@@ -1,0 +1,66 @@
+version: '3.9'
+
+services:
+
+  grafana:
+    image: grafana/grafana:10.0.2
+    hostname: grafana
+    command:
+      - --config=/etc/grafana-config/grafana.ini
+    volumes:
+      - ../common/config/grafana/grafana.ini:/etc/grafana-config/grafana.ini
+      - ../common/config/grafana/dashboards:/var/lib/grafana/dashboards
+      - ../common/config/grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_LOG_LEVEL=warn
+    ports:
+      - "3000:3000"
+
+  agent:
+    image: grafana/agent:v0.35.0-rc.1
+    hostname: agent
+    volumes:
+      - ../common/config/agent-flow:/etc/agent-config
+      - /var/run/docker.sock:/var/run/docker.sock
+    entrypoint:
+      - /bin/grafana-agent
+      - run
+      - /etc/agent-config/single-binary-mode.river
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --cluster.enabled=true
+      - --disable-reporting=true
+    environment:
+      - AGENT_MODE=flow
+      - AGENT_CONFIG_FOLDER=/etc/agent-config
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+    ports:
+      - "12345:12345"
+
+  mimir:
+    image: grafana/mimir:2.9.0
+    hostname: mimir
+    command:
+      - -config.file=/etc/mimir.yaml
+      - -log.level=warn
+    volumes:
+      - ../common/config/mimir/single-binary-mode.yaml:/etc/mimir.yaml
+
+  loki:
+    image: grafana/loki:2.8.2
+    hostname: loki
+    command:
+      - -config.file=/etc/loki.yaml
+      - -target=all
+      - -log.level=warn
+      - -reporting.enabled=false
+    volumes:
+      - ../common/config/loki/single-binary-mode.yaml:/etc/loki.yaml
+
+  tempo:
+    image: grafana/tempo:2.1.1
+    hostname: tempo
+    volumes:
+      - ../common/config/tempo/single-binary-mode.yaml:/etc/tempo.yaml
+    command:
+      - -config.file=/etc/tempo.yaml
+      - -log.level=warn

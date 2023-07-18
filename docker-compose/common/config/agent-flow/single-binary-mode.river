@@ -1,0 +1,163 @@
+logging {
+  level  = "warn"
+  format = "logfmt"
+}
+
+tracing {
+  sampling_fraction = 1
+  write_to          = [otelcol.processor.batch.containers.input]
+}
+
+module.file "local" {
+	  filename = env("AGENT_CONFIG_FOLDER") + "/modules/local.river"
+    arguments {
+      config_url = "https://gist.githubusercontent.com/qclaogui/b6a9d21e003da976a4ae1231c37220df/raw/1ab38edd05700170537165e9db72881c5e71e639/grafana-qclaogui.json"
+      token      = env("GITHUB_TOKEN")
+    }
+}
+
+discovery.docker "containers" {
+  host = "unix:///var/run/docker.sock"
+  filter {
+		name = "status"
+		values = ["running"]
+	}
+}
+
+discovery.relabel "containers" {
+  targets = discovery.docker.containers.targets
+
+  rule {
+		source_labels = ["__address__"]
+		target_label  = "cluster"
+    replacement   = "docker-compose"
+	}
+
+  rule {
+		source_labels = ["__address__"]
+		target_label  = "namespace"
+    replacement   = "monitoring"
+	}
+
+  rule {
+		source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    regex         = "(.*)"
+		target_label  = "pod"
+	}
+
+  rule {
+		source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+		target_label  = "container"
+	}
+}
+
+/********************************************
+ * Metrics
+ ********************************************/
+
+prometheus.exporter.unix {
+  set_collectors     = ["cpu"]
+  disable_collectors = ["diskstats", "mdadm", "textfile", "hwmon"]
+}
+
+prometheus.scrape "integrations" {
+  targets    = concat(
+    [{"__address__" = "agent:12345",  "job" = "integrations/agent"}],
+    [{"__address__" = "grafana:3000", "job" = "integrations/grafana"}],
+    [{"__address__" = "mimir:9009", "job" = "integrations/mimir"}],
+    [{"__address__" = "loki:3100", "job" = "integrations/loki"}],
+    [{"__address__" = "tempo:3200", "job" = "integrations/tempo"}],
+    prometheus.exporter.unix.targets,
+  )
+  
+  clustering {
+    enabled = true
+  }
+  
+  forward_to = [prometheus.relabel.integrations.receiver]
+}
+
+prometheus.relabel "integrations" {
+  rule {
+		source_labels = ["__address__"]
+		target_label  = "cluster"
+    replacement   = "docker-compose"
+	}
+
+  rule {
+		source_labels = ["__address__"]
+		target_label  = "namespace"
+    replacement   = "monitoring"
+	}
+
+  rule {
+		source_labels = ["job"]
+    regex         = "integrations/(.*)"
+		target_label  = "pod"
+	}
+
+  rule {
+		source_labels = ["job"]
+    regex         = "integrations/(.*)"
+		target_label  = "container"
+	}
+
+  forward_to = [module.file.local.exports.metrics_receiver]
+}
+
+/********************************************
+ * Logs
+ ********************************************/
+
+loki.source.docker "containers" {
+  host          = "unix:///var/run/docker.sock"
+  targets       = discovery.relabel.containers.output
+  relabel_rules = discovery.relabel.containers.rules
+  forward_to    = [loki.process.containers.receiver]
+}
+
+loki.process "containers" {
+	forward_to = [module.file.local.exports.logs_receiver]
+
+	stage.drop {
+		older_than = "1h"
+	}
+}
+
+/********************************************
+ * Traces
+ ********************************************/
+
+otelcol.receiver.otlp "containers" {
+	grpc { endpoint = "0.0.0.0:4317" }
+	http { endpoint = "0.0.0.0:4318" }
+
+	output {
+		metrics = [otelcol.processor.batch.containers.input]
+		logs    = [otelcol.processor.batch.containers.input]
+		traces  = [otelcol.processor.batch.containers.input]
+	}
+}
+
+otelcol.processor.batch "containers" {
+	output {
+        metrics = [otelcol.processor.memory_limiter.containers.input]
+        logs    = [otelcol.processor.memory_limiter.containers.input]
+        traces  = [otelcol.processor.memory_limiter.containers.input]
+    }
+}
+
+otelcol.processor.memory_limiter "containers" {
+  check_interval = "1s"
+  limit 		     = "150MiB"
+
+	output {
+    metrics = [otelcol.exporter.prometheus.local.input]
+    logs    = [otelcol.exporter.loki.local.input]
+    traces  = [module.file.local.exports.traces_receiver]
+  }
+}
+
+otelcol.exporter.prometheus "local" { forward_to = [module.file.local.exports.metrics_receiver] }
+otelcol.exporter.loki "local" { forward_to = [module.file.local.exports.logs_receiver] }
