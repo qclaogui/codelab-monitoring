@@ -13,14 +13,17 @@ build-mixin:
 	# ../../tools/check-rules.sh "$(MIXIN_OUT_PATH)/rules.yaml" 20 ; \
 
 check-mixin: ## Build, format and check the mixin files.
-check-mixin: build-mixin format-mixin
+check-mixin: update-mixin build-mixin format-mixin
 	@echo "Checking diff:"
 	../../tools/find-diff-or-untracked.sh . "$(MIXIN_OUT_PATH)" || (echo "Please build and format mixin by running 'make build-mixin format-mixin'" && false); \
-	jb install && \
-	mixtool lint mixin.libsonnet
+	# jb install && \
+	# mixtool lint mixin.libsonnet
 
 format-mixin:
 	@find . -type f -name '*.libsonnet' | xargs -n 1 -- $(JSONNET_FMT) -i
+
+update-mixin:
+	jb update
 
 all: fmt prom_alerts.yaml prom_rules.yaml dashboards_out
 

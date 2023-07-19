@@ -28,7 +28,9 @@ groups:
         - alert: ClusterLamportClockStuck
           annotations:
             message: Cluster nodes's lamport clocks is not progressing.
-          expr: sum by (cluster, namespace, instance) (rate(cluster_node_lamport_time[2m])) == 0
+          expr: |
+            sum by (cluster, namespace, instance) (rate(cluster_node_lamport_time[2m])) == 0
+            and on (cluster, namespace, instance) (cluster_node_peers > 1)
           for: 5m
         - alert: ClusterNodeNameConflict
           annotations:
@@ -43,5 +45,8 @@ groups:
         - alert: ClusterConfigurationDrift
           annotations:
             message: Cluster nodes are not using the same configuration file.
-          expr: "count without (sha256) ( \n    max by (cluster, namespace, sha256) (agent_config_hash and on(cluster, namespace) cluster_node_info)\n) > 1 \n"
+          expr: |
+            count without (sha256) (
+                max by (cluster, namespace, sha256) (agent_config_hash and on(cluster, namespace) cluster_node_info)
+            ) > 1
           for: 5m
