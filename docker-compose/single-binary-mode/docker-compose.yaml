@@ -1,6 +1,17 @@
 version: '3.9'
 
+# Grafana LGTM Stack (Loki Grafana Tempo Mimir)
 services:
+  loki:
+    image: grafana/loki:2.8.2
+    hostname: loki
+    command:
+      - -config.file=/etc/loki.yaml
+      - -target=all
+      - -log.level=warn
+      - -reporting.enabled=false
+    volumes:
+      - ../common/config/loki/single-binary-mode.yaml:/etc/loki.yaml
 
   grafana:
     image: grafana/grafana:10.0.2
@@ -15,6 +26,26 @@ services:
       - GF_LOG_LEVEL=warn
     ports:
       - "3000:3000"
+
+  tempo:
+    image: grafana/tempo:2.1.1
+    hostname: tempo
+    volumes:
+      - ../common/config/tempo/single-binary-mode.yaml:/etc/tempo.yaml
+    command:
+      - -config.file=/etc/tempo.yaml
+      - -log.level=warn
+
+  mimir:
+    image: grafana/mimir:2.9.0
+    hostname: mimir
+    command:
+      - -config.file=/etc/mimir.yaml
+      - -log.level=warn
+    volumes:
+      - ../common/config/mimir/single-binary-mode.yaml:/etc/mimir.yaml
+    ports:
+      - "9009:9009"
 
   agent:
     image: grafana/agent:v0.35.0
@@ -35,34 +66,3 @@ services:
       - GITHUB_TOKEN=${GITHUB_TOKEN}
     ports:
       - "12345:12345"
-
-  mimir:
-    image: grafana/mimir:2.9.0
-    hostname: mimir
-    command:
-      - -config.file=/etc/mimir.yaml
-      - -log.level=warn
-    volumes:
-      - ../common/config/mimir/single-binary-mode.yaml:/etc/mimir.yaml
-    ports:
-      - "9009:9009"
-
-  loki:
-    image: grafana/loki:2.8.2
-    hostname: loki
-    command:
-      - -config.file=/etc/loki.yaml
-      - -target=all
-      - -log.level=warn
-      - -reporting.enabled=false
-    volumes:
-      - ../common/config/loki/single-binary-mode.yaml:/etc/loki.yaml
-
-  tempo:
-    image: grafana/tempo:2.1.1
-    hostname: tempo
-    volumes:
-      - ../common/config/tempo/single-binary-mode.yaml:/etc/tempo.yaml
-    command:
-      - -config.file=/etc/tempo.yaml
-      - -log.level=warn
