@@ -1,4 +1,20 @@
+SHELL = /usr/bin/env bash
+
+# path to jsonnetfmt
 JSONNET_FMT := jsonnetfmt -n 2 --max-blank-lines 2 --string-style s --comment-style s
+# path to the mimir-mixin
+MIXIN_OUT_PATH := deploy
+
+check-mixin-jb:
+	jb install
+
+build-mixin: ## Generates the mixin file.
+build-mixin: check-mixin-jb
+	@# If any rule group has more than 20 rules, fail. 20 is our default per-tenant limit in the ruler.
+	mkdir -p "$(MIXIN_OUT_PATH)"; \
+	find "$(MIXIN_OUT_PATH)" ! -name "kustomization.yaml" -type f -delete; \
+	mixtool generate all --output-alerts "$(MIXIN_OUT_PATH)/alerts.yaml" --output-rules "$(MIXIN_OUT_PATH)/rules.yaml" --directory "$(MIXIN_OUT_PATH)/dashboards_out" "mixin.libsonnet"; \
+	../../tools/check-rules.sh "$(MIXIN_OUT_PATH)/rules.yaml" 20 ; \
 
 all: fmt prom_alerts.yaml prom_rules.yaml dashboards_out
 
