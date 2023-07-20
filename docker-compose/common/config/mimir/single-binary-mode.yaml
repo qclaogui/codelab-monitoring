@@ -1,18 +1,25 @@
 # Do not use this configuration in production.
 # It is for demonstration purposes only.
 multitenancy_enabled: false
+
 # -usage-stats.enabled=false
 usage_stats:
   enabled: false
 
+common:
+  storage:
+    backend: s3
+    s3:
+      endpoint:          minio:9000
+      access_key_id:     admin
+      secret_access_key: admin_password
+      insecure:          true
+
 blocks_storage:
-  backend: filesystem
-  bucket_store:
-    sync_dir: /tmp/mimir/tsdb-sync
-  filesystem:
-    dir: /tmp/mimir/data/tsdb
+  s3:
+    bucket_name: mimir-data
   tsdb:
-    dir: /tmp/mimir/tsdb
+    dir: /data/tsdb
 
 compactor:
   data_dir: /tmp/mimir/compactor
@@ -33,10 +40,21 @@ ingester:
       store: memberlist
     replication_factor: 1
 
+ruler:
+  rule_path: /data/ruler
+  alertmanager_url: http://localhost:9009/alertmanager
+
 ruler_storage:
-  backend: filesystem
-  filesystem:
-    dir: /tmp/mimir/rules
+  s3:
+    bucket_name: mimir-ruler
+
+alertmanager:
+  data_dir: /data/alertmanager
+  external_url: http://localhost:9009/alertmanager
+
+alertmanager_storage:
+  s3:
+    bucket_name: mimir-alertmanager
 
 server:
   http_listen_port: 9009
@@ -45,3 +63,6 @@ server:
 store_gateway:
   sharding_ring:
     replication_factor: 1
+
+limits:
+  native_histograms_ingestion_enabled: true

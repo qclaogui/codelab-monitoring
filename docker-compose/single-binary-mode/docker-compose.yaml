@@ -3,6 +3,7 @@ version: '3.9'
 # Grafana LGTM Stack (Loki Grafana Tempo Mimir)
 services:
   loki:
+    depends_on: ['minio']
     image: grafana/loki:2.8.2
     hostname: loki
     command:
@@ -23,13 +24,14 @@ services:
       - ../common/config/grafana/dashboards:/var/lib/grafana/dashboards
       - ../common/config/grafana/provisioning:/etc/grafana/provisioning
     environment:
-      - GF_LOG_LEVEL=warn
+      - GF_LOG_LEVEL=error
       - GF_SECURITY_ADMIN_PASSWORD=admin_password
       - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor,pyroscopeFlameGraph
     ports:
       - "3000:3000"
 
   tempo:
+    depends_on: ['minio']
     image: grafana/tempo:2.1.1
     hostname: tempo
     volumes:
@@ -39,6 +41,7 @@ services:
       - -log.level=error
 
   mimir:
+    depends_on: ['minio']
     image: grafana/mimir:2.9.0
     hostname: mimir
     command:
@@ -52,6 +55,9 @@ services:
   agent:
     image: grafana/agent:v0.35.0
     hostname: agent
+    # deploy:
+    #   mode: replicated
+    #   replicas: 2
     volumes:
       - ../common/config/agent-flow:/etc/agent-config
       - /var/run/docker.sock:/var/run/docker.sock
@@ -77,8 +83,8 @@ services:
       - -euc
       - |
         mkdir -p /data/loki-data /data/loki-ruler && \
-        mkdir -p /data/tempo-data /data/tempo-ruler && \
-        mkdir -p /data/mimir-data /data/mimir-ruler /data/mimir-alertmanager && \
+        mkdir -p /data/tempo-data /data/mimir-alertmanager && \
+        mkdir -p /data/mimir-data /data/mimir-ruler && \
         minio server /data --console-address ':9001'
     environment:
       - MINIO_ROOT_USER=admin

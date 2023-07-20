@@ -4,7 +4,7 @@ logging {
 }
 
 tracing {
-  sampling_fraction = 0.6
+  sampling_fraction = 0.5
   write_to          = [otelcol.processor.batch.containers.input]
 }
 
@@ -131,8 +131,13 @@ loki.process "containers" {
 	forward_to = [module.file.local.exports.logs_receiver]
 
 	stage.drop {
-		older_than = "1h"
+    longer_than = "8KB"
+		older_than  = "12h"
 	}
+
+  stage.tenant {
+    value = "anonymous"
+  }
 }
 
 /********************************************
