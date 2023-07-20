@@ -1,6 +1,6 @@
 SHELL = /usr/bin/env bash
 
-APPS_MIXIN := "agent-flow-mixin" "go-runtime-mixin" "mimir-mixin" "loki-mixin"
+APPS_MIXIN := "agent-flow-mixin" "go-runtime-mixin" "mimir-mixin" "loki-mixin" "tempo-mixin"
 
 # path to the grafana provisioning dashboards
 GRAFANA_DASHBOARDS_PATH := docker-compose/common/config/grafana/dashboards
