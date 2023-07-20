@@ -3,7 +3,7 @@ version: '3.9'
 # Grafana LGTM Stack (Loki Grafana Tempo Mimir)
 services:
   loki:
-    depends_on: ['minio']
+    depends_on: ["minio"]
     image: grafana/loki:2.8.2
     hostname: loki
     command:
@@ -31,7 +31,7 @@ services:
       - "3000:3000"
 
   tempo:
-    depends_on: ['minio']
+    depends_on: ["minio"]
     image: grafana/tempo:2.1.1
     hostname: tempo
     volumes:
@@ -41,7 +41,7 @@ services:
       - -log.level=error
 
   mimir:
-    depends_on: ['minio']
+    depends_on: ["minio"]
     image: grafana/mimir:2.9.0
     hostname: mimir
     command:
@@ -53,6 +53,7 @@ services:
       - "9009:9009"
 
   agent:
+    depends_on: ["mimir"]
     image: grafana/agent:v0.35.0
     hostname: agent
     # deploy:
