@@ -1,0 +1,33 @@
+# ----------------------------------------------------
+# apiVersion and kind of Kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: grafana-dashboards
+
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_dashboard_folder: "/dashboards/Tempo"
+
+configMapGenerator:
+- name: tempo-operational.json
+  files:
+  - dashboards_out/tempo-operational.json
+- name: tempo-reads.json
+  files:
+  - dashboards_out/tempo-reads.json
+- name: tempo-resources.json
+  files:
+  - dashboards_out/tempo-resources.json
+- name: tempo-rollout-progress.json
+  files:
+  - dashboards_out/tempo-rollout-progress.json
+- name: tempo-tenants.json
+  files:
+  - dashboards_out/tempo-tenants.json
+- name: tempo-writes.json
+  files:
+  - dashboards_out/tempo-writes.json
