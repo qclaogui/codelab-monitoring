@@ -1,5 +1,13 @@
+SHELL = /usr/bin/env bash
+
+APPS_MIXIN := "agent-flow-mixin" "go-runtime-mixin" "mimir-mixin" "loki-mixin"
+
+# path to the grafana provisioning dashboards
+GRAFANA_DASHBOARDS_PATH := docker-compose/common/config/grafana/dashboards
+
 dashboards_out:
-	cp -f monitoring-mixins/agent-flow-mixin/deploy/dashboards_out/* docker-compose/common/config/grafana/dashboards/agent-flow-mixin/
-	cp -f monitoring-mixins/go-runtime-mixin/deploy/dashboards_out/* docker-compose/common/config/grafana/dashboards/go-runtime-mixin/
-	mkdir -p docker-compose/common/config/grafana/dashboards/mimir-mixin
-	cp -f monitoring-mixins/mimir-mixin/deploy/dashboards_out/* docker-compose/common/config/grafana/dashboards/mimir-mixin/
+	@for app in ${APPS_MIXIN}; do \
+		mkdir -p "$(GRAFANA_DASHBOARDS_PATH)/$$app"; \
+		cd "monitoring-mixins/$$app" && cp -f deploy/dashboards_out/* "../../$(GRAFANA_DASHBOARDS_PATH)/$$app/"; \
+		cd -; \
+	done
