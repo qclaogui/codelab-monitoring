@@ -36,7 +36,7 @@ services:
       - ../common/config/tempo/single-binary-mode.yaml:/etc/tempo.yaml
     command:
       - -config.file=/etc/tempo.yaml
-      - -log.level=warn
+      - -log.level=error
 
   mimir:
     image: grafana/mimir:2.9.0
@@ -68,3 +68,24 @@ services:
       - GITHUB_TOKEN=${GITHUB_TOKEN}
     ports:
       - "12345:12345"
+
+  minio:
+    image: minio/minio:RELEASE.2023-07-18T17-49-40Z
+    hostname: minio
+    entrypoint:
+      - sh
+      - -euc
+      - |
+        mkdir -p /data/loki-data /data/loki-ruler && \
+        mkdir -p /data/tempo-data /data/tempo-ruler && \
+        mkdir -p /data/mimir-data /data/mimir-ruler /data/mimir-alertmanager && \
+        minio server /data --console-address ':9001'
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=admin_password
+      - MINIO_PROMETHEUS_AUTH_TYPE=public
+      - MINIO_UPDATE=off
+      - MINIO_PROMETHEUS_URL="http://mimir:9009/prometheus"
+      - MINIO_PROMETHEUS_JOB_ID="integrations/minio"
+    ports:
+      - "9001:9001"

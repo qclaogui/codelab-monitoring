@@ -4,7 +4,7 @@ logging {
 }
 
 tracing {
-  sampling_fraction = 1
+  sampling_fraction = 0.6
   write_to          = [otelcol.processor.batch.containers.input]
 }
 
@@ -70,11 +70,21 @@ prometheus.scrape "integrations" {
     [{"__address__" = "tempo:3200", "job" = "integrations/tempo"}],
     prometheus.exporter.unix.targets,
   )
+  scrape_interval = "15s"
   
   clustering {
     enabled = true
   }
   
+  forward_to = [prometheus.relabel.integrations.receiver]
+}
+
+prometheus.scrape "minio" {
+  targets = [{"__address__" = "minio:9000", "job" = "integrations/minio"}]
+  
+  scrape_interval = "15s"
+  metrics_path    = "/minio/v2/metrics/cluster"
+
   forward_to = [prometheus.relabel.integrations.receiver]
 }
 
@@ -150,7 +160,7 @@ otelcol.processor.batch "containers" {
 
 otelcol.processor.memory_limiter "containers" {
   check_interval = "1s"
-  limit 		     = "150MiB"
+  limit 		     = "256MiB"
 
 	output {
     metrics = [otelcol.exporter.prometheus.local.input]
