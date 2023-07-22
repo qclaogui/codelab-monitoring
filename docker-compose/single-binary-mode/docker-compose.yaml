@@ -4,7 +4,7 @@ version: '3.9'
 services:
   loki:
     depends_on: ["minio"]
-    image: grafana/loki:2.8.2
+    image: grafana/loki:2.8.3
     hostname: loki
     command:
       - -config.file=/etc/loki.yaml
@@ -32,7 +32,7 @@ services:
 
   tempo:
     depends_on: ["minio"]
-    image: grafana/tempo:2.1.1
+    image: grafana/tempo:2.2.0-rc.0
     hostname: tempo
     volumes:
       - ../common/config/tempo/single-binary-mode.yaml:/etc/tempo.yaml
@@ -53,12 +53,9 @@ services:
       - "9009:9009"
 
   agent:
-    depends_on: ["mimir"]
+    depends_on: ["mimir", "tempo", "loki"]
     image: grafana/agent:v0.35.0
     hostname: agent
-    # deploy:
-    #   mode: replicated
-    #   replicas: 2
     volumes:
       - ../common/config/agent-flow:/etc/agent-config
       - /var/run/docker.sock:/var/run/docker.sock
