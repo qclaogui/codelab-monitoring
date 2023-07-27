@@ -7,16 +7,22 @@ GO     ?= $(shell which go)
 
 # Below generated variables ensure that every time a tool under each variable is invoked, the correct version
 # will be used; reinstalling only if needed.
-# For example for jsonnetfmt variable:
+# For example for jb variable:
 #
 # In your main Makefile (for non array binaries):
 #
 #include .bingo/Variables.mk # Assuming -dir was set to .bingo .
 #
-#command: $(JSONNETFMT)
-#	@echo "Running jsonnetfmt"
-#	@$(JSONNETFMT) <flags/args..>
+#command: $(JB)
+#	@echo "Running jb"
+#	@$(JB) <flags/args..>
 #
+JB := $(GOBIN)/jb-v0.5.1
+$(JB): $(BINGO_DIR)/jb.mod
+	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
+	@echo "(re)installing $(GOBIN)/jb-v0.5.1"
+	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=jb.mod -o=$(GOBIN)/jb-v0.5.1 "github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb"
+
 JSONNETFMT := $(GOBIN)/jsonnetfmt-v0.20.0
 $(JSONNETFMT): $(BINGO_DIR)/jsonnetfmt.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
@@ -28,4 +34,10 @@ $(MIXTOOL): $(BINGO_DIR)/mixtool.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
 	@echo "(re)installing $(GOBIN)/mixtool-v0.0.0-20230702171844-2282201396b6"
 	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=mixtool.mod -o=$(GOBIN)/mixtool-v0.0.0-20230702171844-2282201396b6 "github.com/monitoring-mixins/mixtool/cmd/mixtool"
+
+YQ := $(GOBIN)/yq-v4.34.2
+$(YQ): $(BINGO_DIR)/yq.mod
+	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
+	@echo "(re)installing $(GOBIN)/yq-v4.34.2"
+	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=yq.mod -o=$(GOBIN)/yq-v4.34.2 "github.com/mikefarah/yq/v4"
 

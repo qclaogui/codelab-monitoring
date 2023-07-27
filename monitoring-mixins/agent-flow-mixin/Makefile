@@ -15,14 +15,14 @@ fmt: ## Format the mixin files
 build: ## Generates the mixin files
 	@mkdir -p "$(MIXIN_OUT_PATH)"; \
 	find "$(MIXIN_OUT_PATH)" ! -name "kustomization.yaml" -type f -delete; \
-	mixtool generate all --output-alerts "$(MIXIN_OUT_PATH)/alerts.yaml" --output-rules "$(MIXIN_OUT_PATH)/rules.yaml" --directory "$(MIXIN_OUT_PATH)/dashboards_out" "mixin.libsonnet"; \
+	$(MIXTOOL) generate all --output-alerts "$(MIXIN_OUT_PATH)/alerts.yaml" --output-rules "$(MIXIN_OUT_PATH)/rules.yaml" --directory "$(MIXIN_OUT_PATH)/dashboards_out" "mixin.libsonnet"; \
 	# ../../tools/check-rules.sh "$(MIXIN_OUT_PATH)/rules.yaml" 20 ; \
 
 .PHONY: check
 check: build fmt ## Build, fmt and check the mixin files
 	@../../tools/find-diff-or-untracked.sh . "$(MIXIN_OUT_PATH)" || (echo "Please build and fmt mixin by running 'make build fmt'" && false); \
 	# jb install && \
-	# mixtool lint mixin.libsonnet
+	# $(MIXTOOL) lint mixin.libsonnet
 
 ##@ Dashboards & k8s
 
