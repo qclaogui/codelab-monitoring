@@ -1,7 +1,9 @@
 .DEFAULT_GOAL := help
 
+include ../../.bingo/Variables.mk
+
 # path to jsonnetfmt
-JSONNET_FMT := jsonnetfmt -n 2 --max-blank-lines 2 --string-style s --comment-style s
+JSONNET_FMT := $(JSONNETFMT) -n 2 --max-blank-lines 2 --string-style s --comment-style s
 # path to the mixin
 MIXIN_OUT_PATH := deploy
 
