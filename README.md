@@ -1,7 +1,5 @@
 # codelab-monitoring
 
-## Grafana LGTM Stack (Loki Grafana Tempo Mimir) 
-
 <p align="center">
 
 <a href="https://github.com/qclaogui/codelab-monitoring/actions/workflows/ci.yml">
@@ -9,6 +7,8 @@
 </a>
 
 </p>
+
+## Grafana LGTM Stack (Loki Grafana Tempo Mimir) 
 
 Base on Flow mode of Grafana Agent (also called Grafana Agent Flow) is a component-based revision of Grafana Agent
 
