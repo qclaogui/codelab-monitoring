@@ -14,7 +14,7 @@ GRAFANA_DASHBOARDS_PATH := docker-compose/common/config/grafana/dashboards
 install-build-deps: ## Install dependencies tools
 	$(info ******************** downloading dependencies ********************)
 	@echo ">> building bingo and setup dependencies tools"
-	@go install github.com/bwplotka/bingo@latest && bingo get
+	@go install github.com/bwplotka/bingo@latest
 
 
 ##@ Dashboards
@@ -28,7 +28,8 @@ dashboards_out: ## Copy app's dashboards to grafana dashboards provision path
 	done
 
 .PHONY: check
-check: ## Check all the mixin files
+check:  ## Check all the mixin files
+check: $(JSONNETFMT) $(MIXTOOL)
 	@for app in ${APPS_MIXIN}; do \
 		cd "monitoring-mixins/$$app" && make check ; \
 		cd -; \
