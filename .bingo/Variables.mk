@@ -35,9 +35,3 @@ $(MIXTOOL): $(BINGO_DIR)/mixtool.mod
 	@echo "(re)installing $(GOBIN)/mixtool-v0.0.0-20230702171844-2282201396b6"
 	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=mixtool.mod -o=$(GOBIN)/mixtool-v0.0.0-20230702171844-2282201396b6 "github.com/monitoring-mixins/mixtool/cmd/mixtool"
 
-YQ := $(GOBIN)/yq-v4.34.2
-$(YQ): $(BINGO_DIR)/yq.mod
-	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
-	@echo "(re)installing $(GOBIN)/yq-v4.34.2"
-	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=yq.mod -o=$(GOBIN)/yq-v4.34.2 "github.com/mikefarah/yq/v4"
-
