@@ -2,8 +2,9 @@ package main
 
 import (
 	"context"
-	"dagger.io/dagger"
 	"os"
+
+	"dagger.io/dagger"
 )
 
 // use golang:1.20.6 container as builder
@@ -28,9 +29,9 @@ func main() {
 	goContainer := client.Container().From(goImage).
 		WithMountedCache("/go/pkg/mod", client.CacheVolume("go-mod")).
 		WithMountedCache("/root/.cache/go-build", client.CacheVolume("go-build")).
+		WithEnvVariable("GOCACHE", "/root/.cache/go-build").
 		WithMountedDirectory("/app", source).
-		WithWorkdir("/app").
-		WithEnvVariable("GOCACHE", "/root/.cache/go-build") // set GOCACHE explicitly to point to our mounted cache
+		WithWorkdir("/app")
 
 	// Install dependencies tools
 	if _, err = goContainer.WithExec([]string{"bash", "-c", "make", "install-build-deps"}).Sync(ctx); err != nil {
