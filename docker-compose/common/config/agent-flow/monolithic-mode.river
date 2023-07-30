@@ -4,14 +4,14 @@ logging {
 }
 
 tracing {
-  sampling_fraction = 0.5
+  sampling_fraction = 0.1
   write_to          = [otelcol.processor.batch.containers.input]
 }
 
 module.file "local" {
 	  filename = env("AGENT_CONFIG_FOLDER") + "/modules/local.river"
     arguments {
-      config_url = "https://gist.githubusercontent.com/qclaogui/70b05aa375f0108c36b2bca3c7335200/raw/2fa7a566509eef10e96e08d3fc1777f8bef78771/grafana-qclaogui.json"
+      config_url = "https://gist.githubusercontent.com/qclaogui/70b05aa375f0108c36b2bca3c7335200/raw/ed4ccc23e0af8fc649348b16c90fb1c7c64e3c5b/grafana-qclaogui.json"
       token      = env("GITHUB_TOKEN")
     }
 }
@@ -68,7 +68,7 @@ prometheus.scrape "integrations" {
     [{"__address__" = "mimir:9009", "job" = "monitoring/mimir"}],
     [{"__address__" = "loki:3100", "job" = "monitoring/loki"}],
     [{"__address__" = "tempo:3200", "job" = "monitoring/tempo"}],
-    [{"__address__" = "profiles:4100", "job" = "monitoring/profiles"}],
+    [{"__address__" = "pyroscope:4100", "job" = "monitoring/pyroscope"}],
     prometheus.exporter.unix.targets,
   )
   scrape_interval = "15s"
@@ -182,12 +182,11 @@ otelcol.exporter.loki "local" { forward_to = [module.file.local.exports.logs_rec
  * Profiles
  ********************************************/
 
-/***
 pyroscope.scrape "containers" {
   targets = [
-    {"__address__" = "profiles:4100", "service_name"="profiles"},
-    {"__address__" = "agent:12345", "service_name"="agent"},
-    {"__address__" = "grafana:6060", "service_name"="grafana"},
+    {"__address__" = "pyroscope:4100", "service_name"="pyroscope"},
+    //{"__address__" = "agent:12345", "service_name"="agent"},
+    //{"__address__" = "grafana:6060", "service_name"="grafana"},
   ]
 
   profiling_config {
@@ -198,4 +197,3 @@ pyroscope.scrape "containers" {
 
   forward_to = [module.file.local.exports.profiles_receiver]
 }
-*/
