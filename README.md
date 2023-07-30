@@ -1,4 +1,4 @@
-# codelab-monitoring
+# codelab-monitoring - Provisioning Scale Observability Workspace
 
 <p align="center">
 
