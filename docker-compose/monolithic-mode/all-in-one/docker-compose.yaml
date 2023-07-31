@@ -1,8 +1,60 @@
 version: '3.9'
 
 
-# Grafana LGTM Stack (Loki Grafana Tempo Mimir)
+# Grafana LGTM Stack (Agent Mimir Loki Tempo Pyroscope Grafana)
 services:
+
+  agent:
+    depends_on: # https://docs.docker.com/compose/startup-order
+      tempo:
+        condition: service_started
+      mimir:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
+    image: grafana/agent:v0.35.2
+    hostname: agent
+    restart: always
+    volumes:
+      - ../../common/config/agent-flow:/etc/agent-config
+      - /var/run/docker.sock:/var/run/docker.sock
+    entrypoint:
+      - /bin/grafana-agent
+      - run
+      - /etc/agent-config/monolithic-mode.river
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --cluster.enabled=true
+      - --disable-reporting=true
+    environment:
+      - AGENT_MODE=flow
+      - AGENT_CONFIG_FOLDER=/etc/agent-config
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:12345/ready || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "12345:12345"
+
+  mimir:
+    depends_on: # https://docs.docker.com/compose/startup-order
+      minio:
+        condition: service_healthy
+    image: grafana/mimir:2.9.0
+    hostname: mimir
+    command:
+      - -config.file=/etc/mimir.yaml
+      - -log.level=warn
+    ports:
+      - "9009:9009"
+    volumes:
+      - ../../common/config/mimir/monolithic-mode.yaml:/etc/mimir.yaml
+      - data-mimir:/data:delegated
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9009/ready || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   loki:
     depends_on: # https://docs.docker.com/compose/startup-order
@@ -22,6 +74,37 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  tempo:
+    depends_on: # https://docs.docker.com/compose/startup-order
+      minio:
+        condition: service_healthy
+      mimir:
+        condition: service_healthy
+    image: grafana/tempo:2.2.0-rc.0
+    hostname: tempo
+    restart: always
+    volumes:
+      - ../../common/config/tempo/monolithic-mode.yaml:/etc/tempo.yaml
+    command:
+      - -config.file=/etc/tempo.yaml
+      - -log.level=error
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ready || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pyroscope:
+    image: grafana/phlare:weekly-f22-06e09923
+    hostname: pyroscope
+    volumes:
+      - ../../common/config/pyroscope/monolithic-mode.yaml:/etc/pyroscope.yaml
+    command:
+      - -config.file=/etc/pyroscope.yaml
+      - -log.level=warn
+    # ports:
+    #   - "4100:4100"
 
   grafana:
     image: grafana/grafana:10.0.3
@@ -49,87 +132,6 @@ services:
     ports:
       - "3000:3000"
 
-  tempo:
-    depends_on: # https://docs.docker.com/compose/startup-order
-      minio:
-        condition: service_healthy
-      mimir:
-        condition: service_healthy
-    image: grafana/tempo:2.2.0-rc.0
-    hostname: tempo
-    restart: always
-    volumes:
-      - ../../common/config/tempo/monolithic-mode.yaml:/etc/tempo.yaml
-    command:
-      - -config.file=/etc/tempo.yaml
-      - -log.level=error
-    healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ready || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  mimir:
-    depends_on: # https://docs.docker.com/compose/startup-order
-      minio:
-        condition: service_healthy
-    image: grafana/mimir:2.9.0
-    hostname: mimir
-    command:
-      - -config.file=/etc/mimir.yaml
-      - -log.level=warn
-    volumes:
-      - ../../common/config/mimir/monolithic-mode.yaml:/etc/mimir.yaml
-      - data-mimir:/data:delegated
-    healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9009/ready || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  agent:
-    depends_on: # https://docs.docker.com/compose/startup-order
-      tempo:
-        condition: service_started
-      mimir:
-        condition: service_healthy
-      loki:
-        condition: service_healthy
-    image: grafana/agent:v0.35.2
-    hostname: agent
-    restart: always
-    volumes:
-      - ../../common/config/agent-flow:/etc/agent-config
-      - /var/run/docker.sock:/var/run/docker.sock
-    entrypoint:
-      - /bin/grafana-agent
-      - run
-      - /etc/agent-config/monolithic-mode-all-in-one.river
-      - --server.http.listen-addr=0.0.0.0:12345
-      - --cluster.enabled=true
-      - --disable-reporting=true
-    environment:
-      - AGENT_MODE=flow
-      - AGENT_CONFIG_FOLDER=/etc/agent-config
-    healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:12345/ready || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    ports:
-      - "12345:12345"
-
-  pyroscope:
-    image: grafana/phlare:weekly-f22-06e09923
-    hostname: pyroscope
-    volumes:
-      - ../../common/config/pyroscope/monolithic-mode.yaml:/etc/pyroscope.yaml
-    command:
-      - -config.file=/etc/pyroscope.yaml
-      - -log.level=warn
-    # ports:
-    #   - "4100:4100"
-
   minio:
     image: minio/minio:RELEASE.2023-07-18T17-49-40Z
     hostname: minio
@@ -156,8 +158,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    # ports:
-    #   - "9001:9001"
+    ports:
+      - "9001:9001"
 
 volumes:
   data-mimir:

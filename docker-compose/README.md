@@ -1,4 +1,4 @@
-# Deployment modes
+# Docker Compose Deployment modes
 
 You can deploy in one of three modes
 
