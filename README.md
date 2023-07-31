@@ -1,4 +1,4 @@
-# Provisioning Scale Observability Workspace
+# Provisioning Scaled Observability Workspace
 
 <p align="center">
 
