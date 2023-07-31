@@ -1,0 +1,32 @@
+server:
+  http_listen_port: 3200
+
+distributor:
+  receivers:                           # this configuration will listen on all ports and protocols that tempo is capable of.
+    otlp:
+      protocols:
+        http:
+        grpc:
+
+ingester:
+  max_block_duration: 5m               # cut the headblock when this much time passes. this is being set for demo purposes and should probably be left alone normally
+
+
+compactor:
+  compaction:
+    block_retention: 1h                # overall Tempo trace retention. set for demo purposes
+
+storage:
+  trace:
+    backend: s3                     # backend configuration to use
+    wal:
+      path: /tmp/tempo/wal             # where to store the the wal locally
+    s3:
+      bucket: tempo-data
+      endpoint: minio:9000
+      access_key: admin
+      secret_key: admin_password
+      insecure: true
+
+overrides:
+  metrics_generator_processors: [service-graphs, span-metrics] # enables metrics generator

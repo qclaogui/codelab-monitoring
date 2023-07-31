@@ -1,0 +1,47 @@
+// https://github.com/grafana/agent-configurator
+
+logging {
+  level  = "warn"
+  format = "logfmt"
+}
+
+tracing {
+  sampling_fraction = 0.8
+  write_to          = [otelcol.processor.batch.containers.input]
+}
+
+module.file "local" {
+	  filename = env("AGENT_CONFIG_FOLDER") + "/modules/local.river"
+    arguments {
+      config_url = "https://gist.githubusercontent.com/qclaogui/70b05aa375f0108c36b2bca3c7335200/raw/ed4ccc23e0af8fc649348b16c90fb1c7c64e3c5b/grafana-qclaogui.json"
+      token      = env("GITHUB_TOKEN")
+    }
+}
+
+/********************************************
+ * Otelcol for Traces
+ ********************************************/
+
+otelcol.receiver.otlp "containers" {
+	grpc { endpoint = "0.0.0.0:4317" }
+	http { endpoint = "0.0.0.0:4318" }
+
+	output {
+		traces  = [otelcol.processor.batch.containers.input]
+	}
+}
+
+otelcol.processor.batch "containers" {
+	output {
+        traces  = [otelcol.processor.memory_limiter.containers.input]
+    }
+}
+
+otelcol.processor.memory_limiter "containers" {
+  check_interval = "1s"
+  limit 		     = "256MiB"
+
+	output {
+    traces  = [module.file.local.exports.traces_receiver]
+  }
+}

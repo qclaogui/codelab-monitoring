@@ -1,0 +1,97 @@
+version: '3.9'
+
+
+# Grafana LGTM Stack (Agent Tempo Minio Grafana)
+services:
+
+  agent:
+    depends_on: # https://docs.docker.com/compose/startup-order
+      tempo:
+        condition: service_started
+    image: grafana/agent:v0.35.2
+    hostname: agent
+    restart: always
+    volumes:
+      - ../../common/config/agent-flow:/etc/agent-config
+      - /var/run/docker.sock:/var/run/docker.sock
+    entrypoint:
+      - /bin/grafana-agent
+      - run
+      - /etc/agent-config/monolithic-mode-traces.river
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --cluster.enabled=true
+      - --disable-reporting=true
+    environment:
+      - AGENT_MODE=flow
+      - AGENT_CONFIG_FOLDER=/etc/agent-config
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:12345/ready || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "12345:12345"
+
+  tempo:
+    depends_on: # https://docs.docker.com/compose/startup-order
+      minio:
+        condition: service_healthy
+    image: grafana/tempo:2.2.0-rc.0
+    hostname: tempo
+    restart: always
+    volumes:
+      - ../../common/config/tempo/monolithic-mode-traces.yaml:/etc/tempo.yaml
+    command:
+      - -config.file=/etc/tempo.yaml
+      - -log.level=error
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ready || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:RELEASE.2023-07-18T17-49-40Z
+    hostname: minio
+    entrypoint:
+      - sh
+      - -euc
+      - |
+        mkdir -p /data/tempo-data  && \
+        minio server /data --console-address ':9001'
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=admin_password
+      - MINIO_PROMETHEUS_AUTH_TYPE=public
+      - MINIO_UPDATE=off
+    volumes:
+      - data-minio:/data:delegated
+    healthcheck:
+      test: ["CMD", "curl","-f","http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # ports:
+    #   - "9001:9001"
+
+  grafana:
+    image: grafana/grafana:10.0.3
+    hostname: grafana
+    command:
+      - --config=/etc/grafana-config/grafana.ini
+    volumes:
+      - ../../common/config/grafana/grafana.ini:/etc/grafana-config/grafana.ini
+      - ../../common/config/grafana/dashboards:/var/lib/grafana/dashboards
+      - ../../common/config/grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_LOG_LEVEL=error
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin_password}
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
+      - GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS=agent:4317
+      - GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES=cluster:docker-compose,namespace:monitoring
+    ports:
+      - "3000:3000"
+
+volumes:
+  data-minio:
+    driver: local

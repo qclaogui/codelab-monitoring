@@ -24,7 +24,7 @@ Base on Flow mode of Grafana Agent (also called Grafana Agent Flow) is a compone
   - [All in one (Grafana Agent + Loki + Tempo + Mimir + Pyroscope + Grafana)](./docker-compose/monolithic-mode/all-in-one/docker-compose.yaml)
   - [Metrics (Grafana Agent + Mimir + Grafana)](./docker-compose/monolithic-mode/metrics/docker-compose.yaml)
   - [Logs (Grafana Agent + Loki + Grafana)](./docker-compose/monolithic-mode/logs/docker-compose.yaml)
-  - [Traces (Grafana Agent + Tempo + Grafana) //TODO(qc)](TODO)
+  - [Traces (Grafana Agent + Tempo + Grafana)](./docker-compose/monolithic-mode/traces/docker-compose.yaml)
   - [Profiles (Grafana Agent + Pyroscope + Grafana)](./docker-compose/monolithic-mode/profiles/docker-compose.yaml)
 - [Read-Write mode (读写模式)](./docker-compose/read-write-mode/README.md)
   - TODO(qc)
@@ -33,5 +33,5 @@ Base on Flow mode of Grafana Agent (also called Grafana Agent Flow) is a compone
 
 #### [Kubernetes (kubernetes/README.md)](kubernetes/README.md)
 
-- [Microservices mode](./docker-compose/microservices-mode/README.md)
+- [Microservices mode (微服务模式)](./docker-compose/microservices-mode/README.md)
   - TODO(qc)
