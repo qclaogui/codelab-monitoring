@@ -1,4 +1,7 @@
-<p align="center"><h1>Provisioning Scale Observability Workspace</h1></p>
+
+<p align="center">
+  <h1>Provisioning Scale Observability Workspace</h1>
+</p>
 
 <p align="center">
 
@@ -21,7 +24,7 @@ Base on Flow mode of Grafana Agent (also called Grafana Agent Flow) is a compone
 - [Monolithic mode (单体模式)](./docker-compose/monolithic-mode/README.md)
   - [All in one (Grafana Agent + Loki + Tempo + Mimir + Pyroscope + Grafana)](./docker-compose/monolithic-mode/all-in-one/docker-compose.yaml)
   - [Metrics (Grafana Agent + Mimir + Grafana)](./docker-compose/monolithic-mode/metrics/docker-compose.yaml)
-  - [Logs (Grafana Agent + Loki + Grafana) //TODO(qc)]()
+  - [Logs (Grafana Agent + Loki + Grafana)](./docker-compose/monolithic-mode/logs/docker-compose.yaml)
   - [Traces (Grafana Agent + Tempo + Grafana) //TODO(qc)](TODO)
   - [Profiles (Grafana Agent + Pyroscope + Grafana) //TODO(qc)](TODO)
 - [Read-Write mode (读写模式)](./docker-compose/read-write-mode/README.md)

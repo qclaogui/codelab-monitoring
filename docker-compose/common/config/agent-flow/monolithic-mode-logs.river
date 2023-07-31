@@ -1,0 +1,103 @@
+logging {
+  level  = "warn"
+  format = "logfmt"
+}
+
+
+module.file "local" {
+	  filename = env("AGENT_CONFIG_FOLDER") + "/modules/local.river"
+    arguments {
+      config_url = "https://gist.githubusercontent.com/qclaogui/70b05aa375f0108c36b2bca3c7335200/raw/ed4ccc23e0af8fc649348b16c90fb1c7c64e3c5b/grafana-qclaogui.json"
+      token      = env("GITHUB_TOKEN")
+    }
+}
+
+discovery.docker "containers" {
+  host = "unix:///var/run/docker.sock"
+  filter {
+		name = "status"
+		values = ["running"]
+	}
+}
+
+discovery.relabel "containers" {
+  targets = discovery.docker.containers.targets
+
+  rule {
+		source_labels = ["__address__"]
+		target_label  = "cluster"
+    replacement   = "docker-compose"
+	}
+
+  rule {
+		source_labels = ["__address__"]
+		target_label  = "namespace"
+    replacement   = "monitoring"
+	}
+
+  rule {
+		source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    regex         = "(.*)"
+		target_label  = "pod"
+	}
+
+  rule {
+		source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+		target_label  = "container"
+	}
+}
+
+/********************************************
+ * Logs
+ ********************************************/
+
+loki.source.docker "containers" {
+  host          = "unix:///var/run/docker.sock"
+  targets       = discovery.relabel.containers.output
+  relabel_rules = discovery.relabel.containers.rules
+  forward_to    = [loki.process.containers.receiver]
+}
+
+loki.process "containers" {
+	forward_to = [module.file.local.exports.logs_receiver]
+
+	stage.drop {
+    longer_than = "8KB"
+		older_than  = "12h"
+	}
+
+  stage.tenant {
+    value = "anonymous"
+  }
+}
+
+/********************************************
+ * Otelcol for Logs
+ ********************************************/
+
+otelcol.receiver.otlp "containers" {
+	grpc { endpoint = "0.0.0.0:4317" }
+	http { endpoint = "0.0.0.0:4318" }
+
+	output {
+		logs    = [otelcol.processor.batch.containers.input]
+	}
+}
+
+otelcol.processor.batch "containers" {
+	output {
+        logs    = [otelcol.processor.memory_limiter.containers.input]
+    }
+}
+
+otelcol.processor.memory_limiter "containers" {
+  check_interval = "1s"
+  limit 		     = "256MiB"
+
+	output {
+    logs    = [otelcol.exporter.loki.local.input]
+  }
+}
+
+otelcol.exporter.loki "local" { forward_to = [module.file.local.exports.logs_receiver] }
