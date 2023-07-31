@@ -4,25 +4,6 @@ version: '3.9'
 # Grafana LGTM Stack (Loki Grafana Tempo Mimir)
 services:
 
-  loki:
-    depends_on: # https://docs.docker.com/compose/startup-order
-      minio:
-        condition: service_healthy
-    image: grafana/loki:2.8.3
-    hostname: loki
-    command:
-      - -config.file=/etc/loki.yaml
-      - -target=all
-      - -log.level=warn
-      - -reporting.enabled=false
-    volumes:
-      - ../../common/config/loki/monolithic-mode.yaml:/etc/loki.yaml
-    healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   grafana:
     image: grafana/grafana:10.0.3
     # image: grafana # local Dockerfile //TODO(qc)
@@ -43,58 +24,14 @@ services:
       - GF_DIAGNOSTICS_PROFILING_ENABLED=true
       - GF_DIAGNOSTICS_PROFILING_ADDR=0.0.0.0
       - GF_DIAGNOSTICS_PROFILING_PORT=6060
-      - GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS=agent:4317
-      - GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES=cluster:docker-compose,namespace:monitoring
       # - GF_INSTALL_PLUGINS=pyroscope-datasource,pyroscope-panel
     ports:
       - "3000:3000"
 
-  tempo:
-    depends_on: # https://docs.docker.com/compose/startup-order
-      minio:
-        condition: service_healthy
-      mimir:
-        condition: service_healthy
-    image: grafana/tempo:2.2.0-rc.0
-    hostname: tempo
-    restart: always
-    volumes:
-      - ../../common/config/tempo/monolithic-mode.yaml:/etc/tempo.yaml
-    command:
-      - -config.file=/etc/tempo.yaml
-      - -log.level=error
-    healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ready || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  mimir:
-    depends_on: # https://docs.docker.com/compose/startup-order
-      minio:
-        condition: service_healthy
-    image: grafana/mimir:2.9.0
-    hostname: mimir
-    command:
-      - -config.file=/etc/mimir.yaml
-      - -log.level=warn
-    volumes:
-      - ../../common/config/mimir/monolithic-mode.yaml:/etc/mimir.yaml
-      - data-mimir:/data:delegated
-    healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9009/ready || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   agent:
     depends_on: # https://docs.docker.com/compose/startup-order
-      tempo:
+      pyroscope:
         condition: service_started
-      mimir:
-        condition: service_healthy
-      loki:
-        condition: service_healthy
     image: grafana/agent:v0.35.2
     hostname: agent
     restart: always
@@ -104,7 +41,7 @@ services:
     entrypoint:
       - /bin/grafana-agent
       - run
-      - /etc/agent-config/monolithic-mode-all-in-one.river
+      - /etc/agent-config/monolithic-mode-profiles.river
       - --server.http.listen-addr=0.0.0.0:12345
       - --cluster.enabled=true
       - --disable-reporting=true
@@ -127,8 +64,8 @@ services:
     command:
       - -config.file=/etc/pyroscope.yaml
       - -log.level=warn
-    # ports:
-    #   - "4100:4100"
+    ports:
+      - "4100:4100"
 
   minio:
     image: minio/minio:RELEASE.2023-07-18T17-49-40Z
@@ -137,9 +74,6 @@ services:
       - sh
       - -euc
       - |
-        mkdir -p /data/mimir-data /data/mimir-rules /data/mimir-alertmanager && \
-        mkdir -p /data/loki-data /data/loki-rules && \
-        mkdir -p /data/tempo-data  && \
         mkdir -p /data/pyroscope-data && \
         minio server /data --console-address ':9001'
     environment:
@@ -160,7 +94,5 @@ services:
     #   - "9001:9001"
 
 volumes:
-  data-mimir:
-    driver: local
   data-minio:
     driver: local

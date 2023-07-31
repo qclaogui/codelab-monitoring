@@ -1,0 +1,38 @@
+// https://github.com/grafana/agent-configurator
+
+logging {
+  level  = "warn"
+  format = "logfmt"
+}
+
+module.file "local" {
+	  filename = env("AGENT_CONFIG_FOLDER") + "/modules/local.river"
+    arguments {
+      config_url = "https://gist.githubusercontent.com/qclaogui/70b05aa375f0108c36b2bca3c7335200/raw/ed4ccc23e0af8fc649348b16c90fb1c7c64e3c5b/grafana-qclaogui.json"
+      token      = env("GITHUB_TOKEN")
+    }
+}
+
+
+/********************************************
+ * Profiles
+ ********************************************/
+
+pyroscope.scrape "containers" {
+  targets = [
+    {"__address__" = "pyroscope:4100", "service_name"="pyroscope"},
+    //{"__address__" = "agent:12345", "service_name"="agent"},
+    {"__address__" = "grafana:6060", "service_name"="grafana"},
+  ]
+
+  profiling_config {
+    profile.fgprof { enabled = true }
+    profile.block { enabled = true }
+    profile.mutex { enabled = true }
+    profile.memory { enabled = true }
+    profile.goroutine { enabled = true }
+    profile.process_cpu { enabled = true }
+  }
+
+  forward_to = [module.file.local.exports.profiles_receiver]
+}

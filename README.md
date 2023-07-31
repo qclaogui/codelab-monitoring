@@ -1,7 +1,4 @@
-
-<p align="center">
-  <h1>Provisioning Scale Observability Workspace</h1>
-</p>
+# Provisioning Scale Observability Workspace
 
 <p align="center">
 
@@ -17,6 +14,8 @@ Base on Flow mode of Grafana Agent (also called Grafana Agent Flow) is a compone
 
 ## Getting Started
 
+[Grafana Agent Configuration Generator](https://github.com/grafana/agent-configurator) a tool allows for easy configuration of Grafana Agents Flow system
+
 ### Deployment Examples
 
 #### [Docker Compose (docker-compose/README.md)](docker-compose/README.md)
@@ -26,7 +25,7 @@ Base on Flow mode of Grafana Agent (also called Grafana Agent Flow) is a compone
   - [Metrics (Grafana Agent + Mimir + Grafana)](./docker-compose/monolithic-mode/metrics/docker-compose.yaml)
   - [Logs (Grafana Agent + Loki + Grafana)](./docker-compose/monolithic-mode/logs/docker-compose.yaml)
   - [Traces (Grafana Agent + Tempo + Grafana) //TODO(qc)](TODO)
-  - [Profiles (Grafana Agent + Pyroscope + Grafana) //TODO(qc)](TODO)
+  - [Profiles (Grafana Agent + Pyroscope + Grafana)](./docker-compose/monolithic-mode/profiles/docker-compose.yaml)
 - [Read-Write mode (读写模式)](./docker-compose/read-write-mode/README.md)
   - TODO(qc)
 - [Microservices mode (微服务模式)](./docker-compose/microservices-mode/README.md)
