@@ -21,17 +21,28 @@ Base on Flow mode of Grafana Agent (also called Grafana Agent Flow) is a compone
 #### [Docker Compose (docker-compose/README.md)](docker-compose/README.md)
 
 - [Monolithic mode (单体模式)](./docker-compose/monolithic-mode/README.md)
-  - [Logs (Agent + Loki + Grafana)](./docker-compose/monolithic-mode/logs/docker-compose.yaml)
-  - [Traces (Agent + Tempo + Grafana)](./docker-compose/monolithic-mode/traces/docker-compose.yaml)
-  - [Metrics (Agent + Mimir + Grafana)](./docker-compose/monolithic-mode/metrics/docker-compose.yaml)
-  - [Profiles (Agent + Pyroscope + Grafana)](./docker-compose/monolithic-mode/profiles/docker-compose.yaml)
-  - [All in one (Agent + Loki + Tempo + Mimir + Pyroscope + Grafana)](./docker-compose/monolithic-mode/all-in-one/docker-compose.yaml)
+  - [Logs [ Agent + Loki + Grafana ]](./docker-compose/monolithic-mode/logs/docker-compose.yaml)
+  - [Traces [ Agent + Tempo + Grafana ]](./docker-compose/monolithic-mode/traces/docker-compose.yaml)
+  - [Metrics [ Agent + Mimir + Grafana ]](./docker-compose/monolithic-mode/metrics/docker-compose.yaml)
+  - [Profiles [ Agent + Pyroscope + Grafana ]](./docker-compose/monolithic-mode/profiles/docker-compose.yaml)
+  - [All In One [ Agent + Loki + Tempo + Mimir + Pyroscope + Grafana ]](./docker-compose/monolithic-mode/all-in-one/docker-compose.yaml)
 
 - [Read-Write mode (读写模式)](./docker-compose/read-write-mode/README.md)
-  - [Metrics (Agent + Mimir + Grafana)](./docker-compose/read-write-mode/metrics/docker-compose.yaml)
+  - Logs
+  - Traces
+  - [Metrics [ Agent + (Mimir Read * 2) + (Mimir Write * 3) + (Mimir Backend * 2) + Grafana ]](./docker-compose/read-write-mode/metrics/README.md)
+  - Profiles
 
 - Microservices mode (微服务模式)
+  - Logs
+  - Traces
+  - Metrics
+  - Profiles
 
 #### Kubernetes (kubernetes/README.md)
 
 - Microservices mode (微服务模式)
+  - Logs
+  - Traces
+  - Metrics
+  - Profiles
