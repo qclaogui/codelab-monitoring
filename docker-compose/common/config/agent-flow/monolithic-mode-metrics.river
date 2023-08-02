@@ -49,6 +49,12 @@ prometheus.scrape "minio" {
 prometheus.relabel "integrations" {
   rule {
 		source_labels = ["__address__"]
+		target_label  = "scraped_by"
+    replacement   = "grafana-agent"
+	}
+
+  rule {
+		source_labels = ["__address__"]
 		target_label  = "cluster"
     replacement   = "docker-compose"
 	}
@@ -61,14 +67,16 @@ prometheus.relabel "integrations" {
 
   rule {
 		source_labels = ["job"]
-    regex         = "integrations/(.*)"
+    regex         = "(integrations|monitoring)/(.*)"
 		target_label  = "pod"
+    replacement   = "${2}"
 	}
 
   rule {
 		source_labels = ["job"]
-    regex         = "integrations/(.*)"
+    regex         = "(integrations|monitoring)/(.*)"
 		target_label  = "container"
+    replacement   = "${2}"
 	}
 
   forward_to = [module.file.docker_compose.exports.metrics_receiver]

@@ -7,7 +7,7 @@ services:
   agent:
     depends_on: # https://docs.docker.com/compose/startup-order
       mimir:
-        condition: service_healthy
+        condition: service_started
     image: grafana/agent:v0.35.2
     hostname: agent
     restart: always
@@ -50,6 +50,25 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  prometheus:
+    depends_on:
+      mimir:
+        condition: service_started
+    image: prom/prometheus:v2.46.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yaml
+      - --storage.tsdb.retention.time=1d
+      - --storage.tsdb.retention.size=8GB
+      - --web.enable-remote-write-receiver
+      - --enable-feature=exemplar-storage,native-histograms
+      - --log.level=warn
+    volumes:
+      - ../../common/config/prometheus/monolithic-mode-metrics.yaml:/etc/prometheus/prometheus.yaml
+      - ../../../monitoring-mixins/mimir-mixin/deploy/rules.yaml:/etc/prometheus/rules.yaml
+      - ../../../monitoring-mixins/mimir-mixin/deploy/alerts.yaml:/etc/prometheus/alerts.yaml
+    ports:
+      - "9090:9090"
 
   grafana:
     image: grafana/grafana:10.0.3
