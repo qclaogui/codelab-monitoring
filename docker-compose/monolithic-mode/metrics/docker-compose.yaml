@@ -43,11 +43,10 @@ services:
       - -log.level=warn
     volumes:
       - ../../common/config/mimir/monolithic-mode-metrics.yaml:/etc/mimir.yaml
-      - data-mimir:/data:delegated
     ports:
-      - "9009:9009"
+      - "8080:8080"
     healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9009/ready || exit 1" ]
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -81,7 +80,7 @@ services:
       - MINIO_ROOT_PASSWORD=admin_password
       - MINIO_PROMETHEUS_AUTH_TYPE=public
       - MINIO_UPDATE=off
-      - MINIO_PROMETHEUS_URL="http://mimir:9009/prometheus"
+      - MINIO_PROMETHEUS_URL="http://mimir:8080/prometheus"
       - MINIO_PROMETHEUS_JOB_ID="integrations/minio"
     volumes:
       - data-minio:/data:delegated
@@ -94,7 +93,5 @@ services:
       - "9001:9001"
 
 volumes:
-  data-mimir:
-    driver: local
   data-minio:
     driver: local

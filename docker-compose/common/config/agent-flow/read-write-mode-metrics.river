@@ -5,11 +5,10 @@ logging {
   format = "logfmt"
 }
 
-module.file "local" {
-	  filename = env("AGENT_CONFIG_FOLDER") + "/modules/local.river"
+module.file "docker_compose" {
+	  filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker_compose.river"
     arguments {
-      config_url = "https://gist.githubusercontent.com/qclaogui/70b05aa375f0108c36b2bca3c7335200/raw/ed4ccc23e0af8fc649348b16c90fb1c7c64e3c5b/grafana-qclaogui.json"
-      token      = env("GITHUB_TOKEN")
+      metrics_endpoint  = "http://mimir:8080"
     }
 }
 
@@ -30,15 +29,15 @@ prometheus.exporter.memcached "containers" {
 
 prometheus.scrape "integrations" {
   targets    = concat(
-    [{"__address__" = "agent:12345",  "job" = "monitoring/agent"}],
-    [{"__address__" = "grafana:3000", "job" = "monitoring/grafana"}],
-    [{"__address__" = "mimir-read-1:9009", "job" = "monitoring/mimir-read"}],
-    [{"__address__" = "mimir-read-2:9009", "job" = "monitoring/mimir-read"}],
-    [{"__address__" = "mimir-write-1:9009", "job" = "monitoring/mimir-write"}],
-    [{"__address__" = "mimir-write-2:9009", "job" = "monitoring/mimir-write"}],
-    [{"__address__" = "mimir-write-3:9009", "job" = "monitoring/mimir-write"}],
-    [{"__address__" = "mimir-backend-1:9009", "job" = "monitoring/mimir-backend"}],
-    [{"__address__" = "mimir-backend-2:9009", "job" = "monitoring/mimir-backend"}],
+    [{"__address__" = "agent:12345",          "job" = "monitoring/agent"}],
+    [{"__address__" = "grafana:3000",         "job" = "monitoring/grafana"}],
+    [{"__address__" = "mimir-read-1:8080",    "job" = "monitoring/mimir-read"}],
+    [{"__address__" = "mimir-read-2:8080",    "job" = "monitoring/mimir-read"}],
+    [{"__address__" = "mimir-write-1:8080",   "job" = "monitoring/mimir-write"}],
+    [{"__address__" = "mimir-write-2:8080",   "job" = "monitoring/mimir-write"}],
+    [{"__address__" = "mimir-write-3:8080",   "job" = "monitoring/mimir-write"}],
+    [{"__address__" = "mimir-backend-1:8080", "job" = "monitoring/mimir-backend"}],
+    [{"__address__" = "mimir-backend-2:8080", "job" = "monitoring/mimir-backend"}],
     prometheus.exporter.unix.targets,
     prometheus.exporter.memcached.containers.targets,
   )
@@ -85,7 +84,7 @@ prometheus.relabel "integrations" {
 		target_label  = "container"
 	}
 
-  forward_to = [module.file.local.exports.metrics_receiver]
+  forward_to = [module.file.docker_compose.exports.metrics_receiver]
 }
 
 /********************************************
@@ -112,8 +111,10 @@ otelcol.processor.memory_limiter "containers" {
   limit 		     = "256MiB"
 
 	output {
-    metrics = [otelcol.exporter.prometheus.local.input]
+    metrics = [otelcol.exporter.prometheus.containers.input]
   }
 }
 
-otelcol.exporter.prometheus "local" { forward_to = [module.file.local.exports.metrics_receiver] }
+otelcol.exporter.prometheus "containers" { 
+  forward_to = [module.file.docker_compose.exports.metrics_receiver] 
+}

@@ -6,6 +6,10 @@ multitenancy_enabled: false
 usage_stats:
   enabled: false
 
+server:
+  http_listen_port: 8080
+  log_level: warn
+
 common:
   storage:
     backend: s3
@@ -19,7 +23,7 @@ blocks_storage:
   s3:
     bucket_name: mimir-data
   tsdb:
-    dir: /data/tsdb
+    dir: /data/ingester
 
 compactor:
   data_dir: /tmp/mimir/compactor
@@ -42,7 +46,7 @@ ingester:
 
 ruler:
   rule_path: /data/rules
-  alertmanager_url: http://localhost:9009/alertmanager
+  alertmanager_url: http://localhost:8080/alertmanager
 
 ruler_storage:
   s3:
@@ -50,15 +54,11 @@ ruler_storage:
 
 alertmanager:
   data_dir: /data/alertmanager
-  external_url: http://localhost:9009/alertmanager
+  external_url: http://localhost:8080/alertmanager
 
 alertmanager_storage:
   s3:
     bucket_name: mimir-alertmanager
-
-server:
-  http_listen_port: 9009
-  log_level: error
 
 store_gateway:
   sharding_ring:

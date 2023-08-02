@@ -5,11 +5,10 @@ logging {
   format = "logfmt"
 }
 
-module.file "local" {
-	  filename = env("AGENT_CONFIG_FOLDER") + "/modules/local.river"
+module.file "docker_compose" {
+	  filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker_compose.river"
     arguments {
-      config_url = "https://gist.githubusercontent.com/qclaogui/70b05aa375f0108c36b2bca3c7335200/raw/ed4ccc23e0af8fc649348b16c90fb1c7c64e3c5b/grafana-qclaogui.json"
-      token      = env("GITHUB_TOKEN")
+      profiles_endpoint  = "http://pyroscope:4100"
     }
 }
 
@@ -21,8 +20,8 @@ module.file "local" {
 pyroscope.scrape "containers" {
   targets = [
     {"__address__" = "pyroscope:4100", "service_name"="pyroscope"},
-    //{"__address__" = "agent:12345", "service_name"="agent"},
-    {"__address__" = "grafana:6060", "service_name"="grafana"},
+    //{"__address__" = "agent:12345",  "service_name"="agent"},
+    {"__address__" = "grafana:6060",   "service_name"="grafana"},
   ]
 
   profiling_config {
@@ -34,5 +33,5 @@ pyroscope.scrape "containers" {
     profile.process_cpu { enabled = true }
   }
 
-  forward_to = [module.file.local.exports.profiles_receiver]
+  forward_to = [module.file.docker_compose.exports.profiles_receiver]
 }

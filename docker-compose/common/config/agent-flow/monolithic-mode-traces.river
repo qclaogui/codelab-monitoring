@@ -10,13 +10,13 @@ tracing {
   write_to          = [otelcol.processor.batch.containers.input]
 }
 
-module.file "local" {
-	  filename = env("AGENT_CONFIG_FOLDER") + "/modules/local.river"
+module.file "docker_compose" {
+	  filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker_compose.river"
     arguments {
-      config_url = "https://gist.githubusercontent.com/qclaogui/70b05aa375f0108c36b2bca3c7335200/raw/ed4ccc23e0af8fc649348b16c90fb1c7c64e3c5b/grafana-qclaogui.json"
-      token      = env("GITHUB_TOKEN")
+      traces_endpoint  = "tempo:4317"
     }
 }
+
 
 /********************************************
  * Otelcol for Traces
@@ -42,6 +42,6 @@ otelcol.processor.memory_limiter "containers" {
   limit 		     = "256MiB"
 
 	output {
-    traces  = [module.file.local.exports.traces_receiver]
+    traces  = [module.file.docker_compose.exports.traces_receiver]
   }
 }

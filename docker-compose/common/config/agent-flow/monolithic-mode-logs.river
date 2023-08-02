@@ -5,12 +5,10 @@ logging {
   format = "logfmt"
 }
 
-
-module.file "local" {
-	  filename = env("AGENT_CONFIG_FOLDER") + "/modules/local.river"
+module.file "docker_compose" {
+	  filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker_compose.river"
     arguments {
-      config_url = "https://gist.githubusercontent.com/qclaogui/70b05aa375f0108c36b2bca3c7335200/raw/ed4ccc23e0af8fc649348b16c90fb1c7c64e3c5b/grafana-qclaogui.json"
-      token      = env("GITHUB_TOKEN")
+      logs_endpoint  = "http://loki:3100"
     }
 }
 
@@ -62,7 +60,7 @@ loki.source.docker "containers" {
 }
 
 loki.process "containers" {
-	forward_to = [module.file.local.exports.logs_receiver]
+	forward_to = [module.file.docker_compose.exports.logs_receiver]
 
 	stage.drop {
     longer_than = "8KB"
@@ -98,8 +96,10 @@ otelcol.processor.memory_limiter "containers" {
   limit 		     = "256MiB"
 
 	output {
-    logs    = [otelcol.exporter.loki.local.input]
+    logs    = [otelcol.exporter.loki.containers.input]
   }
 }
 
-otelcol.exporter.loki "local" { forward_to = [module.file.local.exports.logs_receiver] }
+otelcol.exporter.loki "containers" { 
+  forward_to = [module.file.docker_compose.exports.logs_receiver] 
+}

@@ -35,13 +35,13 @@ services:
       - ./config/nginx:/etc/nginx/templates
     environment:
       - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
-      - DISTRIBUTOR_HOST=mimir-write-1:9009
-      - ALERT_MANAGER_HOST=mimir-backend-1:9009
-      - RULER_HOST=mimir-backend-1:9009
-      - QUERY_FRONTEND_HOST=mimir-read-1:9009
-      - COMPACTOR_HOST=mimir-backend-1:9009
+      - DISTRIBUTOR_HOST=mimir-write-1:8080
+      - ALERT_MANAGER_HOST=mimir-backend-1:8080
+      - RULER_HOST=mimir-backend-1:8080
+      - QUERY_FRONTEND_HOST=mimir-read-1:8080
+      - COMPACTOR_HOST=mimir-backend-1:8080
     ports:
-      - "9009:9009"
+      - "8080:8080"
 
   mimir-backend-1:
     depends_on: # https://docs.docker.com/compose/startup-order
@@ -109,12 +109,12 @@ services:
       - -config.file=/etc/mimir.yaml
       - -log.level=warn
       - -target=write
-      # - -server.http-listen-port=9009
+      # - -server.http-listen-port=8080
     volumes:
       - ../../common/config/mimir/read-write-mode-metrics.yaml:/etc/mimir.yaml
       - ./config/mimir:/etc/mimir
     healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9009/ready || exit 1" ]
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -129,12 +129,11 @@ services:
       - -config.file=/etc/mimir.yaml
       - -log.level=warn
       - -target=write
-      # - -server.http-listen-port=9009
     volumes:
       - ../../common/config/mimir/read-write-mode-metrics.yaml:/etc/mimir.yaml
       - ./config/mimir:/etc/mimir
     healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9009/ready || exit 1" ]
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -149,12 +148,11 @@ services:
       - -config.file=/etc/mimir.yaml
       - -log.level=warn
       - -target=write
-      # - -server.http-listen-port=9009
     volumes:
       - ../../common/config/mimir/read-write-mode-metrics.yaml:/etc/mimir.yaml
       - ./config/mimir:/etc/mimir
     healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9009/ready || exit 1" ]
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -188,7 +186,7 @@ services:
       - MINIO_ROOT_PASSWORD=admin_password
       - MINIO_PROMETHEUS_AUTH_TYPE=public
       - MINIO_UPDATE=off
-      - MINIO_PROMETHEUS_URL="http://mimir:9009/prometheus"
+      - MINIO_PROMETHEUS_URL="http://mimir:8080/prometheus"
       - MINIO_PROMETHEUS_JOB_ID="integrations/minio"
     volumes:
       - data-minio:/data:delegated
