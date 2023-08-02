@@ -6,6 +6,9 @@ multitenancy_enabled: false
 usage_stats:
   enabled: false
 
+server:
+  http_listen_port: 9009
+
 common:
   storage:
     backend: s3
@@ -19,50 +22,61 @@ blocks_storage:
   s3:
     bucket_name: mimir-data
   tsdb:
-    dir: /data/tsdb
+    dir: /data/ingester
 
-compactor:
-  data_dir: /tmp/mimir/compactor
-  sharding_ring:
-    kvstore:
-      store: memberlist
+  bucket_store:
+    index_cache:
+      backend: memcached
+      memcached:
+        addresses: dns+memcached:11211
 
-distributor:
-  ring:
-    instance_addr: 127.0.0.1
-    kvstore:
-      store: memberlist
+    chunks_cache:
+      backend: memcached
+      memcached:
+        addresses: dns+memcached:11211
 
-ingester:
-  ring:
-    instance_addr: 127.0.0.1
-    kvstore:
-      store: memberlist
-    replication_factor: 1
+    metadata_cache:
+      backend: memcached
+      memcached:
+        addresses: dns+memcached:11211
+
+
+memberlist:
+  # Use write replicas as seed nodes.
+  join_members: [ mimir-write-1, mimir-write-2 ]
 
 ruler:
   rule_path: /data/rules
-  alertmanager_url: http://localhost:9009/alertmanager
+  # Each ruler is configured to route alerts to the Alertmanager running within the same component.
+  alertmanager_url: http://localhost:8080/alertmanager
 
 ruler_storage:
   s3:
     bucket_name: mimir-rules
+  cache:
+    backend: memcached
+    memcached:
+      addresses: dns+memcached:11211
+
+query_scheduler:
+  service_discovery_mode: "ring"
 
 alertmanager:
   data_dir: /data/alertmanager
-  external_url: http://localhost:9009/alertmanager
+  fallback_config_file: /etc/mimir/alertmanager-fallback-config.yaml
+  external_url: http://localhost:8006/alertmanager
 
 alertmanager_storage:
   s3:
     bucket_name: mimir-alertmanager
 
-server:
-  http_listen_port: 9009
-  log_level: error
-
-store_gateway:
-  sharding_ring:
-    replication_factor: 1
+overrides_exporter:
+  ring:
+    enabled: true
+    wait_stability_min_duration: 30s
 
 limits:
   native_histograms_ingestion_enabled: true
+
+runtime_config:
+  file: /etc/mimir/runtime.yaml

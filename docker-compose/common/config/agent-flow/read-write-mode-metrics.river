@@ -23,12 +23,24 @@ prometheus.exporter.unix {
   disable_collectors = ["diskstats", "mdadm", "textfile", "hwmon"]
 }
 
+prometheus.exporter.memcached "containers" {
+  address = "memcached:11211"
+  timeout = "5s"
+}
+
 prometheus.scrape "integrations" {
   targets    = concat(
     [{"__address__" = "agent:12345",  "job" = "monitoring/agent"}],
     [{"__address__" = "grafana:3000", "job" = "monitoring/grafana"}],
-    [{"__address__" = "mimir:9009", "job" = "monitoring/mimir"}],
+    [{"__address__" = "mimir-read-1:9009", "job" = "monitoring/mimir-read"}],
+    [{"__address__" = "mimir-read-2:9009", "job" = "monitoring/mimir-read"}],
+    [{"__address__" = "mimir-write-1:9009", "job" = "monitoring/mimir-write"}],
+    [{"__address__" = "mimir-write-2:9009", "job" = "monitoring/mimir-write"}],
+    [{"__address__" = "mimir-write-3:9009", "job" = "monitoring/mimir-write"}],
+    [{"__address__" = "mimir-backend-1:9009", "job" = "monitoring/mimir-backend"}],
+    [{"__address__" = "mimir-backend-2:9009", "job" = "monitoring/mimir-backend"}],
     prometheus.exporter.unix.targets,
+    prometheus.exporter.memcached.containers.targets,
   )
   scrape_interval = "15s"
   
