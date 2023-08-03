@@ -1,0 +1,51 @@
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+  grpc_listen_port: 9096
+
+memberlist:
+  join_members: ["loki-write:7946"]
+
+common:
+  path_prefix: /loki
+  replication_factor: 1
+  storage:
+    s3:
+      endpoint: minio:9000
+      bucketnames: loki-data
+      access_key_id: admin
+      secret_access_key: admin_password
+      insecure: true
+      s3forcepathstyle: true
+  ring:
+    kvstore:
+      store: memberlist
+
+schema_config:
+  configs:
+    - from: "2023-06-06"
+      store: boltdb-shipper
+      object_store: s3
+      schema: v12
+      index:
+        prefix: loki_index_
+        period: 24h
+
+storage_config:
+  boltdb_shipper:
+    shared_store: s3
+    active_index_directory: /tmp/index
+    cache_location: /tmp/boltdb-cache
+
+compactor:
+  working_directory: /tmp/compactor
+  shared_store: s3
+
+ruler:
+  storage:
+    s3:
+      bucketnames: loki-rules
+
+analytics:
+ reporting_enabled: false
