@@ -1,4 +1,4 @@
-# Provisioning Scaled Observability Workspace
+# Provisioning Scalable Observability Workspace
 
 <p align="center">
 
@@ -8,7 +8,7 @@
 
 </p>
 
-## Grafana LGTM Stack (Loki Grafana Tempo Mimir) 
+## Grafana LGTM Stack (Loki Grafana Tempo Mimir Pyroscope) 
 
 Base on Flow mode of Grafana Agent (also called Grafana Agent Flow) is a component-based revision of Grafana Agent
 
