@@ -1,7 +1,7 @@
 include .bingo/Variables.mk
 
 # support app's mixin
-APPS_MIXIN := "agent-flow-mixin" "go-runtime-mixin" "mimir-mixin" "loki-mixin" "tempo-mixin"
+APPS_MIXIN := "agent-flow-mixin" "go-runtime-mixin"
 
 # path to the grafana provisioning dashboards
 GRAFANA_DASHBOARDS_PATH := docker-compose/common/config/grafana/dashboards

@@ -10,7 +10,7 @@ services:
         condition: service_started
     image: grafana/agent:v0.35.2
     hostname: agent
-    restart: always
+    restart: unless-stopped
     volumes:
       - ../../common/config/agent-flow:/etc/agent-config
       - /var/run/docker.sock:/var/run/docker.sock
@@ -79,6 +79,7 @@ services:
       - ../../common/config/grafana/grafana.ini:/etc/grafana-config/grafana.ini
       - ../../common/config/grafana/dashboards:/var/lib/grafana/dashboards
       - ../../common/config/grafana/provisioning:/etc/grafana/provisioning
+      - ../../../monitoring-mixins/mimir-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/mimir-mixin # load mimir dashboards
     environment:
       - GF_LOG_LEVEL=error
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin_password}
@@ -86,7 +87,7 @@ services:
       - "3000:3000"
 
   minio:
-    image: minio/minio:RELEASE.2023-07-18T17-49-40Z
+    image: minio/minio:RELEASE.2023-07-21T21-12-44Z
     hostname: minio
     entrypoint:
       - sh

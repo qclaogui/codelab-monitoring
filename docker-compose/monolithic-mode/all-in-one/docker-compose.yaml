@@ -80,7 +80,7 @@ services:
         condition: service_healthy
       mimir:
         condition: service_healthy
-    image: grafana/tempo:2.2.0-rc.0
+    image: grafana/tempo:2.2.0
     hostname: tempo
     restart: always
     volumes:
@@ -118,6 +118,9 @@ services:
       - ../../common/config/grafana/grafana.ini:/etc/grafana-config/grafana.ini
       - ../../common/config/grafana/dashboards:/var/lib/grafana/dashboards
       - ../../common/config/grafana/provisioning:/etc/grafana/provisioning
+      - ../../../monitoring-mixins/mimir-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/mimir-mixin  # load mimir dashboards
+      - ../../../monitoring-mixins/loki-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/loki-mixin    # load loki dashboards
+      - ../../../monitoring-mixins/tempo-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/tempo-mixin  # load tempo dashboards
     environment:
       - GF_LOG_LEVEL=error
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin_password}
@@ -132,7 +135,7 @@ services:
       - "3000:3000"
 
   minio:
-    image: minio/minio:RELEASE.2023-07-18T17-49-40Z
+    image: minio/minio:RELEASE.2023-07-21T21-12-44Z
     hostname: minio
     entrypoint:
       - sh
