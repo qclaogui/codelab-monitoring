@@ -8,7 +8,7 @@
 
 </p>
 
-## Grafana LGTM Stack (Loki Grafana Tempo Mimir Pyroscope) 
+## Grafana LGTMP Stack (Loki Grafana Tempo Mimir Pyroscope) 
 
 Base on Flow mode of Grafana Agent (also called Grafana Agent Flow) is a component-based revision of Grafana Agent
 
@@ -28,9 +28,9 @@ Base on Flow mode of Grafana Agent (also called Grafana Agent Flow) is a compone
   - [All In One [ Agent + Loki + Tempo + Mimir + Pyroscope + Grafana ]](./docker-compose/monolithic-mode/all-in-one/docker-compose.yaml)
 
 - [Read-Write mode (读写模式)](./docker-compose/read-write-mode/README.md)
-  - Logs
+  - [Logs [ Agent + (Loki Read * 2) + (Loki Write * 3) + (Loki Backend * 2) + Grafana ]](./docker-compose/read-write-mode/logs)
   - Traces
-  - [Metrics [ Agent + (Mimir Read * 2) + (Mimir Write * 3) + (Mimir Backend * 2) + Grafana ]](./docker-compose/read-write-mode/metrics/README.md)
+  - [Metrics [ Agent + (Mimir Read * 2) + (Mimir Write * 3) + (Mimir Backend * 2) + Grafana ]](./docker-compose/read-write-mode/metrics)
   - Profiles
 
 - Microservices mode (微服务模式)

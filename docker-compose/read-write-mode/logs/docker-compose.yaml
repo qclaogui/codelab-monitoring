@@ -51,17 +51,16 @@ services:
       minio:
         condition: service_healthy
     image: &lokiImage grafana/loki:2.8.3
-    hostname: loki-read
+    deploy:
+      mode: replicated
+      replicas: 2
     command:
       - -config.file=/etc/loki.yaml
       - -target=read
+      - -legacy-read-mode=false
       - -log.level=warn
-      - -reporting.enabled=false
     volumes:
       - ../../common/config/loki/read-write-mode-logs.yaml:/etc/loki.yaml
-    ports:
-      - "3100"
-      - "7946"
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1" ]
       interval: 10s
@@ -73,17 +72,36 @@ services:
       minio:
         condition: service_healthy
     image: *lokiImage
-    hostname: loki-write
+    deploy:
+      mode: replicated
+      replicas: 3
     command:
       - -config.file=/etc/loki.yaml
       - -target=write
       - -log.level=warn
-      - -reporting.enabled=false
     volumes:
       - ../../common/config/loki/read-write-mode-logs.yaml:/etc/loki.yaml
-    ports:
-      - "3100"
-      - "7946"
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  loki-backend:
+    depends_on:
+      minio:
+        condition: service_healthy
+    image: *lokiImage
+    deploy:
+      mode: replicated
+      replicas: 2
+    command:
+      - -config.file=/etc/loki.yaml
+      - -target=backend
+      - -legacy-read-mode=false
+      - -log.level=warn
+    volumes:
+      - ../../common/config/loki/read-write-mode-logs.yaml:/etc/loki.yaml
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1" ]
       interval: 10s

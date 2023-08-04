@@ -4,12 +4,8 @@ server:
   http_listen_port: 3100
   grpc_listen_port: 9096
 
-memberlist:
-  join_members: ["loki-write:7946"]
-
 common:
   path_prefix: /loki
-  replication_factor: 1
   storage:
     s3:
       endpoint: minio:9000
@@ -18,34 +14,86 @@ common:
       secret_access_key: admin_password
       insecure: true
       s3forcepathstyle: true
-  ring:
-    kvstore:
-      store: memberlist
+  compactor_address: http://loki-write:3100
 
-schema_config:
-  configs:
-    - from: "2023-06-06"
-      store: boltdb-shipper
-      object_store: s3
-      schema: v12
-      index:
-        prefix: loki_index_
-        period: 24h
+memberlist:
+  join_members: ["loki-read:7946","loki-write:7946"]
+  dead_node_reclaim_time: 30s
+  gossip_to_dead_nodes_time: 15s
+  left_ingesters_timeout: 30s
+  bind_addr: ['0.0.0.0']
+  bind_port: 7946
+  gossip_interval: 2s
 
-storage_config:
-  boltdb_shipper:
-    shared_store: s3
-    active_index_directory: /tmp/index
-    cache_location: /tmp/boltdb-cache
-
-compactor:
-  working_directory: /tmp/compactor
-  shared_store: s3
+ingester:
+  lifecycler:
+    join_after: 10s
+    observe_period: 5s
+    ring:
+      replication_factor: 2
+      kvstore:
+        store: memberlist
+    final_sleep: 0s
+  chunk_idle_period: 1m
+  wal:
+    enabled: true
+    dir: /loki/wal
+  max_chunk_age: 1m
+  chunk_retain_period: 30s
+  chunk_encoding: snappy
+  chunk_target_size: 1.572864e+06
+  chunk_block_size: 262144
+  flush_op_timeout: 10s
 
 ruler:
   storage:
     s3:
       bucketnames: loki-rules
+
+schema_config:
+  configs:
+    - from: 2023-08-01
+      store: tsdb
+      object_store: s3
+      schema: v12
+      index:
+        prefix: index_
+        period: 24h
+
+limits_config:
+  enforce_metric_name: false
+  reject_old_samples: true
+  reject_old_samples_max_age: 30m
+  split_queries_by_interval: 15m
+  # volume_enabled: true
+
+chunk_store_config:
+  max_look_back_period: 336h
+
+table_manager:
+  retention_deletes_enabled: true
+  retention_period: 336h
+
+query_range:
+  align_queries_with_step: true
+  max_retries: 5
+  parallelise_shardable_queries: true
+  cache_results: true
+
+frontend:
+  log_queries_longer_than: 5s
+  compress_responses: true
+  max_outstanding_per_tenant: 2048
+
+query_scheduler:
+  max_outstanding_requests_per_tenant: 1024
+
+querier:
+  query_ingesters_within: 2h
+
+compactor:
+  working_directory: /tmp/compactor
+  shared_store: s3
 
 analytics:
  reporting_enabled: false
