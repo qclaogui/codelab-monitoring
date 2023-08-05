@@ -2,9 +2,9 @@
 
 You can deploy in one of three modes
 
-- Monolithic mode
-- Read-Write mode
-- Microservices mode
+- [Monolithic mode](./monolithic-mode)
+- [Read-Write mode](./read-write-mode)
+- [Microservices mode](./microservices-mode)
 
 ## Monolithic mode (单体模式)
 
