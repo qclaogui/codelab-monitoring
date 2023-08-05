@@ -31,6 +31,8 @@ services:
       retries: 10
     ports:
       - "12345:12345"
+    networks:
+      - read-write-mode-logs
 
   nginx:
     image: nginxinc/nginx-unprivileged:1.25-alpine
@@ -44,6 +46,8 @@ services:
       - QUERY_FRONTEND_HOST=loki-read:3100
     ports:
       - "3100:3100"
+    networks:
+      - read-write-mode-logs
 
 
   loki-read:
@@ -52,7 +56,6 @@ services:
         condition: service_healthy
     image: &lokiImage grafana/loki:2.8.3
     deploy:
-      mode: replicated
       replicas: 2
     command:
       - -config.file=/etc/loki.yaml
@@ -66,6 +69,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - read-write-mode-logs
 
   loki-write:
     depends_on:
@@ -73,7 +78,6 @@ services:
         condition: service_healthy
     image: *lokiImage
     deploy:
-      mode: replicated
       replicas: 3
     command:
       - -config.file=/etc/loki.yaml
@@ -86,6 +90,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - read-write-mode-logs
 
   loki-backend:
     depends_on:
@@ -93,7 +99,6 @@ services:
         condition: service_healthy
     image: *lokiImage
     deploy:
-      mode: replicated
       replicas: 2
     command:
       - -config.file=/etc/loki.yaml
@@ -107,25 +112,28 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - read-write-mode-logs
 
   grafana:
     image: grafana/grafana:10.0.3
-    hostname: grafana
     command:
       - --config=/etc/grafana-config/grafana.ini
     volumes:
       - ../../common/config/grafana/grafana.ini:/etc/grafana-config/grafana.ini
       - ../../common/config/grafana/dashboards:/var/lib/grafana/dashboards
       - ../../common/config/grafana/provisioning:/etc/grafana/provisioning
+      - ./config/grafana/datasources:/etc/grafana/provisioning/datasources
     environment:
       - GF_LOG_LEVEL=warn
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin_password}
     ports:
       - "3000:3000"
+    networks:
+      - read-write-mode-logs
 
   minio:
     image: minio/minio:RELEASE.2023-07-21T21-12-44Z
-    hostname: minio
     entrypoint:
       - sh
       - -euc
@@ -146,6 +154,11 @@ services:
       retries: 5
     ports:
       - "9001:9001"
+    networks:
+      - read-write-mode-logs
+
+networks:
+  read-write-mode-logs:
 
 volumes:
   data-minio:
