@@ -26,6 +26,8 @@ services:
       - AGENT_CONFIG_FOLDER=/etc/agent-config
     ports:
       - "12345:12345"
+    networks:
+      - read-write-mode-metrics
   
   nginx:
     image: nginxinc/nginx-unprivileged:1.25-alpine
@@ -42,6 +44,8 @@ services:
       - COMPACTOR_HOST=mimir-backend-1:8080
     ports:
       - "8080:8080"
+    networks:
+      - read-write-mode-metrics
 
   mimir-backend-1:
     depends_on: # https://docs.docker.com/compose/startup-order
@@ -56,6 +60,13 @@ services:
     volumes:
       - ../../common/config/mimir/read-write-mode-metrics.yaml:/etc/mimir.yaml
       - ./config/mimir:/etc/mimir
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - read-write-mode-metrics
 
   mimir-backend-2:
     depends_on: # https://docs.docker.com/compose/startup-order
@@ -70,6 +81,13 @@ services:
     volumes:
       - ../../common/config/mimir/read-write-mode-metrics.yaml:/etc/mimir.yaml
       - ./config/mimir:/etc/mimir
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - read-write-mode-metrics
 
   mimir-read-1:
     depends_on: # https://docs.docker.com/compose/startup-order
@@ -84,6 +102,8 @@ services:
     volumes:
       - ../../common/config/mimir/read-write-mode-metrics.yaml:/etc/mimir.yaml
       - ./config/mimir:/etc/mimir
+    networks:
+      - read-write-mode-metrics
 
   mimir-read-2:
     depends_on: # https://docs.docker.com/compose/startup-order
@@ -98,6 +118,8 @@ services:
     volumes:
       - ../../common/config/mimir/read-write-mode-metrics.yaml:/etc/mimir.yaml
       - ./config/mimir:/etc/mimir
+    networks:
+      - read-write-mode-metrics
 
   mimir-write-1:
     depends_on: # https://docs.docker.com/compose/startup-order
@@ -118,6 +140,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - read-write-mode-metrics
 
   mimir-write-2:
     depends_on: # https://docs.docker.com/compose/startup-order
@@ -137,6 +161,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - read-write-mode-metrics
 
   mimir-write-3:
     depends_on: # https://docs.docker.com/compose/startup-order
@@ -156,6 +182,26 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - read-write-mode-metrics
+
+  load-mimir-rules:
+    depends_on:
+      mimir-backend-1:
+        condition: service_healthy
+      mimir-backend-2:
+        condition: service_healthy
+    image: grafana/mimirtool:2.9.0
+    volumes:
+      - ../../../monitoring-mixins/mimir-mixin/deploy/rules.yaml:/mimir-mixin/rules.yaml
+      - ../../../monitoring-mixins/mimir-mixin/deploy/alerts.yaml:/mimir-mixin/alerts.yaml
+    environment:
+      - MIMIR_ADDRESS=http://mimir-backend-1:8080
+      - MIMIR_TENANT_ID=anonymous
+    command: >-
+      rules sync /mimir-mixin/rules.yaml /mimir-mixin/alerts.yaml
+    networks:
+      - read-write-mode-metrics
 
   grafana:
     image: grafana/grafana:10.0.3
@@ -166,11 +212,15 @@ services:
       - ../../common/config/grafana/grafana.ini:/etc/grafana-config/grafana.ini
       - ../../common/config/grafana/dashboards:/var/lib/grafana/dashboards
       - ../../common/config/grafana/provisioning:/etc/grafana/provisioning
+      - ./config/grafana/datasources:/etc/grafana/provisioning/datasources
+      - ../../../monitoring-mixins/mimir-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/mimir-mixin # load dashboards
     environment:
       - GF_LOG_LEVEL=error
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin_password}
     ports:
       - "3000:3000"
+    networks:
+      - read-write-mode-metrics
 
   minio:
     image: minio/minio:RELEASE.2023-07-21T21-12-44Z
@@ -186,8 +236,6 @@ services:
       - MINIO_ROOT_PASSWORD=admin_password
       - MINIO_PROMETHEUS_AUTH_TYPE=public
       - MINIO_UPDATE=off
-      - MINIO_PROMETHEUS_URL="http://mimir:8080/prometheus"
-      - MINIO_PROMETHEUS_JOB_ID="integrations/minio"
     volumes:
       - data-minio:/data:delegated
     healthcheck:
@@ -197,9 +245,16 @@ services:
       retries: 5
     ports:
       - "9001:9001"
+    networks:
+      - read-write-mode-metrics
 
   memcached:
     image: memcached:1.6.19-alpine
+    networks:
+      - read-write-mode-metrics
+
+networks:
+  read-write-mode-metrics:
 
 volumes:
   data-minio:
