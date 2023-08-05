@@ -38,13 +38,16 @@ services:
         condition: service_healthy
     image: grafana/mimir:2.9.0
     hostname: mimir
+    deploy:
+      endpoint_mode: dnsrr # support value: vip or dnsrr
+      replicas: 3
     command:
       - -config.file=/etc/mimir.yaml
       - -log.level=warn
     volumes:
       - ../../common/config/mimir/monolithic-mode-metrics.yaml:/etc/mimir.yaml
     ports:
-      - "8080:8080"
+      - "8080"
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
       interval: 10s

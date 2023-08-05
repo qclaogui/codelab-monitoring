@@ -12,6 +12,13 @@ module.file "docker_compose" {
     }
 }
 
+discovery.dns "dns_lookup_mimir" {
+  names = ["mimir"]
+  type = "A"
+  port = 8080
+  refresh_interval= "60s"
+}
+
 /********************************************
  * Metrics
  ********************************************/
@@ -25,14 +32,21 @@ prometheus.scrape "integrations" {
   targets    = concat(
     [{"__address__" = "agent:12345",  "job" = "monitoring/agent"}],
     [{"__address__" = "grafana:3000", "job" = "monitoring/grafana"}],
-    [{"__address__" = "mimir:8080",   "job" = "monitoring/mimir"}],
     prometheus.exporter.unix.targets,
   )
   scrape_interval = "15s"
   
-  clustering {
-    enabled = true
-  }
+  clustering { enabled = true }
+  
+  forward_to = [prometheus.relabel.integrations.receiver]
+}
+
+prometheus.scrape "dns_lookup_mimir" {
+  targets  = discovery.dns.dns_lookup_mimir.targets
+  scrape_interval = "15s"
+  job_name = "monitoring/mimir"
+  
+  clustering { enabled = true }
   
   forward_to = [prometheus.relabel.integrations.receiver]
 }

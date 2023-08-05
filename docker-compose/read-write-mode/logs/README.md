@@ -21,13 +21,12 @@ Similar to the other modes, each Grafana Mimir process is invoked with its `-tar
 The below diagram describes the various components of this deployment, and how data flows between them.
 
 ```mermaid
-%%{init: {"flowchart": {"htmlLabels": false}} }%%
 flowchart LR
-    Agent["Grafana Agent"]   --> | writes | Nginx
-    Grafana -.-> | reads | Nginx
+    Agent["Grafana Agent"]   --> | writes | GateWay["Load Balancer(Nginx)"]
+    Grafana -.-> | reads | GateWay
 
-    Nginx --> | writes| Distributor
-    Nginx -.-> | reads | QueryFrontend["query-frontend"]
+    GateWay --> | writes| Distributor
+    GateWay -.-> | reads | QueryFrontend["query-frontend"]
 
     subgraph LokiWrite["loki -target=write"]
         Distributor["distributor"] --> Ingester["ingester"]
@@ -37,13 +36,12 @@ flowchart LR
         QueryFrontend -.-> Querier["querier"]
     end
 
-    subgraph Minio["Minio Storage"]
-        Chunks
-        Indexes
+    subgraph Minio
+        ObjectStorage["Object Storage"]
     end
 
-    Querier  -.-> |reads | Chunks & Indexes
-    Ingester -->  |writes| Chunks & Indexes
+    Querier  -.-> |reads | ObjectStorage
+    Ingester -->  |writes| ObjectStorage
 ```
 
 
