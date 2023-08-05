@@ -35,18 +35,21 @@ services:
       retries: 10
     ports:
       - "12345:12345"
+    networks:
+      - monolithic-mode-all
 
   mimir:
-    depends_on: # https://docs.docker.com/compose/startup-order
+    depends_on:
       minio:
         condition: service_healthy
     image: grafana/mimir:2.9.0
-    hostname: mimir
+    deploy:
+      replicas: 1
     command:
       - -config.file=/etc/mimir.yaml
       - -log.level=warn
-    ports:
-      - "8080:8080"
+    # ports:
+    #   - "8080:8080"
     volumes:
       - ../../common/config/mimir/monolithic-mode-metrics.yaml:/etc/mimir.yaml
     healthcheck:
@@ -54,9 +57,27 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - monolithic-mode-all
+
+  load-mimir-rules:
+    depends_on:
+      mimir:
+        condition: service_healthy
+    image: grafana/mimirtool:2.9.0
+    volumes:
+      - ../../../monitoring-mixins/mimir-mixin/deploy/rules.yaml:/mimir-mixin/rules.yaml
+      - ../../../monitoring-mixins/mimir-mixin/deploy/alerts.yaml:/mimir-mixin/alerts.yaml
+    environment:
+      - MIMIR_ADDRESS=http://mimir:8080
+      - MIMIR_TENANT_ID=anonymous
+    command: >-
+      rules load /mimir-mixin/rules.yaml /mimir-mixin/alerts.yaml
+    networks:
+      - monolithic-mode-all
 
   loki:
-    depends_on: # https://docs.docker.com/compose/startup-order
+    depends_on:
       minio:
         condition: service_healthy
     image: grafana/loki:2.8.3
@@ -73,6 +94,24 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - monolithic-mode-all
+
+  load-loki-rules:
+    depends_on:
+      loki:
+        condition: service_healthy
+    image: grafana/mimirtool:2.9.0
+    volumes:
+      - ../../../monitoring-mixins/loki-mixin/deploy/rules.yaml:/loki-mixin/rules.yaml
+      - ../../../monitoring-mixins/loki-mixin/deploy/alerts.yaml:/loki-mixin/alerts.yaml
+    environment:
+      - MIMIR_ADDRESS=http://mimir:8080
+      - MIMIR_TENANT_ID=anonymous
+    command: >-
+      rules load /loki-mixin/rules.yaml /loki-mixin/alerts.yaml
+    networks:
+      - monolithic-mode-all
 
   tempo:
     depends_on: # https://docs.docker.com/compose/startup-order
@@ -93,6 +132,24 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - monolithic-mode-all
+
+  load-tempo-rules:
+    depends_on:
+      tempo:
+        condition: service_healthy
+    image: grafana/mimirtool:2.9.0
+    volumes:
+      - ../../../monitoring-mixins/tempo-mixin/deploy/rules.yaml:/tempo-mixin/rules.yaml
+      - ../../../monitoring-mixins/tempo-mixin/deploy/alerts.yaml:/tempo-mixin/alerts.yaml
+    environment:
+      - MIMIR_ADDRESS=http://mimir:8080
+      - MIMIR_TENANT_ID=anonymous
+    command: >-
+      rules load /tempo-mixin/rules.yaml /tempo-mixin/alerts.yaml
+    networks:
+      - monolithic-mode-all
 
   pyroscope:
     image: grafana/phlare:weekly-f22-06e09923
@@ -104,6 +161,8 @@ services:
       - -log.level=warn
     # ports:
     #   - "4100:4100"
+    networks:
+      - monolithic-mode-all
 
   grafana:
     image: grafana/grafana:10.0.3
@@ -118,6 +177,7 @@ services:
       - ../../common/config/grafana/grafana.ini:/etc/grafana-config/grafana.ini
       - ../../common/config/grafana/dashboards:/var/lib/grafana/dashboards
       - ../../common/config/grafana/provisioning:/etc/grafana/provisioning
+      - ./config/grafana/datasources:/etc/grafana/provisioning/datasources
       - ../../../monitoring-mixins/mimir-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/mimir-mixin  # load mimir dashboards
       - ../../../monitoring-mixins/loki-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/loki-mixin    # load loki dashboards
       - ../../../monitoring-mixins/tempo-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/tempo-mixin  # load tempo dashboards
@@ -133,6 +193,8 @@ services:
       # - GF_INSTALL_PLUGINS=pyroscope-datasource,pyroscope-panel
     ports:
       - "3000:3000"
+    networks:
+      - monolithic-mode-all
 
   minio:
     image: minio/minio:RELEASE.2023-07-21T21-12-44Z
@@ -151,8 +213,6 @@ services:
       - MINIO_ROOT_PASSWORD=admin_password
       - MINIO_PROMETHEUS_AUTH_TYPE=public
       - MINIO_UPDATE=off
-      - MINIO_PROMETHEUS_URL="http://mimir:8080/prometheus"
-      - MINIO_PROMETHEUS_JOB_ID="integrations/minio"
     volumes:
       - data-minio:/data:delegated
     healthcheck:
@@ -162,6 +222,11 @@ services:
       retries: 5
     ports:
       - "9001:9001"
+    networks:
+      - monolithic-mode-all
+
+networks:
+  monolithic-mode-all:
 
 volumes:
   data-minio:

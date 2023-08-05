@@ -50,7 +50,7 @@ services:
       - monolithic-mode-metrics
 
   # use mimirtool load rules instead of prometheus
-  load-rules:
+  load-mimir-rules:
     depends_on:
       mimir:
         condition: service_healthy
@@ -74,7 +74,7 @@ services:
       - ../../common/config/grafana/grafana.ini:/etc/grafana-config/grafana.ini
       - ../../common/config/grafana/dashboards:/var/lib/grafana/dashboards
       - ../../common/config/grafana/provisioning:/etc/grafana/provisioning
-      - ./config/grafana-ds-metrics.yaml:/etc/grafana/provisioning/datasources/grafana-ds-metrics.yaml       # load datasources
+      - ./config/grafana/datasources:/etc/grafana/provisioning/datasources
       - ../../../monitoring-mixins/mimir-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/mimir-mixin # load dashboards
     environment:
       - GF_LOG_LEVEL=error

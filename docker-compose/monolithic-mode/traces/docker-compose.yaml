@@ -31,9 +31,11 @@ services:
       retries: 10
     ports:
       - "12345:12345"
+    networks:
+      - monolithic-mode-traces
 
   tempo:
-    depends_on: # https://docs.docker.com/compose/startup-order
+    depends_on:
       minio:
         condition: service_healthy
     image: grafana/tempo:2.2.0
@@ -49,6 +51,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - monolithic-mode-traces
 
   grafana:
     image: grafana/grafana:10.0.3
@@ -59,6 +63,7 @@ services:
       - ../../common/config/grafana/grafana.ini:/etc/grafana-config/grafana.ini
       - ../../common/config/grafana/dashboards:/var/lib/grafana/dashboards
       - ../../common/config/grafana/provisioning:/etc/grafana/provisioning
+      - ./config/grafana/datasources:/etc/grafana/provisioning/datasources
     environment:
       - GF_LOG_LEVEL=error
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin_password}
@@ -67,6 +72,8 @@ services:
       - GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES=cluster:docker-compose,namespace:monitoring
     ports:
       - "3000:3000"
+    networks:
+      - monolithic-mode-traces
 
   minio:
     image: minio/minio:RELEASE.2023-07-21T21-12-44Z
@@ -91,6 +98,11 @@ services:
       retries: 5
     ports:
       - "9001:9001"
+    networks:
+      - monolithic-mode-traces
+
+networks:
+  monolithic-mode-traces:
 
 volumes:
   data-minio:
