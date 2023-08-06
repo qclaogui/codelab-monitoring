@@ -5,7 +5,7 @@ version: '3.9'
 services:
 
   agent:
-    depends_on: # https://docs.docker.com/compose/startup-order
+    depends_on:
       tempo:
         condition: service_started
       mimir:
@@ -43,6 +43,8 @@ services:
       minio:
         condition: service_healthy
     image: grafana/mimir:2.9.0
+    # support scaling in Monolithic mode
+    # https://grafana.com/docs/mimir/latest/references/architecture/deployment-modes/#monolithic-mode
     deploy:
       replicas: 1
     command:
@@ -114,14 +116,14 @@ services:
       - monolithic-mode-all
 
   tempo:
-    depends_on: # https://docs.docker.com/compose/startup-order
+    depends_on:
       minio:
         condition: service_healthy
       mimir:
         condition: service_healthy
     image: grafana/tempo:2.2.0
     hostname: tempo
-    restart: always
+    restart: on-failure
     volumes:
       - ../../common/config/tempo/monolithic-mode-traces.yaml:/etc/tempo.yaml
     command:
