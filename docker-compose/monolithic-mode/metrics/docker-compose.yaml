@@ -34,10 +34,6 @@ services:
       minio:
         condition: service_healthy
     image: grafana/mimir:2.9.0
-    # support scaling in Monolithic mode
-    # https://grafana.com/docs/mimir/latest/references/architecture/deployment-modes/#monolithic-mode
-    deploy:
-      replicas: 1
     command:
       - -config.file=/etc/mimir.yaml
       - -log.level=warn
@@ -48,8 +44,16 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    # support scaling in Monolithic mode
+    # https://grafana.com/docs/mimir/latest/references/architecture/deployment-modes/#monolithic-mode
+    deploy:
+      replicas: 1
     networks:
-      - monolithic-mode-metrics
+      monolithic-mode-metrics:
+        aliases:
+          - mimir
+    # networks:
+    #   - monolithic-mode-metrics
 
   # use mimirtool load rules instead of prometheus
   load-mimir-rules:

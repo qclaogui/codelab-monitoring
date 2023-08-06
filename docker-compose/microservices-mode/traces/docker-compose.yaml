@@ -8,8 +8,6 @@ services:
       tempo-distributor:
         condition: service_started
     image: grafana/agent:v0.35.2
-    hostname: agent
-    restart: always
     volumes:
       - ../../common/config/agent-flow:/etc/agent-config
       - /var/run/docker.sock:/var/run/docker.sock
@@ -53,16 +51,8 @@ services:
       - -config.file=/etc/tempo.yaml
       - -target=ingester
       - -log.level=warn
-    ports:
-      - "3200:3200"
     networks:
       - microservices-mode-traces
-    # deploy:
-    #   replicas: 3
-    # networks:
-    #   microservices-mode-traces:
-    #     aliases:
-    #       - "tempo-ingester"
 
   tempo-query-frontend:
     depends_on:
@@ -108,23 +98,8 @@ services:
     networks:
       - microservices-mode-traces
 
-  # tempo-metrics-generator:
-  #   depends_on:
-  #     minio:
-  #       condition: service_healthy
-  #   image: *tempoImage
-  #   volumes:
-  #     - ../../common/config/tempo/microservices-mode-traces.yaml:/etc/tempo.yaml # Notics: Tempo use microservices-mode-traces.yaml
-  #   command:
-  #     - -config.file=/etc/tempo.yaml
-  #     - -target=metrics-generator
-  #     - -log.level=error
-  #   networks:
-  #     - microservices-mode-traces
-
   grafana:
     image: grafana/grafana:10.0.3
-    hostname: grafana
     command:
       - --config=/etc/grafana-config/grafana.ini
     volumes:
@@ -145,7 +120,6 @@ services:
 
   minio:
     image: minio/minio:RELEASE.2023-07-21T21-12-44Z
-    hostname: minio
     entrypoint:
       - sh
       - -euc

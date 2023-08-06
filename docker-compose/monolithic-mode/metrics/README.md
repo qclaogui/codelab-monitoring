@@ -16,9 +16,9 @@ flowchart LR
     subgraph Mimir["mimir -target=all"]
         Distributor["distributor"] --> | writes | Ingester["ingester"]
 
-        QueryFrontend -.-> | reads  | Querier["querier"]
-        Querier       -.-> | reads  | Ingester["ingester"]
-        Querier       -.-> | reads  | StoreGateway["store-gateway"]
+        QueryFrontend -.-> | reads | Querier["querier"]
+        Querier       -.-> | reads | Ingester["ingester"]
+        Querier       -.-> | reads | StoreGateway["store-gateway"]
         
         Compactor["compactor"]
         

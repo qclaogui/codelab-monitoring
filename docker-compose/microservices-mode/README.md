@@ -3,6 +3,6 @@
 In microservices mode, components are deployed in distinct processes.
 
 - Logs
-- Traces
+- [Traces](./traces)
 - Metrics
 - Profiles

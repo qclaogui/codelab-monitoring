@@ -5,12 +5,10 @@ version: '3.9'
 services:
 
   agent:
-    depends_on: # https://docs.docker.com/compose/startup-order
+    depends_on:
       tempo:
         condition: service_started
     image: grafana/agent:v0.35.2
-    hostname: agent
-    restart: always
     volumes:
       - ../../common/config/agent-flow:/etc/agent-config
       - /var/run/docker.sock:/var/run/docker.sock
@@ -24,11 +22,6 @@ services:
     environment:
       - AGENT_MODE=flow
       - AGENT_CONFIG_FOLDER=/etc/agent-config
-    healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:12345/ready || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
     ports:
       - "12345:12345"
     networks:
@@ -39,24 +32,16 @@ services:
       minio:
         condition: service_healthy
     image: grafana/tempo:2.2.0
-    hostname: tempo
-    restart: on-failure
     volumes:
       - ./config/tempo/monolithic-mode-traces.yaml:/etc/tempo.yaml # Notics: Tempo use monolithic-mode-traces.yaml
     command:
       - -config.file=/etc/tempo.yaml
       - -log.level=error
-    healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ready || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     networks:
       - monolithic-mode-traces
 
   grafana:
     image: grafana/grafana:10.0.3
-    hostname: grafana
     command:
       - --config=/etc/grafana-config/grafana.ini
     volumes:
@@ -77,7 +62,6 @@ services:
 
   minio:
     image: minio/minio:RELEASE.2023-07-21T21-12-44Z
-    hostname: minio
     entrypoint:
       - sh
       - -euc
