@@ -8,6 +8,7 @@ Monolithic mode is the simplest way to deploy Grafana Mimir and is useful if you
 The below diagram describes how data flows.
 
 ```mermaid
+%%{init: {"flowchart": {"htmlLabels": false}} }%%
 flowchart LR
     GrafanaAgent["Grafana Agent"] ---> | writes | Distributor
     Grafana -.-> | reads | QueryFrontend["query-frontend"]

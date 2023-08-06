@@ -21,6 +21,7 @@ Similar to the other modes, each Grafana Mimir process is invoked with its `-tar
 The below diagram describes the various components of this deployment, and how data flows between them.
 
 ```mermaid
+%%{init: {"flowchart": {"htmlLabels": false}} }%%
 flowchart LR
     Agent["Grafana Agent"]   --> | writes | GateWay["Load Balancer(Nginx)"]
     Grafana -.-> | reads | GateWay
