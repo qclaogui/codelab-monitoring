@@ -43,21 +43,21 @@ docker compose down
 ```
 
 - [Monolithic mode (单体模式)](./docker-compose/monolithic-mode)
-  - [Logs [ Agent + Loki + Grafana ]](./docker-compose/monolithic-mode/logs)
-  - [Traces [ Agent + Tempo + Grafana ]](./docker-compose/monolithic-mode/traces)
-  - [Metrics [ Agent + Mimir + Grafana ]](./docker-compose/monolithic-mode/metrics)
-  - [Profiles [ Agent + Pyroscope + Grafana ]](./docker-compose/monolithic-mode/profiles)
-  - [All In One [ Agent + Loki + Tempo + Mimir + Pyroscope + Grafana ]](./docker-compose/monolithic-mode/all-in-one)
+  - [Logs [ Loki ]](./docker-compose/monolithic-mode/logs)
+  - [Traces [ Tempo ]](./docker-compose/monolithic-mode/traces)
+  - [Metrics [ Mimir ]](./docker-compose/monolithic-mode/metrics)
+  - [Profiles [ Pyroscope ]](./docker-compose/monolithic-mode/profiles)
+  - [All In One [ Loki + Tempo + Mimir + Pyroscope ]](./docker-compose/monolithic-mode/all-in-one)
 
 - [Read-Write mode (读写模式)](./docker-compose/read-write-mode/README.md)
-  - [Logs [ Agent + (Loki Read * 2) + (Loki Write * 3) + (Loki Backend * 2) + Grafana ]](./docker-compose/read-write-mode/logs)
+  - [Logs [ (Loki Read * 2) + (Loki Write * 3) + (Loki Backend * 2) ]](./docker-compose/read-write-mode/logs)
   - Traces
-  - [Metrics [ Agent + (Mimir Read * 2) + (Mimir Write * 3) + (Mimir Backend * 2) + Grafana ]](./docker-compose/read-write-mode/metrics)
+  - [Metrics [ (Mimir Read * 2) + (Mimir Write * 3) + (Mimir Backend * 2) ]](./docker-compose/read-write-mode/metrics)
   - Profiles
 
 - Microservices mode (微服务模式)
   - Logs
-  - [Traces [ Agent + (Tempo Distributor) + (Tempo Ingester) + (Tempo QueryFrontend) + (Tempo Querier) + (Tempo Compactor) + Grafana ]](./docker-compose/microservices-mode/traces)
+  - [Traces [ (Tempo Distributor) + (Tempo Ingester) + (Tempo QueryFrontend) + (Tempo Querier) + (Tempo Compactor) ]](./docker-compose/microservices-mode/traces)
   - Metrics
   - Profiles
 
