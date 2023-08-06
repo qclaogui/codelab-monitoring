@@ -1,0 +1,53 @@
+usage_report:
+  reporting_enabled: false
+
+server:
+  http_listen_port: 3200
+  grpc_listen_port: 9095
+
+distributor:
+  receivers:                           # this configuration will listen on all ports and protocols that tempo is capable of.
+    otlp:
+      protocols:
+        http:
+        grpc:
+
+ingester:
+  max_block_duration: 5m               # cut the headblock when this much time passes. this is being set for demo purposes and should probably be left alone normally
+
+memberlist:
+  join_members: [ tempo-ingester:7946 ]
+
+compactor:
+  compaction:
+    block_retention: 1h                # overall Tempo trace retention. set for demo purposes
+
+querier:
+  frontend_worker:
+    frontend_address: tempo-query-frontend:9095
+
+# metrics_generator:
+#   registry:
+#     external_labels:
+#       cluster: docker-compose
+#       namespace: monitoring
+#   storage:
+#     path: /tmp/tempo/generator/wal
+#     remote_write:
+#       - url: http://mimir:9009/api/v1/push
+#         send_exemplars: true
+
+storage:
+  trace:
+    backend: s3                     # backend configuration to use
+    wal:
+      path: /tmp/tempo/wal             # where to store the the wal locally
+    s3:
+      bucket: tempo-data
+      endpoint: minio:9000
+      access_key: admin
+      secret_key: admin_password
+      insecure: true
+
+# overrides:
+#   metrics_generator_processors: [service-graphs, span-metrics] # enables metrics generator

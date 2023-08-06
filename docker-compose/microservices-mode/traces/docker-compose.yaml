@@ -1,0 +1,177 @@
+version: '3.9'
+
+# Microservices mode (Traces)
+services:
+
+  agent:
+    depends_on:
+      tempo-distributor:
+        condition: service_started
+    image: grafana/agent:v0.35.2
+    hostname: agent
+    restart: always
+    volumes:
+      - ../../common/config/agent-flow:/etc/agent-config
+      - /var/run/docker.sock:/var/run/docker.sock
+    entrypoint:
+      - /bin/grafana-agent
+      - run
+      - /etc/agent-config/microservices-mode-traces.river # Notics: Agent use microservices-mode-traces.river
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --cluster.enabled=true
+      - --disable-reporting=true
+    environment:
+      - AGENT_MODE=flow
+      - AGENT_CONFIG_FOLDER=/etc/agent-config
+    ports:
+      - "12345:12345"
+    networks:
+      - microservices-mode-traces
+
+  tempo-distributor:
+    depends_on:
+      minio:
+        condition: service_healthy
+    image: &tempoImage grafana/tempo:2.2.0
+    volumes:
+      - ../../common/config/tempo/microservices-mode-traces.yaml:/etc/tempo.yaml # Notics: Tempo use microservices-mode-traces.yaml
+    command:
+      - -config.file=/etc/tempo.yaml
+      - -target=distributor
+      - -log.level=warn
+    networks:
+      - microservices-mode-traces
+
+  tempo-ingester:
+    depends_on:
+      minio:
+        condition: service_healthy
+    image: *tempoImage
+    volumes:
+      - ../../common/config/tempo/microservices-mode-traces.yaml:/etc/tempo.yaml # Notics: Tempo use microservices-mode-traces.yaml
+    command:
+      - -config.file=/etc/tempo.yaml
+      - -target=ingester
+      - -log.level=warn
+    ports:
+      - "3200:3200"
+    networks:
+      - microservices-mode-traces
+    # deploy:
+    #   replicas: 3
+    # networks:
+    #   microservices-mode-traces:
+    #     aliases:
+    #       - "tempo-ingester"
+
+  tempo-query-frontend:
+    depends_on:
+      minio:
+        condition: service_healthy
+    image: *tempoImage
+    volumes:
+      - ../../common/config/tempo/microservices-mode-traces.yaml:/etc/tempo.yaml # Notics: Tempo use microservices-mode-traces.yaml
+    command:
+      - -config.file=/etc/tempo.yaml
+      - -target=query-frontend
+      - -log.level=warn
+    networks:
+      - microservices-mode-traces
+
+  tempo-querier:
+    depends_on:
+      minio:
+        condition: service_healthy
+      tempo-query-frontend:
+        condition: service_started
+    image: *tempoImage
+    volumes:
+      - ../../common/config/tempo/microservices-mode-traces.yaml:/etc/tempo.yaml # Notics: Tempo use microservices-mode-traces.yaml
+    command:
+      - -config.file=/etc/tempo.yaml
+      - -target=querier
+      - -log.level=warn
+    networks:
+      - microservices-mode-traces
+
+  tempo-compactor:
+    depends_on:
+      minio:
+        condition: service_healthy
+    image: *tempoImage
+    volumes:
+      - ../../common/config/tempo/microservices-mode-traces.yaml:/etc/tempo.yaml # Notics: Tempo use microservices-mode-traces.yaml
+    command:
+      - -config.file=/etc/tempo.yaml
+      - -target=compactor
+      - -log.level=error
+    networks:
+      - microservices-mode-traces
+
+  # tempo-metrics-generator:
+  #   depends_on:
+  #     minio:
+  #       condition: service_healthy
+  #   image: *tempoImage
+  #   volumes:
+  #     - ../../common/config/tempo/microservices-mode-traces.yaml:/etc/tempo.yaml # Notics: Tempo use microservices-mode-traces.yaml
+  #   command:
+  #     - -config.file=/etc/tempo.yaml
+  #     - -target=metrics-generator
+  #     - -log.level=error
+  #   networks:
+  #     - microservices-mode-traces
+
+  grafana:
+    image: grafana/grafana:10.0.3
+    hostname: grafana
+    command:
+      - --config=/etc/grafana-config/grafana.ini
+    volumes:
+      - ../../common/config/grafana/grafana.ini:/etc/grafana-config/grafana.ini
+      - ../../common/config/grafana/dashboards:/var/lib/grafana/dashboards
+      - ../../common/config/grafana/provisioning:/etc/grafana/provisioning
+      - ./config/grafana/datasources:/etc/grafana/provisioning/datasources
+    environment:
+      - GF_LOG_LEVEL=error
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin_password}
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
+      - GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS=agent:4317
+      - GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES=cluster:docker-compose,namespace:monitoring
+    ports:
+      - "3000:3000"
+    networks:
+      - microservices-mode-traces
+
+  minio:
+    image: minio/minio:RELEASE.2023-07-21T21-12-44Z
+    hostname: minio
+    entrypoint:
+      - sh
+      - -euc
+      - |
+        mkdir -p /data/tempo-data  && \
+        minio server /data --console-address ':9001'
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=admin_password
+      - MINIO_PROMETHEUS_AUTH_TYPE=public
+      - MINIO_UPDATE=off
+    volumes:
+      - data-minio:/data:delegated
+    healthcheck:
+      test: ["CMD", "curl","-f","http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "9001:9001"
+    networks:
+      - microservices-mode-traces
+
+networks:
+  microservices-mode-traces:
+
+volumes:
+  data-minio:
+    driver: local
