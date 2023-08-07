@@ -6,30 +6,30 @@ Monolithic mode deployment runs all top-level components in a single process, fo
 
 ```mermaid
 flowchart LR
-    Agent   --->|writes| Distributor    -->|writes| Ingester -->|writes| ObjectStorage
-    Grafana -.->|reads | QueryFrontend -.->|reads | Querier -.->|reads | ObjectStorage
+    A --->|writes| D  -->|writes| I -->|writes| M
+    G -.->|reads | QF -.->|reads| Q -.->|reads| M
 
     subgraph Minio
-        ObjectStorage{"Object Storage"}
+        M{"Object Storage"}
     end
-
-    subgraph GrafanaAgent["Grafana Agent"]
-        Agent
+    subgraph Agent["Grafana Agent"]
+        A("agent")
     end
-
-    subgraph GFGraph["Grafana"]
-        Grafana
+    subgraph Grafana
+        G("grafana")
     end
 
     subgraph Tempo["tempo -target=all"]
-        Distributor
-        Querier -.->|reads| Ingester
-        QueryFrontend
+        D("distributor")
+        I("ingester")
 
-        Compactor --> |writes| ObjectStorage
-        Compactor -.->|reads | ObjectStorage
+        Q("querier") -.->|reads| I
 
-        Optional("(optional) components ...")
+        QF("query-frontend")
+        C("compactor")
+
+        C  -->|writes| M
+        C -.->|reads | M
     end
 ```
 ## Scaling monolithic mode
@@ -42,51 +42,31 @@ Each of the queriers perform a DNS lookup for the frontend_address and connect t
 
 ```mermaid
 flowchart LR
-    Agent   --->|writes| Distributor   -->|writes| Ingester   -->|writes| ObjectStorage
-    Agent   --->|writes| Distributor-2 -->|writes| Ingester-2 -->|writes| ObjectStorage
-    Agent   --->|writes| Distributor-N -->|writes| Ingester-N -->|writes| ObjectStorage
+    A -->|writes| Tempo  -->|writes| M
+    A -->|writes| Tempo2 -->|writes| M
+    A -->|writes| TempoN -->|writes| M
 
-    Grafana -.->|reads| QueryFrontend   -.->|reads| Querier   -.->|reads| ObjectStorage
-    Grafana -.->|reads| QueryFrontend-2 -.->|reads| Querier-2 -.->|reads| ObjectStorage
-    Grafana -.->|reads| QueryFrontend-N -.->|reads| Querier-N -.->|reads| ObjectStorage
+    G -.->|reads| Tempo  -.->|reads| M
+    G -.->|reads| Tempo2 -.->|reads| M
+    G -.->|reads| TempoN -.->|reads| M
 
     subgraph Minio
-        ObjectStorage{"Object Storage"}
+        M{"Object Storage"}
     end
-
-    subgraph GrafanaAgent["Grafana Agent"]
-        Agent
+    subgraph Agent["Grafana Agent"]
+        A("agent")
     end
-
-    subgraph GFGraph["Grafana"]
-        Grafana
+    subgraph Grafana
+        G("grafana")
     end
 
     subgraph Tempo["tempo -target=scalable-single-binary"]
-        Distributor
-        Querier -.->|reads| Ingester
-        QueryFrontend
-
-        Compactor --> |writes| ObjectStorage
-        Compactor -.->|reads | ObjectStorage
+        CP["Tempo Components ..."]
     end
-
-
     subgraph Tempo2["tempo-2 -target=scalable-single-binary"]
-        Distributor-2
-        Querier-2 -.->|reads| Ingester-2
-        QueryFrontend-2
-
-        Compactor-2 --> |writes| ObjectStorage
-        Compactor-2 -.->|reads | ObjectStorage
+        CP-2["Tempo Components ..."]
     end
-
     subgraph TempoN["tempo-n -target=scalable-single-binary"]
-        Distributor-N
-        Querier-N -.->|reads| Ingester-N
-        QueryFrontend-N
-
-        Compactor-N --> |writes| ObjectStorage
-        Compactor-N -.->|reads | ObjectStorage
+        CP-N["`Tempo Components ...`"]
     end
 ```

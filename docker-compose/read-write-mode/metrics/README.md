@@ -26,41 +26,38 @@ The below diagram describes the various components of this deployment, and how d
 
 ```mermaid
 flowchart LR
-    Agent   --> |writes| Nginx --> |writes| Distributor   --> |writes| Ingester -->|writes| ObjectStorage
-    Grafana -.->|reads | Nginx -.->|reads | QueryFrontend -.->|reads | Querier -.->|reads | StoreGateway -.->|reads| ObjectStorage
+    A  -->|writes| GW  -->|writes| D   -->|writes| I  -->|writes| M
+    G -.->|reads | GW -.->|reads | QF -.->|reads | Q -.->|reads | SG -.->|reads| M
 
     subgraph Minio
-        ObjectStorage{"Object Storage"}
+        M{"Object Storage"}
     end
-
-    subgraph GrafanaAgent["Grafana Agent"]
-        Agent
+    subgraph Agent["Grafana Agent"]
+        A("agent")
     end
-
-    subgraph GFGraph["Grafana"]
-        Grafana
+    subgraph Grafana
+        G("grafana")
     end
-
-    subgraph GateWay["Load Balancer"]
-        Nginx{"Nginx"}
+    subgraph Gateway["Load Balancer"]
+        GW{"Nginx"}
     end
 
     subgraph MimirWrite["mimir -target=write"]
-        Ingester
-        Distributor
+        D("distributor")
+        I("ingester")
     end
 
     subgraph MimirBackend["mimir -target=backend"]
-        StoreGateway
-        Compactor --> |writes| ObjectStorage
-        Compactor -.->|reads | ObjectStorage
-
-        Optional["(optional) components ..."]
+        SG("store-gateway")
+        C("compactor")
+        
+        C  -->|writes| M
+        C -.->|reads | M
     end
 
     subgraph MimirRead["mimir -target=read"]
-        Querier -.->|reads| Ingester
-        QueryFrontend
+        Q("Querier") -.->|reads| I
+        QF("query-frontend")
     end
 ```
 

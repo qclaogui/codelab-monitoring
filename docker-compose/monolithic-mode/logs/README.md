@@ -6,27 +6,25 @@ The simplest mode of operation sets `-target=all`. This is the default target, a
 
 ```mermaid
 flowchart LR
-    Agent   --> |writes| Distributor   --> Ingester --> |writes| ObjectStorage
-    Grafana -.->|reads | QueryFrontend -.-> Querier -.->|reads | ObjectStorage
+    A --> |writes| D   -->|writes| I  -->|writes| M
+    G -.->|reads | QF -.->|reads | Q -.->|reads | M
 
     subgraph Minio
-        ObjectStorage{"Object Storage"}
+        M{"Object Storage"}
     end
-
-    subgraph GrafanaAgent["Grafana Agent"]
-        Agent
+    subgraph Agent["Grafana Agent"]
+        A("agent")
     end
-
-    subgraph GFGraph["Grafana"]
-        Grafana
+    subgraph Grafana
+        G("grafana")
     end
 
     subgraph Loki["loki -target=all"]
-        Ingester
-        Distributor
-        Ruler
-        Querier
-        QueryFrontend
+        I("ingester")
+        D("distributor")
+        R("ruler")
+        Q("querier")
+        QF("query-frontend")
     end
 ```
 
@@ -38,47 +36,31 @@ High availability can be configured by running two Loki instances using memberli
 
 ```mermaid
 flowchart LR
-    Agent   -->|writes| Distributor   --> Ingester   -->|writes| ObjectStorage
-    Agent   -->|writes| Distributor-2 --> Ingester-2 -->|writes| ObjectStorage
-    Agent   -->|writes| Distributor-N --> Ingester-N -->|writes| ObjectStorage
-    
-    Grafana -.->|reads| QueryFrontend   -.-> Querier   -.->|reads| ObjectStorage
-    Grafana -.->|reads| QueryFrontend-2 -.-> Querier-2 -.->|reads| ObjectStorage
-    Grafana -.->|reads| QueryFrontend-N -.-> Querier-N -.->|reads| ObjectStorage
+    A  -->|writes| Loki  -->|writes| M
+    A  -->|writes| Loki2 -->|writes| M
+    A  -->|writes| LokiN -->|writes| M
+
+    G -.->|reads| Loki  -.->|reads| M
+    G -.->|reads| Loki2 -.->|reads| M
+    G -.->|reads| LokiN -.->|reads| M
 
     subgraph Minio
-        ObjectStorage{"Object Storage"}
+        M{"Object Storage"}
     end
-
-    subgraph GrafanaAgent["Grafana Agent"]
-        Agent
+    subgraph Agent["Grafana Agent"]
+        A("agent")
     end
-
-    subgraph GFGraph["Grafana"]
-        Grafana
+    subgraph Grafana
+        G("grafana")
     end
 
     subgraph Loki["loki -target=all"]
-        Ingester
-        Distributor
-        Ruler
-        Querier
-        QueryFrontend
+        CP["Loki Components ..."]
     end
-
     subgraph Loki2["loki-2 -target=all"]
-        Ingester-2
-        Distributor-2
-        Ruler-2
-        Querier-2
-        QueryFrontend-2
+        CP-2["Loki Components ..."]
     end
-
     subgraph LokiN["loki-N -target=all"]
-        Ingester-N
-        Distributor-N
-        Ruler-N
-        Querier-N
-        QueryFrontend-N
+        CP-N["Loki Components ..."]
     end
 ```

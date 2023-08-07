@@ -8,39 +8,34 @@ The below diagram describes how data flows.
 
 ```mermaid
 flowchart LR
-    Agent   --->|writes| Distributor -->   |writes| Ingester -->|writes| ObjectStorage
-    Grafana -.->|reads | QueryFrontend -.->|reads | Querier -.->|reads | ObjectStorage
+    A --->|writes| D   -->|writes| I  -->|writes| M
+    G -.->|reads | QF -.->|reads | Q -.->|reads | M
 
     subgraph Minio
-        ObjectStorage{"Object Storage"}
+        M{"Object Storage"}
+    end
+    subgraph Agent["Grafana Agent"]
+        A("agent")
+    end
+    subgraph Grafana
+        G("grafana")
     end
 
-    subgraph GrafanaAgent["Grafana Agent"]
-        Agent
+    subgraph Ingester[" -target=ingester"]
+        I("ingester")
     end
-
-    subgraph GFGraph["Grafana"]
-        Grafana
+    subgraph Distributor["tempo -target=distributor"]
+        D("distributor")
     end
-
-    subgraph TempoIngester["tempo -target=ingester"]
-        Ingester
+    subgraph Querier["tempo -target=querier"]
+        Q("querier") -.->|reads| I
     end
-
-    subgraph TempoDistributor["tempo -target=distributor"]
-        Distributor
+    subgraph QueryFrontend["tempo -target=query-frontend"]
+        QF("query-frontend")
     end
-
-    subgraph TempoQuerier["tempo -target=querier"]
-        Querier -.->|reads| Ingester
-    end
-
-    subgraph TempoQueryFrontend["tempo -target=query-frontend"]
-        QueryFrontend
-    end
-
-    subgraph TempoCompactor["tempo -target=compactor"]
-        Compactor --> |writes| ObjectStorage
-        Compactor -.->|reads | ObjectStorage
+    subgraph Compactor["tempo -target=compactor"]
+        C("compactor")
+        C  -->|writes| M
+        C -.->|reads | M
     end
 ```

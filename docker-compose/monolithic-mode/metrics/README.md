@@ -8,34 +8,30 @@ Monolithic mode is the simplest way to deploy Grafana Mimir and is useful if you
 
 ```mermaid
 flowchart LR
-    Agent   --->|writes| Distributor -->   |writes| Ingester --> |writes| ObjectStorage
-    Grafana -.->|reads | QueryFrontend -.->|reads | Querier  -.->|reads | StoreGateway -.->|reads| ObjectStorage
+    A --->|writes| D  --> |writes| I --> |writes| M
+    G -.->|reads | QF -.->|reads | Q -.->|reads | SG -.->|reads| M
 
     subgraph Minio
-        ObjectStorage{"Object Storage"}
+        M{"Object Storage"}
     end
-
-    subgraph GrafanaAgent["Grafana Agent"]
-        Agent
+    subgraph Agent["Grafana Agent"]
+        A("agent")
     end
-
-    subgraph GFGraph["Grafana"]
-        Grafana
+    subgraph Grafana
+        G("grafana")
     end
 
     subgraph Mimir["mimir -target=all"]
-        Ingester
-        Distributor
-        StoreGateway
-        QueryFrontend
-        Querier -.->|reads| Ingester
-        
-        Compactor --> |writes| ObjectStorage
-        Compactor -.->|reads | ObjectStorage
-        
-        Optional("(optional) components ...")
-    end
+        I("ingester")
+        D("distributor")
+        SG("store-gateway")
+        QF("query-frontend")
 
+        Q("querier")  -.->|reads | I 
+        C("compactor") -->|writes| M
+
+        C -.->|reads | M
+    end
 ```
 ## Scaling monolithic mode
 
@@ -43,62 +39,35 @@ Monolithic mode can be horizontally scaled out by deploying multiple Grafana Mim
 
 ```mermaid
 flowchart LR
-    Agent -->|writes| Nginx -->|writes| Distributor -->|writes| Ingester -->|writes| ObjectStorage
+    A  -->|writes| GW     -->|writes| Mimir -->|writes| M
+    GW -->|writes| Mimir2 -->|writes| M
+    GW -->|writes| MimirN -->|writes| M
     
-    Nginx -->|writes| Distributor-2 -->|writes| Ingester-2 -->|writes| ObjectStorage
-    Nginx -->|writes| Distributor-N -->|writes| Ingester-N -->|writes| ObjectStorage
-    
-    Grafana -.->|reads| Nginx -.->|reads| QueryFrontend -.->|reads| Querier -.->|reads| StoreGateway -.->|reads| ObjectStorage
-    
-    Nginx -.->|reads| QueryFrontend-2 -.->|reads| Querier-2 -.->|reads| StoreGateway-2 -.->|reads| ObjectStorage
-    Nginx -.->|reads| QueryFrontend-N -.->|reads| Querier-N -.->|reads| StoreGateway-N -.->|reads| ObjectStorage
+    G  -.->|reads| GW     -.->|reads| Mimir -.->|reads| M    
+    GW -.->|reads| Mimir2 -.->|reads| M
+    GW -.->|reads| MimirN -.->|reads| M
 
     subgraph Minio
-        ObjectStorage{"Object Storage"}
+        M{"Object Storage"}
+    end
+    subgraph Agent["Grafana Agent"]
+        A("agent")
+    end
+    subgraph Grafana
+        G("grafana")
     end
 
-    subgraph GrafanaAgent["Grafana Agent"]
-        Agent
-    end
-
-    subgraph GFGraph["Grafana"]
-        Grafana
-    end
-
-    subgraph GateWay["Load Balancer"]
-        Nginx{"Nginx"}
+    subgraph Gateway["Load Balancer"]
+        GW{"Nginx"}
     end
 
     subgraph Mimir["mimir -target=all"]
-        Ingester
-        Distributor
-        StoreGateway
-        QueryFrontend
-        Querier -.->|reads| Ingester
-        
-        Compactor --> |writes| ObjectStorage
-        Compactor -.->|reads | ObjectStorage
+        CP["Mimir Components ..."]
     end
-
     subgraph Mimir2["mimir-2 -target=all"]
-        Ingester-2
-        Distributor-2
-        StoreGateway-2
-        QueryFrontend-2
-        Querier-2 -.->|reads| Ingester-2
-        
-        Compactor-2 --> |writes| ObjectStorage
-        Compactor-2 -.->|reads | ObjectStorage
+        CP-2["Mimir Components ..."]
     end
-
     subgraph MimirN["mimir-n -target=all"]
-        Ingester-N
-        Distributor-N
-        StoreGateway-N
-        QueryFrontend-N
-        Querier-N -.->|reads| Ingester-N
-        
-        Compactor-N --> |writes| ObjectStorage
-        Compactor-N -.->|reads | ObjectStorage
+        CP-N["Mimir Components ..."]
     end
 ```

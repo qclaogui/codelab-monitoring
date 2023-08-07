@@ -22,33 +22,29 @@ The below diagram describes the various components of this deployment, and how d
 
 ```mermaid
 flowchart LR
-    Agent   --> |writes| Nginx --> |writes| Distributor   --> Ingester --> |writes| ObjectStorage
-    Grafana -.->|reads | Nginx -.->|reads | QueryFrontend -.-> Querier -.->|reads | ObjectStorage
+    A  -->|writes| GW  -->|writes| D   -->|writes| I  -->|writes| M
+    G -.->|reads | GW -.->|reads | QF -.->|reads | Q -.->|reads | M
 
     subgraph Minio
-        ObjectStorage{"Object Storage"}
+        M{"Object Storage"}
     end
-
-    subgraph GrafanaAgent["Grafana Agent"]
-        Agent
+    subgraph Agent["Grafana Agent"]
+        A("agent")
     end
-
-    subgraph GFGraph["Grafana"]
-        Grafana
+    subgraph Grafana
+        G("grafana")
     end
-
-    subgraph GateWay["Load Balancer"]
-        Nginx{"Nginx"}
+    subgraph Gateway["Load Balancer"]
+        GW{"Nginx"}
     end
 
     subgraph LokiWrite["loki -target=write"]
-        Ingester
-        Distributor
+        I("ingester")
+        D("distributor")
     end
-
     subgraph LokiRead["loki -target=read"]
-        Querier
-        QueryFrontend
+        Q("querier")
+        QF("query-frontend")
     end
 ```
 
