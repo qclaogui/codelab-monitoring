@@ -2,7 +2,7 @@ module github.com/qclaogui/codelab-monitoring
 
 go 1.20
 
-require dagger.io/dagger v0.7.4
+require dagger.io/dagger v0.8.1
 
 require (
 	github.com/99designs/gqlgen v0.17.36 // indirect
