@@ -1,16 +1,13 @@
 version: '3.9'
 
-
 # Monolithic mode (Metrics)
 services:
 
   agent:
-    depends_on: # https://docs.docker.com/compose/startup-order
+    depends_on:
       mimir:
         condition: service_started
     image: grafana/agent:v0.35.2
-    hostname: agent
-    restart: unless-stopped
     volumes:
       - ../../common/config/agent-flow:/etc/agent-config
       - /var/run/docker.sock:/var/run/docker.sock

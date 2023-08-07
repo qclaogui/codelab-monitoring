@@ -10,27 +10,33 @@ The below diagram describes how data flows.
 ```mermaid
 %%{init: {"flowchart": {"htmlLabels": false}} }%%
 flowchart LR
-    GrafanaAgent["Grafana Agent"] ---> | writes | Distributor
-    Grafana -.-> | reads | QueryFrontend["query-frontend"]
-
-    subgraph Mimir["mimir -target=all"]
-        Distributor["distributor"] --> | writes | Ingester["ingester"]
-
-        QueryFrontend -.-> | reads | Querier["querier"]
-        Querier       -.-> | reads | Ingester["ingester"]
-        Querier       -.-> | reads | StoreGateway["store-gateway"]
-        
-        Compactor["compactor"]
-        
-        Optional["`(optional) components ...`"]
-    end
+    Agent   --->|writes| Distributor -->   |writes| Ingester --> |writes| ObjectStorage
+    Grafana -.->|reads | QueryFrontend -.->|reads | Querier  -.->|reads | StoreGateway -.->|reads| ObjectStorage
 
     subgraph Minio
-        ObjectStorage["Object Storage"]
+        ObjectStorage{"Object Storage"}
     end
 
-    Ingester & Compactor     -->  | writes | ObjectStorage
-    Compactor & StoreGateway -.-> | reads  | ObjectStorage
+    subgraph GrafanaAgent["Grafana Agent"]
+        Agent
+    end
+
+    subgraph GFGraph["Grafana"]
+        Grafana
+    end
+
+    subgraph Mimir["mimir -target=all"]
+        Ingester
+        Distributor
+        StoreGateway
+        QueryFrontend
+        Querier -.->|reads| Ingester
+        
+        Compactor --> |writes| ObjectStorage
+        Compactor -.->|reads | ObjectStorage
+        
+        Optional("`(optional) components ...`")
+    end
 
 ```
 
@@ -42,60 +48,62 @@ The below diagram describes how data flows.
 
 ```mermaid
 flowchart LR
-    GrafanaAgent["Grafana Agent"] --> | writes | GateWay["Load Balancer(Nginx)"]
-    Grafana -.-> | reads | GateWay
+    Agent -->|writes| Nginx -->|writes| Distributor-1 -->|writes| Ingester-1 -->|writes| ObjectStorage
+    
+    Nginx -->|writes| Distributor-2 -->|writes| Ingester-2 -->|writes| ObjectStorage
+    Nginx -->|writes| Distributor-N -->|writes| Ingester-N -->|writes| ObjectStorage
+    
+    Grafana -.->|reads| Nginx -.->|reads| QueryFrontend-1 -.->|reads| Querier-1 -.->|reads| StoreGateway-1 -.->|reads| ObjectStorage
+    
+    Nginx -.->|reads| QueryFrontend-2 -.->|reads| Querier-2 -.->|reads| StoreGateway-2 -.->|reads| ObjectStorage
+    Nginx -.->|reads| QueryFrontend-N -.->|reads| Querier-N -.->|reads| StoreGateway-N -.->|reads| ObjectStorage
 
-    GateWay -->   | writes| Distributor & Distributor2 & DistributorN
-    GateWay -.->  | reads | QueryFrontend & QueryFrontend2 & QueryFrontendN
+    subgraph Minio
+        ObjectStorage{"Object Storage"}
+    end
+
+    subgraph GrafanaAgent["Grafana Agent"]
+        Agent
+    end
+
+    subgraph GFGraph["Grafana"]
+        Grafana
+    end
+
+    subgraph GateWay["Load Balancer"]
+        Nginx{"Nginx"}
+    end
 
     subgraph Mimir1["mimir-1 -target=all"]
-        Distributor["distributor"] --> | writes| Ingester["ingester"]
-
-        QueryFrontend["query-frontend"] -.-> | reads | Querier["querier"]
-
-        Querier["querier"] -.-> | reads | Ingester["ingester"]
-        Querier["querier"] -.-> | reads | StoreGateway["store-gateway"]
+        Ingester-1
+        Distributor-1
+        StoreGateway-1
+        QueryFrontend-1
+        Querier-1 -.->|reads| Ingester-1
         
-        Compactor["compactor"]
-        Optional["`(optional) components ...`"]
+        Compactor-1 --> |writes| ObjectStorage
+        Compactor-1 -.->|reads | ObjectStorage
     end
 
     subgraph Mimir2["mimir-2 -target=all"]
-        Distributor2["distributor"] --> | writes| Ingester2["ingester"]
-
-        QueryFrontend2["query-frontend"] -.-> | reads | Querier2["querier"]
-
-        Querier2["querier"] -.-> | reads | Ingester2["ingester"]
-        Querier2["querier"] -.-> | reads | StoreGateway2["store-gateway"]
+        Ingester-2
+        Distributor-2
+        StoreGateway-2
+        QueryFrontend-2
+        Querier-2 -.->|reads| Ingester-2
         
-        Compactor2["compactor"]
-        Optional2["`(optional) components ...`"]
+        Compactor-2 --> |writes| ObjectStorage
+        Compactor-2 -.->|reads | ObjectStorage
     end
 
     subgraph MimirN["mimir-n -target=all"]
-        DistributorN["distributor"] --> | writes| IngesterN["ingester"]
-
-        QueryFrontendN["query-frontend"] -.-> | reads | QuerierN["querier"]
-
-        QuerierN["querier"] -.-> | reads | IngesterN["ingester"]
-        QuerierN["querier"] -.-> | reads | StoreGatewayN["store-gateway"]
+        Ingester-N
+        Distributor-N
+        StoreGateway-N
+        QueryFrontend-N
+        Querier-N -.->|reads| Ingester-N
         
-        CompactorN["compactor"]
-        OptionalN["`(optional) components ...`"]
+        Compactor-N --> |writes| ObjectStorage
+        Compactor-N -.->|reads | ObjectStorage
     end
-
-    subgraph Minio
-        ObjectStorage["Object Storage"]
-    end
-
-
-    Ingester  & Compactor    -->  | writes | ObjectStorage
-    Compactor & StoreGateway -.-> | reads  | ObjectStorage
-
-    Ingester2  & Compactor2    -->  | writes | ObjectStorage
-    Compactor2 & StoreGateway2 -.-> | reads  | ObjectStorage
-
-    IngesterN  & CompactorN    -->  | writes | ObjectStorage
-    CompactorN & StoreGatewayN -.-> | reads  | ObjectStorage
-
 ```

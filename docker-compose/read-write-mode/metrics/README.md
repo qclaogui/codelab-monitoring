@@ -27,38 +27,44 @@ The below diagram describes the various components of this deployment, and how d
 ```mermaid
 %%{init: {"flowchart": {"htmlLabels": false}} }%%
 flowchart LR
-    Agent["Grafana Agent"] --> | writes | GateWay["Load Balancer(Nginx)"]
-    Grafana                -.-> | reads | GateWay
+    Agent   --> |writes| Nginx --> |writes| Distributor   --> |writes| Ingester -->|writes| ObjectStorage
+    Grafana -.->|reads | Nginx -.->|reads | QueryFrontend -.->|reads | Querier -.->|reads | StoreGateway -.->|reads| ObjectStorage
 
-    GateWay -->  | writes| Distributor
-    GateWay -.-> | reads | QueryFrontend
-
-    subgraph MimirWrite["mimir -target=write"]
-        Distributor["distributor"] --> | writes | Ingester["ingester"]
+    subgraph Minio
+        ObjectStorage{"Object Storage"}
     end
 
-    subgraph MimirRead["mimir -target=read"]
-        QueryFrontend["query-frontend"] -.-> | reads | Querier["querier"]
+    subgraph GrafanaAgent["Grafana Agent"]
+        Agent
+    end
+
+    subgraph GFGraph["Grafana"]
+        Grafana
+    end
+
+    subgraph GateWay["Load Balancer"]
+        Nginx{"Nginx"}
+    end
+
+    subgraph MimirWrite["mimir -target=write"]
+        Ingester
+        Distributor
     end
 
     subgraph MimirBackend["mimir -target=backend"]
-        StoreGateway["store-gateway"]
-        Compactor["compactor"]
+        StoreGateway
+        Compactor --> |writes| ObjectStorage
+        Compactor -.->|reads | ObjectStorage
 
         Optional["`(optional) components ...`"]
     end
 
-    subgraph Minio
-        ObjectStorage["Object Storage"]
+    subgraph MimirRead["mimir -target=read"]
+        Querier -.->|reads| Ingester
+        QueryFrontend
     end
-
-    Ingester & Compactor --> | writes | ObjectStorage
-
-    Querier                  -.-> | reads | Ingester & StoreGateway
-    Compactor & StoreGateway -.-> | reads | ObjectStorage
-    
 ```
 
 ## Getting Started
 
-Simply run `docker-compose up` and all the components will start.
+Simply run `docker compose up` and all the components will start.
