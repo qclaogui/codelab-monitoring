@@ -1,7 +1,6 @@
-# Monolithic mode (单体模式) - Traces
+# Microservices mode (微服务模式) - Traces
 
-The monolithic mode runs all required components in a single process.
-
+In microservices mode, components are deployed in distinct processes.
 ## Diagram
 
 The below diagram describes how data flows.
@@ -21,18 +20,22 @@ flowchart LR
         G("grafana")
     end
 
-    subgraph Ingester[" -target=ingester"]
+    subgraph Ingester["tempo -target=ingester"]
         I("ingester")
     end
+
     subgraph Distributor["tempo -target=distributor"]
         D("distributor")
     end
+
     subgraph Querier["tempo -target=querier"]
         Q("querier") -.->|reads| I
     end
+
     subgraph QueryFrontend["tempo -target=query-frontend"]
         QF("query-frontend")
     end
+    
     subgraph Compactor["tempo -target=compactor"]
         C("compactor")
         C  -->|writes| M
