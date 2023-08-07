@@ -25,7 +25,6 @@ Similar to the other modes, each Grafana Mimir process is invoked with its `-tar
 The below diagram describes the various components of this deployment, and how data flows between them.
 
 ```mermaid
-%%{init: {"flowchart": {"htmlLabels": false}} }%%
 flowchart LR
     Agent   --> |writes| Nginx --> |writes| Distributor   --> |writes| Ingester -->|writes| ObjectStorage
     Grafana -.->|reads | Nginx -.->|reads | QueryFrontend -.->|reads | Querier -.->|reads | StoreGateway -.->|reads| ObjectStorage
@@ -56,7 +55,7 @@ flowchart LR
         Compactor --> |writes| ObjectStorage
         Compactor -.->|reads | ObjectStorage
 
-        Optional["`(optional) components ...`"]
+        Optional["(optional) components ..."]
     end
 
     subgraph MimirRead["mimir -target=read"]

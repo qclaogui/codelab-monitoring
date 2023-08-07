@@ -7,7 +7,6 @@ The monolithic mode runs all required components in a single process.
 The below diagram describes how data flows.
 
 ```mermaid
-%%{init: {"flowchart": {"htmlLabels": false}} }%%
 flowchart LR
     Agent   --->|writes| Distributor -->    |writes| Ingester -->|writes| ObjectStorage
     Grafana -.->|reads | QueryFrontend -.-> |reads | Querier -.->|reads | ObjectStorage
