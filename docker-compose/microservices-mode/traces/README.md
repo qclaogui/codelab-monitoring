@@ -8,8 +8,8 @@ The below diagram describes how data flows.
 
 ```mermaid
 flowchart LR
-    Agent   --->|writes| Distributor -->    |writes| Ingester -->|writes| ObjectStorage
-    Grafana -.->|reads | QueryFrontend -.-> |reads | Querier -.->|reads | ObjectStorage
+    Agent   --->|writes| Distributor -->   |writes| Ingester -->|writes| ObjectStorage
+    Grafana -.->|reads | QueryFrontend -.->|reads | Querier -.->|reads | ObjectStorage
 
     subgraph Minio
         ObjectStorage{"Object Storage"}

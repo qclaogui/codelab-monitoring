@@ -3,10 +3,10 @@ auth_enabled: false
 server:
   http_listen_port: 3100
   grpc_listen_port: 9096
+  log_level: warn
 
 common:
   path_prefix: /loki
-  instance_addr: 127.0.0.1
   replication_factor: 1
   storage:
     s3:
@@ -16,34 +16,42 @@ common:
       secret_access_key: admin_password
       insecure: true
       s3forcepathstyle: true
-  ring:
-    kvstore:
-      store: inmemory
 
-schema_config:
-  configs:
-    - from: "2023-06-06"
-      store: boltdb-shipper
-      object_store: s3
-      schema: v12
-      index:
-        prefix: loki_index_
-        period: 24h
-
-storage_config:
-  boltdb_shipper:
-    shared_store: s3
-    active_index_directory: /tmp/index
-    cache_location: /tmp/boltdb-cache
-
-compactor:
-  working_directory: /tmp/compactor
-  shared_store: s3
+memberlist:
+  join_members: [ loki:7946, loki-2:7946 ] # Horizontally scale up support(Monolithic mode)
 
 ruler:
   storage:
     s3:
       bucketnames: loki-rules
 
+schema_config:
+  configs:
+    - from: 2023-08-01
+      store: tsdb
+      object_store: s3
+      schema: v12
+      index:
+        prefix: index_
+        period: 24h
+
+chunk_store_config:
+  chunk_cache_config:
+    embedded_cache:
+      enabled: true
+
+query_range:
+  align_queries_with_step: true
+  cache_results: true
+  results_cache:
+    cache:
+      embedded_cache:
+        enabled: true
+
+compactor:
+  working_directory: /tmp/compactor
+  shared_store: s3
+
+# -reporting.enabled=false
 analytics:
  reporting_enabled: false

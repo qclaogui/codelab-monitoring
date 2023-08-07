@@ -13,8 +13,6 @@ services:
       loki:
         condition: service_healthy
     image: grafana/agent:v0.35.2
-    hostname: agent
-    restart: always
     volumes:
       - ../../common/config/agent-flow:/etc/agent-config
       - /var/run/docker.sock:/var/run/docker.sock
@@ -43,15 +41,10 @@ services:
       minio:
         condition: service_healthy
     image: grafana/mimir:2.9.0
-    # support scaling in Monolithic mode
-    # https://grafana.com/docs/mimir/latest/references/architecture/deployment-modes/#monolithic-mode
-    deploy:
-      replicas: 1
     command:
       - -config.file=/etc/mimir.yaml
-      - -log.level=warn
-    # ports:
-    #   - "8080:8080"
+      - -target=all
+      - -log.level=error
     volumes:
       - ../../common/config/mimir/monolithic-mode-metrics.yaml:/etc/mimir.yaml
     healthcheck:
@@ -83,12 +76,10 @@ services:
       minio:
         condition: service_healthy
     image: grafana/loki:2.8.3
-    hostname: loki
     command:
       - -config.file=/etc/loki.yaml
       - -target=all
-      - -log.level=warn
-      - -reporting.enabled=false
+      - -log.level=error
     volumes:
       - ../../common/config/loki/monolithic-mode-logs.yaml:/etc/loki.yaml
     healthcheck:
@@ -122,13 +113,14 @@ services:
       mimir:
         condition: service_healthy
     image: grafana/tempo:2.2.0
-    hostname: tempo
-    restart: on-failure
     volumes:
       - ../../common/config/tempo/monolithic-mode-traces.yaml:/etc/tempo.yaml
     command:
       - -config.file=/etc/tempo.yaml
+      - -target=all
       - -log.level=error
+    ports:
+      - "3200"
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ready || exit 1" ]
       interval: 10s
@@ -155,7 +147,6 @@ services:
 
   pyroscope:
     image: grafana/phlare:weekly-f22-06e09923
-    hostname: pyroscope
     volumes:
       - ../../common/config/pyroscope/monolithic-mode-profiles.yaml:/etc/pyroscope.yaml
     command:
@@ -168,11 +159,6 @@ services:
 
   grafana:
     image: grafana/grafana:10.0.3
-    # image: grafana # local Dockerfile //TODO(qc)
-    # build:
-    #   context: ../../
-    #   dockerfile: Dockerfile
-    hostname: grafana
     command:
       - --config=/etc/grafana-config/grafana.ini
     volumes:
@@ -200,7 +186,6 @@ services:
 
   minio:
     image: minio/minio:RELEASE.2023-07-21T21-12-44Z
-    hostname: minio
     entrypoint:
       - sh
       - -euc

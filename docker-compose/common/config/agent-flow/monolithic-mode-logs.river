@@ -45,7 +45,7 @@ discovery.relabel "containers" {
   rule {
 		source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
     action        = "keep"
-    regex         = "(agent|mimir|grafana|loki|tempo|pyroscope)"
+    regex         = "(agent|mimir|grafana|loki|loki-.*|tempo|pyroscope)"
 	}
 
   rule {
@@ -107,8 +107,8 @@ otelcol.receiver.otlp "containers" {
 
 otelcol.processor.batch "containers" {
 	output {
-        logs    = [otelcol.processor.memory_limiter.containers.input]
-    }
+    logs    = [otelcol.processor.memory_limiter.containers.input]
+  }
 }
 
 otelcol.processor.memory_limiter "containers" {

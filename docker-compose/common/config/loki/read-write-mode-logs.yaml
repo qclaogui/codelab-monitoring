@@ -3,6 +3,7 @@ auth_enabled: false
 server:
   http_listen_port: 3100
   grpc_listen_port: 9096
+  log_level: warn
 
 common:
   path_prefix: /loki
@@ -31,18 +32,10 @@ ingester:
     observe_period: 5s
     ring:
       replication_factor: 2
-      kvstore:
-        store: memberlist
-    final_sleep: 0s
   chunk_idle_period: 1m
-  wal:
-    enabled: true
-    dir: /loki/wal
   max_chunk_age: 1m
   chunk_retain_period: 30s
   chunk_encoding: snappy
-  chunk_target_size: 1.572864e+06
-  chunk_block_size: 262144
   flush_op_timeout: 10s
 
 ruler:
@@ -65,35 +58,30 @@ limits_config:
   reject_old_samples: true
   reject_old_samples_max_age: 30m
   split_queries_by_interval: 15m
-  # volume_enabled: true
 
 chunk_store_config:
-  max_look_back_period: 336h
-
-table_manager:
-  retention_deletes_enabled: true
-  retention_period: 336h
+  chunk_cache_config:
+    embedded_cache:
+      enabled: true
 
 query_range:
   align_queries_with_step: true
-  max_retries: 5
-  parallelise_shardable_queries: true
   cache_results: true
+  results_cache:
+    cache:
+      embedded_cache:
+        enabled: true
 
 frontend:
-  log_queries_longer_than: 5s
   compress_responses: true
-  max_outstanding_per_tenant: 2048
 
 query_scheduler:
   max_outstanding_requests_per_tenant: 1024
-
-querier:
-  query_ingesters_within: 2h
 
 compactor:
   working_directory: /tmp/compactor
   shared_store: s3
 
+# -reporting.enabled=false
 analytics:
  reporting_enabled: false

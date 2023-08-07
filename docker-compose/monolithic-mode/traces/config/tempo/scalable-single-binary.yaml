@@ -4,6 +4,7 @@ usage_report:
 server:
   http_listen_port: 3200
   grpc_listen_port: 9095
+  log_level: warn
 
 distributor:
   receivers:                           # this configuration will listen on all ports and protocols that tempo is capable of.
@@ -15,10 +16,17 @@ distributor:
 ingester:
   max_block_duration: 5m               # cut the headblock when this much time passes. this is being set for demo purposes and should probably be left alone normally
 
+memberlist:
+  abort_if_cluster_join_fails: false
+  join_members: [ tempo:7946, tempo-2:7946, tempo-n:7946 ] # Horizontally scale up support(Monolithic mode)
 
 compactor:
   compaction:
     block_retention: 1h                # overall Tempo trace retention. set for demo purposes
+
+querier:
+  frontend_worker:
+    frontend_address: tempo:9095
 
 storage:
   trace:

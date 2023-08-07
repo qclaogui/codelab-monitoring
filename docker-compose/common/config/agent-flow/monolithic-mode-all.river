@@ -47,7 +47,7 @@ discovery.relabel "containers" {
   rule {
 		source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
     action        = "keep"
-    regex         = "(agent|mimir|grafana|loki|tempo|pyroscope)"
+    regex         = "(agent|mimir|mimir-.*|grafana|loki|loki-.*|tempo|pyroscope)"
 	}
 
   rule {
@@ -109,6 +109,12 @@ prometheus.scrape "minio" {
 }
 
 prometheus.relabel "integrations" {
+  rule {
+		source_labels = ["__address__"]
+		target_label  = "scraped_by"
+    replacement   = "grafana-agent"
+	}
+
   rule {
 		source_labels = ["__address__"]
 		target_label  = "cluster"
@@ -211,7 +217,7 @@ otelcol.exporter.loki "containers" {
 pyroscope.scrape "containers" {
   targets = [
     {"__address__" = "pyroscope:4100", "service_name"="pyroscope"},
-    //{"__address__" = "agent:12345", "service_name"="agent"},
+    //{"__address__" = "agent:12345",    "service_name"="agent"},
     {"__address__" = "grafana:6060",   "service_name"="grafana"},
   ]
 

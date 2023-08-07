@@ -1,15 +1,13 @@
 version: '3.9'
 
-
 # Monolithic mode (Logs)
 services:
 
   agent:
-    depends_on: # https://docs.docker.com/compose/startup-order
+    depends_on:
       loki:
         condition: service_healthy
     image: grafana/agent:v0.35.2
-    hostname: agent
     restart: always
     volumes:
       - ../../common/config/agent-flow:/etc/agent-config
@@ -24,11 +22,6 @@ services:
     environment:
       - AGENT_MODE=flow
       - AGENT_CONFIG_FOLDER=/etc/agent-config
-    healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:12345/ready || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
     ports:
       - "12345:12345"
     networks:
@@ -38,13 +31,10 @@ services:
     depends_on:
       minio:
         condition: service_healthy
-    image: grafana/loki:2.8.3
-    hostname: loki
+    image: &lokiImage grafana/loki:2.8.3
     command:
       - -config.file=/etc/loki.yaml
-      - -target=all
-      - -log.level=warn
-      - -reporting.enabled=false
+      - -log.level=error
     volumes:
       - ../../common/config/loki/monolithic-mode-logs.yaml:/etc/loki.yaml
     healthcheck:
@@ -55,9 +45,22 @@ services:
     networks:
       - monolithic-mode-logs
 
+  # # Horizontally scale up support(Monolithic mode)
+  # # https://grafana.com/docs/loki/latest/fundamentals/architecture/deployment-modes/#monolithic-mode
+  # loki-2:
+  #   depends_on:
+  #     minio:
+  #       condition: service_healthy
+  #   image: *lokiImage
+  #   command:
+  #     - -config.file=/etc/loki.yaml
+  #   volumes:
+  #     - ../../common/config/loki/monolithic-mode-logs.yaml:/etc/loki.yaml
+  #   networks:
+  #     - monolithic-mode-logs
+
   grafana:
     image: grafana/grafana:10.0.3
-    hostname: grafana
     command:
       - --config=/etc/grafana-config/grafana.ini
     volumes:
@@ -75,7 +78,6 @@ services:
 
   minio:
     image: minio/minio:RELEASE.2023-07-21T21-12-44Z
-    hostname: minio
     entrypoint:
       - sh
       - -euc
