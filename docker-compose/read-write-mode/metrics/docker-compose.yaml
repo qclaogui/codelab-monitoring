@@ -5,7 +5,7 @@ version: '3.9'
 services:
 
   agent:
-    depends_on: # https://docs.docker.com/compose/startup-order
+    depends_on:
       mimir-write-1:
         condition: service_started
     image: grafana/agent:v0.35.2
@@ -29,12 +29,11 @@ services:
     networks:
       - read-write-mode-metrics
   
-  nginx:
+  gateway:
     image: nginxinc/nginx-unprivileged:1.25-alpine
-    # hostname: nginx
-    hostname: mimir
     volumes:
-      - ./config/nginx:/etc/nginx/templates
+      - ../../common/config/nginx:/etc/nginx/templates
+      - ../../common/config/mimir/gateway.conf.template:/etc/nginx/templates/gateway.conf.template
     environment:
       - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
       - DISTRIBUTOR_HOST=mimir-write-1:8080
@@ -48,7 +47,7 @@ services:
       - read-write-mode-metrics
 
   mimir-backend-1:
-    depends_on: # https://docs.docker.com/compose/startup-order
+    depends_on:
       minio:
         condition: service_healthy
     image: &mimirImage grafana/mimir:2.9.0
@@ -69,7 +68,7 @@ services:
       - read-write-mode-metrics
 
   mimir-backend-2:
-    depends_on: # https://docs.docker.com/compose/startup-order
+    depends_on:
       minio:
         condition: service_healthy
     image: *mimirImage
@@ -90,7 +89,7 @@ services:
       - read-write-mode-metrics
 
   mimir-read-1:
-    depends_on: # https://docs.docker.com/compose/startup-order
+    depends_on:
       minio:
         condition: service_healthy
     image: *mimirImage
@@ -106,7 +105,7 @@ services:
       - read-write-mode-metrics
 
   mimir-read-2:
-    depends_on: # https://docs.docker.com/compose/startup-order
+    depends_on:
       minio:
         condition: service_healthy
     image: *mimirImage
@@ -122,7 +121,7 @@ services:
       - read-write-mode-metrics
 
   mimir-write-1:
-    depends_on: # https://docs.docker.com/compose/startup-order
+    depends_on:
       minio:
         condition: service_healthy
     image: *mimirImage
@@ -144,7 +143,7 @@ services:
       - read-write-mode-metrics
 
   mimir-write-2:
-    depends_on: # https://docs.docker.com/compose/startup-order
+    depends_on:
       minio:
         condition: service_healthy
     image: *mimirImage
@@ -165,7 +164,7 @@ services:
       - read-write-mode-metrics
 
   mimir-write-3:
-    depends_on: # https://docs.docker.com/compose/startup-order
+    depends_on:
       minio:
         condition: service_healthy
     image: *mimirImage
