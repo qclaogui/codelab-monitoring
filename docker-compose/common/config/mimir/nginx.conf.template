@@ -14,14 +14,33 @@ http {
   uwsgi_temp_path       /tmp/uwsgi_temp;
   scgi_temp_path        /tmp/scgi_temp;
 
+  client_max_body_size  4M;
+
+  proxy_read_timeout    600; ## 10 minutes
+  proxy_send_timeout    600;
+  proxy_connect_timeout 600;
+
+  proxy_http_version    1.1;
+
   default_type application/octet-stream;
   log_format   main '$remote_addr - $remote_user [$time_local]  $status '
         '"$request" $body_bytes_sent "$http_referer" '
         '"$http_user_agent" "$http_x_forwarded_for"';
-  access_log   /dev/stderr  main;
+
+  map $status $loggable {
+    ~^[23]  0;
+    default 1;
+  }
+
+  access_log   /dev/stderr  main if=$loggable;
 
   sendfile     on;
   tcp_nopush   on;
+
+  ## Kubernetes
+  # resolver kube-dns.kube-system.svc.cluster.local;
+
+  ## Docker
   resolver 127.0.0.11 ipv6=off;
 
   # Ensure that X-Scope-OrgID is always present, default to the no_auth_tenant for backwards compatibility when multi-tenancy was turned off.
@@ -36,6 +55,7 @@ http {
     location = / {
       return 200 'OK';
       auth_basic off;
+      access_log off;
     }
 
     proxy_set_header X-Scope-OrgID $ensured_x_scope_orgid;
