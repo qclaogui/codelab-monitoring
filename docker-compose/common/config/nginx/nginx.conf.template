@@ -1,0 +1,161 @@
+worker_processes  5;  ## Default: 1
+error_log  /dev/stderr error;
+pid        /tmp/nginx.pid;
+worker_rlimit_nofile 8192;
+
+events {
+  worker_connections  4096;  ## Default: 1024
+}
+
+http {
+  client_body_temp_path /tmp/client_temp;
+  proxy_temp_path       /tmp/proxy_temp_path;
+  fastcgi_temp_path     /tmp/fastcgi_temp;
+  uwsgi_temp_path       /tmp/uwsgi_temp;
+  scgi_temp_path        /tmp/scgi_temp;
+
+  client_max_body_size  4M;
+
+  proxy_read_timeout    600; ## 10 minutes
+  proxy_send_timeout    600;
+  proxy_connect_timeout 600;
+
+  proxy_http_version    1.1;
+
+  default_type application/octet-stream;
+  log_format   main '$remote_addr - $remote_user [$time_local]  $status '
+        '"$request" $body_bytes_sent "$http_referer" '
+        '"$http_user_agent" "$http_x_forwarded_for"';
+  access_log   /dev/stderr  main;
+
+  sendfile     on;
+  tcp_nopush   on;
+
+  ## Kubernetes
+  # resolver kube-dns.kube-system.svc.cluster.local;
+
+  ## Docker
+  resolver 127.0.0.11 ipv6=off;
+
+  # Ensure that X-Scope-OrgID is always present, default to the no_auth_tenant for backwards compatibility when multi-tenancy was turned off.
+  map $http_x_scope_orgid $ensured_x_scope_orgid {
+    default $http_x_scope_orgid;
+    "" "anonymous";
+  }
+
+  server {
+    listen 3100;
+    listen [::]:3100;
+
+    location = / {
+      return 200 'OK';
+      auth_basic off;
+      access_log off;
+    }
+
+    proxy_set_header X-Scope-OrgID $ensured_x_scope_orgid;
+
+    # Distributor endpoints
+    location = /api/prom/push {
+      proxy_pass      http://${DISTRIBUTOR_HOST}$request_uri;
+    }
+    location = /loki/api/v1/push {
+      proxy_pass      http://${DISTRIBUTOR_HOST}$request_uri;
+    }
+    location = /distributor/ring {
+      proxy_pass      http://${DISTRIBUTOR_HOST}$request_uri;
+    }
+
+    # Ingester endpoints
+    location /flush {
+      proxy_pass      http://${INGESTER_HOST}$request_uri;
+    }
+    location ^~ /ingester/ {
+      proxy_pass      http://${INGESTER_HOST}$request_uri;
+    }
+    location = /ingester {
+      internal;        # to suppress 301
+    }
+
+    # Ring
+    location = /ring {
+      proxy_pass http://${INGESTER_HOST}$request_uri;
+    }
+
+    # MemberListKV
+    location = /memberlist {
+      proxy_pass http://${INGESTER_HOST}$request_uri;
+    }
+
+
+    # Ruler endpoints
+    location = /ruler/ring {
+      proxy_pass      http://${RULER_HOST}$request_uri;
+    }
+    location ~ /api/prom/rules.* {
+      proxy_pass      http://${RULER_HOST}$request_uri;
+    }
+    location ~ /api/prom/alerts.* {
+      proxy_pass      http://${RULER_HOST}$request_uri;
+    }
+    location ~ /loki/api/v1/rules.* {
+      proxy_pass      http://${RULER_HOST}$request_uri;
+    }
+    location ~ /loki/api/v1/alerts.* {
+      proxy_pass      http://${RULER_HOST}$request_uri;
+    }
+    location ~ /prometheus/api/v1/alerts.* {
+      proxy_pass      http://${RULER_HOST}$request_uri;
+    }
+    location ~ /prometheus/api/v1/rules.* {
+      proxy_pass      http://${RULER_HOST}$request_uri;
+    }
+
+
+    # Compactor endpoints
+    location = /compactor/ring {
+      proxy_pass      http://${COMPACTOR_HOST}$request_uri;
+    }
+    location = /loki/api/v1/delete {
+      proxy_pass      http://${COMPACTOR_HOST}$request_uri;
+    }
+    location = /loki/api/v1/cache/generation_numbers {
+      proxy_pass      http://${COMPACTOR_HOST}$request_uri;
+    }
+
+    # IndexGateway endpoints
+    location = /indexgateway/ring {
+      proxy_pass      http://${COMPACTOR_HOST}$request_uri;
+    }
+
+    # Config endpoints
+    location = /config {
+      proxy_pass      http://${COMPACTOR_HOST}$request_uri;
+    }
+
+
+    # QueryScheduler endpoints
+    location = /scheduler/ring {
+      proxy_pass      http://${QUERY_SCHEDULER_HOST}$request_uri;
+    }
+
+    # QueryFrontend, Querier endpoints
+    location = /api/prom/tail {
+      proxy_pass      http://${QUERY_FRONTEND_HOST}$request_uri;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+    }
+    location = /loki/api/v1/tail {
+      proxy_pass      http://${QUERIER_HOST}$request_uri;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+    }
+    location ~ /api/prom/.* {
+      proxy_pass      http://${QUERY_FRONTEND_HOST}$request_uri;
+    }
+    location ~ /loki/api/v1.* {
+      proxy_pass      http://${QUERY_FRONTEND_HOST}$request_uri;
+    }
+
+  }
+}
