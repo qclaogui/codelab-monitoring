@@ -6,8 +6,8 @@ server:
   log_level: warn
 
 common:
-  compactor_address: loki-backend
-  path_prefix: /var/loki
+  compactor_address: http://compactor:3100
+  path_prefix: /loki
   replication_factor: 1
   storage:
     s3:
@@ -19,19 +19,18 @@ common:
       s3forcepathstyle: true
 
 memberlist:
-  join_members: [ loki-read:7946, loki-write:7946 ]
+  join_members:
+  - distributor
+  - ingester
+  - query-scheduler
+  - compactor
+  - ruler
 
-ingester:
-  lifecycler:
-    join_after: 10s
-    observe_period: 5s
-    ring:
-      replication_factor: 2
-  chunk_idle_period: 1m
-  max_chunk_age: 1m
-  chunk_retain_period: 30s
-  chunk_encoding: snappy
-  flush_op_timeout: 10s
+frontend:
+  scheduler_address: query-scheduler:9095
+  tail_proxy_url: http://querier:3100
+frontend_worker:
+  scheduler_address: query-scheduler:9095
 
 ruler:
   storage:
@@ -45,14 +44,8 @@ schema_config:
       object_store: s3
       schema: v12
       index:
-        prefix: index_
+        prefix: loki_index_
         period: 24h
-
-limits_config:
-  enforce_metric_name: false
-  reject_old_samples: true
-  reject_old_samples_max_age: 30m
-  split_queries_by_interval: 15m
 
 chunk_store_config:
   chunk_cache_config:
@@ -62,19 +55,14 @@ chunk_store_config:
 query_range:
   align_queries_with_step: true
   cache_results: true
+  max_retries: 5
   results_cache:
     cache:
       embedded_cache:
         enabled: true
-
-frontend:
-  compress_responses: true
-
-query_scheduler:
-  max_outstanding_requests_per_tenant: 1024
+        ttl: 1h
 
 compactor:
-  working_directory: /tmp/compactor
   shared_store: s3
 
 # -reporting.enabled=false
