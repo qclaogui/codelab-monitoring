@@ -60,8 +60,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      replicas: 2
     networks:
-      - microservices-mode-metrics
+      microservices-mode-metrics:
+        aliases:
+          - mimir-memberlist
 
   overrides-exporter:
     image: *mimirImage
@@ -77,7 +81,7 @@ services:
   querier:
     depends_on:
       query-scheduler:
-        condition: service_started
+        condition: service_healthy
     image: *mimirImage
     volumes:
       - ../../common/config/mimir/microservices-mode-metrics.yaml:/etc/mimir.yaml # Note: Mimir use microservices-mode-metrics.yaml
@@ -85,13 +89,18 @@ services:
     command:
       - -config.file=/etc/mimir.yaml
       - -target=querier
+      - -log.level=error
+    deploy:
+      replicas: 2
     networks:
-      - microservices-mode-metrics
+      microservices-mode-metrics:
+        aliases:
+          - mimir-memberlist
 
   query-frontend:
     depends_on:
       query-scheduler:
-        condition: service_started
+        condition: service_healthy
     image: *mimirImage
     volumes:
       - ../../common/config/mimir/microservices-mode-metrics.yaml:/etc/mimir.yaml # Note: Mimir use microservices-mode-metrics.yaml
@@ -99,6 +108,7 @@ services:
     command:
       - -config.file=/etc/mimir.yaml
       - -target=query-frontend
+      - -log.level=error
     networks:
       - microservices-mode-metrics
 
@@ -110,6 +120,13 @@ services:
     command:
       - -config.file=/etc/mimir.yaml
       - -target=query-scheduler
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      replicas: 2
     networks:
       - microservices-mode-metrics
 
@@ -125,7 +142,9 @@ services:
       - -config.file=/etc/mimir.yaml
       - -target=ruler
     networks:
-      - microservices-mode-metrics
+      microservices-mode-metrics:
+        aliases:
+          - mimir-memberlist
 
   alertmanager:
     depends_on:
@@ -139,9 +158,14 @@ services:
       - -config.file=/etc/mimir.yaml
       - -target=alertmanager
     networks:
-      - microservices-mode-metrics
+      microservices-mode-metrics:
+        aliases:
+          - mimir-memberlist
 
   compactor:
+    depends_on:
+      minio:
+        condition: service_healthy
     image: *mimirImage
     volumes:
       - ../../common/config/mimir/microservices-mode-metrics.yaml:/etc/mimir.yaml # Note: Mimir use microservices-mode-metrics.yaml
@@ -150,7 +174,9 @@ services:
       - -config.file=/etc/mimir.yaml
       - -target=compactor
     networks:
-      - microservices-mode-metrics
+      microservices-mode-metrics:
+        aliases:
+          - mimir-memberlist
 
   ingester:
     depends_on:
@@ -164,37 +190,13 @@ services:
       - -config.file=/etc/mimir.yaml
       - -target=ingester
     ports:
-      - "8080:8080"
+      - "8080"
+    deploy:
+      replicas: 3
     networks:
-      - microservices-mode-metrics
-
-  ingester-2:
-    depends_on:
-      minio:
-        condition: service_healthy
-    image: *mimirImage
-    volumes:
-      - ../../common/config/mimir/microservices-mode-metrics.yaml:/etc/mimir.yaml # Note: Mimir use microservices-mode-metrics.yaml
-      - ./config/mimir:/etc/mimir
-    command:
-      - -config.file=/etc/mimir.yaml
-      - -target=ingester
-    networks:
-      - microservices-mode-metrics
-
-  ingester-3:
-    depends_on:
-      minio:
-        condition: service_healthy
-    image: *mimirImage
-    volumes:
-      - ../../common/config/mimir/microservices-mode-metrics.yaml:/etc/mimir.yaml # Note: Mimir use microservices-mode-metrics.yaml
-      - ./config/mimir:/etc/mimir
-    command:
-      - -config.file=/etc/mimir.yaml
-      - -target=ingester
-    networks:
-      - microservices-mode-metrics
+      microservices-mode-metrics:
+        aliases:
+          - mimir-memberlist
 
   store-gateway:
     depends_on:
@@ -208,7 +210,9 @@ services:
       - -config.file=/etc/mimir.yaml
       - -target=store-gateway
     networks:
-      - microservices-mode-metrics
+      microservices-mode-metrics:
+        aliases:
+          - mimir-memberlist
 
   grafana:
     image: grafana/grafana:10.0.3
@@ -250,6 +254,11 @@ services:
       retries: 5
     ports:
       - "9001:9001"
+    networks:
+      - microservices-mode-metrics
+
+  memcached:
+    image: memcached:1.6.19-alpine
     networks:
       - microservices-mode-metrics
 
