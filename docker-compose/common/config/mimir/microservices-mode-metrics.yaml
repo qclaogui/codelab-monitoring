@@ -1,0 +1,96 @@
+# Do not use this configuration in production.
+# It is for demonstration purposes only.
+multitenancy_enabled: false
+
+# -usage-stats.enabled=false
+usage_stats:
+  enabled: false
+
+server:
+  http_listen_port: 8080
+  log_level: warn
+
+common:
+  storage:
+    backend: s3
+    s3:
+      endpoint:          minio:9000
+      access_key_id:     admin
+      secret_access_key: admin_password
+      insecure:          true
+
+alertmanager:
+  data_dir: /data/alertmanager
+  enable_api: true
+  external_url: /alertmanager
+  fallback_config_file: /etc/mimir/alertmanager-fallback-config.yaml
+alertmanager_storage:
+  s3:
+    bucket_name: mimir-alertmanager
+
+blocks_storage:
+  s3:
+    bucket_name: mimir-data
+  tsdb:
+    dir: /data/ingester
+  # bucket_store:
+  #   index_cache:
+  #     backend: memcached
+  #     memcached:
+  #       addresses: dns+memcached:11211
+  #   chunks_cache:
+  #     backend: memcached
+  #     memcached:
+  #       addresses: dns+memcached:11211
+  #   metadata_cache:
+  #     backend: memcached
+  #     memcached:
+  #       addresses: dns+memcached:11211
+
+frontend:
+  parallelize_shardable_queries: true
+  scheduler_address: query-scheduler:9095
+frontend_worker:
+  grpc_client_config:
+    max_send_msg_size: 419430400
+  scheduler_address: query-scheduler:9095
+
+memberlist:
+  join_members:
+    # - mimir-memberlist:7946
+    - distributor:7946
+    - ingester:7946
+    - ingester-2:7946
+    - ingester-3:7946
+    - querier:7946
+    - store-gateway:7946
+    - compactor:7946
+    - ruler:7946
+    - alertmanager:7946
+
+ruler:
+  rule_path: /data/rules
+  enable_api: true
+  alertmanager_url: http://alertmanager:8080/alertmanager
+ruler_storage:
+  s3:
+    bucket_name: mimir-rules
+  # cache:
+  #   backend: memcached
+  #   memcached:
+  #     addresses: dns+memcached:11211
+
+runtime_config:
+  file: /etc/mimir/runtime.yaml
+
+query_scheduler:
+  max_outstanding_requests_per_tenant: 800
+
+# overrides_exporter:
+#   ring:
+#     enabled: true
+#     wait_stability_min_duration: 30s
+
+limits:
+  native_histograms_ingestion_enabled: true
+
