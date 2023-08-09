@@ -1,6 +1,7 @@
 # Microservices mode (微服务模式) - Traces
 
 In microservices mode, components are deployed in distinct processes.
+
 ## Diagram
 
 The below diagram describes how data flows.

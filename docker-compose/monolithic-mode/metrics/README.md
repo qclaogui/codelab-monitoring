@@ -33,6 +33,7 @@ flowchart LR
         C -.->|reads | M
     end
 ```
+
 ## Scaling monolithic mode
 
 Monolithic mode can be horizontally scaled out by deploying multiple Grafana Mimir binaries with `-target=all`. This approach provides high-availability and increased scale without the configuration complexity of the full microservices deployment.

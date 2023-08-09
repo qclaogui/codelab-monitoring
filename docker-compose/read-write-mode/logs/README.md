@@ -15,7 +15,6 @@ In read-write mode, components are grouped into three services to ease the opera
 
 Similar to the other modes, each Grafana Mimir process is invoked with its `-target` parameter set to the specific service: `-target=read`, `-target=write`, or `-target=backend`.
 
-
 ## Diagram
 
 The below diagram describes the various components of this deployment, and how data flows between them.
@@ -47,7 +46,6 @@ flowchart LR
         QF("query-frontend")
     end
 ```
-
 
 ## Getting Started
 

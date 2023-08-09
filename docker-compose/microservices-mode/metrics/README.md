@@ -4,8 +4,8 @@ In microservices mode, components are deployed in distinct processes. Scaling is
 
 In microservices mode, each Grafana Mimir process is invoked with its -target parameter set to a specific Grafana Mimir component (for example, `-target=ingester` or `-target=distributor`). To get a working Grafana Mimir instance, you must deploy every required component.
 
-
 ## Grafana Mimir components
+
 Grafana Mimir includes a set of [components](https://grafana.com/docs/mimir/latest/references/architecture/components/) that interact to form a cluster.
 
 - Compactor
