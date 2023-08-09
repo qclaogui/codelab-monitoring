@@ -8,12 +8,11 @@
 
 </p>
 
-## Grafana LGTMP Stack (Loki Grafana Tempo Mimir Pyroscope) 
+## Grafana LGTMP Stack (Loki Grafana Tempo Mimir Pyroscope)
 
 Base on Flow mode of Grafana Agent.
 
 [Grafana Agent Configuration Generator](https://github.com/grafana/agent-configurator) a tool allows for easy configuration of Grafana Agents Flow system
-
 
 ## Getting Started
 
@@ -27,20 +26,6 @@ These instructions will get you through the deploying samples with Docker Compos
   - Windows or macOS: [Install Docker Desktop](https://www.docker.com/get-started)
   - Linux: [Install Docker](https://www.docker.com/get-started) and then [Docker Compose](https://github.com/docker/compose)
 - Download some or all of the samples from this repository.
-
-#### Running a sample
-
-The root directory of each sample contains the `docker-compose.yaml` which describes the configuration of service components. All samples can be run in a local environment by going into the root directory of each one and executing:
-
-```
-docker compose up -d
-```
-
-To stop and remove all containers of the sample application run:
-
-```
-docker compose down
-```
 
 - [Monolithic mode (单体模式)](./docker-compose/monolithic-mode)
   - [Logs [ Loki ]](./docker-compose/monolithic-mode/logs)
@@ -56,9 +41,9 @@ docker compose down
   - Profiles
 
 - Microservices mode (微服务模式)
-  - Logs
-  - [Traces [ (Tempo Distributor) + (Tempo Ingester) + (Tempo QueryFrontend) + (Tempo Querier) + (Tempo Compactor) ]](./docker-compose/microservices-mode/traces)
-  - Metrics
+  - [Logs(Loki)](./docker-compose/microservices-mode/logs)
+  - [Traces(Tempo)](./docker-compose/microservices-mode/traces)
+  - [Metrics(Mimir)](./docker-compose/microservices-mode/metrics)
   - Profiles
 
 ### Kubernetes (kubernetes/README.md)
