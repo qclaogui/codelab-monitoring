@@ -8,14 +8,14 @@ services:
     depends_on:
       tempo:
         condition: service_started
-    image: grafana/agent:v0.35.2
+    image: grafana/agent:v0.35.3
     volumes:
       - ../../common/config/agent-flow:/etc/agent-config
       - /var/run/docker.sock:/var/run/docker.sock
     entrypoint:
       - /bin/grafana-agent
       - run
-      - /etc/agent-config/monolithic-mode-traces.river # Note: Agent use monolithic-mode-traces.river
+      - /etc/agent-config/traces.river
       - --server.http.listen-addr=0.0.0.0:12345
       - --cluster.enabled=true
       - --disable-reporting=true
@@ -24,6 +24,27 @@ services:
       - AGENT_CONFIG_FOLDER=/etc/agent-config
     ports:
       - "12345:12345"
+    networks:
+      - monolithic-mode-traces
+
+  gateway:
+    depends_on:
+      tempo:
+        condition: service_started
+    image: nginxinc/nginx-unprivileged:1.25-alpine
+    restart: always
+    volumes:
+      - ../../common/config/nginx:/etc/nginx/templates
+      - ../../common/config/tempo/gateway.conf.template:/etc/nginx/templates/gateway_tempo.conf.template
+    environment:
+      - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
+      - DISTRIBUTOR_HOST=tempo
+      - INGESTER_HOST=tempo
+      - QUERY_FRONTEND_HOST=tempo
+      - COMPACTOR_HOST=tempo
+    ports:
+      - "3200"
+      - "4317"
     networks:
       - monolithic-mode-traces
 
@@ -39,42 +60,16 @@ services:
       - -config.file=/etc/tempo.yaml
       - -target=scalable-single-binary
       - -log.level=error
-    # ports:
-    #   - "3200:3200"
+    ports:
+      - "3200"
+    # Horizontally scale up support(Monolithic mode)
+    # https://grafana.com/docs/tempo/latest/setup/deployment/#scaling-monolithic-mode
+    deploy:
+      replicas: 2
     networks:
-      - monolithic-mode-traces
-
-  # Horizontally scale up support(Monolithic mode)
-  # https://grafana.com/docs/tempo/latest/setup/deployment/#scaling-monolithic-mode
-  tempo-2:
-    depends_on:
-      minio:
-        condition: service_healthy
-    image: *tempoImage
-    restart: always
-    volumes:
-      - ./config/tempo/scalable-single-binary.yaml:/etc/tempo.yaml # Note: Tempo use scalable-single-binary.yaml
-    command:
-      - -config.file=/etc/tempo.yaml
-      - -target=scalable-single-binary
-    networks:
-      - monolithic-mode-traces
-
-  # Horizontally scale up support(Monolithic mode)
-  # https://grafana.com/docs/tempo/latest/setup/deployment/#scaling-monolithic-mode
-  tempo-n:
-    depends_on:
-      minio:
-        condition: service_healthy
-    image: *tempoImage
-    restart: always
-    volumes:
-      - ./config/tempo/scalable-single-binary.yaml:/etc/tempo.yaml # Note: Tempo use scalable-single-binary.yaml
-    command:
-      - -config.file=/etc/tempo.yaml
-      - -target=scalable-single-binary
-    networks:
-      - monolithic-mode-traces
+      monolithic-mode-traces:
+        aliases:
+          - tempo-memberlist
 
   grafana:
     image: grafana/grafana:10.0.3

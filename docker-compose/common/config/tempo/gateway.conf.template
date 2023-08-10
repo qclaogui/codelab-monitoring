@@ -1,0 +1,61 @@
+upstream otlp {
+    server ${DISTRIBUTOR_HOST}:4317;
+}
+server {
+    listen 4317;
+    http2 on;
+
+    location / {
+      grpc_set_header X-Scope-OrgID $ensured_x_scope_orgid;
+      grpc_pass grpc://otlp;
+    }
+}
+
+server {
+    listen 3200;
+    listen [::]:3200;
+
+    location = / {
+      return 200 'OK';
+      auth_basic off;
+      access_log off;
+    }
+
+    proxy_set_header X-Scope-OrgID $ensured_x_scope_orgid;
+
+    # Distributor endpoints
+    location = /jaeger/api/traces {
+      proxy_pass      http://${DISTRIBUTOR_HOST}:14268/api/traces;
+    }
+    location = /zipkin/spans {
+      proxy_pass      http://${DISTRIBUTOR_HOST}:9411/spans;
+    }
+    location = /otlp/v1/traces {
+      proxy_pass      http://${DISTRIBUTOR_HOST}:4318/v1/traces;
+    }
+
+    location = /distributor/ring {
+      proxy_pass      http://${DISTRIBUTOR_HOST}:3200$request_uri;
+    }
+    location = /ingester/ring {
+      proxy_pass      http://${DISTRIBUTOR_HOST}:3200$request_uri;
+    }
+    
+    # Ingester endpoints
+    location = /flush {
+      proxy_pass      http://${INGESTER_HOST}:3200$request_uri;
+    }
+    location = /shutdown {
+      proxy_pass      http://${INGESTER_HOST}:3200$request_uri;
+    }
+
+    # Query endpoints
+    location ^~ /api {
+      proxy_pass      http://${QUERY_FRONTEND_HOST}:3200$request_uri;
+    }
+
+    # Compactor endpoint
+    location = /compactor/ring {
+      proxy_pass      http://${COMPACTOR_HOST}:3200$request_uri;
+    }
+}

@@ -43,3 +43,6 @@ flowchart LR
         C -.->|reads | M
     end
 ```
+
+Once all containers are up and running you can search for traces in Grafana.
+Navigate to [http://localhost:3000/explore](http://localhost:3000/explore) and select the search tab.

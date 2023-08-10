@@ -7,7 +7,7 @@ services:
     depends_on:
       distributor:
         condition: service_healthy
-    image: grafana/agent:v0.35.2
+    image: grafana/agent:v0.35.3
     volumes:
       - ../../common/config/agent-flow:/etc/agent-config
       - /var/run/docker.sock:/var/run/docker.sock
@@ -30,16 +30,16 @@ services:
     image: nginxinc/nginx-unprivileged:1.25-alpine
     volumes:
       - ../../common/config/nginx:/etc/nginx/templates
-      - ../../common/config/mimir/gateway.conf.template:/etc/nginx/templates/gateway.conf.template
+      - ../../common/config/mimir/gateway.conf.template:/etc/nginx/templates/gateway_mimir.conf.template
     environment:
       - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
-      - DISTRIBUTOR_HOST=distributor:8080
-      - ALERT_MANAGER_HOST=alertmanager:8080
-      - RULER_HOST=ruler:8080
-      - QUERY_FRONTEND_HOST=query-frontend:8080
-      - COMPACTOR_HOST=compactor:8080
-    # ports:
-    #   - "8080:8080"
+      - DISTRIBUTOR_HOST=distributor
+      - ALERT_MANAGER_HOST=alertmanager
+      - RULER_HOST=ruler
+      - QUERY_FRONTEND_HOST=query-frontend
+      - COMPACTOR_HOST=compactor
+    ports:
+      - "8080"
     networks:
       - microservices-mode-metrics
 

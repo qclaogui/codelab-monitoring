@@ -5,16 +5,16 @@ services:
 
   agent:
     depends_on:
-      tempo-distributor:
-        condition: service_started
-    image: grafana/agent:v0.35.2
+      distributor:
+        condition: service_healthy
+    image: grafana/agent:v0.35.3
     volumes:
       - ../../common/config/agent-flow:/etc/agent-config
       - /var/run/docker.sock:/var/run/docker.sock
     entrypoint:
       - /bin/grafana-agent
       - run
-      - /etc/agent-config/microservices-mode-traces.river # Note: Agent use microservices-mode-traces.river
+      - /etc/agent-config/traces.river
       - --server.http.listen-addr=0.0.0.0:12345
       - --cluster.enabled=true
       - --disable-reporting=true
@@ -26,35 +26,67 @@ services:
     networks:
       - microservices-mode-traces
 
-  tempo-distributor:
+  gateway:
     depends_on:
-      minio:
-        condition: service_healthy
+      distributor:
+        condition: service_started
+    image: nginxinc/nginx-unprivileged:1.25-alpine
+    restart: always
+    volumes:
+      - ../../common/config/nginx:/etc/nginx/templates
+      - ../../common/config/tempo/gateway.conf.template:/etc/nginx/templates/gateway_tempo.conf.template
+    environment:
+      - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
+      - DISTRIBUTOR_HOST=distributor
+      - INGESTER_HOST=ingester
+      - QUERY_FRONTEND_HOST=query-frontend
+      - COMPACTOR_HOST=compactor
+    ports:
+      - "3200"
+      - "4317"
+    networks:
+      - microservices-mode-traces
+
+  distributor:
+    depends_on:
+      ingester:
+        condition: service_started
     image: &tempoImage grafana/tempo:2.2.0
     volumes:
       - ../../common/config/tempo/microservices-mode-traces.yaml:/etc/tempo.yaml # Note: Tempo use microservices-mode-traces.yaml
     command:
       - -config.file=/etc/tempo.yaml
       - -target=distributor
-      - -log.level=warn
+      # - -log.level=warn
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ready || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - microservices-mode-traces
 
-  tempo-ingester:
+  ingester:
     depends_on:
       minio:
         condition: service_healthy
     image: *tempoImage
     volumes:
       - ../../common/config/tempo/microservices-mode-traces.yaml:/etc/tempo.yaml # Note: Tempo use microservices-mode-traces.yaml
+    ports:
+      - "3200"
     command:
       - -config.file=/etc/tempo.yaml
       - -target=ingester
       - -log.level=warn
+    deploy:
+      replicas: 3
     networks:
-      - microservices-mode-traces
+      microservices-mode-traces:
+        aliases:
+          - tempo-memberlist
 
-  tempo-query-frontend:
+  query-frontend:
     depends_on:
       minio:
         condition: service_healthy
@@ -68,11 +100,11 @@ services:
     networks:
       - microservices-mode-traces
 
-  tempo-querier:
+  querier:
     depends_on:
       minio:
         condition: service_healthy
-      tempo-query-frontend:
+      query-frontend:
         condition: service_started
     image: *tempoImage
     volumes:
@@ -84,7 +116,7 @@ services:
     networks:
       - microservices-mode-traces
 
-  tempo-compactor:
+  compactor:
     depends_on:
       minio:
         condition: service_healthy
@@ -99,6 +131,9 @@ services:
       - microservices-mode-traces
 
   grafana:
+    depends_on:
+      agent:
+        condition: service_started
     image: grafana/grafana:10.0.3
     command:
       - --config=/etc/grafana-config/grafana.ini

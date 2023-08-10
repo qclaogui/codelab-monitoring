@@ -30,16 +30,16 @@ services:
     image: nginxinc/nginx-unprivileged:1.25-alpine
     volumes:
       - ../../common/config/nginx:/etc/nginx/templates
-      - ../../common/config/mimir/gateway.conf.template:/etc/nginx/templates/gateway.conf.template
+      - ../../common/config/mimir/gateway.conf.template:/etc/nginx/templates/gateway_mimir.conf.template
     environment:
       - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
-      - DISTRIBUTOR_HOST=mimir:8080
-      - ALERT_MANAGER_HOST=mimir:8080
-      - RULER_HOST=mimir:8080
-      - QUERY_FRONTEND_HOST=mimir:8080
-      - COMPACTOR_HOST=mimir:8080
+      - DISTRIBUTOR_HOST=mimir
+      - ALERT_MANAGER_HOST=mimir
+      - RULER_HOST=mimir
+      - QUERY_FRONTEND_HOST=mimir
+      - COMPACTOR_HOST=mimir
     ports:
-      - "8080:8080"
+      - "8080"
     networks:
       - monolithic-mode-metrics
 
@@ -64,7 +64,7 @@ services:
     # Horizontally scale up support(Monolithic mode)
     # https://grafana.com/docs/mimir/latest/references/architecture/deployment-modes/#monolithic-mode
     deploy:
-      replicas: 1
+      replicas: 3
     networks:
       monolithic-mode-metrics:
         aliases:

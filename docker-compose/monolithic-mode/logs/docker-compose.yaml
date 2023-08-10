@@ -7,7 +7,7 @@ services:
     depends_on:
       loki:
         condition: service_healthy
-    image: grafana/agent:v0.35.2
+    image: grafana/agent:v0.35.3
     volumes:
       - ../../common/config/agent-flow:/etc/agent-config
       - /var/run/docker.sock:/var/run/docker.sock
@@ -29,19 +29,19 @@ services:
   gateway:
     image: nginxinc/nginx-unprivileged:1.25-alpine
     volumes:
-    - ../../common/config/nginx:/etc/nginx/templates
-    - ../../common/config/loki/gateway.conf.template:/etc/nginx/templates/gateway.conf.template
+      - ../../common/config/nginx:/etc/nginx/templates
+      - ../../common/config/loki/gateway.conf.template:/etc/nginx/templates/gateway_loki.conf.template
     environment:
     - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
-    - DISTRIBUTOR_HOST=loki:3100
-    - INGESTER_HOST=loki:3100
-    - RULER_HOST=loki:3100
-    - QUERY_FRONTEND_HOST=loki:3100
-    - QUERY_SCHEDULER_HOST=loki:3100
-    - QUERIER_HOST=loki:3100
-    - COMPACTOR_HOST=loki:3100
+    - DISTRIBUTOR_HOST=loki
+    - INGESTER_HOST=loki
+    - RULER_HOST=loki
+    - QUERY_FRONTEND_HOST=loki
+    - QUERY_SCHEDULER_HOST=loki
+    - QUERIER_HOST=loki
+    - COMPACTOR_HOST=loki
     ports:
-    - "3100:3100"
+    - "3100"
     networks:
     - monolithic-mode-logs
 

@@ -1,6 +1,8 @@
 usage_report:
   reporting_enabled: false
 
+multitenancy_enabled: false
+
 server:
   http_listen_port: 3200
   grpc_listen_port: 9095
@@ -17,21 +19,24 @@ ingester:
   max_block_duration: 5m               # cut the headblock when this much time passes. this is being set for demo purposes and should probably be left alone normally
 
 memberlist:
-  join_members: [ tempo-ingester:7946 ]
+  join_members: [ tempo-memberlist:7946 ]
 
 compactor:
+  ring:
+    kvstore:
+      store: memberlist
   compaction:
     block_retention: 1h                # overall Tempo trace retention. set for demo purposes
 
 querier:
   frontend_worker:
-    frontend_address: tempo-query-frontend:9095
+    frontend_address: query-frontend:9095
 
 storage:
   trace:
-    backend: s3                     # backend configuration to use
+    backend: s3
     wal:
-      path: /tmp/tempo/wal             # where to store the the wal locally
+      path: /tmp/tempo/wal
     s3:
       bucket: tempo-data
       endpoint: minio:9000
