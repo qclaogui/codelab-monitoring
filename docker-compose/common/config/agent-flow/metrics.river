@@ -75,15 +75,9 @@ prometheus.exporter.unix {
   disable_collectors = ["diskstats", "mdadm", "textfile", "hwmon"]
 }
 
-prometheus.exporter.memcached "containers" {
-  address = "memcached:11211"
-  timeout = "5s"
-}
-
 prometheus.scrape "integrations" {
   targets    = concat(
     prometheus.exporter.unix.targets,
-    prometheus.exporter.memcached.containers.targets,
   )
   scrape_interval = "15s"
   
