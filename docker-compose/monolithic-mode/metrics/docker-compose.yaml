@@ -7,14 +7,14 @@ services:
     depends_on:
       mimir:
         condition: service_started
-    image: grafana/agent:v0.35.2
+    image: grafana/agent:v0.35.3
     volumes:
       - ../../common/config/agent-flow:/etc/agent-config
       - /var/run/docker.sock:/var/run/docker.sock
     entrypoint:
       - /bin/grafana-agent
       - run
-      - /etc/agent-config/monolithic-mode-metrics.river # Note: Agent use monolithic-mode-metrics.river
+      - /etc/agent-config/metrics.river
       - --server.http.listen-addr=0.0.0.0:12345
       - --cluster.enabled=true
       - --disable-reporting=true
@@ -23,6 +23,23 @@ services:
       - AGENT_CONFIG_FOLDER=/etc/agent-config
     ports:
       - "12345:12345"
+    networks:
+      - monolithic-mode-metrics
+
+  gateway:
+    image: nginxinc/nginx-unprivileged:1.25-alpine
+    volumes:
+      - ../../common/config/nginx:/etc/nginx/templates
+      - ../../common/config/mimir/gateway.conf.template:/etc/nginx/templates/gateway.conf.template
+    environment:
+      - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
+      - DISTRIBUTOR_HOST=mimir:8080
+      - ALERT_MANAGER_HOST=mimir:8080
+      - RULER_HOST=mimir:8080
+      - QUERY_FRONTEND_HOST=mimir:8080
+      - COMPACTOR_HOST=mimir:8080
+    # ports:
+    #   - "8080:8080"
     networks:
       - monolithic-mode-metrics
 
@@ -35,28 +52,20 @@ services:
       - -config.file=/etc/mimir.yaml
       - -log.level=error
     volumes:
-      - ../../common/config/mimir/monolithic-mode-metrics.yaml:/etc/mimir.yaml
+      - ../../common/config/mimir/monolithic-mode-metrics.yaml:/etc/mimir.yaml # Note: Mimir use monolithic-mode-metrics.yaml
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5
+    # Horizontally scale up support(Monolithic mode)
+    # https://grafana.com/docs/mimir/latest/references/architecture/deployment-modes/#monolithic-mode
+    deploy:
+      replicas: 1
     networks:
-      - monolithic-mode-metrics
-
-  # # Horizontally scale up support(Monolithic mode)
-  # # https://grafana.com/docs/mimir/latest/references/architecture/deployment-modes/#monolithic-mode
-  # mimir-2:
-  #   depends_on:
-  #     minio:
-  #       condition: service_healthy
-  #   image: *mimirImage
-  #   command:
-  #     - -config.file=/etc/mimir.yaml
-  #   volumes:
-  #     - ../../common/config/mimir/monolithic-mode-metrics.yaml:/etc/mimir.yaml
-  #   networks:
-  #     - monolithic-mode-metrics
+      monolithic-mode-metrics:
+        aliases:
+          - mimir-memberlist
 
   # use mimirtool load rules instead of prometheus
   load-mimir-rules:
@@ -118,6 +127,11 @@ services:
       retries: 5
     ports:
       - "9001:9001"
+    networks:
+      - monolithic-mode-metrics
+
+  memcached:
+    image: memcached:1.6.19-alpine
     networks:
       - monolithic-mode-metrics
 

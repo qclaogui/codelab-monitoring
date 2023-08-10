@@ -8,8 +8,8 @@ Monolithic mode is the simplest way to deploy Grafana Mimir and is useful if you
 
 ```mermaid
 flowchart LR
-    A --->|writes| D  --> |writes| I --> |writes| M
-    G -.->|reads | QF -.->|reads | Q -.->|reads | SG -.->|reads| M
+    A -->|writes| GW --->|writes| D  --> |writes| I --> |writes| M
+    G -.->|reads | GW -.->|reads | QF -.->|reads | Q -.->|reads | SG -.->|reads| M
 
     subgraph Minio
         M{"Object Storage"}
@@ -19,6 +19,9 @@ flowchart LR
     end
     subgraph Grafana
         G("grafana")
+    end
+    subgraph Gateway["Load Balancer"]
+        GW{"Nginx"}
     end
 
     subgraph Mimir["mimir -target=all"]

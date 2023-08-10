@@ -8,9 +8,10 @@ logging {
 module.file "docker_compose" {
 	  filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker_compose.river"
     arguments {
-      metrics_endpoint  = "http://mimir:8080"
+      metrics_endpoint  = "http://gateway:8080"
     }
 }
+
 
 discovery.docker "containers" {
   host = "unix:///var/run/docker.sock"
@@ -42,7 +43,7 @@ discovery.relabel "containers" {
   rule {
 		source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
     action        = "keep"
-    regex         = "(agent|mimir|mimir-.*|grafana)"
+    regex = "(agent|mimir|mimir-.*|grafana|loki|loki-.*|tempo|tempo-.*|pyroscope|distributor|ingester|query-frontend|querier|query-scheduler|store-gateway|alertmanager|compactor|ruler|overrides-exporter)"
 	}
 
   rule {
@@ -74,9 +75,15 @@ prometheus.exporter.unix {
   disable_collectors = ["diskstats", "mdadm", "textfile", "hwmon"]
 }
 
+prometheus.exporter.memcached "containers" {
+  address = "memcached:11211"
+  timeout = "5s"
+}
+
 prometheus.scrape "integrations" {
   targets    = concat(
     prometheus.exporter.unix.targets,
+    prometheus.exporter.memcached.containers.targets,
   )
   scrape_interval = "15s"
   
@@ -95,21 +102,16 @@ prometheus.scrape "containers" {
 }
 
 prometheus.scrape "minio" {
-  targets = [{"__address__" = "minio:9000", "job" = "integrations/minio"}]
-  
+  targets = [{"__address__" = "minio:9000", "job" = "integrations/minio"}]  
+
   scrape_interval = "15s"
+  clustering { enabled = true }
   metrics_path    = "/minio/v2/metrics/cluster"
 
   forward_to = [prometheus.relabel.integrations.receiver]
 }
 
 prometheus.relabel "integrations" {
-  rule {
-		source_labels = ["__address__"]
-		target_label  = "scraped_by"
-    replacement   = "grafana-agent"
-	}
-
   rule {
 		source_labels = ["__address__"]
 		target_label  = "cluster"
