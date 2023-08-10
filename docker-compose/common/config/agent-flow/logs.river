@@ -8,7 +8,7 @@ logging {
 module.file "docker_compose" {
 	  filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker_compose.river"
     arguments {
-      logs_endpoint  = "http://loki:3100"
+      logs_endpoint  = "http://gateway:3100"
     }
 }
 
@@ -22,7 +22,7 @@ discovery.docker "containers" {
 
 discovery.relabel "containers" {
   targets = discovery.docker.containers.targets
-  
+
   rule {
 		source_labels = ["__address__"]
 		target_label  = "scraped_by"
@@ -45,7 +45,7 @@ discovery.relabel "containers" {
   rule {
 		source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
     action        = "keep"
-    regex         = "(agent|mimir|grafana|loki|loki-.*|tempo|pyroscope)"
+    regex = "(agent|mimir|mimir-.*|grafana|loki|loki-.*|tempo|tempo-.*|pyroscope|distributor|ingester|query-frontend|query-scheduler|querier|ruler|index-gateway|compactor|gateway)"
 	}
 
   rule {
@@ -107,8 +107,8 @@ otelcol.receiver.otlp "containers" {
 
 otelcol.processor.batch "containers" {
 	output {
-    logs    = [otelcol.processor.memory_limiter.containers.input]
-  }
+        logs    = [otelcol.processor.memory_limiter.containers.input]
+    }
 }
 
 otelcol.processor.memory_limiter "containers" {

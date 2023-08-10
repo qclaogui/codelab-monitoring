@@ -38,8 +38,8 @@ services:
       - RULER_HOST=mimir:8080
       - QUERY_FRONTEND_HOST=mimir:8080
       - COMPACTOR_HOST=mimir:8080
-    # ports:
-    #   - "8080:8080"
+    ports:
+      - "8080:8080"
     networks:
       - monolithic-mode-metrics
 
@@ -50,9 +50,12 @@ services:
     image: &mimirImage grafana/mimir:2.9.0
     command:
       - -config.file=/etc/mimir.yaml
+      - -target=all
       - -log.level=error
     volumes:
       - ../../common/config/mimir/monolithic-mode-metrics.yaml:/etc/mimir.yaml # Note: Mimir use monolithic-mode-metrics.yaml
+    ports:
+      - "8080"
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
       interval: 10s

@@ -1,20 +1,20 @@
 version: '3.9'
 
-# Microservices mode (Logs) //TODO(qc)
+# Microservices mode (Logs)
 services:
 
   agent:
     depends_on:
       distributor:
         condition: service_healthy
-    image: grafana/agent:v0.35.2
+    image: grafana/agent:v0.35.3
     volumes:
       - ../../common/config/agent-flow:/etc/agent-config
       - /var/run/docker.sock:/var/run/docker.sock
     entrypoint:
       - /bin/grafana-agent
       - run
-      - /etc/agent-config/microservices-mode-logs.river # Note: Agent use microservices-mode-logs.river
+      - /etc/agent-config/logs.river
       - --server.http.listen-addr=0.0.0.0:12345
       - --cluster.enabled=true
       - --disable-reporting=true
@@ -29,22 +29,21 @@ services:
   gateway:
     image: nginxinc/nginx-unprivileged:1.25-alpine
     volumes:
-    - ../../common/config/nginx:/etc/nginx/templates
-    - ../../common/config/loki/gateway.conf.template:/etc/nginx/templates/gateway.conf.template
+      - ../../common/config/nginx:/etc/nginx/templates
+      - ../../common/config/loki/gateway.conf.template:/etc/nginx/templates/gateway.conf.template
     environment:
-    - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
-    - DISTRIBUTOR_HOST=distributor:3100
-    - INGESTER_HOST=ingester:3100
-    - RULER_HOST=ruler:3100
-    - QUERY_FRONTEND_HOST=query-frontend:3100
-    - QUERY_SCHEDULER_HOST=query-scheduler:3100
-    - QUERIER_HOST=querier:3100
-    - COMPACTOR_HOST=compactor:3100
+      - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
+      - DISTRIBUTOR_HOST=distributor:3100
+      - INGESTER_HOST=ingester:3100
+      - RULER_HOST=ruler:3100
+      - QUERY_FRONTEND_HOST=query-frontend:3100
+      - QUERY_SCHEDULER_HOST=query-scheduler:3100
+      - QUERIER_HOST=querier:3100
+      - COMPACTOR_HOST=compactor:3100
     ports:
-    - "3100:3100"
+      - "3100:3100"
     networks:
-    - microservices-mode-logs
-
+      - microservices-mode-logs
 
   distributor:
     depends_on:
@@ -62,8 +61,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      replicas: 2
     networks:
-      - microservices-mode-logs
+      microservices-mode-logs:
+        aliases:
+          - loki-memberlist
 
   ingester:
     depends_on:
@@ -75,8 +78,14 @@ services:
     command:
       - -config.file=/etc/loki.yaml
       - -target=ingester
+    ports:
+      - "3100"
+    deploy:
+      replicas: 3
     networks:
-      - microservices-mode-logs
+      microservices-mode-logs:
+        aliases:
+          - loki-memberlist
 
   query-frontend:
     depends_on:
@@ -94,12 +103,16 @@ services:
   query-scheduler:
     image: *lokiImage
     volumes:
-    - ../../common/config/loki/microservices-mode-logs.yaml:/etc/loki.yaml # Note: Loki use microservices-mode-logs.yaml
+      - ../../common/config/loki/microservices-mode-logs.yaml:/etc/loki.yaml # Note: Loki use microservices-mode-logs.yaml
     command:
-    - -config.file=/etc/loki.yaml
-    - -target=query-scheduler
+      - -config.file=/etc/loki.yaml
+      - -target=query-scheduler
+    deploy:
+      replicas: 2
     networks:
-    - microservices-mode-logs
+      microservices-mode-logs:
+        aliases:
+          - loki-memberlist
 
   querier:
     depends_on:
@@ -125,7 +138,9 @@ services:
     - -config.file=/etc/loki.yaml
     - -target=ruler
     networks:
-    - microservices-mode-logs
+      microservices-mode-logs:
+        aliases:
+          - loki-memberlist
 
   compactor:
     image: *lokiImage
@@ -135,7 +150,9 @@ services:
       - -config.file=/etc/loki.yaml
       - -target=compactor
     networks:
-      - microservices-mode-logs
+      microservices-mode-logs:
+        aliases:
+          - loki-memberlist
 
   grafana:
     image: grafana/grafana:10.0.3

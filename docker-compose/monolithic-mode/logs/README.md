@@ -6,8 +6,8 @@ The simplest mode of operation sets `-target=all`. This is the default target, a
 
 ```mermaid
 flowchart LR
-    A --> |writes| D   -->|writes| I  -->|writes| M
-    G -.->|reads | QF -.->|reads | Q -.->|reads | M
+    A  -->|writes| GW --> |writes| D   -->|writes| I  -->|writes| M
+    G -.->|reads | GW -.->|reads | QF -.->|reads | Q -.->|reads | M
 
     subgraph Minio
         M{"Object Storage"}
@@ -17,6 +17,9 @@ flowchart LR
     end
     subgraph Grafana
         G("grafana")
+    end
+    subgraph Gateway["Load Balancer"]
+        GW{"Nginx"}
     end
 
     subgraph Loki["loki -target=all"]
@@ -36,13 +39,13 @@ High availability can be configured by running two Loki instances using memberli
 
 ```mermaid
 flowchart LR
-    A  -->|writes| Loki  -->|writes| M
-    A  -->|writes| Loki2 -->|writes| M
-    A  -->|writes| LokiN -->|writes| M
+    A  -->|writes| GW -->|writes| Loki -->|writes| M
+    GW -->|writes| Loki2 -->|writes| M
+    GW -->|writes| LokiN -->|writes| M
 
-    G -.->|reads| Loki  -.->|reads| M
-    G -.->|reads| Loki2 -.->|reads| M
-    G -.->|reads| LokiN -.->|reads| M
+    G  -.->|reads| GW    -.->|reads| Loki -.->|reads| M
+    GW -.->|reads| Loki2 -.->|reads| M
+    GW -.->|reads| LokiN -.->|reads| M
 
     subgraph Minio
         M{"Object Storage"}
@@ -52,6 +55,9 @@ flowchart LR
     end
     subgraph Grafana
         G("grafana")
+    end
+    subgraph Gateway["Load Balancer"]
+        GW{"Nginx"}
     end
 
     subgraph Loki["loki -target=all"]

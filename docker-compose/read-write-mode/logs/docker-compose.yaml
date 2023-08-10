@@ -5,19 +5,17 @@ version: '3.9'
 services:
 
   agent:
-    depends_on: # https://docs.docker.com/compose/startup-order
+    depends_on:
       loki-write:
         condition: service_healthy
-    image: grafana/agent:v0.35.2
-    hostname: agent
-    restart: always
+    image: grafana/agent:v0.35.3
     volumes:
       - ../../common/config/agent-flow:/etc/agent-config
       - /var/run/docker.sock:/var/run/docker.sock
     entrypoint:
       - /bin/grafana-agent
       - run
-      - /etc/agent-config/read-write-mode-logs.river # Note: Agent use read-write-mode-logs.river
+      - /etc/agent-config/logs.river
       - --server.http.listen-addr=0.0.0.0:12345
       - --cluster.enabled=true
       - --disable-reporting=true
@@ -34,14 +32,20 @@ services:
     networks:
       - read-write-mode-logs
 
-  loki-gateway:
+  gateway:
     image: nginxinc/nginx-unprivileged:1.25-alpine
     volumes:
-      - ./config/nginx:/etc/nginx/templates
+      - ../../common/config/nginx:/etc/nginx/templates
+      - ../../common/config/loki/gateway.conf.template:/etc/nginx/templates/gateway.conf.template
     environment:
       - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
       - DISTRIBUTOR_HOST=loki-write:3100
+      - INGESTER_HOST=loki-write:3100
+      - RULER_HOST=loki-backend:3100
       - QUERY_FRONTEND_HOST=loki-read:3100
+      - QUERY_SCHEDULER_HOST=loki-read:3100
+      - QUERIER_HOST=loki-read:3100
+      - COMPACTOR_HOST=loki-backend:3100
     ports:
       - "3100:3100"
     networks:
@@ -53,8 +57,6 @@ services:
       minio:
         condition: service_healthy
     image: &lokiImage grafana/loki:2.8.3
-    deploy:
-      replicas: 2
     command:
       - -config.file=/etc/loki.yaml
       - -target=read
@@ -67,29 +69,36 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      replicas: 2
     networks:
-      - read-write-mode-logs
+      read-write-mode-logs:
+        aliases:
+          - loki-memberlist
 
   loki-write:
     depends_on:
       minio:
         condition: service_healthy
     image: *lokiImage
-    deploy:
-      replicas: 3
     command:
       - -config.file=/etc/loki.yaml
       - -target=write
-      - -log.level=warn
     volumes:
       - ../../common/config/loki/read-write-mode-logs.yaml:/etc/loki.yaml
+    ports:
+      - "3100"
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      replicas: 3
     networks:
-      - read-write-mode-logs
+      read-write-mode-logs:
+        aliases:
+          - loki-memberlist
 
   loki-backend:
     depends_on:
@@ -102,7 +111,6 @@ services:
       - -config.file=/etc/loki.yaml
       - -target=backend
       - -legacy-read-mode=false
-      - -log.level=warn
     volumes:
       - ../../common/config/loki/read-write-mode-logs.yaml:/etc/loki.yaml
     healthcheck:
