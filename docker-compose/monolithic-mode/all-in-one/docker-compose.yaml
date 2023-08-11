@@ -3,7 +3,7 @@ version: '3.9'
 # Note: 
 # include is available in Docker Compose version 2.20 and later, and Docker Desktop version 4.22 and later.
 include:
-  - ../../common/compose-include.yaml
+  - path: ../../common/compose-include/minio.yaml
 
 # Monolithic mode (Metrics + Logs + Traces + Profiles)
 services:
@@ -36,8 +36,6 @@ services:
       retries: 10
     ports:
       - "12345:12345"
-    networks:
-      - monolithic-mode-all
 
   mimir:
     depends_on:
@@ -58,7 +56,7 @@ services:
     deploy:
       replicas: 1
     networks:
-      monolithic-mode-all:
+      default:
         aliases:
           - mimir-memberlist
 
@@ -75,8 +73,6 @@ services:
       - MIMIR_TENANT_ID=anonymous
     command: >-
       rules load /mimir-mixin/rules.yaml /mimir-mixin/alerts.yaml
-    networks:
-      - monolithic-mode-all
 
   loki:
     depends_on:
@@ -97,7 +93,7 @@ services:
     deploy:
       replicas: 1
     networks:
-      monolithic-mode-all:
+      default:
         aliases:
           - loki-memberlist
 
@@ -114,8 +110,6 @@ services:
       - MIMIR_TENANT_ID=anonymous
     command: >-
       rules load /loki-mixin/rules.yaml /loki-mixin/alerts.yaml
-    networks:
-      - monolithic-mode-all
 
   tempo:
     depends_on:
@@ -137,8 +131,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - monolithic-mode-all
 
   load-tempo-rules:
     depends_on:
@@ -153,8 +145,6 @@ services:
       - MIMIR_TENANT_ID=anonymous
     command: >-
       rules load /tempo-mixin/rules.yaml /tempo-mixin/alerts.yaml
-    networks:
-      - monolithic-mode-all
 
   pyroscope:
     image: grafana/phlare:weekly-f22-06e09923
@@ -165,8 +155,6 @@ services:
       - -log.level=warn
     # ports:
     #   - "4100:4100"
-    networks:
-      - monolithic-mode-all
 
   grafana:
     image: grafana/grafana:10.0.3
@@ -192,40 +180,4 @@ services:
       # - GF_INSTALL_PLUGINS=pyroscope-datasource,pyroscope-panel
     ports:
       - "3000:3000"
-    networks:
-      - monolithic-mode-all
 
-  minio:
-    image: minio/minio:RELEASE.2023-07-21T21-12-44Z
-    entrypoint:
-      - sh
-      - -euc
-      - |
-        mkdir -p /data/mimir-data /data/mimir-rules /data/mimir-alertmanager && \
-        mkdir -p /data/loki-data /data/loki-rules && \
-        mkdir -p /data/tempo-data  && \
-        mkdir -p /data/pyroscope-data && \
-        minio server /data --console-address ':9001'
-    environment:
-      - MINIO_ROOT_USER=admin
-      - MINIO_ROOT_PASSWORD=admin_password
-      - MINIO_PROMETHEUS_AUTH_TYPE=public
-      - MINIO_UPDATE=off
-    volumes:
-      - data-minio:/data:delegated
-    healthcheck:
-      test: ["CMD", "curl","-f","http://localhost:9000/minio/health/live"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    ports:
-      - "9001:9001"
-    networks:
-      - monolithic-mode-all
-
-networks:
-  monolithic-mode-all:
-
-volumes:
-  data-minio:
-    driver: local
