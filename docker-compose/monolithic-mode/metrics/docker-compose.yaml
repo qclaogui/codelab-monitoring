@@ -1,32 +1,18 @@
 version: '3.9'
 
+# Note: 
+# include is available in Docker Compose version 2.20 and later, and Docker Desktop version 4.22 and later.
+include:
+  - ../../common/compose-include/minio.yaml
+  - ../../common/compose-include/agent-collect-metrics.yaml
+  - ../../common/compose-include/load-mimir-rules.yaml
+
 # Monolithic mode (Metrics)
 services:
-
-  agent:
+  gateway:
     depends_on:
       mimir:
-        condition: service_started
-    image: grafana/agent:v0.35.3
-    volumes:
-      - ../../common/config/agent-flow:/etc/agent-config
-      - /var/run/docker.sock:/var/run/docker.sock
-    entrypoint:
-      - /bin/grafana-agent
-      - run
-      - /etc/agent-config/metrics.river
-      - --server.http.listen-addr=0.0.0.0:12345
-      - --cluster.enabled=true
-      - --disable-reporting=true
-    environment:
-      - AGENT_MODE=flow
-      - AGENT_CONFIG_FOLDER=/etc/agent-config
-    ports:
-      - "12345:12345"
-    networks:
-      - monolithic-mode-metrics
-
-  gateway:
+        condition: service_healthy
     image: nginxinc/nginx-unprivileged:1.25-alpine
     volumes:
       - ../../common/config/nginx:/etc/nginx/templates
@@ -40,8 +26,6 @@ services:
       - COMPACTOR_HOST=mimir
     ports:
       - "8080"
-    networks:
-      - monolithic-mode-metrics
 
   mimir:
     depends_on:
@@ -53,7 +37,7 @@ services:
       - -target=all
       - -log.level=error
     volumes:
-      - ../../common/config/mimir/monolithic-mode-metrics.yaml:/etc/mimir.yaml # Note: Mimir use monolithic-mode-metrics.yaml
+      - ../../common/config/mimir/monolithic-mode-metrics.yaml:/etc/mimir.yaml # Note: Mimir use monolithic-mode.yaml
     ports:
       - "8080"
     healthcheck:
@@ -64,29 +48,12 @@ services:
     # Horizontally scale up support(Monolithic mode)
     # https://grafana.com/docs/mimir/latest/references/architecture/deployment-modes/#monolithic-mode
     deploy:
-      replicas: 3
+      replicas: 2
     networks:
-      monolithic-mode-metrics:
+      default:
         aliases:
           - mimir-memberlist
 
-  # use mimirtool load rules instead of prometheus
-  load-mimir-rules:
-    depends_on:
-      mimir:
-        condition: service_healthy
-    image: grafana/mimirtool:2.9.0
-    volumes:
-      - ../../../monitoring-mixins/mimir-mixin/deploy/rules.yaml:/mimir-mixin/rules.yaml
-      - ../../../monitoring-mixins/mimir-mixin/deploy/alerts.yaml:/mimir-mixin/alerts.yaml
-    environment:
-      - MIMIR_ADDRESS=http://mimir:8080
-      - MIMIR_TENANT_ID=anonymous
-    command: >-
-      rules sync /mimir-mixin/rules.yaml /mimir-mixin/alerts.yaml
-    networks:
-      - monolithic-mode-metrics
-  
   grafana:
     image: grafana/grafana:10.0.3
     command:
@@ -101,40 +68,3 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin_password}
     ports:
       - "3000:3000"
-    networks:
-      - monolithic-mode-metrics
-
-  minio:
-    image: minio/minio:RELEASE.2023-07-21T21-12-44Z
-    entrypoint:
-      - sh
-      - -euc
-      - |
-        mkdir -p /data/mimir-data /data/mimir-rules /data/mimir-alertmanager && \
-        minio server /data --console-address ':9001'
-    environment:
-      - MINIO_ROOT_USER=admin
-      - MINIO_ROOT_PASSWORD=admin_password
-      - MINIO_PROMETHEUS_AUTH_TYPE=public
-      # # Using /minio/v2/metrics is not supported yet with console. https://github.com/minio/console/issues/629#issuecomment-792055977
-      # - MINIO_PROMETHEUS_URL="http://mimir:8080/prometheus"
-      # - MINIO_PROMETHEUS_JOB_ID="integrations/minio"
-      - MINIO_UPDATE=off
-    volumes:
-      - data-minio:/data:delegated
-    healthcheck:
-      test: ["CMD", "curl","-f","http://localhost:9000/minio/health/live"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    ports:
-      - "9001:9001"
-    networks:
-      - monolithic-mode-metrics
-
-networks:
-  monolithic-mode-metrics:
-
-volumes:
-  data-minio:
-    driver: local

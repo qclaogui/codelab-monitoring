@@ -1,0 +1,16 @@
+# use mimirtool load rules
+services:
+  load-mimir-rules:
+    depends_on:
+      gateway:
+        condition: service_started
+    image: grafana/mimirtool:2.9.0
+    volumes:
+      - ../../../monitoring-mixins/mimir-mixin/deploy/rules.yaml:/mimir-mixin/rules.yaml
+      - ../../../monitoring-mixins/mimir-mixin/deploy/alerts.yaml:/mimir-mixin/alerts.yaml
+    environment:
+      - MIMIR_ADDRESS=http://gateway:8080
+      - MIMIR_TENANT_ID=anonymous
+    command: >-
+      rules load /mimir-mixin/rules.yaml /mimir-mixin/alerts.yaml
+  

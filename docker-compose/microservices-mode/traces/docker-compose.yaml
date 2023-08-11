@@ -1,35 +1,17 @@
 version: '3.9'
 
+# Note: 
+# include is available in Docker Compose version 2.20 and later, and Docker Desktop version 4.22 and later.
+include:
+  - ../../common/compose-include/minio.yaml
+  - ../../common/compose-include/agent-collect-traces.yaml
+
 # Microservices mode (Traces)
 services:
-
-  agent:
-    depends_on:
-      distributor:
-        condition: service_healthy
-    image: grafana/agent:v0.35.3
-    volumes:
-      - ../../common/config/agent-flow:/etc/agent-config
-      - /var/run/docker.sock:/var/run/docker.sock
-    entrypoint:
-      - /bin/grafana-agent
-      - run
-      - /etc/agent-config/traces.river
-      - --server.http.listen-addr=0.0.0.0:12345
-      - --cluster.enabled=true
-      - --disable-reporting=true
-    environment:
-      - AGENT_MODE=flow
-      - AGENT_CONFIG_FOLDER=/etc/agent-config
-    ports:
-      - "12345:12345"
-    networks:
-      - microservices-mode-traces
-
   gateway:
     depends_on:
       distributor:
-        condition: service_started
+        condition: service_healthy
     image: nginxinc/nginx-unprivileged:1.25-alpine
     restart: always
     volumes:
@@ -44,8 +26,6 @@ services:
     ports:
       - "3200"
       - "4317"
-    networks:
-      - microservices-mode-traces
 
   distributor:
     depends_on:
@@ -63,8 +43,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - microservices-mode-traces
 
   ingester:
     depends_on:
@@ -82,7 +60,7 @@ services:
     deploy:
       replicas: 3
     networks:
-      microservices-mode-traces:
+      default:
         aliases:
           - tempo-memberlist
 
@@ -97,8 +75,6 @@ services:
       - -config.file=/etc/tempo.yaml
       - -target=query-frontend
       - -log.level=warn
-    networks:
-      - microservices-mode-traces
 
   querier:
     depends_on:
@@ -113,8 +89,6 @@ services:
       - -config.file=/etc/tempo.yaml
       - -target=querier
       - -log.level=warn
-    networks:
-      - microservices-mode-traces
 
   compactor:
     depends_on:
@@ -127,8 +101,6 @@ services:
       - -config.file=/etc/tempo.yaml
       - -target=compactor
       - -log.level=error
-    networks:
-      - microservices-mode-traces
 
   grafana:
     depends_on:
@@ -149,37 +121,3 @@ services:
       - GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES=cluster:docker-compose,namespace:monitoring
     ports:
       - "3000:3000"
-    networks:
-      - microservices-mode-traces
-
-  minio:
-    image: minio/minio:RELEASE.2023-07-21T21-12-44Z
-    entrypoint:
-      - sh
-      - -euc
-      - |
-        mkdir -p /data/tempo-data  && \
-        minio server /data --console-address ':9001'
-    environment:
-      - MINIO_ROOT_USER=admin
-      - MINIO_ROOT_PASSWORD=admin_password
-      - MINIO_PROMETHEUS_AUTH_TYPE=public
-      - MINIO_UPDATE=off
-    volumes:
-      - data-minio:/data:delegated
-    healthcheck:
-      test: ["CMD", "curl","-f","http://localhost:9000/minio/health/live"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    ports:
-      - "9001:9001"
-    networks:
-      - microservices-mode-traces
-
-networks:
-  microservices-mode-traces:
-
-volumes:
-  data-minio:
-    driver: local
