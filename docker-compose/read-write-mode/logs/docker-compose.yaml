@@ -1,38 +1,17 @@
 version: '3.9'
 
+# Note: 
+# include is available in Docker Compose version 2.20 and later, and Docker Desktop version 4.22 and later.
+include:
+  - ../../common/compose-include/minio.yaml
+  - ../../common/compose-include/agent-collect-logs.yaml
 
 # Read-Write mode (Logs)
 services:
-
-  agent:
+  gateway:
     depends_on:
       loki-write:
         condition: service_healthy
-    image: grafana/agent:v0.35.3
-    volumes:
-      - ../../common/config/agent-flow:/etc/agent-config
-      - /var/run/docker.sock:/var/run/docker.sock
-    entrypoint:
-      - /bin/grafana-agent
-      - run
-      - /etc/agent-config/logs.river
-      - --server.http.listen-addr=0.0.0.0:12345
-      - --cluster.enabled=true
-      - --disable-reporting=true
-    environment:
-      - AGENT_MODE=flow
-      - AGENT_CONFIG_FOLDER=/etc/agent-config
-    healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:12345/ready || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    ports:
-      - "12345:12345"
-    networks:
-      - read-write-mode-logs
-
-  gateway:
     image: nginxinc/nginx-unprivileged:1.25-alpine
     volumes:
       - ../../common/config/nginx:/etc/nginx/templates
@@ -48,9 +27,6 @@ services:
       - COMPACTOR_HOST=loki-backend
     ports:
       - "3100"
-    networks:
-      - read-write-mode-logs
-
 
   loki-read:
     depends_on:
@@ -72,7 +48,7 @@ services:
     deploy:
       replicas: 2
     networks:
-      read-write-mode-logs:
+      default:
         aliases:
           - loki-memberlist
 
@@ -96,7 +72,7 @@ services:
     deploy:
       replicas: 3
     networks:
-      read-write-mode-logs:
+      default:
         aliases:
           - loki-memberlist
 
@@ -118,8 +94,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - read-write-mode-logs
 
   grafana:
     image: grafana/grafana:10.0.3
@@ -134,37 +108,3 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin_password}
     ports:
       - "3000:3000"
-    networks:
-      - read-write-mode-logs
-
-  minio:
-    image: minio/minio:RELEASE.2023-07-21T21-12-44Z
-    entrypoint:
-      - sh
-      - -euc
-      - |
-        mkdir -p /data/loki-data /data/loki-rules && \
-        minio server /data --console-address ':9001'
-    environment:
-      - MINIO_ROOT_USER=admin
-      - MINIO_ROOT_PASSWORD=admin_password
-      - MINIO_PROMETHEUS_AUTH_TYPE=public
-      - MINIO_UPDATE=off
-    volumes:
-      - data-minio:/data:delegated
-    healthcheck:
-      test: ["CMD", "curl","-f","http://localhost:9000/minio/health/live"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    ports:
-      - "9001:9001"
-    networks:
-      - read-write-mode-logs
-
-networks:
-  read-write-mode-logs:
-
-volumes:
-  data-minio:
-    driver: local
