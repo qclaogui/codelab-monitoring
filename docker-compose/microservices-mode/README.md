@@ -2,7 +2,7 @@
 
 In microservices mode, components are deployed in distinct processes.
 
-- [Logs](./logs)
-- [Traces](./traces)
-- [Metrics](./metrics)
+- [Logs [Loki (Query-Frontend + Querier + Ruler + Distributor + Ingester)]](./logs)
+- [Traces [Tempo (Query-Frontend + Querier + Distributor + Ingester + Compactor)]](./traces)
+- [Metrics[Mimir (Query-Frontend + Querier + Store-Gateway + Distributor + Ingester + Compactor)]](./metrics)
 - Profiles
