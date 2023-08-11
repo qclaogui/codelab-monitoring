@@ -1,0 +1,22 @@
+
+services:
+  agent:
+    depends_on:
+      gateway:
+        condition: service_started
+    image: grafana/agent:v0.35.3
+    volumes:
+      - ../config/agent-flow:/etc/agent-config
+      - /var/run/docker.sock:/var/run/docker.sock
+    entrypoint:
+      - /bin/grafana-agent
+      - run
+      - /etc/agent-config/logs.river
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --cluster.enabled=true
+      - --disable-reporting=true
+    environment:
+      - AGENT_MODE=flow
+      - AGENT_CONFIG_FOLDER=/etc/agent-config
+    ports:
+      - "12345:12345"
