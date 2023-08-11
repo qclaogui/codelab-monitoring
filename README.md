@@ -16,40 +16,41 @@ Base on Flow mode of Grafana Agent.
 
 ## Getting Started
 
-### [Docker Compose (docker-compose/README.md)](./docker-compose)
-
 These instructions will get you through the deploying samples with Docker Compose.
 
-#### Prerequisites
+***Prerequisites:*** Make sure that you have Docker and Docker Compose installed
 
-- Make sure that you have Docker and Docker Compose installed
-  - Windows or macOS: [Install Docker Desktop](https://www.docker.com/get-started)
-  - Linux: [Install Docker](https://www.docker.com/get-started) and then [Docker Compose](https://github.com/docker/compose)
-- Download some or all of the samples from this repository.
+> Note:
+> `include` is available in Docker Compose version 2.20 and later, and Docker Desktop version 4.22 and later.
 
-- [Monolithic mode (单体模式)](./docker-compose/monolithic-mode)
-  - [Logs [ Loki ]](./docker-compose/monolithic-mode/logs)
-  - [Traces [ Tempo ]](./docker-compose/monolithic-mode/traces)
-  - [Metrics [ Mimir ]](./docker-compose/monolithic-mode/metrics)
-  - [Profiles [ Pyroscope ]](./docker-compose/monolithic-mode/profiles)
-  - [All In One [ Loki + Tempo + Mimir + Pyroscope ]](./docker-compose/monolithic-mode/all-in-one)
+- Windows or macOS: [Install Docker Desktop](https://www.docker.com/get-started)
+- Linux: [Install Docker](https://www.docker.com/get-started) and then [Docker Compose](https://github.com/docker/compose)
 
-- [Read-Write mode (读写模式)](./docker-compose/read-write-mode/README.md)
-  - [Logs [ (Loki Read * 2) + (Loki Write * 3) + (Loki Backend * 2) ]](./docker-compose/read-write-mode/logs)
-  - Traces
-  - [Metrics [ (Mimir Read * 2) + (Mimir Write * 3) + (Mimir Backend * 2) ]](./docker-compose/read-write-mode/metrics)
-  - Profiles
+### [`docker-compose` - Monolithic mode (单体模式)](./docker-compose/monolithic-mode)
 
-- Microservices mode (微服务模式)
-  - [Logs(Loki)](./docker-compose/microservices-mode/logs)
-  - [Traces(Tempo)](./docker-compose/microservices-mode/traces)
-  - [Metrics(Mimir)](./docker-compose/microservices-mode/metrics)
-  - Profiles
+- [Logs [Loki]](./docker-compose/monolithic-mode/logs)
+- [Traces [Tempo]](./docker-compose/monolithic-mode/traces)
+- [Metrics [Mimir]](./docker-compose/monolithic-mode/metrics)
+- [Profiles [Pyroscope]](./docker-compose/monolithic-mode/profiles)
+- [All In One [Loki + Tempo + Mimir + Pyroscope]](./docker-compose/monolithic-mode/all-in-one)
 
-### Kubernetes (kubernetes/README.md)
+### [`docker-compose` - Read-Write mode (读写模式)](./docker-compose/read-write-mode)
 
-- Microservices mode (微服务模式)
-  - Logs
-  - Traces
-  - Metrics
-  - Profiles
+- [Logs [Loki (Read + Write + Backend)]](./docker-compose/read-write-mode/logs)
+- Traces
+- [Metrics [Mimir (Read + Write + Backend)]](./docker-compose/read-write-mode/metrics)
+- Profiles
+
+### [`docker-compose` - Microservices mode (微服务模式)](./docker-compose/microservices-mode)
+
+- [Logs [Loki (Query-Frontend + Querier + Ruler + Distributor + Ingester)]](./docker-compose/microservices-mode/logs)
+- [Traces [Tempo (Query-Frontend + Querier + Distributor + Ingester + Compactor)]](./docker-compose/microservices-mode/traces)
+- [Metrics[Mimir (Query-Frontend + Querier + Store-Gateway + Distributor + Ingester + Compactor)]](./docker-compose/microservices-mode/metrics)
+- Profiles
+
+### [`kubernetes` - Microservices mode (微服务模式)](./kubernetes/microservices-mode)
+
+- Logs
+- Traces
+- Metrics
+- Profiles
