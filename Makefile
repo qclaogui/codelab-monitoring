@@ -35,6 +35,9 @@ check: $(JSONNETFMT) $(MIXTOOL)
 		cd -; \
 	done
 
+.PHONY: manifests
+manifests: $(KUSTOMIZE)  ## Generates k8s manifests
+	$(KUSTOMIZE) build kubernetes/microservices-mode/metrics > kubernetes/microservices-mode/metrics/k8s-all-in-one.yaml
 
 ##@ General
 

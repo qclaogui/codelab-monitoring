@@ -1,0 +1,4667 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    team: team-infra
+  name: monitoring-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    team: team-infra
+  name: grafana
+  namespace: monitoring-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    team: team-infra
+  name: prometheus
+  namespace: monitoring-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    team: team-infra
+  name: grafana-clusterrole
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  verbs:
+  - get
+  - watch
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    team: team-infra
+  name: prometheus
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  - nodes/proxy
+  - nodes/metrics
+  - services
+  - endpoints
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    team: team-infra
+  name: grafana-clusterrolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: grafana-clusterrole
+subjects:
+- kind: ServiceAccount
+  name: grafana
+  namespace: monitoring-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    team: team-infra
+  name: prometheus
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus
+subjects:
+- kind: ServiceAccount
+  name: prometheus
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  datasources.yaml: |
+    apiVersion: 1
+
+    datasources:
+    # Mimir for metrics
+    - name: Metrics
+      type: prometheus
+      uid: metrics
+      access: proxy
+      orgId: 1
+      url: http://nginx:8080/prometheus
+      basicAuth: false
+      isDefault: true
+      version: 1
+      editable: true
+
+    # Loki for logs
+    - name: Logs
+      type: loki
+      access: proxy
+      orgId: 1
+      uid: logs
+      url: http://nginx:3100
+      basicAuth: false
+      isDefault: false
+      version: 1
+      editable: true
+
+    # Tempo for traces
+    - name: Traces
+      type: tempo
+      access: proxy
+      orgId: 1
+      uid: traces
+      url: http://nginx:3200
+      basicAuth: false
+      isDefault: false
+      version: 1
+      editable: true
+      apiVersion: 1
+  grafana.ini: |
+    [log]
+    level = warn
+    [log.frontend]
+    enabled = false
+    provider = grafana
+
+    [analytics]
+    reporting_enabled = false
+    check_for_updates = false
+    check_for_plugin_updates = false
+
+    [auth.anonymous]
+    enabled = true
+    org_role = Admin
+
+    [security]
+    disable_gravatar=true
+    angular_support_enabled=false
+
+    [explore]
+    enabled = true
+
+    [users]
+    default_theme = dark
+
+    [metrics]
+    enabled = true
+    disable_total_stats = false
+
+    [dashboards]
+    default_home_dashboard_path = /dashboards/minio-dashboard.json
+    ;default_home_dashboard_path = /var/lib/grafana/dashboards/minio-dashboard.json
+immutable: true
+kind: ConfigMap
+metadata:
+  labels:
+    team: team-infra
+  name: grafana-252b8kcf9h
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  provider.yaml: |-
+    apiVersion: 1
+    providers:
+    - name: 'sidecarProvider'
+      orgId: 1
+      type: file
+      disableDeletion: false
+      allowUiUpdates: false
+      updateIntervalSeconds: 30
+      options:
+        foldersFromFilesStructure: true
+        path: /dashboards
+immutable: true
+kind: ConfigMap
+metadata:
+  labels:
+    team: team-infra
+  name: grafana-config-dashboards-f9dhd6k9t5
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  GF_LOG_LEVEL: error
+  NAMESPACE: monitoring-system
+immutable: true
+kind: ConfigMap
+metadata:
+  labels:
+    team: team-infra
+  name: grafana-env-dkmb477tfh
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  minio-dashboard.json: |
+    {
+       "annotations": {
+         "list": [
+           {
+             "builtIn": 1,
+             "datasource": {
+               "type": "datasource",
+               "uid": "grafana"
+             },
+             "enable": true,
+             "hide": true,
+             "iconColor": "rgba(0, 211, 255, 1)",
+             "name": "Annotations & Alerts",
+             "target": {
+               "limit": 100,
+               "matchAny": false,
+               "tags": [],
+               "type": "dashboard"
+             },
+             "type": "dashboard"
+           }
+         ]
+       },
+       "description": "MinIO Grafana Dashboard - https://min.io/",
+       "editable": true,
+       "fiscalYearStartMonth": 0,
+       "gnetId": 13502,
+       "graphTooltip": 0,
+       "id": 35,
+       "links": [
+         {
+           "icon": "external link",
+           "includeVars": true,
+           "keepTime": true,
+           "tags": [
+             "minio"
+           ],
+           "type": "dashboards"
+         }
+       ],
+       "liveNow": false,
+       "panels": [
+         {
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "description": "",
+           "fieldConfig": {
+             "defaults": {
+               "mappings": [
+                 {
+                   "options": {
+                     "match": "null",
+                     "result": {
+                       "text": "N/A"
+                     }
+                   },
+                   "type": "special"
+                 }
+               ],
+               "thresholds": {
+                 "mode": "percentage",
+                 "steps": [
+                   {
+                     "color": "green",
+                     "value": null
+                   }
+                 ]
+               },
+               "unit": "dtdurations"
+             },
+             "overrides": []
+           },
+           "gridPos": {
+             "h": 6,
+             "w": 3,
+             "x": 0,
+             "y": 0
+           },
+           "id": 1,
+           "links": [],
+           "maxDataPoints": 100,
+           "options": {
+             "colorMode": "value",
+             "graphMode": "none",
+             "justifyMode": "auto",
+             "orientation": "auto",
+             "reduceOptions": {
+               "calcs": [
+                 "mean"
+               ],
+               "fields": "",
+               "values": false
+             },
+             "text": {},
+             "textMode": "auto"
+           },
+           "pluginVersion": "10.0.3",
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "time() - max(minio_node_process_starttime_seconds{job=\"$scrape_jobs\"})",
+               "format": "time_series",
+               "instant": true,
+               "interval": "",
+               "intervalFactor": 1,
+               "legendFormat": "{{instance}}",
+               "metric": "process_start_time_seconds",
+               "refId": "A",
+               "step": 60
+             }
+           ],
+           "title": "Uptime",
+           "type": "stat"
+         },
+         {
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "description": "",
+           "fieldConfig": {
+             "defaults": {
+               "mappings": [
+                 {
+                   "options": {
+                     "match": "null",
+                     "result": {
+                       "text": "N/A"
+                     }
+                   },
+                   "type": "special"
+                 }
+               ],
+               "thresholds": {
+                 "mode": "absolute",
+                 "steps": [
+                   {
+                     "color": "green",
+                     "value": null
+                   }
+                 ]
+               },
+               "unit": "bytes"
+             },
+             "overrides": []
+           },
+           "gridPos": {
+             "h": 3,
+             "w": 3,
+             "x": 3,
+             "y": 0
+           },
+           "id": 65,
+           "links": [],
+           "maxDataPoints": 100,
+           "options": {
+             "colorMode": "value",
+             "graphMode": "area",
+             "justifyMode": "auto",
+             "orientation": "auto",
+             "reduceOptions": {
+               "calcs": [
+                 "last"
+               ],
+               "fields": "",
+               "values": false
+             },
+             "text": {},
+             "textMode": "auto"
+           },
+           "pluginVersion": "10.0.3",
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "sum by (instance) (minio_s3_traffic_received_bytes{job=\"$scrape_jobs\"})",
+               "format": "table",
+               "hide": false,
+               "instant": false,
+               "interval": "",
+               "intervalFactor": 1,
+               "legendFormat": "{{instance}}",
+               "metric": "process_start_time_seconds",
+               "refId": "A",
+               "step": 60
+             }
+           ],
+           "title": "Total S3 Traffic Inbound",
+           "type": "stat"
+         },
+         {
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "description": "",
+           "fieldConfig": {
+             "defaults": {
+               "color": {
+                 "mode": "palette-classic"
+               },
+               "custom": {
+                 "hideFrom": {
+                   "legend": false,
+                   "tooltip": false,
+                   "viz": false
+                 }
+               },
+               "mappings": [
+                 {
+                   "options": {
+                     "match": "null",
+                     "result": {
+                       "text": "N/A"
+                     }
+                   },
+                   "type": "special"
+                 }
+               ],
+               "unit": "bytes"
+             },
+             "overrides": [
+               {
+                 "matcher": {
+                   "id": "byName",
+                   "options": "Free"
+                 },
+                 "properties": [
+                   {
+                     "id": "color",
+                     "value": {
+                       "fixedColor": "green",
+                       "mode": "fixed"
+                     }
+                   }
+                 ]
+               },
+               {
+                 "matcher": {
+                   "id": "byName",
+                   "options": "Used"
+                 },
+                 "properties": [
+                   {
+                     "id": "color",
+                     "value": {
+                       "fixedColor": "orange",
+                       "mode": "fixed"
+                     }
+                   }
+                 ]
+               }
+             ]
+           },
+           "gridPos": {
+             "h": 6,
+             "w": 4,
+             "x": 6,
+             "y": 0
+           },
+           "id": 50,
+           "interval": "1m",
+           "links": [],
+           "maxDataPoints": 100,
+           "options": {
+             "displayLabels": [],
+             "legend": {
+               "displayMode": "table",
+               "placement": "bottom",
+               "showLegend": true,
+               "values": [
+                 "percent"
+               ]
+             },
+             "pieType": "donut",
+             "reduceOptions": {
+               "calcs": [
+                 "lastNotNull"
+               ],
+               "fields": "",
+               "values": false
+             },
+             "tooltip": {
+               "mode": "single",
+               "sort": "none"
+             }
+           },
+           "pluginVersion": "8.2.1",
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "topk(1, sum(minio_cluster_capacity_usable_total_bytes{job=\"$scrape_jobs\"}) by (instance)) - topk(1, sum(minio_cluster_capacity_usable_free_bytes{job=\"$scrape_jobs\"}) by (instance))",
+               "format": "time_series",
+               "instant": false,
+               "interval": "1m",
+               "intervalFactor": 1,
+               "legendFormat": "Used",
+               "refId": "A",
+               "step": 300
+             },
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "topk(1, sum(minio_cluster_capacity_usable_free_bytes{job=\"$scrape_jobs\"}) by (instance)) ",
+               "hide": false,
+               "interval": "1m",
+               "legendFormat": "Free",
+               "refId": "B"
+             }
+           ],
+           "title": "Capacity",
+           "type": "piechart"
+         },
+         {
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "fieldConfig": {
+             "defaults": {
+               "color": {
+                 "mode": "palette-classic"
+               },
+               "custom": {
+                 "axisCenteredZero": false,
+                 "axisColorMode": "text",
+                 "axisLabel": "",
+                 "axisPlacement": "auto",
+                 "barAlignment": 0,
+                 "drawStyle": "line",
+                 "fillOpacity": 10,
+                 "gradientMode": "none",
+                 "hideFrom": {
+                   "legend": false,
+                   "tooltip": false,
+                   "viz": false
+                 },
+                 "lineInterpolation": "linear",
+                 "lineWidth": 1,
+                 "pointSize": 5,
+                 "scaleDistribution": {
+                   "type": "linear"
+                 },
+                 "showPoints": "never",
+                 "spanNulls": true,
+                 "stacking": {
+                   "group": "A",
+                   "mode": "none"
+                 },
+                 "thresholdsStyle": {
+                   "mode": "off"
+                 }
+               },
+               "mappings": [],
+               "thresholds": {
+                 "mode": "absolute",
+                 "steps": [
+                   {
+                     "color": "green",
+                     "value": null
+                   },
+                   {
+                     "color": "red",
+                     "value": 80
+                   }
+                 ]
+               },
+               "unit": "bytes"
+             },
+             "overrides": [
+               {
+                 "matcher": {
+                   "id": "byName",
+                   "options": "Objects"
+                 },
+                 "properties": [
+                   {
+                     "id": "color",
+                     "value": {
+                       "fixedColor": "blue",
+                       "mode": "fixed"
+                     }
+                   }
+                 ]
+               },
+               {
+                 "__systemRef": "hideSeriesFrom",
+                 "matcher": {
+                   "id": "byNames",
+                   "options": {
+                     "mode": "exclude",
+                     "names": [
+                       "Usage"
+                     ],
+                     "prefix": "All except:",
+                     "readOnly": true
+                   }
+                 },
+                 "properties": [
+                   {
+                     "id": "custom.hideFrom",
+                     "value": {
+                       "legend": false,
+                       "tooltip": false,
+                       "viz": true
+                     }
+                   }
+                 ]
+               }
+             ]
+           },
+           "gridPos": {
+             "h": 6,
+             "w": 6,
+             "x": 10,
+             "y": 0
+           },
+           "id": 68,
+           "options": {
+             "legend": {
+               "calcs": [],
+               "displayMode": "list",
+               "placement": "bottom",
+               "showLegend": false
+             },
+             "tooltip": {
+               "mode": "single",
+               "sort": "none"
+             }
+           },
+           "pluginVersion": "8.2.1",
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "editorMode": "code",
+               "exemplar": true,
+               "expr": "minio_cluster_usage_total_bytes{job=\"$scrape_jobs\"}",
+               "interval": "",
+               "legendFormat": "Usage",
+               "range": true,
+               "refId": "A"
+             }
+           ],
+           "title": "Data Usage Growth",
+           "type": "timeseries"
+         },
+         {
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "fieldConfig": {
+             "defaults": {
+               "mappings": [],
+               "thresholds": {
+                 "mode": "absolute",
+                 "steps": [
+                   {
+                     "color": "green",
+                     "value": null
+                   },
+                   {
+                     "color": "semi-dark-red",
+                     "value": 80
+                   }
+                 ]
+               }
+             },
+             "overrides": []
+           },
+           "gridPos": {
+             "h": 6,
+             "w": 5,
+             "x": 16,
+             "y": 0
+           },
+           "id": 52,
+           "links": [],
+           "options": {
+             "displayMode": "basic",
+             "minVizHeight": 10,
+             "minVizWidth": 0,
+             "orientation": "horizontal",
+             "reduceOptions": {
+               "calcs": [
+                 "mean"
+               ],
+               "fields": "",
+               "values": false
+             },
+             "showUnfilled": false,
+             "text": {},
+             "valueMode": "color"
+           },
+           "pluginVersion": "10.0.3",
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "editorMode": "code",
+               "exemplar": true,
+               "expr": "minio_cluster_objects_size_distribution{job=\"$scrape_jobs\"}",
+               "format": "time_series",
+               "instant": false,
+               "interval": "",
+               "intervalFactor": 1,
+               "legendFormat": "{{range}}",
+               "refId": "A",
+               "step": 300
+             }
+           ],
+           "title": "Object size distribution",
+           "type": "bargauge"
+         },
+         {
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "description": "",
+           "fieldConfig": {
+             "defaults": {
+               "mappings": [
+                 {
+                   "options": {
+                     "match": "null",
+                     "result": {
+                       "text": "N/A"
+                     }
+                   },
+                   "type": "special"
+                 }
+               ],
+               "thresholds": {
+                 "mode": "absolute",
+                 "steps": [
+                   {
+                     "color": "green",
+                     "value": null
+                   },
+                   {
+                     "color": "red",
+                     "value": 2000
+                   }
+                 ]
+               },
+               "unit": "short"
+             },
+             "overrides": []
+           },
+           "gridPos": {
+             "h": 3,
+             "w": 3,
+             "x": 21,
+             "y": 0
+           },
+           "id": 61,
+           "links": [],
+           "maxDataPoints": 100,
+           "options": {
+             "colorMode": "value",
+             "graphMode": "area",
+             "justifyMode": "auto",
+             "orientation": "auto",
+             "reduceOptions": {
+               "calcs": [
+                 "last"
+               ],
+               "fields": "",
+               "values": false
+             },
+             "text": {},
+             "textMode": "auto"
+           },
+           "pluginVersion": "10.0.3",
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "sum (minio_node_file_descriptor_open_total{job=\"$scrape_jobs\"})",
+               "format": "table",
+               "hide": false,
+               "instant": false,
+               "interval": "",
+               "intervalFactor": 1,
+               "legendFormat": "",
+               "metric": "process_start_time_seconds",
+               "refId": "A",
+               "step": 60
+             }
+           ],
+           "title": "Total Open FDs",
+           "type": "stat"
+         },
+         {
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "description": "",
+           "fieldConfig": {
+             "defaults": {
+               "mappings": [
+                 {
+                   "options": {
+                     "match": "null",
+                     "result": {
+                       "text": "N/A"
+                     }
+                   },
+                   "type": "special"
+                 }
+               ],
+               "thresholds": {
+                 "mode": "absolute",
+                 "steps": [
+                   {
+                     "color": "green",
+                     "value": null
+                   }
+                 ]
+               },
+               "unit": "bytes"
+             },
+             "overrides": []
+           },
+           "gridPos": {
+             "h": 3,
+             "w": 3,
+             "x": 3,
+             "y": 3
+           },
+           "id": 64,
+           "links": [],
+           "maxDataPoints": 100,
+           "options": {
+             "colorMode": "value",
+             "graphMode": "area",
+             "justifyMode": "auto",
+             "orientation": "auto",
+             "reduceOptions": {
+               "calcs": [
+                 "last"
+               ],
+               "fields": "",
+               "values": false
+             },
+             "text": {},
+             "textMode": "auto"
+           },
+           "pluginVersion": "10.0.3",
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "sum by (instance) (minio_s3_traffic_sent_bytes{job=\"$scrape_jobs\"})",
+               "format": "table",
+               "hide": false,
+               "instant": false,
+               "interval": "",
+               "intervalFactor": 1,
+               "legendFormat": "",
+               "metric": "process_start_time_seconds",
+               "refId": "A",
+               "step": 60
+             }
+           ],
+           "title": "Total S3 Traffic Outbound",
+           "type": "stat"
+         },
+         {
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "description": "",
+           "fieldConfig": {
+             "defaults": {
+               "mappings": [
+                 {
+                   "options": {
+                     "match": "null",
+                     "result": {
+                       "text": "N/A"
+                     }
+                   },
+                   "type": "special"
+                 }
+               ],
+               "thresholds": {
+                 "mode": "absolute",
+                 "steps": [
+                   {
+                     "color": "green",
+                     "value": null
+                   },
+                   {
+                     "color": "red",
+                     "value": 2000
+                   }
+                 ]
+               },
+               "unit": "short"
+             },
+             "overrides": []
+           },
+           "gridPos": {
+             "h": 3,
+             "w": 3,
+             "x": 21,
+             "y": 3
+           },
+           "id": 62,
+           "links": [],
+           "maxDataPoints": 100,
+           "options": {
+             "colorMode": "value",
+             "graphMode": "area",
+             "justifyMode": "auto",
+             "orientation": "auto",
+             "reduceOptions": {
+               "calcs": [
+                 "last"
+               ],
+               "fields": "",
+               "values": false
+             },
+             "text": {},
+             "textMode": "auto"
+           },
+           "pluginVersion": "10.0.3",
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "sum without (server,instance) (minio_node_go_routine_total{job=\"$scrape_jobs\"})",
+               "format": "table",
+               "hide": false,
+               "instant": false,
+               "interval": "",
+               "intervalFactor": 1,
+               "legendFormat": "",
+               "metric": "process_start_time_seconds",
+               "refId": "A",
+               "step": 60
+             }
+           ],
+           "title": "Total Goroutines",
+           "type": "stat"
+         },
+         {
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "description": "",
+           "fieldConfig": {
+             "defaults": {
+               "mappings": [
+                 {
+                   "options": {
+                     "match": "null",
+                     "result": {
+                       "text": "N/A"
+                     }
+                   },
+                   "type": "special"
+                 }
+               ],
+               "thresholds": {
+                 "mode": "absolute",
+                 "steps": [
+                   {
+                     "color": "green",
+                     "value": null
+                   },
+                   {
+                     "color": "red",
+                     "value": 80
+                   }
+                 ]
+               },
+               "unit": "short"
+             },
+             "overrides": []
+           },
+           "gridPos": {
+             "h": 2,
+             "w": 3,
+             "x": 0,
+             "y": 6
+           },
+           "id": 53,
+           "links": [],
+           "maxDataPoints": 100,
+           "options": {
+             "colorMode": "value",
+             "graphMode": "area",
+             "justifyMode": "auto",
+             "orientation": "auto",
+             "reduceOptions": {
+               "calcs": [
+                 "mean"
+               ],
+               "fields": "",
+               "values": false
+             },
+             "text": {},
+             "textMode": "auto"
+           },
+           "pluginVersion": "10.0.3",
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "minio_cluster_nodes_online_total{job=\"$scrape_jobs\"}",
+               "format": "table",
+               "hide": false,
+               "instant": true,
+               "interval": "",
+               "intervalFactor": 1,
+               "legendFormat": "",
+               "metric": "process_start_time_seconds",
+               "refId": "A",
+               "step": 60
+             }
+           ],
+           "title": "Total Online Servers",
+           "type": "stat"
+         },
+         {
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "description": "",
+           "fieldConfig": {
+             "defaults": {
+               "mappings": [
+                 {
+                   "options": {
+                     "match": "null",
+                     "result": {
+                       "text": "N/A"
+                     }
+                   },
+                   "type": "special"
+                 }
+               ],
+               "thresholds": {
+                 "mode": "absolute",
+                 "steps": [
+                   {
+                     "color": "green",
+                     "value": null
+                   },
+                   {
+                     "color": "red",
+                     "value": 80
+                   }
+                 ]
+               },
+               "unit": "short"
+             },
+             "overrides": []
+           },
+           "gridPos": {
+             "h": 2,
+             "w": 3,
+             "x": 3,
+             "y": 6
+           },
+           "id": 9,
+           "links": [],
+           "maxDataPoints": 100,
+           "options": {
+             "colorMode": "value",
+             "graphMode": "area",
+             "justifyMode": "auto",
+             "orientation": "auto",
+             "reduceOptions": {
+               "calcs": [
+                 "mean"
+               ],
+               "fields": "",
+               "values": false
+             },
+             "text": {},
+             "textMode": "auto"
+           },
+           "pluginVersion": "10.0.3",
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "minio_cluster_disk_online_total{job=\"$scrape_jobs\"}",
+               "format": "table",
+               "hide": false,
+               "instant": true,
+               "interval": "",
+               "intervalFactor": 1,
+               "legendFormat": "Total online disks in MinIO Cluster",
+               "metric": "process_start_time_seconds",
+               "refId": "A",
+               "step": 60
+             }
+           ],
+           "title": "Total Online Disks",
+           "type": "stat"
+         },
+         {
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "fieldConfig": {
+             "defaults": {
+               "mappings": [
+                 {
+                   "options": {
+                     "match": "null",
+                     "result": {
+                       "text": "N/A"
+                     }
+                   },
+                   "type": "special"
+                 }
+               ],
+               "thresholds": {
+                 "mode": "absolute",
+                 "steps": [
+                   {
+                     "color": "green",
+                     "value": null
+                   },
+                   {
+                     "color": "dark-yellow",
+                     "value": 75000000
+                   },
+                   {
+                     "color": "dark-red",
+                     "value": 100000000
+                   }
+                 ]
+               },
+               "unit": "short"
+             },
+             "overrides": []
+           },
+           "gridPos": {
+             "h": 3,
+             "w": 3,
+             "x": 6,
+             "y": 6
+           },
+           "id": 66,
+           "links": [],
+           "maxDataPoints": 100,
+           "options": {
+             "colorMode": "value",
+             "graphMode": "area",
+             "justifyMode": "auto",
+             "orientation": "horizontal",
+             "reduceOptions": {
+               "calcs": [
+                 "lastNotNull"
+               ],
+               "fields": "",
+               "values": false
+             },
+             "text": {},
+             "textMode": "auto"
+           },
+           "pluginVersion": "10.0.3",
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "editorMode": "code",
+               "exemplar": true,
+               "expr": "minio_cluster_bucket_total{job=\"$scrape_jobs\"}",
+               "format": "time_series",
+               "instant": false,
+               "interval": "1m",
+               "intervalFactor": 1,
+               "legendFormat": "",
+               "refId": "A"
+             }
+           ],
+           "title": "Number of Buckets",
+           "type": "stat"
+         },
+         {
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "fieldConfig": {
+             "defaults": {
+               "color": {
+                 "mode": "palette-classic"
+               },
+               "custom": {
+                 "axisCenteredZero": false,
+                 "axisColorMode": "text",
+                 "axisLabel": "",
+                 "axisPlacement": "auto",
+                 "barAlignment": 0,
+                 "drawStyle": "line",
+                 "fillOpacity": 10,
+                 "gradientMode": "none",
+                 "hideFrom": {
+                   "legend": false,
+                   "tooltip": false,
+                   "viz": false
+                 },
+                 "lineInterpolation": "linear",
+                 "lineWidth": 1,
+                 "pointSize": 5,
+                 "scaleDistribution": {
+                   "type": "linear"
+                 },
+                 "showPoints": "never",
+                 "spanNulls": false,
+                 "stacking": {
+                   "group": "A",
+                   "mode": "none"
+                 },
+                 "thresholdsStyle": {
+                   "mode": "off"
+                 }
+               },
+               "mappings": [],
+               "thresholds": {
+                 "mode": "absolute",
+                 "steps": [
+                   {
+                     "color": "green",
+                     "value": null
+                   },
+                   {
+                     "color": "red",
+                     "value": 80
+                   }
+                 ]
+               },
+               "unit": "bytes"
+             },
+             "overrides": [
+               {
+                 "matcher": {
+                   "id": "byName",
+                   "options": "S3 Errors"
+                 },
+                 "properties": [
+                   {
+                     "id": "color",
+                     "value": {
+                       "fixedColor": "light-red",
+                       "mode": "fixed"
+                     }
+                   }
+                 ]
+               },
+               {
+                 "matcher": {
+                   "id": "byName",
+                   "options": "S3 Requests"
+                 },
+                 "properties": [
+                   {
+                     "id": "color",
+                     "value": {
+                       "fixedColor": "light-green",
+                       "mode": "fixed"
+                     }
+                   }
+                 ]
+               }
+             ]
+           },
+           "gridPos": {
+             "h": 6,
+             "w": 7,
+             "x": 9,
+             "y": 6
+           },
+           "id": 63,
+           "options": {
+             "legend": {
+               "calcs": [],
+               "displayMode": "list",
+               "placement": "bottom",
+               "showLegend": true
+             },
+             "tooltip": {
+               "mode": "multi",
+               "sort": "none"
+             }
+           },
+           "pluginVersion": "10.0.2",
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "sum by (server) (rate(minio_s3_traffic_received_bytes{job=\"$scrape_jobs\"}[$__rate_interval]))",
+               "interval": "1m",
+               "intervalFactor": 2,
+               "legendFormat": "Data Received [{{server}}]",
+               "refId": "A"
+             }
+           ],
+           "title": "S3 API Data Received Rate ",
+           "type": "timeseries"
+         },
+         {
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "fieldConfig": {
+             "defaults": {
+               "color": {
+                 "mode": "palette-classic"
+               },
+               "custom": {
+                 "axisCenteredZero": false,
+                 "axisColorMode": "text",
+                 "axisLabel": "",
+                 "axisPlacement": "auto",
+                 "barAlignment": 0,
+                 "drawStyle": "line",
+                 "fillOpacity": 10,
+                 "gradientMode": "none",
+                 "hideFrom": {
+                   "legend": false,
+                   "tooltip": false,
+                   "viz": false
+                 },
+                 "lineInterpolation": "linear",
+                 "lineWidth": 1,
+                 "pointSize": 5,
+                 "scaleDistribution": {
+                   "type": "linear"
+                 },
+                 "showPoints": "never",
+                 "spanNulls": false,
+                 "stacking": {
+                   "group": "A",
+                   "mode": "none"
+                 },
+                 "thresholdsStyle": {
+                   "mode": "off"
+                 }
+               },
+               "mappings": [],
+               "thresholds": {
+                 "mode": "absolute",
+                 "steps": [
+                   {
+                     "color": "green",
+                     "value": null
+                   },
+                   {
+                     "color": "red",
+                     "value": 80
+                   }
+                 ]
+               },
+               "unit": "bytes"
+             },
+             "overrides": [
+               {
+                 "matcher": {
+                   "id": "byName",
+                   "options": "S3 Errors"
+                 },
+                 "properties": [
+                   {
+                     "id": "color",
+                     "value": {
+                       "fixedColor": "light-red",
+                       "mode": "fixed"
+                     }
+                   }
+                 ]
+               },
+               {
+                 "matcher": {
+                   "id": "byName",
+                   "options": "S3 Requests"
+                 },
+                 "properties": [
+                   {
+                     "id": "color",
+                     "value": {
+                       "fixedColor": "light-green",
+                       "mode": "fixed"
+                     }
+                   }
+                 ]
+               }
+             ]
+           },
+           "gridPos": {
+             "h": 6,
+             "w": 8,
+             "x": 16,
+             "y": 6
+           },
+           "id": 70,
+           "options": {
+             "legend": {
+               "calcs": [],
+               "displayMode": "list",
+               "placement": "bottom",
+               "showLegend": true
+             },
+             "tooltip": {
+               "mode": "multi",
+               "sort": "none"
+             }
+           },
+           "pluginVersion": "10.0.2",
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "sum by (server) (rate(minio_s3_traffic_sent_bytes{job=\"$scrape_jobs\"}[$__rate_interval]))",
+               "interval": "1m",
+               "intervalFactor": 2,
+               "legendFormat": "Data Sent [{{server}}]",
+               "refId": "A"
+             }
+           ],
+           "title": "S3 API Data Sent Rate ",
+           "type": "timeseries"
+         },
+         {
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "description": "",
+           "fieldConfig": {
+             "defaults": {
+               "mappings": [
+                 {
+                   "options": {
+                     "match": "null",
+                     "result": {
+                       "text": "N/A"
+                     }
+                   },
+                   "type": "special"
+                 }
+               ],
+               "thresholds": {
+                 "mode": "absolute",
+                 "steps": [
+                   {
+                     "color": "green",
+                     "value": null
+                   },
+                   {
+                     "color": "red",
+                     "value": 80
+                   }
+                 ]
+               },
+               "unit": "short"
+             },
+             "overrides": []
+           },
+           "gridPos": {
+             "h": 2,
+             "w": 3,
+             "x": 0,
+             "y": 8
+           },
+           "id": 69,
+           "links": [],
+           "maxDataPoints": 100,
+           "options": {
+             "colorMode": "value",
+             "graphMode": "area",
+             "justifyMode": "auto",
+             "orientation": "auto",
+             "reduceOptions": {
+               "calcs": [
+                 "mean"
+               ],
+               "fields": "",
+               "values": false
+             },
+             "text": {},
+             "textMode": "auto"
+           },
+           "pluginVersion": "10.0.3",
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "minio_cluster_nodes_offline_total{job=\"$scrape_jobs\"}",
+               "format": "table",
+               "hide": false,
+               "instant": true,
+               "interval": "",
+               "intervalFactor": 1,
+               "legendFormat": "",
+               "metric": "process_start_time_seconds",
+               "refId": "A",
+               "step": 60
+             }
+           ],
+           "title": "Total Offline Servers",
+           "type": "stat"
+         },
+         {
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "description": "",
+           "fieldConfig": {
+             "defaults": {
+               "mappings": [
+                 {
+                   "options": {
+                     "match": "null",
+                     "result": {
+                       "text": "N/A"
+                     }
+                   },
+                   "type": "special"
+                 }
+               ],
+               "thresholds": {
+                 "mode": "absolute",
+                 "steps": [
+                   {
+                     "color": "green",
+                     "value": null
+                   },
+                   {
+                     "color": "red",
+                     "value": 80
+                   }
+                 ]
+               },
+               "unit": "short"
+             },
+             "overrides": []
+           },
+           "gridPos": {
+             "h": 2,
+             "w": 3,
+             "x": 3,
+             "y": 8
+           },
+           "id": 78,
+           "links": [],
+           "maxDataPoints": 100,
+           "options": {
+             "colorMode": "value",
+             "graphMode": "area",
+             "justifyMode": "auto",
+             "orientation": "auto",
+             "reduceOptions": {
+               "calcs": [
+                 "mean"
+               ],
+               "fields": "",
+               "values": false
+             },
+             "text": {},
+             "textMode": "auto"
+           },
+           "pluginVersion": "10.0.3",
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "minio_cluster_disk_offline_total{job=\"$scrape_jobs\"}",
+               "format": "table",
+               "hide": false,
+               "instant": true,
+               "interval": "",
+               "intervalFactor": 1,
+               "legendFormat": "",
+               "metric": "process_start_time_seconds",
+               "refId": "A",
+               "step": 60
+             }
+           ],
+           "title": "Total Offline Disks",
+           "type": "stat"
+         },
+         {
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "fieldConfig": {
+             "defaults": {
+               "mappings": [
+                 {
+                   "options": {
+                     "match": "null",
+                     "result": {
+                       "text": "N/A"
+                     }
+                   },
+                   "type": "special"
+                 }
+               ],
+               "thresholds": {
+                 "mode": "absolute",
+                 "steps": [
+                   {
+                     "color": "green",
+                     "value": null
+                   },
+                   {
+                     "color": "dark-yellow",
+                     "value": 75000000
+                   },
+                   {
+                     "color": "dark-red",
+                     "value": 100000000
+                   }
+                 ]
+               },
+               "unit": "short"
+             },
+             "overrides": []
+           },
+           "gridPos": {
+             "h": 3,
+             "w": 3,
+             "x": 6,
+             "y": 9
+           },
+           "id": 44,
+           "links": [],
+           "maxDataPoints": 100,
+           "options": {
+             "colorMode": "value",
+             "graphMode": "area",
+             "justifyMode": "auto",
+             "orientation": "horizontal",
+             "reduceOptions": {
+               "calcs": [
+                 "lastNotNull"
+               ],
+               "fields": "",
+               "values": false
+             },
+             "text": {},
+             "textMode": "auto"
+           },
+           "pluginVersion": "10.0.3",
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "editorMode": "code",
+               "exemplar": true,
+               "expr": "minio_cluster_usage_object_total{job=\"$scrape_jobs\"}",
+               "format": "time_series",
+               "instant": false,
+               "interval": "1m",
+               "intervalFactor": 1,
+               "legendFormat": "",
+               "refId": "A"
+             }
+           ],
+           "title": "Number of Objects",
+           "type": "stat"
+         },
+         {
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "description": "",
+           "fieldConfig": {
+             "defaults": {
+               "color": {
+                 "mode": "thresholds"
+               },
+               "mappings": [],
+               "thresholds": {
+                 "mode": "absolute",
+                 "steps": [
+                   {
+                     "color": "green",
+                     "value": null
+                   }
+                 ]
+               },
+               "unit": "ns"
+             },
+             "overrides": []
+           },
+           "gridPos": {
+             "h": 2,
+             "w": 3,
+             "x": 0,
+             "y": 10
+           },
+           "id": 80,
+           "links": [],
+           "maxDataPoints": 100,
+           "options": {
+             "colorMode": "value",
+             "graphMode": "none",
+             "justifyMode": "auto",
+             "orientation": "auto",
+             "reduceOptions": {
+               "calcs": [
+                 "last"
+               ],
+               "fields": "",
+               "values": false
+             },
+             "text": {},
+             "textMode": "auto"
+           },
+           "pluginVersion": "10.0.3",
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "minio_heal_time_last_activity_nano_seconds{job=\"$scrape_jobs\"}",
+               "format": "time_series",
+               "instant": true,
+               "interval": "",
+               "intervalFactor": 1,
+               "legendFormat": "{{server}}",
+               "metric": "process_start_time_seconds",
+               "refId": "A",
+               "step": 60
+             }
+           ],
+           "title": "Time Since Last Heal Activity",
+           "type": "stat"
+         },
+         {
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "description": "",
+           "fieldConfig": {
+             "defaults": {
+               "color": {
+                 "mode": "thresholds"
+               },
+               "mappings": [],
+               "thresholds": {
+                 "mode": "absolute",
+                 "steps": [
+                   {
+                     "color": "green",
+                     "value": null
+                   }
+                 ]
+               },
+               "unit": "ns"
+             },
+             "overrides": []
+           },
+           "gridPos": {
+             "h": 2,
+             "w": 3,
+             "x": 3,
+             "y": 10
+           },
+           "id": 81,
+           "links": [],
+           "maxDataPoints": 100,
+           "options": {
+             "colorMode": "value",
+             "graphMode": "none",
+             "justifyMode": "auto",
+             "orientation": "auto",
+             "reduceOptions": {
+               "calcs": [
+                 "last"
+               ],
+               "fields": "",
+               "values": false
+             },
+             "text": {},
+             "textMode": "auto"
+           },
+           "pluginVersion": "10.0.3",
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "minio_usage_last_activity_nano_seconds{job=\"$scrape_jobs\"}",
+               "format": "time_series",
+               "instant": true,
+               "interval": "",
+               "intervalFactor": 1,
+               "legendFormat": "{{server}}",
+               "metric": "process_start_time_seconds",
+               "refId": "A",
+               "step": 60
+             }
+           ],
+           "title": "Time Since Last Scan Activity",
+           "type": "stat"
+         },
+         {
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "fieldConfig": {
+             "defaults": {
+               "color": {
+                 "mode": "palette-classic"
+               },
+               "custom": {
+                 "axisCenteredZero": false,
+                 "axisColorMode": "text",
+                 "axisLabel": "",
+                 "axisPlacement": "auto",
+                 "barAlignment": 0,
+                 "drawStyle": "line",
+                 "fillOpacity": 10,
+                 "gradientMode": "none",
+                 "hideFrom": {
+                   "legend": false,
+                   "tooltip": false,
+                   "viz": false
+                 },
+                 "lineInterpolation": "linear",
+                 "lineWidth": 1,
+                 "pointSize": 5,
+                 "scaleDistribution": {
+                   "type": "linear"
+                 },
+                 "showPoints": "never",
+                 "spanNulls": false,
+                 "stacking": {
+                   "group": "A",
+                   "mode": "none"
+                 },
+                 "thresholdsStyle": {
+                   "mode": "off"
+                 }
+               },
+               "mappings": [],
+               "thresholds": {
+                 "mode": "absolute",
+                 "steps": [
+                   {
+                     "color": "green",
+                     "value": null
+                   },
+                   {
+                     "color": "red",
+                     "value": 80
+                   }
+                 ]
+               },
+               "unit": "none"
+             },
+             "overrides": [
+               {
+                 "matcher": {
+                   "id": "byName",
+                   "options": "S3 Errors"
+                 },
+                 "properties": [
+                   {
+                     "id": "color",
+                     "value": {
+                       "fixedColor": "light-red",
+                       "mode": "fixed"
+                     }
+                   }
+                 ]
+               },
+               {
+                 "matcher": {
+                   "id": "byName",
+                   "options": "S3 Requests"
+                 },
+                 "properties": [
+                   {
+                     "id": "color",
+                     "value": {
+                       "fixedColor": "light-green",
+                       "mode": "fixed"
+                     }
+                   }
+                 ]
+               }
+             ]
+           },
+           "gridPos": {
+             "h": 10,
+             "w": 10,
+             "x": 0,
+             "y": 12
+           },
+           "id": 60,
+           "options": {
+             "legend": {
+               "calcs": [],
+               "displayMode": "list",
+               "placement": "bottom",
+               "showLegend": true
+             },
+             "tooltip": {
+               "mode": "multi",
+               "sort": "none"
+             }
+           },
+           "pluginVersion": "10.0.2",
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "sum by (server,api) (increase(minio_s3_requests_total{job=\"$scrape_jobs\"}[$__rate_interval]))",
+               "interval": "1m",
+               "intervalFactor": 2,
+               "legendFormat": "{{server,api}}",
+               "refId": "A"
+             }
+           ],
+           "title": "S3 API Request Rate",
+           "type": "timeseries"
+         },
+         {
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "fieldConfig": {
+             "defaults": {
+               "color": {
+                 "mode": "palette-classic"
+               },
+               "custom": {
+                 "axisCenteredZero": false,
+                 "axisColorMode": "text",
+                 "axisLabel": "",
+                 "axisPlacement": "auto",
+                 "barAlignment": 0,
+                 "drawStyle": "line",
+                 "fillOpacity": 10,
+                 "gradientMode": "none",
+                 "hideFrom": {
+                   "legend": false,
+                   "tooltip": false,
+                   "viz": false
+                 },
+                 "lineInterpolation": "linear",
+                 "lineWidth": 1,
+                 "pointSize": 5,
+                 "scaleDistribution": {
+                   "type": "linear"
+                 },
+                 "showPoints": "never",
+                 "spanNulls": false,
+                 "stacking": {
+                   "group": "A",
+                   "mode": "none"
+                 },
+                 "thresholdsStyle": {
+                   "mode": "off"
+                 }
+               },
+               "mappings": [],
+               "thresholds": {
+                 "mode": "absolute",
+                 "steps": [
+                   {
+                     "color": "green",
+                     "value": null
+                   },
+                   {
+                     "color": "red",
+                     "value": 80
+                   }
+                 ]
+               },
+               "unit": "none"
+             },
+             "overrides": [
+               {
+                 "matcher": {
+                   "id": "byName",
+                   "options": "S3 Errors"
+                 },
+                 "properties": [
+                   {
+                     "id": "color",
+                     "value": {
+                       "fixedColor": "light-red",
+                       "mode": "fixed"
+                     }
+                   }
+                 ]
+               },
+               {
+                 "matcher": {
+                   "id": "byName",
+                   "options": "S3 Requests"
+                 },
+                 "properties": [
+                   {
+                     "id": "color",
+                     "value": {
+                       "fixedColor": "light-green",
+                       "mode": "fixed"
+                     }
+                   }
+                 ]
+               }
+             ]
+           },
+           "gridPos": {
+             "h": 10,
+             "w": 7,
+             "x": 10,
+             "y": 12
+           },
+           "id": 88,
+           "options": {
+             "legend": {
+               "calcs": [],
+               "displayMode": "list",
+               "placement": "bottom",
+               "showLegend": true
+             },
+             "tooltip": {
+               "mode": "multi",
+               "sort": "none"
+             }
+           },
+           "pluginVersion": "10.0.2",
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "sum by (server,api) (increase(minio_s3_requests_4xx_errors_total{job=\"$scrape_jobs\"}[$__rate_interval]))",
+               "interval": "1m",
+               "intervalFactor": 2,
+               "legendFormat": "{{server,api}}",
+               "refId": "A"
+             }
+           ],
+           "title": "S3 API Request 4xx Error Rate",
+           "type": "timeseries"
+         },
+         {
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "fieldConfig": {
+             "defaults": {
+               "color": {
+                 "mode": "palette-classic"
+               },
+               "custom": {
+                 "axisCenteredZero": false,
+                 "axisColorMode": "text",
+                 "axisLabel": "",
+                 "axisPlacement": "auto",
+                 "barAlignment": 0,
+                 "drawStyle": "line",
+                 "fillOpacity": 10,
+                 "gradientMode": "none",
+                 "hideFrom": {
+                   "legend": false,
+                   "tooltip": false,
+                   "viz": false
+                 },
+                 "lineInterpolation": "linear",
+                 "lineWidth": 1,
+                 "pointSize": 5,
+                 "scaleDistribution": {
+                   "type": "linear"
+                 },
+                 "showPoints": "never",
+                 "spanNulls": false,
+                 "stacking": {
+                   "group": "A",
+                   "mode": "none"
+                 },
+                 "thresholdsStyle": {
+                   "mode": "off"
+                 }
+               },
+               "mappings": [],
+               "thresholds": {
+                 "mode": "absolute",
+                 "steps": [
+                   {
+                     "color": "green",
+                     "value": null
+                   },
+                   {
+                     "color": "red",
+                     "value": 80
+                   }
+                 ]
+               },
+               "unit": "none"
+             },
+             "overrides": [
+               {
+                 "matcher": {
+                   "id": "byName",
+                   "options": "S3 Errors"
+                 },
+                 "properties": [
+                   {
+                     "id": "color",
+                     "value": {
+                       "fixedColor": "light-red",
+                       "mode": "fixed"
+                     }
+                   }
+                 ]
+               },
+               {
+                 "matcher": {
+                   "id": "byName",
+                   "options": "S3 Requests"
+                 },
+                 "properties": [
+                   {
+                     "id": "color",
+                     "value": {
+                       "fixedColor": "light-green",
+                       "mode": "fixed"
+                     }
+                   }
+                 ]
+               }
+             ]
+           },
+           "gridPos": {
+             "h": 10,
+             "w": 7,
+             "x": 17,
+             "y": 12
+           },
+           "id": 86,
+           "options": {
+             "legend": {
+               "calcs": [],
+               "displayMode": "list",
+               "placement": "bottom",
+               "showLegend": true
+             },
+             "tooltip": {
+               "mode": "multi",
+               "sort": "none"
+             }
+           },
+           "pluginVersion": "10.0.2",
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "sum by (server,api) (increase(minio_s3_requests_5xx_errors_total{job=\"$scrape_jobs\"}[$__rate_interval]))",
+               "interval": "1m",
+               "intervalFactor": 2,
+               "legendFormat": "{{server,api}}",
+               "refId": "A"
+             }
+           ],
+           "title": "S3 API Request 5xx Error Rate",
+           "type": "timeseries"
+         },
+         {
+           "aliasColors": {
+             "10.13.1.25:9000 DELETE": "red",
+             "10.13.1.25:9000 GET": "green",
+             "10.13.1.25:9000 POST": "blue"
+           },
+           "autoMigrateFrom": "graph",
+           "bars": true,
+           "dashLength": 10,
+           "dashes": false,
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "description": "Total number of bytes received and sent among all MinIO server instances",
+           "fieldConfig": {
+             "defaults": {
+               "links": []
+             },
+             "overrides": []
+           },
+           "fill": 10,
+           "fillGradient": 1,
+           "gridPos": {
+             "h": 10,
+             "w": 12,
+             "x": 0,
+             "y": 22
+           },
+           "hiddenSeries": false,
+           "id": 17,
+           "legend": {
+             "avg": false,
+             "current": false,
+             "max": false,
+             "min": false,
+             "rightSide": false,
+             "show": true,
+             "total": false,
+             "values": false
+           },
+           "lines": true,
+           "linewidth": 1,
+           "links": [],
+           "nullPointMode": "null",
+           "options": {
+             "alertThreshold": true
+           },
+           "percentage": false,
+           "pluginVersion": "10.0.2",
+           "pointradius": 5,
+           "points": false,
+           "renderer": "flot",
+           "seriesOverrides": [],
+           "spaceLength": 10,
+           "stack": false,
+           "steppedLine": false,
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "rate(minio_inter_node_traffic_sent_bytes{job=\"$scrape_jobs\"}[$__rate_interval])",
+               "format": "time_series",
+               "interval": "",
+               "intervalFactor": 2,
+               "legendFormat": "Internode Bytes Received [{{server}}]",
+               "metric": "minio_http_requests_duration_seconds_count",
+               "refId": "A",
+               "step": 4
+             },
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "rate(minio_inter_node_traffic_received_bytes{job=\"$scrape_jobs\"}[$__rate_interval])",
+               "interval": "",
+               "legendFormat": "Internode Bytes Sent [{{server}}]",
+               "refId": "B"
+             }
+           ],
+           "thresholds": [],
+           "timeRegions": [],
+           "title": "Internode Data Transfer",
+           "tooltip": {
+             "shared": true,
+             "sort": 0,
+             "value_type": "individual"
+           },
+           "type": "timeseries",
+           "xaxis": {
+             "mode": "time",
+             "show": true,
+             "values": []
+           },
+           "yaxes": [
+             {
+               "$$hashKey": "object:211",
+               "format": "bytes",
+               "logBase": 1,
+               "show": true
+             },
+             {
+               "$$hashKey": "object:212",
+               "format": "s",
+               "logBase": 1,
+               "show": true
+             }
+           ],
+           "yaxis": {
+             "align": false
+           }
+         },
+         {
+           "aliasColors": {},
+           "autoMigrateFrom": "graph",
+           "bars": false,
+           "dashLength": 10,
+           "dashes": false,
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "fill": 1,
+           "fillGradient": 0,
+           "gridPos": {
+             "h": 10,
+             "w": 12,
+             "x": 12,
+             "y": 22
+           },
+           "hiddenSeries": false,
+           "id": 84,
+           "legend": {
+             "avg": false,
+             "current": false,
+             "max": false,
+             "min": false,
+             "show": true,
+             "total": false,
+             "values": false
+           },
+           "lines": true,
+           "linewidth": 1,
+           "nullPointMode": "null",
+           "options": {
+             "alertThreshold": true
+           },
+           "percentage": false,
+           "pluginVersion": "10.0.2",
+           "pointradius": 2,
+           "points": false,
+           "renderer": "flot",
+           "seriesOverrides": [],
+           "spaceLength": 10,
+           "stack": false,
+           "steppedLine": false,
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "sum by (instance) (minio_heal_objects_heal_total{job=\"$scrape_jobs\"})",
+               "interval": "",
+               "legendFormat": "Objects healed in current self heal run",
+               "refId": "A"
+             },
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "sum by (instance) (minio_heal_objects_error_total{job=\"$scrape_jobs\"})",
+               "hide": false,
+               "interval": "",
+               "legendFormat": "Heal errors in current self heal run",
+               "refId": "B"
+             },
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "sum by (instance) (minio_heal_objects_total{job=\"$scrape_jobs\"}) ",
+               "hide": false,
+               "interval": "",
+               "legendFormat": "Objects scanned in current self heal run",
+               "refId": "C"
+             }
+           ],
+           "thresholds": [],
+           "timeRegions": [],
+           "title": "Healing",
+           "tooltip": {
+             "shared": true,
+             "sort": 0,
+             "value_type": "individual"
+           },
+           "type": "timeseries",
+           "xaxis": {
+             "mode": "time",
+             "show": true,
+             "values": []
+           },
+           "yaxes": [
+             {
+               "$$hashKey": "object:846",
+               "format": "short",
+               "logBase": 1,
+               "show": true
+             },
+             {
+               "$$hashKey": "object:847",
+               "format": "short",
+               "logBase": 1,
+               "show": true
+             }
+           ],
+           "yaxis": {
+             "align": false
+           }
+         },
+         {
+           "aliasColors": {},
+           "autoMigrateFrom": "graph",
+           "bars": true,
+           "dashLength": 10,
+           "dashes": false,
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "fill": 1,
+           "fillGradient": 0,
+           "gridPos": {
+             "h": 9,
+             "w": 12,
+             "x": 0,
+             "y": 32
+           },
+           "hiddenSeries": false,
+           "id": 77,
+           "legend": {
+             "avg": false,
+             "current": false,
+             "max": false,
+             "min": false,
+             "show": true,
+             "total": false,
+             "values": false
+           },
+           "lines": true,
+           "linewidth": 1,
+           "nullPointMode": "null",
+           "options": {
+             "alertThreshold": true
+           },
+           "percentage": false,
+           "pluginVersion": "10.0.2",
+           "pointradius": 2,
+           "points": false,
+           "renderer": "flot",
+           "seriesOverrides": [],
+           "spaceLength": 10,
+           "stack": false,
+           "steppedLine": false,
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "rate(minio_node_process_cpu_total_seconds{job=\"$scrape_jobs\"}[$__rate_interval])",
+               "interval": "",
+               "legendFormat": "CPU Usage Rate [{{server}}]",
+               "refId": "A"
+             }
+           ],
+           "thresholds": [],
+           "timeRegions": [],
+           "title": "Node CPU Usage",
+           "tooltip": {
+             "shared": true,
+             "sort": 0,
+             "value_type": "individual"
+           },
+           "type": "timeseries",
+           "xaxis": {
+             "mode": "time",
+             "show": true,
+             "values": []
+           },
+           "yaxes": [
+             {
+               "$$hashKey": "object:1043",
+               "format": "none",
+               "logBase": 1,
+               "show": true
+             },
+             {
+               "$$hashKey": "object:1044",
+               "format": "short",
+               "logBase": 1,
+               "show": true
+             }
+           ],
+           "yaxis": {
+             "align": false
+           }
+         },
+         {
+           "aliasColors": {},
+           "autoMigrateFrom": "graph",
+           "bars": false,
+           "dashLength": 10,
+           "dashes": false,
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "fill": 1,
+           "fillGradient": 0,
+           "gridPos": {
+             "h": 9,
+             "w": 12,
+             "x": 12,
+             "y": 32
+           },
+           "hiddenSeries": false,
+           "id": 76,
+           "legend": {
+             "avg": false,
+             "current": false,
+             "max": false,
+             "min": false,
+             "show": true,
+             "total": false,
+             "values": false
+           },
+           "lines": true,
+           "linewidth": 1,
+           "nullPointMode": "null",
+           "options": {
+             "alertThreshold": true
+           },
+           "percentage": false,
+           "pluginVersion": "10.0.2",
+           "pointradius": 2,
+           "points": false,
+           "renderer": "flot",
+           "seriesOverrides": [],
+           "spaceLength": 10,
+           "stack": false,
+           "steppedLine": false,
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "minio_node_process_resident_memory_bytes{job=\"$scrape_jobs\"}",
+               "interval": "",
+               "legendFormat": "Memory Used [{{server}}]",
+               "refId": "A"
+             }
+           ],
+           "thresholds": [],
+           "timeRegions": [],
+           "title": "Node Memory Usage",
+           "tooltip": {
+             "shared": true,
+             "sort": 0,
+             "value_type": "individual"
+           },
+           "type": "timeseries",
+           "xaxis": {
+             "mode": "time",
+             "show": true,
+             "values": []
+           },
+           "yaxes": [
+             {
+               "$$hashKey": "object:1043",
+               "format": "bytes",
+               "logBase": 1,
+               "show": true
+             },
+             {
+               "$$hashKey": "object:1044",
+               "format": "short",
+               "logBase": 1,
+               "show": true
+             }
+           ],
+           "yaxis": {
+             "align": false
+           }
+         },
+         {
+           "aliasColors": {},
+           "autoMigrateFrom": "graph",
+           "bars": false,
+           "dashLength": 10,
+           "dashes": false,
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "fill": 1,
+           "fillGradient": 0,
+           "gridPos": {
+             "h": 8,
+             "w": 12,
+             "x": 0,
+             "y": 41
+           },
+           "hiddenSeries": false,
+           "id": 74,
+           "legend": {
+             "avg": false,
+             "current": false,
+             "max": false,
+             "min": false,
+             "show": true,
+             "total": false,
+             "values": false
+           },
+           "lines": true,
+           "linewidth": 1,
+           "nullPointMode": "null",
+           "options": {
+             "alertThreshold": true
+           },
+           "percentage": false,
+           "pluginVersion": "10.0.2",
+           "pointradius": 2,
+           "points": false,
+           "renderer": "flot",
+           "seriesOverrides": [],
+           "spaceLength": 10,
+           "stack": false,
+           "steppedLine": false,
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "minio_node_disk_used_bytes{job=\"$scrape_jobs\"}",
+               "format": "time_series",
+               "instant": false,
+               "interval": "",
+               "legendFormat": "Used Capacity [{{server}}:{{disk}}]",
+               "refId": "A"
+             }
+           ],
+           "thresholds": [],
+           "timeRegions": [],
+           "title": "Drive Used Capacity",
+           "tooltip": {
+             "shared": true,
+             "sort": 0,
+             "value_type": "individual"
+           },
+           "type": "timeseries",
+           "xaxis": {
+             "mode": "time",
+             "show": true,
+             "values": []
+           },
+           "yaxes": [
+             {
+               "$$hashKey": "object:381",
+               "format": "bytes",
+               "logBase": 1,
+               "show": true
+             },
+             {
+               "$$hashKey": "object:382",
+               "format": "short",
+               "logBase": 1,
+               "show": true
+             }
+           ],
+           "yaxis": {
+             "align": false
+           }
+         },
+         {
+           "aliasColors": {},
+           "autoMigrateFrom": "graph",
+           "bars": false,
+           "dashLength": 10,
+           "dashes": false,
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "fill": 1,
+           "fillGradient": 0,
+           "gridPos": {
+             "h": 8,
+             "w": 12,
+             "x": 12,
+             "y": 41
+           },
+           "hiddenSeries": false,
+           "id": 82,
+           "legend": {
+             "avg": false,
+             "current": false,
+             "max": false,
+             "min": false,
+             "show": true,
+             "total": false,
+             "values": false
+           },
+           "lines": true,
+           "linewidth": 1,
+           "nullPointMode": "null",
+           "options": {
+             "alertThreshold": true
+           },
+           "percentage": false,
+           "pluginVersion": "10.0.2",
+           "pointradius": 2,
+           "points": false,
+           "renderer": "flot",
+           "seriesOverrides": [],
+           "spaceLength": 10,
+           "stack": false,
+           "steppedLine": false,
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "minio_node_disk_free_inodes{job=\"$scrape_jobs\"}",
+               "format": "time_series",
+               "instant": false,
+               "interval": "",
+               "legendFormat": "Free Inodes [{{server}}:{{disk}}]",
+               "refId": "A"
+             }
+           ],
+           "thresholds": [],
+           "timeRegions": [],
+           "title": "Drives Free Inodes",
+           "tooltip": {
+             "shared": true,
+             "sort": 0,
+             "value_type": "individual"
+           },
+           "type": "timeseries",
+           "xaxis": {
+             "mode": "time",
+             "show": true,
+             "values": []
+           },
+           "yaxes": [
+             {
+               "$$hashKey": "object:381",
+               "format": "none",
+               "logBase": 1,
+               "show": true
+             },
+             {
+               "$$hashKey": "object:382",
+               "format": "short",
+               "logBase": 1,
+               "show": true
+             }
+           ],
+           "yaxis": {
+             "align": false
+           }
+         },
+         {
+           "aliasColors": {
+             "Offline 10.13.1.25:9000": "dark-red",
+             "Total 10.13.1.25:9000": "blue"
+           },
+           "autoMigrateFrom": "graph",
+           "bars": true,
+           "dashLength": 10,
+           "dashes": false,
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "description": "Number of online disks per MinIO Server",
+           "fieldConfig": {
+             "defaults": {
+               "links": []
+             },
+             "overrides": []
+           },
+           "fill": 1,
+           "fillGradient": 0,
+           "gridPos": {
+             "h": 9,
+             "w": 12,
+             "x": 0,
+             "y": 49
+           },
+           "hiddenSeries": false,
+           "id": 11,
+           "legend": {
+             "avg": false,
+             "current": false,
+             "max": false,
+             "min": false,
+             "rightSide": false,
+             "show": true,
+             "total": false,
+             "values": false
+           },
+           "lines": false,
+           "linewidth": 1,
+           "links": [],
+           "nullPointMode": "null",
+           "options": {
+             "alertThreshold": true
+           },
+           "percentage": false,
+           "pluginVersion": "10.0.2",
+           "pointradius": 2,
+           "points": false,
+           "renderer": "flot",
+           "seriesOverrides": [],
+           "spaceLength": 10,
+           "stack": false,
+           "steppedLine": false,
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "rate(minio_node_syscall_read_total{job=\"$scrape_jobs\"}[$__rate_interval])",
+               "format": "time_series",
+               "interval": "",
+               "intervalFactor": 2,
+               "legendFormat": "Read Syscalls [{{server}}]",
+               "metric": "process_start_time_seconds",
+               "refId": "A",
+               "step": 60
+             },
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "rate(minio_node_syscall_write_total{job=\"$scrape_jobs\"}[$__rate_interval])",
+               "interval": "",
+               "legendFormat": "Write Syscalls [{{server}}]",
+               "refId": "B"
+             }
+           ],
+           "thresholds": [],
+           "timeRegions": [],
+           "title": "Node Syscalls",
+           "tooltip": {
+             "shared": true,
+             "sort": 0,
+             "value_type": "individual"
+           },
+           "type": "timeseries",
+           "xaxis": {
+             "mode": "time",
+             "show": true,
+             "values": []
+           },
+           "yaxes": [
+             {
+               "$$hashKey": "object:185",
+               "decimals": 0,
+               "format": "short",
+               "logBase": 1,
+               "min": "0",
+               "show": true
+             },
+             {
+               "$$hashKey": "object:186",
+               "format": "short",
+               "logBase": 1,
+               "show": true
+             }
+           ],
+           "yaxis": {
+             "align": false
+           }
+         },
+         {
+           "aliasColors": {
+             "available 10.13.1.25:9000": "green",
+             "used 10.13.1.25:9000": "blue"
+           },
+           "autoMigrateFrom": "graph",
+           "bars": false,
+           "dashLength": 10,
+           "dashes": false,
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "description": "",
+           "fieldConfig": {
+             "defaults": {
+               "links": []
+             },
+             "overrides": []
+           },
+           "fill": 1,
+           "fillGradient": 0,
+           "gridPos": {
+             "h": 9,
+             "w": 12,
+             "x": 12,
+             "y": 49
+           },
+           "hiddenSeries": false,
+           "id": 8,
+           "legend": {
+             "avg": false,
+             "current": false,
+             "max": false,
+             "min": false,
+             "rightSide": false,
+             "show": true,
+             "total": false,
+             "values": false
+           },
+           "lines": true,
+           "linewidth": 1,
+           "links": [],
+           "nullPointMode": "null",
+           "options": {
+             "alertThreshold": true
+           },
+           "percentage": false,
+           "pluginVersion": "10.0.2",
+           "pointradius": 2,
+           "points": false,
+           "renderer": "flot",
+           "seriesOverrides": [],
+           "spaceLength": 10,
+           "stack": false,
+           "steppedLine": false,
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "minio_node_file_descriptor_open_total{job=\"$scrape_jobs\"}",
+               "interval": "",
+               "legendFormat": "Open FDs [{{server}}]",
+               "refId": "B"
+             }
+           ],
+           "thresholds": [],
+           "timeRegions": [],
+           "title": "Node File Descriptors",
+           "tooltip": {
+             "shared": true,
+             "sort": 0,
+             "value_type": "individual"
+           },
+           "type": "timeseries",
+           "xaxis": {
+             "mode": "time",
+             "show": true,
+             "values": []
+           },
+           "yaxes": [
+             {
+               "$$hashKey": "object:212",
+               "format": "none",
+               "logBase": 1,
+               "min": "0",
+               "show": true
+             },
+             {
+               "$$hashKey": "object:213",
+               "format": "none",
+               "logBase": 1,
+               "min": "0",
+               "show": true
+             }
+           ],
+           "yaxis": {
+             "align": false
+           }
+         },
+         {
+           "aliasColors": {},
+           "autoMigrateFrom": "graph",
+           "bars": true,
+           "dashLength": 10,
+           "dashes": false,
+           "datasource": {
+             "type": "prometheus",
+             "uid": "metrics"
+           },
+           "fill": 1,
+           "fillGradient": 0,
+           "gridPos": {
+             "h": 7,
+             "w": 24,
+             "x": 0,
+             "y": 58
+           },
+           "hiddenSeries": false,
+           "id": 73,
+           "legend": {
+             "avg": false,
+             "current": false,
+             "max": false,
+             "min": false,
+             "show": true,
+             "total": false,
+             "values": false
+           },
+           "lines": true,
+           "linewidth": 1,
+           "nullPointMode": "null",
+           "options": {
+             "alertThreshold": true
+           },
+           "percentage": false,
+           "pluginVersion": "10.0.2",
+           "pointradius": 2,
+           "points": false,
+           "renderer": "flot",
+           "seriesOverrides": [],
+           "spaceLength": 10,
+           "stack": false,
+           "steppedLine": false,
+           "targets": [
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "rate(minio_node_io_rchar_bytes{job=\"$scrape_jobs\"}[$__rate_interval])",
+               "format": "time_series",
+               "instant": false,
+               "interval": "",
+               "legendFormat": "Node RChar [{{server}}]",
+               "refId": "A"
+             },
+             {
+               "datasource": {
+                 "type": "prometheus",
+                 "uid": "metrics"
+               },
+               "exemplar": true,
+               "expr": "rate(minio_node_io_wchar_bytes{job=\"$scrape_jobs\"}[$__rate_interval])",
+               "interval": "",
+               "legendFormat": "Node WChar [{{server}}]",
+               "refId": "B"
+             }
+           ],
+           "thresholds": [],
+           "timeRegions": [],
+           "title": "Node IO",
+           "tooltip": {
+             "shared": true,
+             "sort": 0,
+             "value_type": "individual"
+           },
+           "type": "timeseries",
+           "xaxis": {
+             "mode": "time",
+             "show": true,
+             "values": []
+           },
+           "yaxes": [
+             {
+               "$$hashKey": "object:381",
+               "format": "bytes",
+               "logBase": 1,
+               "show": true
+             },
+             {
+               "$$hashKey": "object:382",
+               "format": "short",
+               "logBase": 1,
+               "show": true
+             }
+           ],
+           "yaxis": {
+             "align": false
+           }
+         }
+       ],
+       "refresh": "",
+       "schemaVersion": 38,
+       "style": "dark",
+       "tags": [
+         "minio"
+       ],
+       "templating": {
+         "list": [
+           {
+             "current": {
+               "selected": true,
+               "text": [
+                 "integrations/minio"
+               ],
+               "value": [
+                 "integrations/minio"
+               ]
+             },
+             "datasource": {
+               "type": "prometheus",
+               "uid": "metrics"
+             },
+             "definition": "label_values(job)",
+             "hide": 0,
+             "includeAll": true,
+             "multi": true,
+             "name": "scrape_jobs",
+             "options": [],
+             "query": {
+               "query": "label_values(job)",
+               "refId": "StandardVariableQuery"
+             },
+             "refresh": 1,
+             "regex": "",
+             "skipUrlSync": false,
+             "sort": 0,
+             "type": "query"
+           }
+         ]
+       },
+       "time": {
+         "from": "now-15m",
+         "to": "now"
+       },
+       "timepicker": {
+         "refresh_intervals": [
+           "10s",
+           "30s",
+           "1m",
+           "5m",
+           "15m",
+           "30m",
+           "1h",
+           "2h",
+           "1d"
+         ],
+         "time_options": [
+           "5m",
+           "15m",
+           "1h",
+           "6h",
+           "12h",
+           "24h",
+           "2d",
+           "7d",
+           "30d"
+         ]
+       },
+       "timezone": "",
+       "title": "MinIO Cluster Dashboard",
+       "uid": "TgmJnqnnk",
+       "version": 1,
+       "weekStart": ""
+    }
+kind: ConfigMap
+metadata:
+  annotations:
+    grafana_dashboard_folder: /dashboards
+  labels:
+    grafana_dashboard: "1"
+    team: team-infra
+  name: minio-dashboard.json
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  ALERT_MANAGER_HOST: alertmanager-headless.monitoring-system.svc.cluster.local
+  COMPACTOR_HOST: compactor.monitoring-system.svc.cluster.local
+  DISTRIBUTOR_HOST: distributor.monitoring-system.svc.cluster.local
+  NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx
+  QUERY_FRONTEND_HOST: query-frontend.monitoring-system.svc.cluster.local
+  RULER_HOST: ruler.monitoring-system.svc.cluster.local
+immutable: true
+kind: ConfigMap
+metadata:
+  labels:
+    team: team-infra
+  name: nginx-env-d58ddffg6h
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  gateway_mimir.conf.template: "server {\n    listen 8080;\n    listen [::]:8080;\n\n
+    \   location = / {\n      return 200 'OK';\n      auth_basic off;\n      access_log
+    off;\n    }\n\n    proxy_set_header X-Scope-OrgID $ensured_x_scope_orgid;\n\n
+    \   # Distributor endpoints\n    location /distributor {\n      proxy_pass      http://${DISTRIBUTOR_HOST}:8080$request_uri;\n
+    \   }\n    location = /api/v1/push {\n      proxy_pass      http://${DISTRIBUTOR_HOST}:8080$request_uri;\n
+    \   }\n    location /otlp/v1/metrics {\n      proxy_pass      http://${DISTRIBUTOR_HOST}:8080$request_uri;\n
+    \   }\n\n    # Alertmanager endpoints\n    location /alertmanager {\n      proxy_pass
+    \     http://${ALERT_MANAGER_HOST}:8080$request_uri;\n    }\n    location = /multitenant_alertmanager/status
+    {\n      proxy_pass      http://${ALERT_MANAGER_HOST}:8080$request_uri;\n    }\n
+    \   location = /api/v1/alerts {\n      proxy_pass      http://${ALERT_MANAGER_HOST}:8080$request_uri;\n
+    \   }\n\n    # Ruler endpoints\n    location /prometheus/config/v1/rules {\n      proxy_pass
+    \     http://${RULER_HOST}:8080$request_uri;\n    }\n    location /prometheus/api/v1/rules
+    {\n      proxy_pass      http://${RULER_HOST}:8080$request_uri;\n    }\n    \n
+    \   location /prometheus/api/v1/alerts {\n      proxy_pass      http://${RULER_HOST}:8080$request_uri;\n
+    \   }\n    location = /ruler/ring {\n      proxy_pass      http://${RULER_HOST}:8080$request_uri;\n
+    \   }\n\n    # Rest of /prometheus goes to the query frontend\n    location /prometheus
+    {\n      proxy_pass      http://${QUERY_FRONTEND_HOST}:8080$request_uri;\n    }\n\n
+    \   # Buildinfo endpoint can go to any component\n    location = /api/v1/status/buildinfo
+    {\n      proxy_pass      http://${QUERY_FRONTEND_HOST}:8080$request_uri;\n    }\n\n
+    \   # Compactor endpoint for uploading blocks\n    location /api/v1/upload/block/
+    {\n      proxy_pass      http://${COMPACTOR_HOST}:8080$request_uri;\n    }\n}"
+  nginx.conf.template: |-
+    worker_processes  auto;
+    error_log  /dev/stderr error;
+    pid        /tmp/nginx.pid;
+    worker_rlimit_nofile 8192;
+
+    events {
+      worker_connections  4096;  ## Default: 1024
+    }
+
+    http {
+      client_body_temp_path /tmp/client_temp;
+      proxy_temp_path       /tmp/proxy_temp_path;
+      fastcgi_temp_path     /tmp/fastcgi_temp;
+      uwsgi_temp_path       /tmp/uwsgi_temp;
+      scgi_temp_path        /tmp/scgi_temp;
+
+      client_max_body_size  4M;
+
+      proxy_read_timeout    600; ## 10 minutes
+      proxy_send_timeout    600;
+      proxy_connect_timeout 600;
+
+      proxy_http_version    1.1;
+
+      default_type application/octet-stream;
+      log_format   main '$remote_addr - $remote_user [$time_local]  $status '
+            '"$request" $body_bytes_sent "$http_referer" '
+            '"$http_user_agent" "$http_x_forwarded_for"';
+
+      map $status $loggable {
+        ~^[23]  0;
+        default 1;
+      }
+
+      access_log   /dev/stderr  main if=$loggable;
+
+      sendfile     on;
+      tcp_nopush   on;
+
+      resolver kube-dns.kube-system.svc.cluster.local;
+
+      # Ensure that X-Scope-OrgID is always present, default to the no_auth_tenant for backwards compatibility when multi-tenancy was turned off.
+      map $http_x_scope_orgid $ensured_x_scope_orgid {
+        default $http_x_scope_orgid;
+        "" "anonymous";
+      }
+
+      include /etc/nginx/gateway_*.conf;
+    }
+kind: ConfigMap
+metadata:
+  labels:
+    team: team-infra
+  name: nginx-templates-h69cm5877t
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  prometheus.yml: "global:\n  scrape_interval: 15s\n  external_labels:\n    scraped_by:
+    prometheus\n    cluster: k3d-k3s-01\n\nremote_write:\n- url: http://nginx:8080/api/v1/push\n
+    \ send_exemplars: true\n  # send_native_histograms: true\n  headers:\n    X-Scope-OrgID:
+    \"anonymous\"\n\nscrape_configs:\n- job_name: 'kubernetes-pods'\n  kubernetes_sd_configs:\n
+    \ - role: pod  \n    namespaces:\n      own_namespace: true\n\n  tls_config:\n
+    \   ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt\n  # fix minio
+    401\n  # bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token\n\n
+    \ # You can specify the following annotations (on pods):\n  #   prometheus.io.scrape:
+    false - don't scrape this pod\n  #   prometheus.io.scheme: https - use https for
+    scraping\n  #   prometheus.io.port - scrape this port\n  #   prometheus.io.path
+    - scrape this path\n  relabel_configs:\n\n  # Always use HTTPS for the api server\n
+    \ - source_labels: [__meta_kubernetes_service_label_component]\n    regex: apiserver\n
+    \   action: replace\n    target_label: __scheme__\n    replacement: https\n\n
+    \ - source_labels: [__meta_kubernetes_namespace]\n    action: replace\n    target_label:
+    namespace\n    replacement: $1\n\n\n  # Drop anything annotated with prometheus.io.scrape=false\n
+    \ - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]\n    action:
+    drop\n    regex: false\n\n  # # Drop any endpoint who's pod port name ends with
+    -noscrape\n  # - source_labels: [__meta_kubernetes_pod_container_port_name]\n
+    \ #   action: drop\n  #   regex: .*-noscrape\n\n  # Keep endpoint who's pod port
+    name is http-metrics\n  - source_labels: [__meta_kubernetes_pod_container_port_name]\n
+    \   action: keep\n    regex: http-metrics\n\n  # Allow pods to override the scrape
+    scheme with prometheus.io.scheme=https\n  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]\n
+    \   action: replace\n    target_label: __scheme__\n    regex: ^(https?)$\n    replacement:
+    $1\n\n  # Allow service to override the scrape path with prometheus.io.path=/other_metrics_path\n
+    \ - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]\n    action:
+    replace\n    target_label: __metrics_path__\n    regex: ^(.+)$\n    replacement:
+    $1\n\n  # Allow services to override the scrape port with prometheus.io.port=1234\n
+    \ - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]\n
+    \   action: replace\n    target_label: __address__\n    regex: (.+?)(\\:\\d+)?;(\\d+)\n
+    \   replacement: $1:$3\n\n  # Drop pods without a name label\n  - source_labels:
+    [__meta_kubernetes_pod_label_app]\n    action: drop\n    regex: ^$\n\n  # Rename
+    jobs to be <namespace>/<name, from pod name label>\n  - source_labels: [__meta_kubernetes_namespace,
+    __meta_kubernetes_pod_label_app]\n    action: replace\n    separator: /\n    target_label:
+    job\n    replacement: $1\n\n  # Rename instances to be the pod name\n  - source_labels:
+    [__meta_kubernetes_pod_name]\n    action: replace\n    target_label: instance\n\n
+    \ # Include node name as a extra field\n  - source_labels: [__meta_kubernetes_pod_node_name]\n
+    \   target_label: node\n\n# This scrape config gather all nodes\n- job_name: 'kubernetes-nodes'\n
+    \ kubernetes_sd_configs:\n  - role: node\n\n  # couldn't get prometheus to validate
+    the kublet cert for scraping, so don't bother for now\n  tls_config:\n    insecure_skip_verify:
+    true\n  bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token\n\n
+    \ relabel_configs:\n  - target_label: __scheme__\n    replacement: https\n  -
+    source_labels: [__meta_kubernetes_node_label_kubernetes_io_hostname]\n    target_label:
+    instance\n\n# This scrape config just pulls in the default/kubernetes service\n-
+    job_name: 'kubernetes-service'\n  kubernetes_sd_configs:\n  - role: endpoints\n\n
+    \ tls_config:\n    insecure_skip_verify: true\n  bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token\n\n
+    \ relabel_configs:\n  - source_labels: [__meta_kubernetes_service_label_component]\n
+    \   regex: apiserver\n    action: keep\n\n  - target_label: __scheme__\n    replacement:
+    https\n\n  - source_labels: []\n    target_label: job\n    replacement: default/kubernetes"
+immutable: true
+kind: ConfigMap
+metadata:
+  labels:
+    team: team-infra
+  name: prometheus-config-b2c7mk5dc6
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  runtime.yaml: |-
+    ingester_limits: # limits that each ingester replica enforces
+      max_ingestion_rate: 20000
+      max_series: 1500000
+      max_tenants: 1000
+      max_inflight_push_requests: 30000
+
+    distributor_limits: # limits that each distributor replica enforces
+      max_ingestion_rate: 20000
+      max_inflight_push_requests: 30000
+      max_inflight_push_requests_bytes: 50000000
+
+    overrides:
+      anonymous: # limits for anonymous that the whole cluster enforces
+        # ingestion_tenant_shard_size: 9
+        max_global_series_per_user: 1500000
+        max_fetched_series_per_query: 100000
+immutable: true
+kind: ConfigMap
+metadata:
+  labels:
+    team: team-infra
+  name: runtime-config-d6979bkdgd
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  admin-password: YWRtaW5fcGFzc3dvcmQ=
+  admin-user: YWRtaW4=
+immutable: true
+kind: Secret
+metadata:
+  labels:
+    team: team-infra
+  name: grafana-55dh9ff969
+  namespace: monitoring-system
+type: Opaque
+---
+apiVersion: v1
+data:
+  alertmanager-fallback-config.yaml: |
+    cm91dGU6CiAgZ3JvdXBfd2FpdDogMHMKICByZWNlaXZlcjogZW1wdHktcmVjZWl2ZXIKCn
+    JlY2VpdmVyczoKICAjIEluIHRoaXMgZXhhbXBsZSB3ZSdyZSBub3QgZ29pbmcgdG8gc2Vu
+    ZCBhbnkgbm90aWZpY2F0aW9uIG91dCBvZiBBbGVydG1hbmFnZXIuCiAgLSBuYW1lOiAnZW
+    1wdHktcmVjZWl2ZXInCg==
+  mimir.yaml: |
+    IyBEbyBub3QgdXNlIHRoaXMgY29uZmlndXJhdGlvbiBpbiBwcm9kdWN0aW9uLgojIEl0IG
+    lzIGZvciBkZW1vbnN0cmF0aW9uIHB1cnBvc2VzIG9ubHkuCm11bHRpdGVuYW5jeV9lbmFi
+    bGVkOiBmYWxzZQoKIyAtdXNhZ2Utc3RhdHMuZW5hYmxlZD1mYWxzZQp1c2FnZV9zdGF0cz
+    oKICBlbmFibGVkOiBmYWxzZQoKc2VydmVyOgogIGh0dHBfbGlzdGVuX3BvcnQ6IDgwODAK
+    ICBncnBjX2xpc3Rlbl9wb3J0OiA5MDk1CiAgbG9nX2xldmVsOiB3YXJuCgpjb21tb246Ci
+    Agc3RvcmFnZToKICAgIGJhY2tlbmQ6IHMzCiAgICBzMzoKICAgICAgZW5kcG9pbnQ6ICAg
+    ICAgICAgIG1pbmlvOjkwMDAKICAgICAgYWNjZXNzX2tleV9pZDogICAgIGFkbWluCiAgIC
+    AgIHNlY3JldF9hY2Nlc3Nfa2V5OiBhZG1pbl9wYXNzd29yZAogICAgICBpbnNlY3VyZTog
+    ICAgICAgICAgdHJ1ZQoKYWxlcnRtYW5hZ2VyOgogIGRhdGFfZGlyOiAvZGF0YS9hbGVydG
+    1hbmFnZXIKICBlbmFibGVfYXBpOiB0cnVlCiAgZXh0ZXJuYWxfdXJsOiAvYWxlcnRtYW5h
+    Z2VyCiAgZmFsbGJhY2tfY29uZmlnX2ZpbGU6IC9ldGMvbWltaXIvYWxlcnRtYW5hZ2VyLW
+    ZhbGxiYWNrLWNvbmZpZy55YW1sCmFsZXJ0bWFuYWdlcl9zdG9yYWdlOgogIHMzOgogICAg
+    YnVja2V0X25hbWU6IG1pbWlyLWFsZXJ0bWFuYWdlcgoKYmxvY2tzX3N0b3JhZ2U6CiAgcz
+    M6CiAgICBidWNrZXRfbmFtZTogbWltaXItZGF0YQogIHRzZGI6CiAgICBkaXI6IC9kYXRh
+    L2luZ2VzdGVyCgpmcm9udGVuZDoKICBwYXJhbGxlbGl6ZV9zaGFyZGFibGVfcXVlcmllcz
+    ogdHJ1ZQogIHNjaGVkdWxlcl9hZGRyZXNzOiBxdWVyeS1zY2hlZHVsZXItaGVhZGxlc3M6
+    OTA5NQpmcm9udGVuZF93b3JrZXI6CiAgZ3JwY19jbGllbnRfY29uZmlnOgogICAgbWF4X3
+    NlbmRfbXNnX3NpemU6IDQxOTQzMDQwMAogIHNjaGVkdWxlcl9hZGRyZXNzOiBxdWVyeS1z
+    Y2hlZHVsZXItaGVhZGxlc3M6OTA5NQoKbWVtYmVybGlzdDoKICBqb2luX21lbWJlcnM6IF
+    sgZ29zc2lwLXJpbmctaGVhZGxlc3M6Nzk0NiBdCgpydWxlcjoKICBydWxlX3BhdGg6IC9k
+    YXRhL3J1bGVzCiAgZW5hYmxlX2FwaTogdHJ1ZQogIGFsZXJ0bWFuYWdlcl91cmw6IGh0dH
+    A6Ly9hbGVydG1hbmFnZXItaGVhZGxlc3M6ODA4MC9hbGVydG1hbmFnZXIKcnVsZXJfc3Rv
+    cmFnZToKICBzMzoKICAgIGJ1Y2tldF9uYW1lOiBtaW1pci1ydWxlcwoKcnVudGltZV9jb2
+    5maWc6CiAgZmlsZTogL3Zhci9taW1pci9ydW50aW1lLnlhbWwKCnF1ZXJ5X3NjaGVkdWxl
+    cjoKICBtYXhfb3V0c3RhbmRpbmdfcmVxdWVzdHNfcGVyX3RlbmFudDogODAwCgpsaW1pdH
+    M6CiAgbmF0aXZlX2hpc3RvZ3JhbXNfaW5nZXN0aW9uX2VuYWJsZWQ6IHRydWUK
+kind: Secret
+metadata:
+  labels:
+    team: team-infra
+  name: mimir-config-6f5cgttm66
+  namespace: monitoring-system
+type: Opaque
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: alertmanager
+    team: team-infra
+  name: alertmanager
+  namespace: monitoring-system
+spec:
+  ports:
+  - name: http-metrics
+    port: 8080
+  - name: grpc-am
+    port: 9095
+  selector:
+    app: alertmanager
+    team: team-infra
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: alertmanager
+    team: team-infra
+  name: alertmanager-headless
+  namespace: monitoring-system
+spec:
+  clusterIP: None
+  ports:
+  - name: http-metrics
+    port: 8080
+  - name: http-web
+    port: 9093
+  - name: tcp-cluster
+    port: 9094
+  - name: udp-cluster
+    port: 9094
+    protocol: UDP
+  - name: grpc-am
+    port: 9095
+  publishNotReadyAddresses: true
+  selector:
+    app: alertmanager
+    team: team-infra
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: compactor
+    team: team-infra
+  name: compactor
+  namespace: monitoring-system
+spec:
+  ports:
+  - name: http-metrics
+    port: 8080
+  - name: grpc-compactor
+    port: 9095
+  selector:
+    app: compactor
+    team: team-infra
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: distributor
+    team: team-infra
+  name: distributor
+  namespace: monitoring-system
+spec:
+  ports:
+  - name: http-metrics
+    port: 8080
+  - name: grpc-distribut
+    port: 9095
+  selector:
+    app: distributor
+    team: team-infra
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: gossip-ring
+    team: team-infra
+  name: gossip-ring-headless
+  namespace: monitoring-system
+spec:
+  clusterIP: None
+  ports:
+  - name: tcp-gossip-ring
+    port: 7946
+    protocol: TCP
+    targetPort: 7946
+  publishNotReadyAddresses: true
+  selector:
+    gossip_ring_member: "true"
+    team: team-infra
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: grafana
+    team: team-infra
+  name: grafana
+  namespace: monitoring-system
+spec:
+  ports:
+  - name: http-metrics
+    port: 3000
+  selector:
+    app: grafana
+    team: team-infra
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: ingester
+    team: team-infra
+  name: ingester
+  namespace: monitoring-system
+spec:
+  ports:
+  - name: http-metrics
+    port: 8080
+  - name: grpc-ingester
+    port: 9095
+  selector:
+    app: ingester
+    team: team-infra
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: ingester
+    team: team-infra
+  name: ingester-headless
+  namespace: monitoring-system
+spec:
+  clusterIP: None
+  ports:
+  - name: http-metrics
+    port: 8080
+  - name: grpc-ingester
+    port: 9095
+  selector:
+    app: ingester
+    team: team-infra
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: minio
+    team: team-infra
+  name: minio
+  namespace: monitoring-system
+spec:
+  ports:
+  - name: http-metrics
+    port: 9000
+  selector:
+    app: minio
+    team: team-infra
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: nginx
+    team: team-infra
+  name: nginx
+  namespace: monitoring-system
+spec:
+  ports:
+  - name: http-service
+    port: 8080
+  selector:
+    app: nginx
+    team: team-infra
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: prometheus
+    team: team-infra
+  name: prometheus
+  namespace: monitoring-system
+spec:
+  ports:
+  - name: http-metrics
+    port: 9090
+  selector:
+    app: prometheus
+    team: team-infra
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: querier
+    team: team-infra
+  name: querier
+  namespace: monitoring-system
+spec:
+  ports:
+  - name: http-metrics
+    port: 8080
+  - name: grpc-querier
+    port: 9095
+  selector:
+    app: querier
+    team: team-infra
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: query-frontend
+    team: team-infra
+  name: query-frontend
+  namespace: monitoring-system
+spec:
+  ports:
+  - name: http-metrics
+    port: 8080
+  - name: grpc-frontend
+    port: 9095
+  selector:
+    app: query-frontend
+    team: team-infra
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: query-scheduler
+    team: team-infra
+  name: query-scheduler
+  namespace: monitoring-system
+spec:
+  ports:
+  - name: http-metrics
+    port: 8080
+  - name: grpc-scheduler
+    port: 9095
+  selector:
+    app: query-scheduler
+    team: team-infra
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: query-scheduler
+    team: team-infra
+  name: query-scheduler-headless
+  namespace: monitoring-system
+spec:
+  clusterIP: None
+  ports:
+  - name: http-metrics
+    port: 8080
+  - name: grpc-scheduler
+    port: 9095
+  publishNotReadyAddresses: true
+  selector:
+    app: query-scheduler
+    team: team-infra
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: ruler
+    team: team-infra
+  name: ruler
+  namespace: monitoring-system
+spec:
+  ports:
+  - name: http-metrics
+    port: 8080
+  selector:
+    app: ruler
+    team: team-infra
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: store-gateway
+    team: team-infra
+  name: store-gateway
+  namespace: monitoring-system
+spec:
+  ports:
+  - name: http-metrics
+    port: 8080
+  - name: grpc-store-gw
+    port: 9095
+  selector:
+    app: store-gateway
+    team: team-infra
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: store-gateway
+    team: team-infra
+  name: store-gateway-headless
+  namespace: monitoring-system
+spec:
+  clusterIP: None
+  ports:
+  - name: http-metrics
+    port: 8080
+  - name: grpc-store-gw
+    port: 9095
+  selector:
+    app: store-gateway
+    team: team-infra
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: distributor
+    team: team-infra
+  name: distributor
+  namespace: monitoring-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: distributor
+      team: team-infra
+  template:
+    metadata:
+      labels:
+        app: distributor
+        gossip_ring_member: "true"
+        team: team-infra
+    spec:
+      containers:
+      - args:
+        - -target=distributor
+        - -config.expand-env=true
+        - -config.file=/etc/mimir/mimir.yaml
+        - -memberlist.bind-addr=$(POD_IP)
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        image: grafana/mimir:2.9.0
+        imagePullPolicy: IfNotPresent
+        name: distributor
+        ports:
+        - containerPort: 8080
+          name: http-metrics
+        - containerPort: 9095
+          name: grpc-distribut
+        - containerPort: 7946
+          name: http-memberlist
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http-metrics
+          initialDelaySeconds: 45
+        volumeMounts:
+        - mountPath: /etc/mimir
+          name: mimir-config
+        - mountPath: /var/mimir
+          name: runtime-config
+      terminationGracePeriodSeconds: 60
+      volumes:
+      - name: mimir-config
+        secret:
+          secretName: mimir-config-6f5cgttm66
+      - configMap:
+          name: runtime-config-d6979bkdgd
+        name: runtime-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: grafana
+    team: team-infra
+  name: grafana
+  namespace: monitoring-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+      team: team-infra
+  template:
+    metadata:
+      annotations:
+        prometheus.io.port: "3000"
+        prometheus.io.scrape: "true"
+      labels:
+        app: grafana
+        team: team-infra
+    spec:
+      automountServiceAccountToken: true
+      containers:
+      - env:
+        - name: METHOD
+          value: WATCH
+        - name: LABEL
+          value: grafana_dashboard
+        - name: LABEL_VALUE
+          value: "1"
+        - name: FOLDER
+          value: /dashboards
+        - name: RESOURCE
+          value: both
+        - name: NAMESPACE
+          valueFrom:
+            configMapKeyRef:
+              key: NAMESPACE
+              name: grafana-env-dkmb477tfh
+        - name: FOLDER_ANNOTATION
+          value: grafana_dashboard_folder
+        - name: REQ_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: admin-user
+              name: grafana-55dh9ff969
+        - name: REQ_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: admin-password
+              name: grafana-55dh9ff969
+        - name: REQ_URL
+          value: http://localhost:3000/api/admin/provisioning/dashboards/reload
+        - name: REQ_METHOD
+          value: POST
+        image: quay.io/kiwigrid/k8s-sidecar:1.24.6
+        imagePullPolicy: IfNotPresent
+        name: grafana-sc-dashboard
+        volumeMounts:
+        - mountPath: /dashboards
+          name: sc-dashboard-volume
+      - env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: GF_SECURITY_ADMIN_USER
+          valueFrom:
+            secretKeyRef:
+              key: admin-user
+              name: grafana-55dh9ff969
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: admin-password
+              name: grafana-55dh9ff969
+        - name: GF_PATHS_DATA
+          value: /var/lib/grafana/
+        - name: GF_PATHS_LOGS
+          value: /var/log/grafana
+        - name: GF_PATHS_PLUGINS
+          value: /var/lib/grafana/plugins
+        - name: GF_PATHS_PROVISIONING
+          value: /etc/grafana/provisioning
+        envFrom:
+        - configMapRef:
+            name: grafana-env-dkmb477tfh
+            optional: true
+        image: grafana/grafana:10.0.3
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 60
+          timeoutSeconds: 30
+        name: grafana
+        ports:
+        - containerPort: 3000
+          name: http-metrics
+        - containerPort: 9094
+          name: tcp-gossip
+        - containerPort: 9094
+          name: udp-gossip
+          protocol: UDP
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+        volumeMounts:
+        - mountPath: /etc/grafana/grafana.ini
+          name: config
+          subPath: grafana.ini
+        - mountPath: /var/lib/grafana
+          name: storage
+        - mountPath: /etc/grafana/provisioning/datasources/datasources.yaml
+          name: config
+          subPath: datasources.yaml
+        - mountPath: /dashboards
+          name: sc-dashboard-volume
+        - mountPath: /etc/grafana/provisioning/dashboards/sc-dashboardproviders.yaml
+          name: sc-dashboard-provider
+          subPath: provider.yaml
+      enableServiceLinks: true
+      serviceAccountName: grafana
+      volumes:
+      - configMap:
+          name: grafana-252b8kcf9h
+        name: config
+      - emptyDir: {}
+        name: storage
+      - emptyDir: {}
+        name: sc-dashboard-volume
+      - configMap:
+          name: grafana-config-dashboards-f9dhd6k9t5
+        name: sc-dashboard-provider
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: minio
+    team: team-infra
+  name: minio
+  namespace: monitoring-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minio
+      team: team-infra
+  template:
+    metadata:
+      annotations:
+        prometheus.io.path: /minio/v2/metrics/cluster
+        prometheus.io.port: "9000"
+        prometheus.io.scrape: "true"
+      labels:
+        app: minio
+        team: team-infra
+    spec:
+      containers:
+      - command:
+        - sh
+        - -c
+        - |
+          mkdir -p /data/mimir-data /data/mimir-rules /data/mimir-alertmanager && \
+          mkdir -p /data/loki-data /data/loki-rules && \
+          mkdir -p /data/tempo-data  && \
+          mkdir -p /data/pyroscope-data && \
+          minio server /data --console-address ':9001'
+        env:
+        - name: MINIO_PROMETHEUS_AUTH_TYPE
+          value: public
+        - name: MINIO_ROOT_USER
+          value: admin
+        - name: MINIO_ROOT_PASSWORD
+          value: admin_password
+        - name: MINIO_UPDATE
+          value: "off"
+        image: minio/minio:RELEASE.2023-07-21T21-12-44Z
+        imagePullPolicy: IfNotPresent
+        name: minio
+        ports:
+        - containerPort: 9000
+          name: http-metrics
+        - containerPort: 9001
+          name: http-console
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nginx
+    team: team-infra
+  name: nginx
+  namespace: monitoring-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+      team: team-infra
+  template:
+    metadata:
+      labels:
+        app: nginx
+        team: team-infra
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: nginx-env-d58ddffg6h
+        image: nginxinc/nginx-unprivileged:1.25-alpine
+        imagePullPolicy: IfNotPresent
+        name: nginx
+        ports:
+        - containerPort: 8080
+          name: http-service
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http-service
+          initialDelaySeconds: 15
+          timeoutSeconds: 1
+        volumeMounts:
+        - mountPath: /etc/nginx/templates
+          name: templates
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          name: nginx-templates-h69cm5877t
+        name: templates
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: prometheus
+    team: team-infra
+  name: prometheus
+  namespace: monitoring-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+      team: team-infra
+  template:
+    metadata:
+      annotations:
+        prometheus.io.port: "9090"
+        prometheus.io.scrape: "true"
+      labels:
+        app: prometheus
+        team: team-infra
+    spec:
+      containers:
+      - args:
+        - --config.file=/etc/prometheus/prometheus.yml
+        - --storage.tsdb.retention.time=6h
+        - --storage.tsdb.retention.size=10GB
+        - --enable-feature=exemplar-storage
+        - --enable-feature=remote-write-receiver
+        - --enable-feature=native-histograms
+        image: prom/prometheus:v2.46.0
+        imagePullPolicy: IfNotPresent
+        name: prometheus
+        ports:
+        - containerPort: 9090
+          name: http-metrics
+        volumeMounts:
+        - mountPath: /etc/prometheus
+          name: config-volume
+      serviceAccountName: prometheus
+      volumes:
+      - configMap:
+          name: prometheus-config-b2c7mk5dc6
+        name: config-volume
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: querier
+    team: team-infra
+  name: querier
+  namespace: monitoring-system
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: querier
+      team: team-infra
+  template:
+    metadata:
+      labels:
+        app: querier
+        gossip_ring_member: "true"
+        team: team-infra
+    spec:
+      containers:
+      - args:
+        - -target=querier
+        - -config.file=/etc/mimir/mimir.yaml
+        - -config.expand-env=true
+        - -memberlist.bind-addr=$(POD_IP)
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        image: grafana/mimir:2.9.0
+        imagePullPolicy: IfNotPresent
+        name: querier
+        ports:
+        - containerPort: 8080
+          name: http-metrics
+        - containerPort: 9095
+          name: grpc-querier
+        - containerPort: 7946
+          name: http-memberlist
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http-metrics
+          initialDelaySeconds: 45
+        volumeMounts:
+        - mountPath: /etc/mimir
+          name: mimir-config
+        - mountPath: /var/mimir
+          name: runtime-config
+      terminationGracePeriodSeconds: 180
+      volumes:
+      - name: mimir-config
+        secret:
+          secretName: mimir-config-6f5cgttm66
+      - configMap:
+          name: runtime-config-d6979bkdgd
+        name: runtime-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: query-frontend
+    team: team-infra
+  name: query-frontend
+  namespace: monitoring-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: query-frontend
+      team: team-infra
+  template:
+    metadata:
+      labels:
+        app: query-frontend
+        team: team-infra
+    spec:
+      containers:
+      - args:
+        - -target=query-frontend
+        - -config.file=/etc/mimir/mimir.yaml
+        - -config.expand-env=true
+        image: grafana/mimir:2.9.0
+        imagePullPolicy: IfNotPresent
+        name: query-frontend
+        ports:
+        - containerPort: 8080
+          name: http-metrics
+        - containerPort: 9095
+          name: grpc-frontend
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http-metrics
+          initialDelaySeconds: 45
+        volumeMounts:
+        - mountPath: /etc/mimir
+          name: mimir-config
+        - mountPath: /var/mimir
+          name: runtime-config
+      terminationGracePeriodSeconds: 180
+      volumes:
+      - name: mimir-config
+        secret:
+          secretName: mimir-config-6f5cgttm66
+      - configMap:
+          name: runtime-config-d6979bkdgd
+        name: runtime-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: query-scheduler
+    team: team-infra
+  name: query-scheduler
+  namespace: monitoring-system
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: query-scheduler
+      team: team-infra
+  template:
+    metadata:
+      labels:
+        app: query-scheduler
+        team: team-infra
+    spec:
+      containers:
+      - args:
+        - -target=query-scheduler
+        - -config.file=/etc/mimir/mimir.yaml
+        - -config.expand-env=true
+        - -server.grpc.keepalive.max-connection-age=2562047h
+        - -server.grpc.keepalive.max-connection-age-grace=2562047h
+        image: grafana/mimir:2.9.0
+        imagePullPolicy: IfNotPresent
+        name: query-scheduler
+        ports:
+        - containerPort: 8080
+          name: http-metrics
+        - containerPort: 9095
+          name: grpc-scheduler
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http-metrics
+          initialDelaySeconds: 45
+        volumeMounts:
+        - mountPath: /etc/mimir
+          name: mimir-config
+        - mountPath: /var/mimir
+          name: runtime-config
+      terminationGracePeriodSeconds: 180
+      volumes:
+      - name: mimir-config
+        secret:
+          secretName: mimir-config-6f5cgttm66
+      - configMap:
+          name: runtime-config-d6979bkdgd
+        name: runtime-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ruler
+    team: team-infra
+  name: ruler
+  namespace: monitoring-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ruler
+      team: team-infra
+  template:
+    metadata:
+      labels:
+        app: ruler
+        gossip_ring_member: "true"
+        team: team-infra
+    spec:
+      containers:
+      - args:
+        - -target=ruler
+        - -config.file=/etc/mimir/mimir.yaml
+        - -config.expand-env=true
+        - -memberlist.bind-addr=$(POD_IP)
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        image: grafana/mimir:2.9.0
+        imagePullPolicy: IfNotPresent
+        name: ruler
+        ports:
+        - containerPort: 8080
+          name: http-metrics
+        - containerPort: 9095
+          name: grpc-ruler
+        - containerPort: 7946
+          name: http-memberlist
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http-metrics
+          initialDelaySeconds: 45
+        volumeMounts:
+        - mountPath: /etc/mimir
+          name: mimir-config
+        - mountPath: /var/mimir
+          name: runtime-config
+        - mountPath: /rules
+          name: rule-path
+      terminationGracePeriodSeconds: 180
+      volumes:
+      - name: mimir-config
+        secret:
+          secretName: mimir-config-6f5cgttm66
+      - configMap:
+          name: runtime-config-d6979bkdgd
+        name: runtime-config
+      - emptyDir: {}
+        name: rule-path
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: alertmanager
+    team: team-infra
+  name: alertmanager
+  namespace: monitoring-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alertmanager
+      team: team-infra
+  serviceName: alertmanager
+  template:
+    metadata:
+      labels:
+        app: alertmanager
+        gossip_ring_member: "true"
+        team: team-infra
+    spec:
+      containers:
+      - args:
+        - -target=alertmanager
+        - -config.file=/etc/mimir/mimir.yaml
+        - -config.expand-env=true
+        - -memberlist.bind-addr=$(POD_IP)
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        image: grafana/mimir:2.9.0
+        imagePullPolicy: IfNotPresent
+        name: alertmanager
+        ports:
+        - containerPort: 8080
+          name: http-metrics
+        - containerPort: 9095
+          name: grpc-am
+        - containerPort: 9093
+          name: http-web
+        - containerPort: 9094
+          name: tcp-cluster
+        - containerPort: 9094
+          name: ucp-cluster
+          protocol: UDP
+        - containerPort: 7946
+          name: http-memberlist
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http-metrics
+          initialDelaySeconds: 45
+        volumeMounts:
+        - mountPath: /etc/mimir
+          name: mimir-config
+        - mountPath: /var/mimir
+          name: runtime-config
+      terminationGracePeriodSeconds: 60
+      volumes:
+      - name: mimir-config
+        secret:
+          secretName: mimir-config-6f5cgttm66
+      - configMap:
+          name: runtime-config-d6979bkdgd
+        name: runtime-config
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: compactor
+    team: team-infra
+  name: compactor
+  namespace: monitoring-system
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  selector:
+    matchLabels:
+      app: compactor
+      team: team-infra
+  serviceName: compactor
+  template:
+    metadata:
+      labels:
+        app: compactor
+        gossip_ring_member: "true"
+        team: team-infra
+    spec:
+      containers:
+      - args:
+        - -target=compactor
+        - -config.file=/etc/mimir/mimir.yaml
+        - -config.expand-env=true
+        - -memberlist.bind-addr=$(POD_IP)
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        image: grafana/mimir:2.9.0
+        imagePullPolicy: IfNotPresent
+        name: compactor
+        ports:
+        - containerPort: 8080
+          name: http-metrics
+        - containerPort: 9095
+          name: grpc-compactor
+        - containerPort: 7946
+          name: http-memberlist
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http-metrics
+          initialDelaySeconds: 60
+        volumeMounts:
+        - mountPath: /etc/mimir
+          name: mimir-config
+        - mountPath: /var/mimir
+          name: runtime-config
+      terminationGracePeriodSeconds: 240
+      volumes:
+      - name: mimir-config
+        secret:
+          secretName: mimir-config-6f5cgttm66
+      - configMap:
+          name: runtime-config-d6979bkdgd
+        name: runtime-config
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: ingester
+    team: team-infra
+  name: ingester
+  namespace: monitoring-system
+spec:
+  podManagementPolicy: Parallel
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ingester
+      team: team-infra
+  serviceName: ingester-headless
+  template:
+    metadata:
+      labels:
+        app: ingester
+        gossip_ring_member: "true"
+        team: team-infra
+    spec:
+      containers:
+      - args:
+        - -target=ingester
+        - -config.expand-env=true
+        - -config.file=/etc/mimir/mimir.yaml
+        - -ingester.ring.instance-availability-zone=zone-default
+        - -memberlist.bind-addr=$(POD_IP)
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        image: grafana/mimir:2.9.0
+        imagePullPolicy: IfNotPresent
+        name: ingester
+        ports:
+        - containerPort: 8080
+          name: http-metrics
+        - containerPort: 9095
+          name: grpc-ingester
+        - containerPort: 7946
+          name: http-memberlist
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http-metrics
+          initialDelaySeconds: 60
+        volumeMounts:
+        - mountPath: /etc/mimir
+          name: mimir-config
+        - mountPath: /var/mimir
+          name: runtime-config
+      terminationGracePeriodSeconds: 240
+      volumes:
+      - name: mimir-config
+        secret:
+          secretName: mimir-config-6f5cgttm66
+      - configMap:
+          name: runtime-config-d6979bkdgd
+        name: runtime-config
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: store-gateway
+    team: team-infra
+  name: store-gateway
+  namespace: monitoring-system
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  selector:
+    matchLabels:
+      app: store-gateway
+      team: team-infra
+  serviceName: store-gateway-headless
+  template:
+    metadata:
+      labels:
+        app: store-gateway
+        gossip_ring_member: "true"
+        team: team-infra
+    spec:
+      containers:
+      - args:
+        - -target=store-gateway
+        - -config.file=/etc/mimir/mimir.yaml
+        - -config.expand-env=true
+        - -memberlist.bind-addr=$(POD_IP)
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        image: grafana/mimir:2.9.0
+        imagePullPolicy: IfNotPresent
+        name: store-gateway
+        ports:
+        - containerPort: 8080
+          name: http-metrics
+          protocol: TCP
+        - containerPort: 9095
+          name: grpc-store-gw
+          protocol: TCP
+        - containerPort: 7946
+          name: http-memberlist
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http-metrics
+          initialDelaySeconds: 60
+        volumeMounts:
+        - mountPath: /etc/mimir
+          name: mimir-config
+        - mountPath: /var/mimir
+          name: runtime-config
+      terminationGracePeriodSeconds: 240
+      volumes:
+      - name: mimir-config
+        secret:
+          secretName: mimir-config-6f5cgttm66
+      - configMap:
+          name: runtime-config-d6979bkdgd
+        name: runtime-config
