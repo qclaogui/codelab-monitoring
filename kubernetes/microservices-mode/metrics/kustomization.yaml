@@ -1,0 +1,83 @@
+# ----------------------------------------------------
+# apiVersion and kind of Kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: monitoring-system
+
+labels:
+- includeSelectors: true
+  pairs:
+    team: team-infra
+
+resources:
+# This can improve cloning a large repository, or over a slow network.
+# https://github.com/kubernetes-sigs/kustomize/commit/24a64bdee32602b6756608d4c24da28486461199
+- github.com/qclaogui/cortex-kustomize/deploy/base/mimir?ref=main&submodules=false&timeout=2m30s
+- namespace.yaml
+- add-grafana-dep.yaml
+- add-grafana-svc.yaml
+- add-prometheus-dep.yaml
+- add-prometheus-svc.yaml
+- add-dashboards-minio.yaml
+
+# patches:
+# - path: patch-nginx-svc.yaml
+
+images:
+- name: grafana/mimir
+  newTag: 2.9.0
+- name: prom/prometheus
+  newTag: v2.46.0
+- name: grafana/grafana
+  newTag: 10.0.3
+- name: quay.io/kiwigrid/k8s-sidecar
+  newTag: 1.24.6
+
+replicas:
+- count: 2
+  name: ingester
+
+# https://kubernetes.io/docs/concepts/configuration/configmap/#configmap-immutable
+generatorOptions:
+  immutable: true
+
+secretGenerator:
+# # just use mimir.yaml in base
+# - name: mimir-config
+#   behavior: replace
+#   files:
+#   - configs/mimir.yaml
+- name: grafana
+  literals:
+  - admin-user=admin
+  - admin-password=admin_password
+
+configMapGenerator:
+- name: runtime-config
+  behavior: merge
+  files:
+  - configs/runtime.yaml
+- name: prometheus-config
+  files:
+  - configs/prometheus.yml
+- name: grafana
+  files:
+  - configs/grafana/datasources.yaml
+  - configs/grafana/grafana.ini
+- name: grafana-config-dashboards
+  files:
+  - configs/grafana/provider.yaml
+- name: grafana-env
+  literals:
+  - NAMESPACE=monitoring-system
+  - GF_LOG_LEVEL=error
+
+- name: nginx-env
+  behavior: merge
+  literals:
+  - DISTRIBUTOR_HOST=distributor.monitoring-system.svc.cluster.local
+  - ALERT_MANAGER_HOST=alertmanager-headless.monitoring-system.svc.cluster.local
+  - RULER_HOST=ruler.monitoring-system.svc.cluster.local
+  - QUERY_FRONTEND_HOST=query-frontend.monitoring-system.svc.cluster.local
+  - COMPACTOR_HOST=compactor.monitoring-system.svc.cluster.local
