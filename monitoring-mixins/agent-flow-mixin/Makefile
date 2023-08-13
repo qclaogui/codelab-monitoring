@@ -27,8 +27,8 @@ check: build fmt ## Build, fmt and check the mixin files
 ##@ Dashboards & k8s
 
 .PHONY: manifests
-manifests: ## Generates dashboards for k8s
-	kustomize build deploy > deploy/manifests/k8s-all-in-one.yaml
+manifests: $(KUSTOMIZE) ## Generates dashboards for k8s
+	$(KUSTOMIZE) build deploy > deploy/manifests/k8s-all-in-one.yaml
 
 .PHONY: rules_load
 rules_load: ## Load rules and alerts to monitoring system

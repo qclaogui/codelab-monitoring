@@ -7,7 +7,6 @@ APPS_MIXIN := "agent-flow-mixin" "go-runtime-mixin"
 GRAFANA_DASHBOARDS_PATH := docker-compose/common/config/grafana/dashboards
 
 
-
 ##@ Dependencies
 
 .PHONY: install-build-deps
