@@ -1,11 +1,9 @@
 # Provisioning Scalable Observability Workspace
 
 <p align="center">
-
-<a href="https://github.com/qclaogui/codelab-monitoring/actions/workflows/ci.yml">
-  <img src="https://github.com/qclaogui/codelab-monitoring/actions/workflows/ci.yml/badge.svg">
-</a>
-
+  <a href="https://github.com/qclaogui/codelab-monitoring/actions/workflows/ci.yml">
+    <img src="https://github.com/qclaogui/codelab-monitoring/actions/workflows/ci.yml/badge.svg">
+  </a>
 </p>
 
 ## Grafana LGTMP Stack (Loki Grafana Tempo Mimir Pyroscope)
@@ -42,7 +40,7 @@ These instructions will get you through the deploying samples with Docker Compos
 
 - [Logs [Loki (Query-Frontend + Querier + Ruler + Distributor + Ingester)]](./docker-compose/microservices-mode/logs)
 - [Traces [Tempo (Query-Frontend + Querier + Distributor + Ingester + Compactor)]](./docker-compose/microservices-mode/traces)
-- [Metrics[Mimir (Query-Frontend + Querier + Store-Gateway + Distributor + Ingester + Compactor)]](./docker-compose/microservices-mode/metrics)
+- [Metrics [Mimir (Query-Frontend + Querier + Store-Gateway + Distributor + Ingester + Compactor)]](./docker-compose/microservices-mode/metrics)
 - Profiles
 
 ## Kubernetes
@@ -51,5 +49,5 @@ These instructions will get you through the deploying samples with Docker Compos
 
 - Logs
 - Traces
-- [Metrics](./kubernetes/microservices-mode/metrics)
+- [Metrics [Mimir (Query-Frontend + Querier + Store-Gateway + Distributor + Ingester + Compactor)]](./kubernetes/microservices-mode/metrics)
 - Profiles
