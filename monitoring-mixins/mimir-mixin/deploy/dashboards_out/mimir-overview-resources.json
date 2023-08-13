@@ -66,7 +66,7 @@
                   "steppedLine": false,
                   "targets": [
                      {
-                        "expr": "sum by(pod) (rate(container_cpu_usage_seconds_total{job=~\"$job\",container=~\"distributor|ingester|mimir-write\"}[$__rate_interval]))",
+                        "expr": "sum by(pod) (rate(container_cpu_usage_seconds_total{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"distributor|ingester|mimir-write\"}[$__rate_interval]))",
                         "format": "time_series",
                         "intervalFactor": 2,
                         "legendFormat": "{{pod}}",
@@ -141,7 +141,7 @@
                   "steppedLine": false,
                   "targets": [
                      {
-                        "expr": "max by(pod) (container_memory_working_set_bytes{job=~\"$job\",container=~\"distributor|ingester|mimir-write\"})",
+                        "expr": "max by(pod) (container_memory_working_set_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"distributor|ingester|mimir-write\"})",
                         "format": "time_series",
                         "intervalFactor": 2,
                         "legendFormat": "{{pod}}",
@@ -216,7 +216,7 @@
                   "steppedLine": false,
                   "targets": [
                      {
-                        "expr": "sum by(pod) (go_memstats_heap_inuse_bytes{job=~\"$job\",container=~\"distributor|ingester|mimir-write\"})",
+                        "expr": "sum by(pod) (go_memstats_heap_inuse_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"distributor|ingester|mimir-write\"})",
                         "format": "time_series",
                         "intervalFactor": 2,
                         "legendFormat": "{{pod}}",
@@ -301,7 +301,7 @@
                   "steppedLine": false,
                   "targets": [
                      {
-                        "expr": "sum by(instance, pod, device) (\n  rate(\n    node_disk_written_bytes_total[$__rate_interval]\n  )\n)\n+\nignoring(pod) group_right() (\n  label_replace(\n    count by(\n      instance,\n      pod,\n      device\n    )\n    (\n      container_fs_writes_bytes_total{\n        job=~\"$job\",\n        container=~\"distributor|ingester|mimir-write\",\n        device!~\".*sda.*\"\n      }\n    ),\n    \"device\",\n    \"$1\",\n    \"device\",\n    \"/dev/(.*)\"\n  ) * 0\n)\n\n",
+                        "expr": "sum by(instance, pod, device) (\n  rate(\n    node_disk_written_bytes_total[$__rate_interval]\n  )\n)\n+\nignoring(pod) group_right() (\n  label_replace(\n    count by(\n      instance,\n      pod,\n      device\n    )\n    (\n      container_fs_writes_bytes_total{\n        cluster=~\"$cluster\", namespace=~\"$namespace\",\n        container=~\"distributor|ingester|mimir-write\",\n        device!~\".*sda.*\"\n      }\n    ),\n    \"device\",\n    \"$1\",\n    \"device\",\n    \"/dev/(.*)\"\n  ) * 0\n)\n\n",
                         "format": "time_series",
                         "intervalFactor": 2,
                         "legendFormat": "{{pod}} - {{device}}",
@@ -376,7 +376,7 @@
                   "steppedLine": false,
                   "targets": [
                      {
-                        "expr": "sum by(instance, pod, device) (\n  rate(\n    node_disk_read_bytes_total[$__rate_interval]\n  )\n) + ignoring(pod) group_right() (\n  label_replace(\n    count by(\n      instance,\n      pod,\n      device\n    )\n    (\n      container_fs_writes_bytes_total{\n        job=~\"$job\",\n        container=~\"distributor|ingester|mimir-write\",\n        device!~\".*sda.*\"\n      }\n    ),\n    \"device\",\n    \"$1\",\n    \"device\",\n    \"/dev/(.*)\"\n  ) * 0\n)\n\n",
+                        "expr": "sum by(instance, pod, device) (\n  rate(\n    node_disk_read_bytes_total[$__rate_interval]\n  )\n) + ignoring(pod) group_right() (\n  label_replace(\n    count by(\n      instance,\n      pod,\n      device\n    )\n    (\n      container_fs_writes_bytes_total{\n        cluster=~\"$cluster\", namespace=~\"$namespace\",\n        container=~\"distributor|ingester|mimir-write\",\n        device!~\".*sda.*\"\n      }\n    ),\n    \"device\",\n    \"$1\",\n    \"device\",\n    \"/dev/(.*)\"\n  ) * 0\n)\n\n",
                         "format": "time_series",
                         "intervalFactor": 2,
                         "legendFormat": "{{pod}} - {{device}}",
@@ -451,7 +451,7 @@
                   "steppedLine": false,
                   "targets": [
                      {
-                        "expr": "max by(persistentvolumeclaim) (\n  kubelet_volume_stats_used_bytes{job=~\"$job\"} /\n  kubelet_volume_stats_capacity_bytes{job=~\"$job\"}\n)\nand\ncount by(persistentvolumeclaim) (\n  kube_persistentvolumeclaim_labels{\n    job=~\"$job\",\n    label_name=~\"(distributor|ingester|mimir-write).*\"\n  }\n)\n",
+                        "expr": "max by(persistentvolumeclaim) (\n  kubelet_volume_stats_used_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\"} /\n  kubelet_volume_stats_capacity_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\"}\n)\nand\ncount by(persistentvolumeclaim) (\n  kube_persistentvolumeclaim_labels{\n    cluster=~\"$cluster\", namespace=~\"$namespace\",\n    label_name=~\"(distributor|ingester|mimir-write).*\"\n  }\n)\n",
                         "format": "time_series",
                         "intervalFactor": 2,
                         "legendFormat": "{{persistentvolumeclaim}}",
@@ -538,7 +538,7 @@
                   "steppedLine": false,
                   "targets": [
                      {
-                        "expr": "sum by(pod) (rate(container_cpu_usage_seconds_total{job=~\"$job\",container=~\"query-frontend|querier|ruler-query-frontend|ruler-querier|mimir-read\"}[$__rate_interval]))",
+                        "expr": "sum by(pod) (rate(container_cpu_usage_seconds_total{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"query-frontend|querier|ruler-query-frontend|ruler-querier|mimir-read\"}[$__rate_interval]))",
                         "format": "time_series",
                         "intervalFactor": 2,
                         "legendFormat": "{{pod}}",
@@ -613,7 +613,7 @@
                   "steppedLine": false,
                   "targets": [
                      {
-                        "expr": "max by(pod) (container_memory_working_set_bytes{job=~\"$job\",container=~\"query-frontend|querier|ruler-query-frontend|ruler-querier|mimir-read\"})",
+                        "expr": "max by(pod) (container_memory_working_set_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"query-frontend|querier|ruler-query-frontend|ruler-querier|mimir-read\"})",
                         "format": "time_series",
                         "intervalFactor": 2,
                         "legendFormat": "{{pod}}",
@@ -688,7 +688,7 @@
                   "steppedLine": false,
                   "targets": [
                      {
-                        "expr": "sum by(pod) (go_memstats_heap_inuse_bytes{job=~\"$job\",container=~\"query-frontend|querier|ruler-query-frontend|ruler-querier|mimir-read\"})",
+                        "expr": "sum by(pod) (go_memstats_heap_inuse_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"query-frontend|querier|ruler-query-frontend|ruler-querier|mimir-read\"})",
                         "format": "time_series",
                         "intervalFactor": 2,
                         "legendFormat": "{{pod}}",
@@ -773,7 +773,7 @@
                   "steppedLine": false,
                   "targets": [
                      {
-                        "expr": "sum by(pod) (rate(container_cpu_usage_seconds_total{job=~\"$job\",container=~\"query-scheduler|ruler-query-scheduler|ruler|store-gateway|compactor|alertmanager|overrides-exporter|mimir-backend\"}[$__rate_interval]))",
+                        "expr": "sum by(pod) (rate(container_cpu_usage_seconds_total{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"query-scheduler|ruler-query-scheduler|ruler|store-gateway|compactor|alertmanager|overrides-exporter|mimir-backend\"}[$__rate_interval]))",
                         "format": "time_series",
                         "intervalFactor": 2,
                         "legendFormat": "{{pod}}",
@@ -848,7 +848,7 @@
                   "steppedLine": false,
                   "targets": [
                      {
-                        "expr": "max by(pod) (container_memory_working_set_bytes{job=~\"$job\",container=~\"query-scheduler|ruler-query-scheduler|ruler|store-gateway|compactor|alertmanager|overrides-exporter|mimir-backend\"})",
+                        "expr": "max by(pod) (container_memory_working_set_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"query-scheduler|ruler-query-scheduler|ruler|store-gateway|compactor|alertmanager|overrides-exporter|mimir-backend\"})",
                         "format": "time_series",
                         "intervalFactor": 2,
                         "legendFormat": "{{pod}}",
@@ -923,7 +923,7 @@
                   "steppedLine": false,
                   "targets": [
                      {
-                        "expr": "sum by(pod) (go_memstats_heap_inuse_bytes{job=~\"$job\",container=~\"query-scheduler|ruler-query-scheduler|ruler|store-gateway|compactor|alertmanager|overrides-exporter|mimir-backend\"})",
+                        "expr": "sum by(pod) (go_memstats_heap_inuse_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\",container=~\"query-scheduler|ruler-query-scheduler|ruler|store-gateway|compactor|alertmanager|overrides-exporter|mimir-backend\"})",
                         "format": "time_series",
                         "intervalFactor": 2,
                         "legendFormat": "{{pod}}",
@@ -1008,7 +1008,7 @@
                   "steppedLine": false,
                   "targets": [
                      {
-                        "expr": "sum by(instance, pod, device) (\n  rate(\n    node_disk_written_bytes_total[$__rate_interval]\n  )\n)\n+\nignoring(pod) group_right() (\n  label_replace(\n    count by(\n      instance,\n      pod,\n      device\n    )\n    (\n      container_fs_writes_bytes_total{\n        job=~\"$job\",\n        container=~\"query-scheduler|ruler-query-scheduler|ruler|store-gateway|compactor|alertmanager|overrides-exporter|mimir-backend\",\n        device!~\".*sda.*\"\n      }\n    ),\n    \"device\",\n    \"$1\",\n    \"device\",\n    \"/dev/(.*)\"\n  ) * 0\n)\n\n",
+                        "expr": "sum by(instance, pod, device) (\n  rate(\n    node_disk_written_bytes_total[$__rate_interval]\n  )\n)\n+\nignoring(pod) group_right() (\n  label_replace(\n    count by(\n      instance,\n      pod,\n      device\n    )\n    (\n      container_fs_writes_bytes_total{\n        cluster=~\"$cluster\", namespace=~\"$namespace\",\n        container=~\"query-scheduler|ruler-query-scheduler|ruler|store-gateway|compactor|alertmanager|overrides-exporter|mimir-backend\",\n        device!~\".*sda.*\"\n      }\n    ),\n    \"device\",\n    \"$1\",\n    \"device\",\n    \"/dev/(.*)\"\n  ) * 0\n)\n\n",
                         "format": "time_series",
                         "intervalFactor": 2,
                         "legendFormat": "{{pod}} - {{device}}",
@@ -1083,7 +1083,7 @@
                   "steppedLine": false,
                   "targets": [
                      {
-                        "expr": "sum by(instance, pod, device) (\n  rate(\n    node_disk_read_bytes_total[$__rate_interval]\n  )\n) + ignoring(pod) group_right() (\n  label_replace(\n    count by(\n      instance,\n      pod,\n      device\n    )\n    (\n      container_fs_writes_bytes_total{\n        job=~\"$job\",\n        container=~\"query-scheduler|ruler-query-scheduler|ruler|store-gateway|compactor|alertmanager|overrides-exporter|mimir-backend\",\n        device!~\".*sda.*\"\n      }\n    ),\n    \"device\",\n    \"$1\",\n    \"device\",\n    \"/dev/(.*)\"\n  ) * 0\n)\n\n",
+                        "expr": "sum by(instance, pod, device) (\n  rate(\n    node_disk_read_bytes_total[$__rate_interval]\n  )\n) + ignoring(pod) group_right() (\n  label_replace(\n    count by(\n      instance,\n      pod,\n      device\n    )\n    (\n      container_fs_writes_bytes_total{\n        cluster=~\"$cluster\", namespace=~\"$namespace\",\n        container=~\"query-scheduler|ruler-query-scheduler|ruler|store-gateway|compactor|alertmanager|overrides-exporter|mimir-backend\",\n        device!~\".*sda.*\"\n      }\n    ),\n    \"device\",\n    \"$1\",\n    \"device\",\n    \"/dev/(.*)\"\n  ) * 0\n)\n\n",
                         "format": "time_series",
                         "intervalFactor": 2,
                         "legendFormat": "{{pod}} - {{device}}",
@@ -1158,7 +1158,7 @@
                   "steppedLine": false,
                   "targets": [
                      {
-                        "expr": "max by(persistentvolumeclaim) (\n  kubelet_volume_stats_used_bytes{job=~\"$job\"} /\n  kubelet_volume_stats_capacity_bytes{job=~\"$job\"}\n)\nand\ncount by(persistentvolumeclaim) (\n  kube_persistentvolumeclaim_labels{\n    job=~\"$job\",\n    label_name=~\"(query-scheduler|ruler-query-scheduler|ruler|store-gateway|compactor|alertmanager|overrides-exporter|mimir-backend).*\"\n  }\n)\n",
+                        "expr": "max by(persistentvolumeclaim) (\n  kubelet_volume_stats_used_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\"} /\n  kubelet_volume_stats_capacity_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\"}\n)\nand\ncount by(persistentvolumeclaim) (\n  kube_persistentvolumeclaim_labels{\n    cluster=~\"$cluster\", namespace=~\"$namespace\",\n    label_name=~\"(query-scheduler|ruler-query-scheduler|ruler|store-gateway|compactor|alertmanager|overrides-exporter|mimir-backend).*\"\n  }\n)\n",
                         "format": "time_series",
                         "intervalFactor": 2,
                         "legendFormat": "{{persistentvolumeclaim}}",
@@ -1232,6 +1232,29 @@
                "type": "datasource"
             },
             {
+               "allValue": ".*",
+               "current": {
+                  "text": "prod",
+                  "value": "prod"
+               },
+               "datasource": "$datasource",
+               "hide": 0,
+               "includeAll": true,
+               "label": "cluster",
+               "multi": false,
+               "name": "cluster",
+               "options": [ ],
+               "query": "label_values(cortex_build_info, cluster)",
+               "refresh": 1,
+               "regex": "",
+               "sort": 1,
+               "tagValuesQuery": "",
+               "tags": [ ],
+               "tagsQuery": "",
+               "type": "query",
+               "useTags": false
+            },
+            {
                "allValue": null,
                "current": {
                   "text": "prod",
@@ -1240,11 +1263,11 @@
                "datasource": "$datasource",
                "hide": 0,
                "includeAll": false,
-               "label": "job",
+               "label": "namespace",
                "multi": false,
-               "name": "job",
+               "name": "namespace",
                "options": [ ],
-               "query": "label_values(cortex_build_info, job)",
+               "query": "label_values(cortex_build_info{cluster=~\"$cluster\"}, namespace)",
                "refresh": 1,
                "regex": "",
                "sort": 1,

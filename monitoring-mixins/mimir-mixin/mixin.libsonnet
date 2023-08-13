@@ -22,7 +22,7 @@ mixin {
 
     // If Mimir is deployed as a single binary, set to true to
     // modify the job selectors in the dashboard queries.
-    singleBinary: true,
+    singleBinary: false,
 
     // This is mapping between a Mimir component name and the regular expression that should be used
     // to match its instance and container name. Mimir jsonnet and Helm guarantee that the instance name
