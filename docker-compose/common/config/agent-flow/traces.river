@@ -1,47 +1,52 @@
 // https://github.com/grafana/agent-configurator
 
 logging {
-  level  = "warn"
-  format = "logfmt"
+	level  = "warn"
+	format = "logfmt"
 }
 
 tracing {
-  sampling_fraction = 0.8
-  write_to          = [otelcol.processor.batch.containers.input]
+	sampling_fraction = 0.8
+	write_to          = [otelcol.processor.batch.containers.input]
 }
 
 module.file "docker_compose" {
-	  filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker_compose.river"
-    arguments {
-      traces_endpoint  = "gateway:4317"
-    }
-}
+	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker_compose.river"
 
+	arguments {
+		traces_endpoint = "gateway:4317"
+	}
+}
 
 /********************************************
  * Otelcol for Traces
  ********************************************/
 
 otelcol.receiver.otlp "containers" {
-	grpc { endpoint = "0.0.0.0:4317" }
-	http { endpoint = "0.0.0.0:4318" }
+	grpc {
+		endpoint = "0.0.0.0:4317"
+	}
+
+	http {
+		endpoint = "0.0.0.0:4318"
+	}
 
 	output {
-		traces  = [otelcol.processor.batch.containers.input]
+		traces = [otelcol.processor.batch.containers.input]
 	}
 }
 
 otelcol.processor.batch "containers" {
 	output {
-        traces  = [otelcol.processor.memory_limiter.containers.input]
-    }
+		traces = [otelcol.processor.memory_limiter.containers.input]
+	}
 }
 
 otelcol.processor.memory_limiter "containers" {
-  check_interval = "1s"
-  limit 		     = "256MiB"
+	check_interval = "1s"
+	limit          = "256MiB"
 
 	output {
-    traces  = [module.file.docker_compose.exports.traces_receiver]
-  }
+		traces = [module.file.docker_compose.exports.traces_receiver]
+	}
 }

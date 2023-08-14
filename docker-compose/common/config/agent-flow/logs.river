@@ -1,69 +1,71 @@
 // https://github.com/grafana/agent-configurator
 
 logging {
-  level  = "warn"
-  format = "logfmt"
+	level  = "warn"
+	format = "logfmt"
 }
 
 module.file "docker_compose" {
-	  filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker_compose.river"
-    arguments {
-      logs_endpoint  = "http://gateway:3100"
-    }
+	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker_compose.river"
+
+	arguments {
+		logs_endpoint = "http://gateway:3100"
+	}
 }
 
 discovery.docker "containers" {
-  host = "unix:///var/run/docker.sock"
-  filter {
-		name = "status"
+	host = "unix:///var/run/docker.sock"
+
+	filter {
+		name   = "status"
 		values = ["running"]
 	}
 }
 
 discovery.relabel "containers" {
-  targets = discovery.docker.containers.targets
+	targets = discovery.docker.containers.targets
 
-  rule {
+	rule {
 		source_labels = ["__address__"]
 		target_label  = "scraped_by"
-    replacement   = "grafana-agent"
+		replacement   = "grafana-agent"
 	}
 
-  rule {
+	rule {
 		source_labels = ["__address__"]
 		target_label  = "cluster"
-    replacement   = "docker-compose"
+		replacement   = "docker-compose"
 	}
 
-  rule {
+	rule {
 		source_labels = ["__address__"]
 		target_label  = "namespace"
-    replacement   = "monitoring"
+		replacement   = "monitoring"
 	}
 
-  // filter by service name
-  rule {
+	// filter by service name
+	rule {
 		source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
-    action        = "keep"
-    regex = "(agent|mimir|mimir-.*|grafana|loki|loki-.*|tempo|tempo-.*|pyroscope|distributor|ingester|query-frontend|query-scheduler|querier|ruler|index-gateway|compactor|gateway)"
+		action        = "keep"
+		regex         = "(agent|mimir|mimir-.*|grafana|loki|loki-.*|tempo|tempo-.*|pyroscope|distributor|ingester|query-frontend|query-scheduler|querier|ruler|index-gateway|compactor|gateway)"
 	}
 
-  rule {
+	rule {
 		source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
-    regex         = "(.*)"
-    replacement   = "monitoring/$1"
+		regex         = "(.*)"
+		replacement   = "monitoring/$1"
 		target_label  = "job"
 	}
 
-  rule {
+	rule {
 		source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
-    regex         = "(.*)"
+		regex         = "(.*)"
 		target_label  = "pod"
 	}
 
-  rule {
+	rule {
 		source_labels = ["__meta_docker_container_name"]
-    regex         = "/(.*)"
+		regex         = "/(.*)"
 		target_label  = "container"
 	}
 }
@@ -73,23 +75,23 @@ discovery.relabel "containers" {
  ********************************************/
 
 loki.source.docker "containers" {
-  host          = "unix:///var/run/docker.sock"
-  targets       = discovery.relabel.containers.output
-  relabel_rules = discovery.relabel.containers.rules
-  forward_to    = [loki.process.containers.receiver]
+	host          = "unix:///var/run/docker.sock"
+	targets       = discovery.relabel.containers.output
+	relabel_rules = discovery.relabel.containers.rules
+	forward_to    = [loki.process.containers.receiver]
 }
 
 loki.process "containers" {
 	forward_to = [module.file.docker_compose.exports.logs_receiver]
 
 	stage.drop {
-    longer_than = "8KB"
+		longer_than = "8KB"
 		older_than  = "12h"
 	}
 
-  stage.tenant {
-    value = "anonymous"
-  }
+	stage.tenant {
+		value = "anonymous"
+	}
 }
 
 /********************************************
@@ -97,29 +99,34 @@ loki.process "containers" {
  ********************************************/
 
 otelcol.receiver.otlp "containers" {
-	grpc { endpoint = "0.0.0.0:4317" }
-	http { endpoint = "0.0.0.0:4318" }
+	grpc {
+		endpoint = "0.0.0.0:4317"
+	}
+
+	http {
+		endpoint = "0.0.0.0:4318"
+	}
 
 	output {
-		logs    = [otelcol.processor.batch.containers.input]
+		logs = [otelcol.processor.batch.containers.input]
 	}
 }
 
 otelcol.processor.batch "containers" {
 	output {
-        logs    = [otelcol.processor.memory_limiter.containers.input]
-    }
+		logs = [otelcol.processor.memory_limiter.containers.input]
+	}
 }
 
 otelcol.processor.memory_limiter "containers" {
-  check_interval = "1s"
-  limit 		     = "256MiB"
+	check_interval = "1s"
+	limit          = "256MiB"
 
 	output {
-    logs    = [otelcol.exporter.loki.containers.input]
-  }
+		logs = [otelcol.exporter.loki.containers.input]
+	}
 }
 
-otelcol.exporter.loki "containers" { 
-  forward_to = [module.file.docker_compose.exports.logs_receiver] 
+otelcol.exporter.loki "containers" {
+	forward_to = [module.file.docker_compose.exports.logs_receiver]
 }

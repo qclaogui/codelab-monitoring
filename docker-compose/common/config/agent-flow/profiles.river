@@ -1,37 +1,54 @@
 // https://github.com/grafana/agent-configurator
 
 logging {
-  level  = "warn"
-  format = "logfmt"
+	level  = "warn"
+	format = "logfmt"
 }
 
 module.file "docker_compose" {
-	  filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker_compose.river"
-    arguments {
-      profiles_endpoint  = "http://pyroscope:4100"
-    }
-}
+	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker_compose.river"
 
+	arguments {
+		profiles_endpoint = "http://pyroscope:4100"
+	}
+}
 
 /********************************************
  * Profiles
  ********************************************/
 
 pyroscope.scrape "containers" {
-  targets = [
-    {"__address__" = "pyroscope:4100", "service_name"="pyroscope"},
-    //{"__address__" = "agent:12345",  "service_name"="agent"},
-    {"__address__" = "grafana:6060",   "service_name"="grafana"},
-  ]
+	targets = [
+		{"__address__" = "pyroscope:4100", "service_name" = "pyroscope"},
+		//{"__address__" = "agent:12345",  "service_name"="agent"},
+		{"__address__" = "grafana:6060", "service_name" = "grafana"},
+	]
 
-  profiling_config {
-    profile.fgprof { enabled = true }
-    profile.block { enabled = true }
-    profile.mutex { enabled = true }
-    profile.memory { enabled = true }
-    profile.goroutine { enabled = true }
-    profile.process_cpu { enabled = true }
-  }
+	profiling_config {
+		profile.fgprof {
+			enabled = true
+		}
 
-  forward_to = [module.file.docker_compose.exports.profiles_receiver]
+		profile.block {
+			enabled = true
+		}
+
+		profile.mutex {
+			enabled = true
+		}
+
+		profile.memory {
+			enabled = true
+		}
+
+		profile.goroutine {
+			enabled = true
+		}
+
+		profile.process_cpu {
+			enabled = true
+		}
+	}
+
+	forward_to = [module.file.docker_compose.exports.profiles_receiver]
 }
