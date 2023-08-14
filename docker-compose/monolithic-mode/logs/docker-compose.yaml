@@ -15,7 +15,7 @@ services:
     image: nginxinc/nginx-unprivileged:1.25-alpine
     volumes:
       - ../../common/config/nginx:/etc/nginx/templates
-      - ../../common/config/loki/gateway.conf.template:/etc/nginx/templates/gateway_loki.conf.template
+      - ../../common/config/loki/gateway_loki.conf.template:/etc/nginx/templates/gateway_loki.conf.template
     environment:
       - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
       - DISTRIBUTOR_HOST=loki
@@ -25,6 +25,11 @@ services:
       - QUERY_SCHEDULER_HOST=loki
       - QUERIER_HOST=loki
       - COMPACTOR_HOST=loki
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     ports:
       - "3100"
 
@@ -32,7 +37,7 @@ services:
     depends_on:
       minio:
         condition: service_healthy
-    image: &lokiImage grafana/loki:2.8.3
+    image: &lokiImage grafana/loki:2.8.4
     command:
       - -config.file=/etc/loki.yaml
       - -target=all
@@ -63,6 +68,7 @@ services:
       - ../../common/config/grafana/grafana.ini:/etc/grafana-config/grafana.ini
       - ../../common/config/grafana/dashboards:/var/lib/grafana/dashboards
       - ../../common/config/grafana/provisioning:/etc/grafana/provisioning
+      - ../../common/config/loki/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml # load datasources
     environment:
       - GF_LOG_LEVEL=warn
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin_password}

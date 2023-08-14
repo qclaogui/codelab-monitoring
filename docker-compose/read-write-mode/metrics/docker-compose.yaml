@@ -12,7 +12,9 @@ services:
   gateway:
     depends_on:
       mimir-write:
-        condition: service_started
+        condition: service_healthy
+      mimir-backend:
+        condition: service_healthy
     image: nginxinc/nginx-unprivileged:1.25-alpine
     volumes:
       - ../../common/config/nginx:/etc/nginx/templates

@@ -16,13 +16,18 @@ services:
     restart: always
     volumes:
       - ../../common/config/nginx:/etc/nginx/templates
-      - ../../common/config/tempo/gateway.conf.template:/etc/nginx/templates/gateway_tempo.conf.template
+      - ../../common/config/tempo/gateway_tempo.conf.template:/etc/nginx/templates/gateway_tempo.conf.template
     environment:
       - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
       - DISTRIBUTOR_HOST=tempo
       - INGESTER_HOST=tempo
       - QUERY_FRONTEND_HOST=tempo
       - COMPACTOR_HOST=tempo
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     ports:
       - "3200"
       - "4317"
@@ -66,11 +71,12 @@ services:
       - ../../common/config/grafana/grafana.ini:/etc/grafana-config/grafana.ini
       - ../../common/config/grafana/dashboards:/var/lib/grafana/dashboards
       - ../../common/config/grafana/provisioning:/etc/grafana/provisioning
+      - ../../common/config/tempo/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml # load datasources
     environment:
       - GF_LOG_LEVEL=error
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin_password}
       - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
-      - GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS=agent:4317
-      - GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES=cluster:docker-compose,namespace:monitoring
+      # - GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS=agent:4317
+      # - GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES=cluster:docker-compose,namespace:monitoring
     ports:
       - "3000:3000"
