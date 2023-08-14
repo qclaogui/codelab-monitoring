@@ -18,7 +18,7 @@ services:
     image: nginxinc/nginx-unprivileged:1.25-alpine
     volumes:
       - ../../common/config/nginx:/etc/nginx/templates
-      - ../../common/config/mimir/gateway.conf.template:/etc/nginx/templates/gateway_mimir.conf.template
+      - ../../common/config/mimir/gateway_mimir.conf.template:/etc/nginx/templates/gateway_mimir.conf.template
     environment:
       - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
       - DISTRIBUTOR_HOST=distributor
@@ -26,6 +26,11 @@ services:
       - RULER_HOST=ruler
       - QUERY_FRONTEND_HOST=query-frontend
       - COMPACTOR_HOST=compactor
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     ports:
       - "8080"
 
@@ -207,6 +212,7 @@ services:
       - ../../common/config/grafana/grafana.ini:/etc/grafana-config/grafana.ini
       - ../../common/config/grafana/dashboards:/var/lib/grafana/dashboards
       - ../../common/config/grafana/provisioning:/etc/grafana/provisioning
+      - ../../common/config/mimir/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml    # load datasources
       - ../../../monitoring-mixins/mimir-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/mimir-mixin # load dashboards
     environment:
       - GF_LOG_LEVEL=error
