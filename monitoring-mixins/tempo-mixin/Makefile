@@ -11,6 +11,10 @@ MIXIN_OUT_PATH := deploy
 fmt: ## Format the mixin files
 	@find . -type f -name '*.libsonnet' | xargs -n 1 -- $(JSONNET_FMT) -i
 
+.PHONY: update
+update: ## update mixin 
+	$(JB) update
+
 .PHONY: build
 build: ## Generates the mixin files
 	@mkdir -p "$(MIXIN_OUT_PATH)"; \

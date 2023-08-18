@@ -11,6 +11,10 @@ MIXIN_OUT_PATH := deploy
 fmt: ## Format the mixin files
 	@find . -type f -name '*.libsonnet' | xargs -n 1 -- $(JSONNET_FMT) -i
 
+.PHONY: update
+update: ## update mixin 
+	$(JB) update
+
 .PHONY: build
 build: ## Generates the mixin files
 	@mkdir -p "$(MIXIN_OUT_PATH)"; \
@@ -21,7 +25,7 @@ build: ## Generates the mixin files
 .PHONY: check
 check: build fmt ## Build, fmt and check the mixin files
 	@../../tools/find-diff-or-untracked.sh . "$(MIXIN_OUT_PATH)" || (echo "Please build and fmt mixin by running 'make build fmt'" && false); \
-	# jb install && \
+	# $(JB) install && \
 	# $(MIXTOOL) lint mixin.libsonnet
 
 ##@ Dashboards & k8s
