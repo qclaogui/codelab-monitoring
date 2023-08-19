@@ -1,6 +1,15 @@
 /********************************************
  * ARGUMENTS
  ********************************************/
+argument "cluster" {
+	optional = true
+	default  = "docker-compose"
+}
+
+argument "namespace" {
+	optional = true
+	default  = "monitoring-system"
+}
 
 argument "metrics_endpoint" {
 	optional = true
@@ -55,12 +64,24 @@ prometheus.remote_write "docker_compose" {
 	endpoint {
 		url = argument.metrics_endpoint.value + "/api/v1/push"
 	}
+
+	external_labels = {
+		"scraped_by" = "grafana-agent",
+		"cluster" 	 = argument.cluster.value,
+		"namespace"  = argument.namespace.value,
+	}
 }
 
 // Logs
 loki.write "docker_compose" {
 	endpoint {
 		url = argument.logs_endpoint.value + "/loki/api/v1/push"
+	}
+
+	external_labels = {
+		"scraped_by" = "grafana-agent",
+		"cluster" 	 = argument.cluster.value,
+		"namespace"  = argument.namespace.value,
 	}
 }
 
@@ -80,5 +101,11 @@ otelcol.exporter.otlp "docker_compose" {
 pyroscope.write "docker_compose" {
 	endpoint {
 		url = argument.profiles_endpoint.value
+	}
+
+	external_labels = {
+		"scraped_by" = "grafana-agent",
+		"cluster" 	 = argument.cluster.value,
+		"namespace"  = argument.namespace.value,
 	}
 }

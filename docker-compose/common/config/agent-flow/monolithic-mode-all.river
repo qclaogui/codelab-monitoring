@@ -26,24 +26,6 @@ discovery.docker "containers" {
 discovery.relabel "containers" {
 	targets = discovery.docker.containers.targets
 
-	rule {
-		source_labels = ["__address__"]
-		target_label  = "scraped_by"
-		replacement   = "grafana-agent"
-	}
-
-	rule {
-		source_labels = ["__address__"]
-		target_label  = "cluster"
-		replacement   = "docker-compose"
-	}
-
-	rule {
-		source_labels = ["__address__"]
-		target_label  = "namespace"
-		replacement   = "monitoring"
-	}
-
 	// filter by service name
 	rule {
 		source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
@@ -54,7 +36,7 @@ discovery.relabel "containers" {
 	rule {
 		source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
 		regex         = "(.*)"
-		replacement   = "monitoring/$1"
+		replacement   = "monitoring-system/$1"
 		target_label  = "job"
 	}
 
@@ -105,7 +87,7 @@ prometheus.scrape "containers" {
 }
 
 prometheus.scrape "minio" {
-	targets = [{"__address__" = "minio:9000", "job" = "integrations/minio"}]
+	targets = [{"__address__" = "minio:9000", "job" = "monitoring-system/minio"}]
 
 	scrape_interval = "15s"
 	metrics_path    = "/minio/v2/metrics/cluster"
@@ -115,33 +97,15 @@ prometheus.scrape "minio" {
 
 prometheus.relabel "integrations" {
 	rule {
-		source_labels = ["__address__"]
-		target_label  = "scraped_by"
-		replacement   = "grafana-agent"
-	}
-
-	rule {
-		source_labels = ["__address__"]
-		target_label  = "cluster"
-		replacement   = "docker-compose"
-	}
-
-	rule {
-		source_labels = ["__address__"]
-		target_label  = "namespace"
-		replacement   = "monitoring"
-	}
-
-	rule {
 		source_labels = ["job"]
-		regex         = "(integrations|monitoring)/(.*)"
+		regex         = "(integrations|monitoring-system)/(.*)"
 		target_label  = "pod"
 		replacement   = "${2}"
 	}
 
 	rule {
 		source_labels = ["job"]
-		regex         = "(integrations|monitoring)/(.*)"
+		regex         = "(integrations|monitoring-system)/(.*)"
 		target_label  = "container"
 		replacement   = "${2}"
 	}

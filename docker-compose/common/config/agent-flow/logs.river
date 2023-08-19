@@ -25,24 +25,6 @@ discovery.docker "containers" {
 discovery.relabel "containers" {
 	targets = discovery.docker.containers.targets
 
-	rule {
-		source_labels = ["__address__"]
-		target_label  = "scraped_by"
-		replacement   = "grafana-agent"
-	}
-
-	rule {
-		source_labels = ["__address__"]
-		target_label  = "cluster"
-		replacement   = "docker-compose"
-	}
-
-	rule {
-		source_labels = ["__address__"]
-		target_label  = "namespace"
-		replacement   = "monitoring"
-	}
-
 	// filter by service name
 	rule {
 		source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
@@ -53,7 +35,7 @@ discovery.relabel "containers" {
 	rule {
 		source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
 		regex         = "(.*)"
-		replacement   = "monitoring/$1"
+		replacement   = "monitoring-system/$1"
 		target_label  = "job"
 	}
 
