@@ -1,0 +1,21 @@
+server {
+    listen 4040;
+    listen [::]:4040;
+
+    location = / {
+      return 200 'OK';
+      auth_basic off;
+      access_log off;
+    }
+
+    proxy_set_header X-Scope-OrgID $ensured_x_scope_orgid;
+
+    # Distributor endpoints
+    location /push.v1.PusherService {
+      proxy_pass      http://${DISTRIBUTOR_HOST}:4040$request_uri;
+    }
+
+    location /querier.v1.QuerierService {
+      proxy_pass      http://${QUERY_FRONTEND_HOST}:4040$request_uri;
+    }
+}

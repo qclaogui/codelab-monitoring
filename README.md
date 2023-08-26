@@ -41,9 +41,11 @@ These instructions will get you through the deploying samples with Docker Compos
 - [Logs [Loki (Query-Frontend + Querier + Ruler + Distributor + Ingester)]](./docker-compose/microservices-mode/logs)
 - [Traces [Tempo (Query-Frontend + Querier + Distributor + Ingester + Compactor)]](./docker-compose/microservices-mode/traces)
 - [Metrics [Mimir (Query-Frontend + Querier + Store-Gateway + Distributor + Ingester + Compactor)]](./docker-compose/microservices-mode/metrics)
-- Profiles
+- [Profiles [Pyroscope (Query-Frontend + Query-Scheduler + Querier + Distributor + Ingester)]](./docker-compose/microservices-mode/profiles)
 
 ## Kubernetes
+
+[cortex-kustomize](https://github.com/qclaogui/cortex-kustomize) provides a common `base` for Mimir deployment to Kubernetes.
 
 ### [Microservices mode (微服务模式)](./kubernetes/microservices-mode)
 

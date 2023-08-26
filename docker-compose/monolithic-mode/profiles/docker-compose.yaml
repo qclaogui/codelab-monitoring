@@ -4,54 +4,27 @@ version: '3.9'
 # include is available in Docker Compose version 2.20 and later, and Docker Desktop version 4.22 and later.
 include:
   - path: ../../common/compose-include/minio.yaml
+  - path: ../../common/compose-include/agent-collect-profiles.yaml
 
 # Monolithic mode (Profiles)
 services:
-  agent:
-    depends_on:
-      pyroscope:
-        condition: service_started
-    image: grafana/agent:v0.35.3
-    hostname: agent
-    restart: always
-    volumes:
-      - ../../common/config/agent-flow:/etc/agent-config
-      - /var/run/docker.sock:/var/run/docker.sock
-    entrypoint:
-      - /bin/grafana-agent
-      - run
-      - /etc/agent-config/profiles.river
-      - --server.http.listen-addr=0.0.0.0:12345
-      - --cluster.enabled=true
-      - --disable-reporting=true
-    environment:
-      - AGENT_MODE=flow
-      - AGENT_CONFIG_FOLDER=/etc/agent-config
-    healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:12345/ready || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    ports:
-      - "12345:12345"
-
   pyroscope:
-    image: grafana/phlare:weekly-f22-06e09923
-    hostname: pyroscope
+    image: grafana/pyroscope:1.0.0-rc.0
     volumes:
-      - ../../common/config/pyroscope/monolithic-mode-profiles.yaml:/etc/pyroscope.yaml
+      - ../../common/config/pyroscope/monolithic-mode-profiles.yaml:/etc/config.yaml
     command:
-      - -config.file=/etc/pyroscope.yaml
+      - -config.file=/etc/config.yaml
+      - -target=all
       - -log.level=warn
     # ports:
-    #   - "4100:4100"
+    #   - "4040:4040"
     networks:
       default:
         aliases:
           - gateway
 
   grafana:
-    image: grafana/grafana:10.0.3
+    image: grafana/grafana:10.1.0
     hostname: grafana
     command:
       - --config=/etc/grafana-config/grafana.ini
@@ -59,11 +32,11 @@ services:
       - ../../common/config/grafana/grafana.ini:/etc/grafana-config/grafana.ini
       - ../../common/config/grafana/dashboards:/var/lib/grafana/dashboards
       - ../../common/config/grafana/provisioning:/etc/grafana/provisioning
-      - ../../common/config/pyroscope/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml    # load datasources
+      - ../../common/config/pyroscope/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml # load datasources
     environment:
       - GF_LOG_LEVEL=error
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin_password}
-      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor,pyroscopeFlameGraph
+      - GF_FEATURE_TOGGLES_ENABLE=flameGraph
       - GF_DIAGNOSTICS_PROFILING_ENABLED=true
       - GF_DIAGNOSTICS_PROFILING_ADDR=0.0.0.0
       - GF_DIAGNOSTICS_PROFILING_PORT=6060
