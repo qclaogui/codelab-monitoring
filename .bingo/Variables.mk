@@ -7,16 +7,22 @@ GO     ?= $(shell which go)
 
 # Below generated variables ensure that every time a tool under each variable is invoked, the correct version
 # will be used; reinstalling only if needed.
-# For example for jb variable:
+# For example for copyright variable:
 #
 # In your main Makefile (for non array binaries):
 #
 #include .bingo/Variables.mk # Assuming -dir was set to .bingo .
 #
-#command: $(JB)
-#	@echo "Running jb"
-#	@$(JB) <flags/args..>
+#command: $(COPYRIGHT)
+#	@echo "Running copyright"
+#	@$(COPYRIGHT) <flags/args..>
 #
+COPYRIGHT := $(GOBIN)/copyright-v0.0.0-20230505153745-6b7392939a60
+$(COPYRIGHT): $(BINGO_DIR)/copyright.mod
+	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
+	@echo "(re)installing $(GOBIN)/copyright-v0.0.0-20230505153745-6b7392939a60"
+	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=copyright.mod -o=$(GOBIN)/copyright-v0.0.0-20230505153745-6b7392939a60 "github.com/efficientgo/tools/copyright"
+
 JB := $(GOBIN)/jb-v0.5.1
 $(JB): $(BINGO_DIR)/jb.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.

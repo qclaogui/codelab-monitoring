@@ -1,4 +1,9 @@
+.DEFAULT_GOAL := help
+
 include .bingo/Variables.mk
+
+GOPROXY  ?= https://proxy.golang.org
+export GOPROXY
 
 # support app's mixin
 APPS_MIXIN := "agent-flow-mixin" "go-runtime-mixin"
@@ -26,13 +31,23 @@ dashboards_out: ## Copy app's dashboards to grafana dashboards provision path
 		cd -; \
 	done
 
+
+##@ Lint & fmt
+
 .PHONY: check
 check:  ## Check all the mixin files
-check: $(JSONNETFMT) $(MIXTOOL)
+check: $(JSONNETFMT) $(MIXTOOL) copyright
 	@for app in ${APPS_MIXIN}; do \
 		cd "monitoring-mixins/$$app" && make check ; \
 		cd -; \
 	done
+
+.PHONY: copyright
+copyright: $(COPYRIGHT) ## Add Copyright header to .go files.
+	@$(COPYRIGHT) $(shell go list -f "{{.Dir}}" ./... | xargs -I {} find {} -name "*.go")
+	@echo ">> ensured all .go files have copyright headers"
+
+##@ Kubernetes
 
 .PHONY: manifests
 manifests: $(KUSTOMIZE)  ## Generates k8s manifests
