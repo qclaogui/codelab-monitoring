@@ -15,7 +15,7 @@ services:
         condition: service_healthy
       loki:
         condition: service_healthy
-    image: grafana/agent:v0.35.4
+    image: grafana/agent:v0.36.1
     volumes:
       - ../../common/config/agent-flow:/etc/agent-config
       - /var/run/docker.sock:/var/run/docker.sock
@@ -36,13 +36,13 @@ services:
     depends_on:
       minio:
         condition: service_healthy
-    image: grafana/mimir:2.9.0
+    image: grafana/mimir:2.10.0-rc.1
+    volumes:
+      - ../../common/config/mimir/monolithic-mode-metrics.yaml:/etc/config.yaml
     command:
-      - -config.file=/etc/mimir.yaml
+      - -config.file=/etc/config.yaml
       - -target=all
       - -log.level=error
-    volumes:
-      - ../../common/config/mimir/monolithic-mode-metrics.yaml:/etc/mimir.yaml
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
       interval: 10s
@@ -73,13 +73,13 @@ services:
     depends_on:
       minio:
         condition: service_healthy
-    image: grafana/loki:2.8.4
+    image: grafana/loki:2.9.0
+    volumes:
+      - ../../common/config/loki/monolithic-mode-logs.yaml:/etc/config.yaml
     command:
-      - -config.file=/etc/loki.yaml
+      - -config.file=/etc/config.yaml
       - -target=all
       - -log.level=error
-    volumes:
-      - ../../common/config/loki/monolithic-mode-logs.yaml:/etc/loki.yaml
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1" ]
       interval: 10s
@@ -112,11 +112,11 @@ services:
         condition: service_healthy
       mimir:
         condition: service_healthy
-    image: grafana/tempo:2.2.0
+    image: grafana/tempo:2.2.2
     volumes:
-      - ../../common/config/tempo/monolithic-mode-traces.yaml:/etc/tempo.yaml
+      - ../../common/config/tempo/monolithic-mode-traces.yaml:/etc/config.yaml
     command:
-      - -config.file=/etc/tempo.yaml
+      - -config.file=/etc/config.yaml
       - -target=all
       - -log.level=error
     ports:
@@ -142,24 +142,24 @@ services:
       rules load /tempo-mixin/rules.yaml /tempo-mixin/alerts.yaml
 
   pyroscope:
-    image: grafana/phlare:weekly-f22-06e09923
+    image: grafana/pyroscope:1.0.0
     volumes:
-      - ../../common/config/pyroscope/monolithic-mode-profiles.yaml:/etc/pyroscope.yaml
+      - ../../common/config/pyroscope/monolithic-mode-profiles.yaml:/etc/config.yaml
     command:
-      - -config.file=/etc/pyroscope.yaml
+      - -config.file=/etc/config.yaml
       - -log.level=warn
     # ports:
-    #   - "4100:4100"
+    #   - "4040:4040"
 
   grafana:
-    image: grafana/grafana:10.0.3
+    image: grafana/grafana:10.1.1
     command:
       - --config=/etc/grafana-config/grafana.ini
     volumes:
       - ../../common/config/grafana/grafana.ini:/etc/grafana-config/grafana.ini
       - ../../common/config/grafana/dashboards:/var/lib/grafana/dashboards
       - ../../common/config/grafana/provisioning:/etc/grafana/provisioning
-      - ./config/grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./config/grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
       - ../../../monitoring-mixins/mimir-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/mimir-mixin  # load mimir dashboards
       - ../../../monitoring-mixins/loki-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/loki-mixin    # load loki dashboards
       - ../../../monitoring-mixins/tempo-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/tempo-mixin  # load tempo dashboards

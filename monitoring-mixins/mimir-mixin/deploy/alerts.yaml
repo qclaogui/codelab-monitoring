@@ -184,6 +184,19 @@ groups:
           for: 1h
           labels:
             severity: warning
+        - alert: MimirIngestedDataTooFarInTheFuture
+          annotations:
+            message: Mimir ingester {{ $labels.pod }} in {{ $labels.cluster }}/{{ $labels.namespace }} has ingested samples with timestamps more than 1h in the future.
+            runbook_url: https://grafana.com/docs/mimir/latest/operators-guide/mimir-runbooks/#mimiringesteddatatoofarinthefuture
+          expr: |
+            max by(cluster, namespace, pod) (
+                cortex_ingester_tsdb_head_max_timestamp_seconds - time()
+                and
+                cortex_ingester_tsdb_head_max_timestamp_seconds > 0
+            ) > 60*60
+          for: 5m
+          labels:
+            severity: warning
         - alert: MimirRingMembersMismatch
           annotations:
             message: |
@@ -461,7 +474,7 @@ groups:
             message: Mimir instance {{ $labels.pod }} in {{ $labels.cluster }}/{{ $labels.namespace }} sees incorrect number of gossip members.
             runbook_url: https://grafana.com/docs/mimir/latest/operators-guide/mimir-runbooks/#mimirgossipmembersmismatch
           expr: |
-            avg by (cluster, namespace) (memberlist_client_cluster_members_count) != sum by (cluster, namespace) (up{job=~".+/(alertmanager|compactor|distributor|ingester.*|querier.*|ruler|ruler-querier.*|store-gateway.*|cortex|mimir|mimir-write.*|mimir-read.*|mimir-backend.*)"})
+            avg by (cluster, namespace) (memberlist_client_cluster_members_count) != sum by (cluster, namespace) (up{job=~".+/(admin-api|alertmanager|compactor.*|distributor|ingester.*|querier.*|ruler|ruler-querier.*|store-gateway.*|cortex|mimir|mimir-write.*|mimir-read.*|mimir-backend.*)"})
           for: 15m
           labels:
             severity: warning
