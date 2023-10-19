@@ -56,14 +56,14 @@ discovery.relabel "containers" {
  * Metrics
  ********************************************/
 
-prometheus.exporter.unix {
+prometheus.exporter.unix "containers" {
 	set_collectors     = ["cpu"]
 	disable_collectors = ["diskstats", "mdadm", "textfile", "hwmon"]
 }
 
 prometheus.scrape "integrations" {
 	targets = concat(
-		prometheus.exporter.unix.targets,
+		prometheus.exporter.unix.containers.targets,
 	)
 	scrape_interval = "15s"
 
