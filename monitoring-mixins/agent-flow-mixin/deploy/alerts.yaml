@@ -17,7 +17,7 @@ groups:
         - alert: ClusterLamportClockDrift
           annotations:
             message: Cluster nodes' lamport clocks are not converging.
-          expr: stddev by (cluster, namespace) (cluster_node_lamport_time) > 4
+          expr: stddev by (cluster, namespace) (cluster_node_lamport_time) > 4 * sqrt(count by (cluster, namespace) (cluster_node_info))
           for: 5m
         - alert: ClusterNodeUnhealthy
           annotations:

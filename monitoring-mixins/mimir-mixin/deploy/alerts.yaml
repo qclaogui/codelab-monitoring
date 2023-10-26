@@ -471,7 +471,7 @@ groups:
       rules:
         - alert: MimirGossipMembersMismatch
           annotations:
-            message: Mimir instance {{ $labels.pod }} in {{ $labels.cluster }}/{{ $labels.namespace }} sees incorrect number of gossip members.
+            message: One or more Mimir instances in {{ $labels.cluster }}/{{ $labels.namespace }} see incorrect number of gossip members.
             runbook_url: https://grafana.com/docs/mimir/latest/operators-guide/mimir-runbooks/#mimirgossipmembersmismatch
           expr: |
             avg by (cluster, namespace) (memberlist_client_cluster_members_count) != sum by (cluster, namespace) (up{job=~".+/(admin-api|alertmanager|compactor.*|distributor|ingester.*|querier.*|ruler|ruler-querier.*|store-gateway.*|cortex|mimir|mimir-write.*|mimir-read.*|mimir-backend.*)"})
@@ -852,6 +852,15 @@ groups:
           for: 1m
           labels:
             severity: warning
+        - alert: MimirCompactorSkippedBlocksWithOutOfOrderChunks
+          annotations:
+            message: Mimir Compactor {{ $labels.pod }} in {{ $labels.cluster }}/{{ $labels.namespace }} has found and ignored blocks with out of order chunks.
+            runbook_url: https://grafana.com/docs/mimir/latest/operators-guide/mimir-runbooks/#mimircompactorskippedblockswithoutoforderchunks
+          expr: |
+            increase(cortex_compactor_blocks_marked_for_no_compaction_total{reason="block-index-out-of-order-chunk"}[5m]) > 1
+          for: 30m
+          labels:
+            severity: critical
     - name: mimir_autoscaling
       rules:
         - alert: MimirAutoscalerNotActive

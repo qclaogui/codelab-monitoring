@@ -268,7 +268,7 @@
          },
          {
             "datasource": "${datasource}",
-            "description": "The frequency in which the component graph gets updated.\n",
+            "description": "The frequency at which components get updated.\n",
             "fieldConfig": {
                "defaults": {
                   "custom": {
@@ -298,12 +298,12 @@
                   "range": true
                }
             ],
-            "title": "Graph evaluation rate",
+            "title": "Component evaluation rate",
             "type": "timeseries"
          },
          {
             "datasource": "${datasource}",
-            "description": "The percentiles for how long it takes to complete a graph evaluation.\n\nGraph evaluations must complete for components to have the latest\narguments. The longer graph evaluations take, the slower it will be to\nreconcile the state of components.\n\nIf evaluation is taking too long, consider sharding your components to\ndeal with smaller amounts of data and reuse data as much as possible.\n",
+            "description": "The percentiles for how long it takes to complete component evaluations.\n\nComponent evaluations must complete for components to have the latest\narguments. The longer the evaluations take, the slower it will be to\nreconcile the state of components.\n\nIf evaluation is taking too long, consider sharding your components to\ndeal with smaller amounts of data and reuse data as much as possible.\n",
             "fieldConfig": {
                "defaults": {
                   "unit": "s"
@@ -338,12 +338,12 @@
                   "range": true
                }
             ],
-            "title": "Graph evaluation time",
+            "title": "Component evaluation time",
             "type": "timeseries"
          },
          {
             "datasource": "${datasource}",
-            "description": "Detailed histogram view of how long graph evaluations take.\n\nThe goal is to design your config so that evaluations take as little\ntime as possible; under 100ms is a good goal.\n",
+            "description": "Detailed histogram view of how long component evaluations take.\n\nThe goal is to design your config so that evaluations take as little\ntime as possible; under 100ms is a good goal.\n",
             "gridPos": {
                "h": 10,
                "w": 8,
@@ -386,7 +386,55 @@
                   "range": true
                }
             ],
-            "title": "Graph evaluation histogram",
+            "title": "Component evaluation histogram",
+            "type": "heatmap"
+         },
+         {
+            "datasource": "${datasource}",
+            "description": "Detailed histogram of how long components wait to be evaluated after their dependency is updated.\n\nThe goal is to design your config so that most of the time components do not\nqueue for long; under 10ms is a good goal.\n",
+            "gridPos": {
+               "h": 10,
+               "w": 8,
+               "x": 0,
+               "y": 22
+            },
+            "maxDataPoints": 30,
+            "options": {
+               "calculate": false,
+               "color": {
+                  "exponent": 0.5,
+                  "fill": "dark-orange",
+                  "mode": "scheme",
+                  "scale": "exponential",
+                  "scheme": "Oranges",
+                  "steps": 65
+               },
+               "exemplars": {
+                  "color": "rgba(255,0,255,0.7)"
+               },
+               "filterValues": {
+                  "le": 1.0000000000000001e-09
+               },
+               "tooltip": {
+                  "show": true,
+                  "yHistogram": true
+               },
+               "yAxis": {
+                  "unit": "s"
+               }
+            },
+            "pluginVersion": "9.0.6",
+            "targets": [
+               {
+                  "datasource": "${datasource}",
+                  "expr": "sum by (le) (increase(agent_component_dependencies_wait_seconds_bucket{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]))",
+                  "format": "heatmap",
+                  "instant": false,
+                  "legendFormat": "{{le}}",
+                  "range": true
+               }
+            ],
+            "title": "Component dependency wait histogram",
             "type": "heatmap"
          }
       ],
