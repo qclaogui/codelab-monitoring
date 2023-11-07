@@ -1,0 +1,28 @@
+logging {
+  level  = "info"
+  format = "logfmt"
+}
+
+module.git "metrics_primary" {
+  repository = "https://github.com/grafana/agent-modules.git"
+  revision   = "main"
+  path       = "modules/kubernetes/metrics/all.river"
+
+  arguments {
+    forward_to   = [prometheus.remote_write.local_primary.receiver]
+    clustering   = false
+    blackbox_url = "prometheus-blackbox-exporter.monitoring-system.svc.cluster.local:9115"
+    git_pull_freq= "60s"
+  }
+}
+
+prometheus.remote_write "local_primary" {
+  endpoint {
+    url = "http://nginx.monitoring-system:8080/api/v1/push"
+  }
+
+  external_labels = {
+    "scraped_by" = "grafana-agent",
+    "cluster" 	 = "k3d-k3s-codelab",
+  }
+}

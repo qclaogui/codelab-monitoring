@@ -5,8 +5,6 @@ kind: Kustomization
 
 namespace: monitoring-system
 
-buildMetadata: [managedByLabel]
-
 labels:
 - includeSelectors: true
   pairs:
@@ -17,13 +15,9 @@ resources:
 # https://github.com/kubernetes-sigs/kustomize/commit/24a64bdee32602b6756608d4c24da28486461199
 - github.com/qclaogui/cortex-kustomize/deploy/base/mimir?ref=main&submodules=false&timeout=2m30s
 - namespace.yaml
-- add-grafana-dep.yaml
-- add-grafana-svc.yaml
-- add-prometheus-dep.yaml
-- add-prometheus-svc.yaml
-
-- add-dashboards-go-runtime.yaml
-- add-dashboards-minio.yaml
+- grafana-agent/k8s-all-in-one.yaml
+- prometheus-blackbox-exporter/k8s-all-in-one.yaml
+- grafana/k8s-all-in-one.yaml
 
 # patches:
 # - path: patch-nginx-svc.yaml
@@ -31,12 +25,14 @@ resources:
 images:
 - name: grafana/mimir
   newTag: 2.10.3
-- name: prom/prometheus
-  newTag: v2.48.0-rc.0
-- name: grafana/grafana
+- name: docker.io/grafana/agent
+  newTag: v0.37.4
+- name: docker.io/grafana/grafana
   newTag: 10.2.0
 - name: quay.io/kiwigrid/k8s-sidecar
   newTag: 1.25.2
+- name: docker.io/jimmidyson/configmap-reload
+  newTag: v0.8.0
 
 replicas:
 - count: 2
@@ -46,39 +42,18 @@ replicas:
 generatorOptions:
   immutable: true
 
-secretGenerator:
-# # just use mimir.yaml in base
-# - name: mimir-config
-#   behavior: replace
-#   files:
-#   - configs/mimir.yaml
-- name: grafana
-  literals:
-  - admin-user=admin
-  - admin-password=admin_password
+# secretGenerator:
+# # # just use mimir.yaml in base
+# # - name: mimir-config
+# #   behavior: replace
+# #   files:
+# #   - configs/mimir.yaml
 
 configMapGenerator:
 - name: runtime-config
   behavior: merge
   files:
   - configs/runtime.yaml
-  # options:
-  #   disableNameSuffixHash: true
-
-- name: prometheus-config
-  files:
-  - configs/prometheus.yml
-- name: grafana
-  files:
-  - configs/grafana/datasources.yaml
-  - configs/grafana/grafana.ini
-- name: grafana-config-dashboards
-  files:
-  - configs/grafana/provider.yaml
-- name: grafana-env
-  literals:
-  - NAMESPACE=monitoring-system
-  - GF_LOG_LEVEL=error
 
 - name: nginx-env
   behavior: merge

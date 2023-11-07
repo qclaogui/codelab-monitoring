@@ -1,0 +1,35 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: monitoring-system
+
+helmCharts:
+- name: grafana
+  version: 7.0.3
+  repo: https://grafana.github.io/helm-charts
+  releaseName: grafana
+  namespace: monitoring-system
+  includeCRDs: false
+  skipTests: true
+  valuesFile: values-k3d-k3s.yaml
+
+configMapGenerator:
+- name: grafana
+  files:
+  - configs/grafana.ini
+- name: grafana-datasources
+  options:
+    labels:
+      grafana_datasource: "1"
+  files:
+  - configs/datasources.yaml
+- name: grafana-env
+  literals:
+  - NAMESPACE=monitoring-system
+  - GF_LOG_LEVEL=error
+
+secretGenerator:
+- name: grafana-secret
+  literals:
+  - admin-user=admin
+  - admin-password=admin_password

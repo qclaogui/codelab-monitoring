@@ -49,9 +49,18 @@ copyright: $(COPYRIGHT) ## Add Copyright header to .go files.
 
 ##@ Kubernetes
 
+.PHONY: k3s
+k3s:  ## create k3s cluster
+	k3d cluster create k3s-codelab --config kubernetes/k3d-k3s-config.yaml
+
+.PHONY: clean
+clean:  ## clean cluster
+	k3d cluster delete k3s-codelab
+
 .PHONY: manifests
 manifests: $(KUSTOMIZE)  ## Generates k8s manifests
 	$(KUSTOMIZE) build kubernetes/microservices-mode/metrics > kubernetes/microservices-mode/metrics/k8s-all-in-one.yaml
+	$(KUSTOMIZE) build monitoring-mixins > monitoring-mixins/k8s-all-in-one.yaml
 
 ##@ General
 

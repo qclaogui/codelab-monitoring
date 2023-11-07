@@ -41,9 +41,9 @@ $(KUSTOMIZE): $(BINGO_DIR)/kustomize.mod
 	@echo "(re)installing $(GOBIN)/kustomize-v5.2.1"
 	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=kustomize.mod -o=$(GOBIN)/kustomize-v5.2.1 "sigs.k8s.io/kustomize/kustomize/v5"
 
-MIXTOOL := $(GOBIN)/mixtool-v0.0.0-20231012051940-173803b1f00d
+MIXTOOL := $(GOBIN)/mixtool-v0.0.0-20231106214329-ad41c1466f54
 $(MIXTOOL): $(BINGO_DIR)/mixtool.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
-	@echo "(re)installing $(GOBIN)/mixtool-v0.0.0-20231012051940-173803b1f00d"
-	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=mixtool.mod -o=$(GOBIN)/mixtool-v0.0.0-20231012051940-173803b1f00d "github.com/monitoring-mixins/mixtool/cmd/mixtool"
+	@echo "(re)installing $(GOBIN)/mixtool-v0.0.0-20231106214329-ad41c1466f54"
+	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=mixtool.mod -o=$(GOBIN)/mixtool-v0.0.0-20231106214329-ad41c1466f54 "github.com/monitoring-mixins/mixtool/cmd/mixtool"
 

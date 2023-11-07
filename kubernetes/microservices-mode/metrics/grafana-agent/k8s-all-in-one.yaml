@@ -1,0 +1,259 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/instance: grafana-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: grafana-agent
+    app.kubernetes.io/version: v0.37.4
+    helm.sh/chart: grafana-agent-0.27.2
+  name: grafana-agent
+  namespace: monitoring-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/instance: grafana-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: grafana-agent
+    app.kubernetes.io/version: v0.37.4
+    helm.sh/chart: grafana-agent-0.27.2
+  name: grafana-agent
+rules:
+- apiGroups:
+  - ""
+  - discovery.k8s.io
+  - networking.k8s.io
+  resources:
+  - endpoints
+  - endpointslices
+  - ingresses
+  - nodes
+  - nodes/proxy
+  - nodes/metrics
+  - pods
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - pods/log
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - monitoring.grafana.com
+  resources:
+  - podlogs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - prometheusrules
+  verbs:
+  - get
+  - list
+  - watch
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - podmonitors
+  - servicemonitors
+  - probes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/instance: grafana-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: grafana-agent
+    app.kubernetes.io/version: v0.37.4
+    helm.sh/chart: grafana-agent-0.27.2
+  name: grafana-agent
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: grafana-agent
+subjects:
+- kind: ServiceAccount
+  name: grafana-agent
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  metrics.river: "logging {\n  level  = \"info\"\n  format = \"logfmt\"\n}\n\nmodule.git
+    \"metrics_primary\" {\n  repository = \"https://github.com/grafana/agent-modules.git\"\n
+    \ revision   = \"main\"\n  path       = \"modules/kubernetes/metrics/all.river\"\n\n
+    \ arguments {\n    forward_to   = [prometheus.remote_write.local_primary.receiver]\n
+    \   clustering   = false\n    blackbox_url = \"prometheus-blackbox-exporter.monitoring-system.svc.cluster.local:9115\"\n
+    \   git_pull_freq= \"60s\"\n  }\n}\n\nprometheus.remote_write \"local_primary\"
+    {\n  endpoint {\n    url = \"http://nginx.monitoring-system:8080/api/v1/push\"\n
+    \ }\n\n  external_labels = {\n    \"scraped_by\" = \"grafana-agent\",\n    \"cluster\"
+    \t = \"k3d-k3s-codelab\",\n  }\n}"
+kind: ConfigMap
+metadata:
+  name: grafana-agent-metrics-config-m75g754mc5
+  namespace: monitoring-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: grafana-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: grafana-agent
+    app.kubernetes.io/version: v0.37.4
+    helm.sh/chart: grafana-agent-0.27.2
+  name: grafana-agent
+  namespace: monitoring-system
+spec:
+  ports:
+  - name: http-metrics
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app.kubernetes.io/instance: grafana-agent
+    app.kubernetes.io/name: grafana-agent
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: grafana-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: grafana-agent
+    app.kubernetes.io/version: v0.37.4
+    helm.sh/chart: grafana-agent-0.27.2
+  name: grafana-agent-cluster
+  namespace: monitoring-system
+spec:
+  clusterIP: None
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app.kubernetes.io/instance: grafana-agent
+    app.kubernetes.io/name: grafana-agent
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app.kubernetes.io/instance: grafana-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: grafana-agent
+    app.kubernetes.io/version: v0.37.4
+    helm.sh/chart: grafana-agent-0.27.2
+  name: grafana-agent
+  namespace: monitoring-system
+spec:
+  minReadySeconds: 10
+  podManagementPolicy: Parallel
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: grafana-agent
+      app.kubernetes.io/name: grafana-agent
+  serviceName: grafana-agent
+  template:
+    metadata:
+      annotations:
+        metrics.agent.grafana.com/interval: 15s
+        metrics.agent.grafana.com/scrape: "true"
+      labels:
+        app.kubernetes.io/instance: grafana-agent
+        app.kubernetes.io/name: grafana-agent
+    spec:
+      containers:
+      - args:
+        - run
+        - /etc/agent/metrics.river
+        - --storage.path=/tmp/agent
+        - --server.http.listen-addr=0.0.0.0:80
+        - --server.http.ui-path-prefix=/
+        - --disable-reporting
+        - --cluster.enabled=true
+        - --cluster.join-addresses=grafana-agent-cluster
+        env:
+        - name: AGENT_MODE
+          value: flow
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        image: docker.io/grafana/agent:v0.37.4
+        imagePullPolicy: IfNotPresent
+        name: grafana-agent
+        ports:
+        - containerPort: 80
+          name: http-metrics
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: 80
+          initialDelaySeconds: 10
+          timeoutSeconds: 1
+        volumeMounts:
+        - mountPath: /etc/agent
+          name: config
+      - args:
+        - --volume-dir=/etc/agent
+        - --webhook-url=http://localhost:80/-/reload
+        image: docker.io/jimmidyson/configmap-reload:v0.8.0
+        name: config-reloader
+        resources:
+          requests:
+            cpu: 1m
+            memory: 5Mi
+        volumeMounts:
+        - mountPath: /etc/agent
+          name: config
+      dnsPolicy: ClusterFirst
+      nodeSelector:
+        kubernetes.io/os: linux
+      serviceAccountName: grafana-agent
+      volumes:
+      - configMap:
+          name: grafana-agent-metrics-config-m75g754mc5
+        name: config
