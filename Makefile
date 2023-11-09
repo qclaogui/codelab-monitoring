@@ -60,6 +60,7 @@ clean:  ## clean cluster
 .PHONY: manifests
 manifests: $(KUSTOMIZE)  ## Generates k8s manifests
 	$(KUSTOMIZE) build kubernetes/microservices-mode/metrics > kubernetes/microservices-mode/metrics/k8s-all-in-one.yaml
+	$(KUSTOMIZE) build kubernetes/microservices-mode/logs > kubernetes/microservices-mode/logs/k8s-all-in-one.yaml
 	$(KUSTOMIZE) build monitoring-mixins > monitoring-mixins/k8s-all-in-one.yaml
 
 ##@ General

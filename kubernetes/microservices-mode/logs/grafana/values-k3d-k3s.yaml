@@ -1,0 +1,46 @@
+testFramework:
+  enabled: false
+
+# Use an existing secret for the admin user.
+admin:
+  ## Name of the secret. Can be templated.
+  existingSecret: "grafana-secret"
+  userKey: admin-user
+  passwordKey: admin-password
+
+envFromConfigMaps:
+  - name: grafana-env
+    optional: true
+
+podAnnotations:
+  logs.agent.grafana.com/scrape: "true"
+  logs.agent.grafana.com/scrub-level: "debug" # Boolean whether or not the level should be dropped from the log message (as it is a label).
+
+service:
+  portName: http-metrics
+
+# Enable creating the grafana configmap
+createConfigmap: false
+
+## Sidecars that collect the configmaps with specified label and stores the included files them into the respective folders
+## Requires at least Grafana 5 to work and can't be used together with parameters dashboardProviders, datasources and dashboards
+sidecar:
+  dashboards:
+    enabled: true
+    label: grafana_dashboard
+    labelValue: 1
+    folder: /dashboards
+    searchNamespace: logging-system
+    folderAnnotation: grafana_dashboard_folder
+    provider:
+      name: sidecarProvider
+      orgid: 1
+      type: file
+      disableDelete: false
+      allowUiUpdates: false
+      foldersFromFilesStructure: true
+  datasources:
+    enabled: true
+    label: grafana_datasource
+    labelValue: 1
+    searchNamespace: logging-system

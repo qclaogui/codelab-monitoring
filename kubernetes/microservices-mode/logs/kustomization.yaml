@@ -1,0 +1,25 @@
+# ----------------------------------------------------
+# apiVersion and kind of Kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: logging-system
+
+labels:
+- includeSelectors: true
+  pairs:
+    team: team-infra
+
+resources:
+# This can improve cloning a large repository, or over a slow network.
+# https://github.com/kubernetes-sigs/kustomize/commit/24a64bdee32602b6756608d4c24da28486461199
+# - github.com/qclaogui/cortex-kustomize/deploy/base/loki?ref=main&submodules=false&timeout=2m30s # //TODO(qc)
+- namespace.yaml
+- grafana-agent/k8s-all-in-one.yaml
+- grafana/k8s-all-in-one.yaml
+- loki/k8s-all-in-one.yaml
+
+
+images:
+- name: docker.io/grafana/agent
+  newTag: v0.37.4

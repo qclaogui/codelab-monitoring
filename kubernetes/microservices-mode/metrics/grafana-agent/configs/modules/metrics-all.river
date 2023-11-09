@@ -1,0 +1,138 @@
+/*
+Module: metrics-all
+Description: Wrapper module to include all kubernetes metric modules and use cri parsing
+*/
+argument "forward_to" {
+  // comment = "Must be a list(MetricssReceiver) where collected logs should be forwarded to"
+	optional = false
+}
+
+argument "agent_config_folder" {
+  // comment = "Whether or not clustering should be enabled"
+  optional = true
+  default = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent")
+}
+
+argument "scrape_port_named_metrics" {
+  // comment = "Whether or not to automatically scrape endpoints that have a port with 'metrics' in the name"
+  optional = true
+  default = false
+}
+
+argument "clustering" {
+  // comment = "Whether or not clustering should be enabled"
+  optional = true
+  default = false
+}
+
+argument "tenant" {
+  // comment = "The tenant to filter logs to.  This does not have to be the tenantId, this is the value to look for in the logs.agent.grafana.com/tenant annotation, and this can be a regex."
+  optional = true
+  default = ".*"
+}
+
+argument "git_repo" {
+  optional = true
+  default = coalesce(env("GIT_REPO"), "https://github.com/grafana/agent-modules.git")
+}
+
+argument "git_rev" {
+  optional = true
+  default = coalesce(env("GIT_REV"), env("GIT_REVISION"), env("GIT_BRANCH"), "main")
+}
+
+argument "git_pull_freq" {
+  optional = true
+  default = "0s"
+}
+
+
+/********************************************
+ * Scrape Kube API Server
+ ********************************************/
+module.file "scrape_kube_apiserver" {
+	filename = argument.agent_config_folder.value + "/kube-apiserver.river"
+
+  arguments {
+    forward_to = argument.forward_to.value
+    clustering = argument.clustering.value
+  }
+}
+
+/********************************************
+ * Scrape Kubelet
+ ********************************************/
+module.git "scrape_kubelet_cadvisor" {
+  repository = argument.git_repo.value
+  revision = argument.git_rev.value
+  pull_frequency = argument.git_pull_freq.value
+  path = "modules/kubernetes/metrics/scrapes/kubelet-cadvisor.river"
+
+  arguments {
+    forward_to = argument.forward_to.value
+    tenant = argument.tenant.value
+    clustering = argument.clustering.value
+    git_repo = argument.git_repo.value
+    git_rev = argument.git_rev.value
+    git_pull_freq = argument.git_pull_freq.value
+  }
+}
+
+module.git "scrape_kubelet" {
+  repository = argument.git_repo.value
+  revision = argument.git_rev.value
+  pull_frequency = argument.git_pull_freq.value
+  path = "modules/kubernetes/metrics/scrapes/kubelet.river"
+
+  arguments {
+    forward_to = argument.forward_to.value
+    tenant = argument.tenant.value
+    clustering = argument.clustering.value
+    git_repo = argument.git_repo.value
+    git_rev = argument.git_rev.value
+    git_pull_freq = argument.git_pull_freq.value
+  }
+}
+
+module.git "scrape_kubelet_probes" {
+  repository = argument.git_repo.value
+  revision = argument.git_rev.value
+  pull_frequency = argument.git_pull_freq.value
+  path = "modules/kubernetes/metrics/scrapes/kubelet-probes.river"
+
+  arguments {
+    forward_to = argument.forward_to.value
+    tenant = argument.tenant.value
+    clustering = argument.clustering.value
+    git_repo = argument.git_repo.value
+    git_rev = argument.git_rev.value
+    git_pull_freq = argument.git_pull_freq.value
+  }
+}
+
+/********************************************
+ * Kubernetes Auto Scrape Endpoints
+ ********************************************/
+module.file "auto_scrape_endpoints" {
+	filename = argument.agent_config_folder.value + "/auto-scrape-endpoints.river"
+
+  arguments {
+    forward_to = argument.forward_to.value
+    tenant = argument.tenant.value
+    clustering = argument.clustering.value
+    scrape_port_named_metrics = argument.scrape_port_named_metrics.value
+  }
+}
+
+/********************************************
+ * Kubernetes Auto Scrape Pods
+ ********************************************/
+module.file "auto_scrape_pods" {
+	filename = argument.agent_config_folder.value + "/auto-scrape-pods.river"
+
+  arguments {
+    forward_to = argument.forward_to.value
+    tenant = argument.tenant.value
+    clustering = argument.clustering.value
+  }
+}

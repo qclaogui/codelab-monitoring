@@ -10,6 +10,11 @@ https://github.com/monitoring-mixins/docs.
 
 ### mimir-mixin
 
+```bash
+mkdir mimir-mixin && cd mimir-mixin
+
+```
+
 1. Initialise Jsonnet
 
 ``` bash

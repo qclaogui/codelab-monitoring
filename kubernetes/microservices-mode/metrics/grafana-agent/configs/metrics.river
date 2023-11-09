@@ -1,28 +1,23 @@
 logging {
-  level  = "info"
+  level  = coalesce(env("AGENT_LOG_LEVEL"), "info")
   format = "logfmt"
 }
 
-module.git "metrics_primary" {
-  repository = "https://github.com/grafana/agent-modules.git"
-  revision   = "main"
-  path       = "modules/kubernetes/metrics/all.river"
+module.file "lgtmp" {
+	filename = env("AGENT_CONFIG_FOLDER") + "/lgtmp.river"
 
-  arguments {
-    forward_to   = [prometheus.remote_write.local_primary.receiver]
-    clustering   = false
-    blackbox_url = "prometheus-blackbox-exporter.monitoring-system.svc.cluster.local:9115"
-    git_pull_freq= "60s"
-  }
+	arguments {
+    cluster          = coalesce(env("CLUSTER"), "k3d-k3s-codelab")
+    metrics_endpoint = coalesce(env("METRICS_ENDPOINT"), "http://nginx.monitoring-system:8080")
+	}
 }
 
-prometheus.remote_write "local_primary" {
-  endpoint {
-    url = "http://nginx.monitoring-system:8080/api/v1/push"
-  }
+module.file "metrics_primary" {
+	filename = env("AGENT_CONFIG_FOLDER") + "/metrics-all.river"
 
-  external_labels = {
-    "scraped_by" = "grafana-agent",
-    "cluster" 	 = "k3d-k3s-codelab",
+  arguments {
+    forward_to = [module.file.lgtmp.exports.metrics_receiver]
+    clustering = true
+    scrape_port_named_metrics = true
   }
 }

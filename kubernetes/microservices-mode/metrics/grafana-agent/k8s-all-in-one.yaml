@@ -117,19 +117,538 @@ subjects:
 ---
 apiVersion: v1
 data:
-  metrics.river: "logging {\n  level  = \"info\"\n  format = \"logfmt\"\n}\n\nmodule.git
-    \"metrics_primary\" {\n  repository = \"https://github.com/grafana/agent-modules.git\"\n
-    \ revision   = \"main\"\n  path       = \"modules/kubernetes/metrics/all.river\"\n\n
-    \ arguments {\n    forward_to   = [prometheus.remote_write.local_primary.receiver]\n
-    \   clustering   = false\n    blackbox_url = \"prometheus-blackbox-exporter.monitoring-system.svc.cluster.local:9115\"\n
-    \   git_pull_freq= \"60s\"\n  }\n}\n\nprometheus.remote_write \"local_primary\"
-    {\n  endpoint {\n    url = \"http://nginx.monitoring-system:8080/api/v1/push\"\n
-    \ }\n\n  external_labels = {\n    \"scraped_by\" = \"grafana-agent\",\n    \"cluster\"
-    \t = \"k3d-k3s-codelab\",\n  }\n}"
+  metrics.river: "logging {\n  level  = coalesce(env(\"AGENT_LOG_LEVEL\"), \"info\")\n
+    \ format = \"logfmt\"\n}\n\nmodule.file \"lgtmp\" {\n\tfilename = env(\"AGENT_CONFIG_FOLDER\")
+    + \"/lgtmp.river\"\n\n\targuments {\n    cluster          = coalesce(env(\"CLUSTER\"),
+    \"k3d-k3s-codelab\")\n    metrics_endpoint = coalesce(env(\"METRICS_ENDPOINT\"),
+    \"http://nginx.monitoring-system:8080\")\n\t}\n}\n\nmodule.file \"metrics_primary\"
+    {\n\tfilename = env(\"AGENT_CONFIG_FOLDER\") + \"/metrics-all.river\"\n\n  arguments
+    {\n    forward_to = [module.file.lgtmp.exports.metrics_receiver]\n    clustering
+    = true\n    scrape_port_named_metrics = true\n  }\n}"
 kind: ConfigMap
 metadata:
-  name: grafana-agent-metrics-config-m75g754mc5
+  name: agent-metrics-config-t5d9gg7fc6
   namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  auto-scrape-endpoints.river: |
+    /*
+    Module: scrape-endpoints
+    Description:
+      Kubernetes Service Endpoints Auto-Scraping
+      ------------------------------------------------------------------------------------------------------------------------------------
+      Each port attached to an endpoint is an eligible target, oftentimes endpoint will have multiple ports.
+      There may be instances when you want to scrape all ports or some ports and not others. To support this
+      the following annotations are available:
+
+      only scrape endpoints with scrape set to true, this can be single valued i.e. scrape all ports for
+      the endpoint:
+
+      metrics.agent.grafana.com/scrape: true
+      prometheus.io/scrape: true
+
+      the default scraping scheme is http, this can be specified as a single value which would override,
+      the schema being used for all ports attached to the endpoint:
+
+      metrics.agent.grafana.com/scheme: https
+      prometheus.io/scheme: https
+
+      the default path to scrape is /metrics, this can be specified as a single value which would override,
+      the scrape path being used for all ports attached to the endpoint:
+
+      metrics.agent.grafana.com/path: /metrics/some_path
+      prometheus.io/path: /metrics/some_path
+
+      the default port to scrape is the endpoint port, this can be specified as a single value which would
+      override the scrape port being used for all ports attached to the endpoint, note that even if aan endpoint had
+      multiple targets, the relabel_config targets are deduped before scraping:
+
+      metrics.agent.grafana.com/port: 8080
+      prometheus.io/port: 8080
+
+      the default interval to scrape is 1m, this can be specified as a single value which would override,
+      the scrape interval being used for all ports attached to the endpoint:
+
+      metrics.agent.grafana.com/interval: 5m
+      prometheus.io/interval: 5m
+
+      the default timeout for scraping is 10s, this can be specified as a single value which would override,
+      the scrape interval being used for all ports attached to the endpoint:
+
+      metrics.agent.grafana.com/timeout: 30s
+      prometheus.io/timeout: 30s
+    */
+    argument "forward_to" {
+      // comment = "Must be a list(MetricssReceiver) where collected logs should be forwarded to"
+      optional = false
+    }
+
+    argument "tenant" {
+      // comment = "The tenant to filter logs to.  This does not have to be the tenantId, this is the value to look for in the logs.agent.grafana.com/tenant annotation, and this can be a regex."
+      optional = true
+      default = ".*"
+    }
+
+    argument "scrape_port_named_metrics" {
+      // comment = "Whether or not to automatically scrape endpoints that have a port with 'metrics' in the name"
+      optional = true
+      default = false
+    }
+
+    argument "clustering" {
+      // comment = "Whether or not clustering should be enabled"
+      optional = true
+      default = false
+    }
+
+    argument "git_repo" {
+      optional = true
+      default = coalesce(env("GIT_REPO"), "https://github.com/grafana/agent-modules.git")
+    }
+
+    argument "git_rev" {
+      optional = true
+      default = coalesce(env("GIT_REV"), env("GIT_REVISION"), env("GIT_BRANCH"), "main")
+    }
+
+    argument "git_pull_freq" {
+      optional = true
+      default = "0s"
+    }
+
+    module.git "endpoints_targets" {
+      repository = argument.git_repo.value
+      revision = argument.git_rev.value
+      pull_frequency = argument.git_pull_freq.value
+      path = "modules/kubernetes/metrics/targets/endpoints.river"
+
+      arguments {
+        tenant = argument.tenant.value
+        git_repo = argument.git_repo.value
+        git_rev = argument.git_rev.value
+        git_pull_freq = argument.git_pull_freq.value
+        scrape_port_named_metrics = argument.scrape_port_named_metrics.value
+      }
+    }
+
+    prometheus.scrape "scrape_endpoints" {
+      targets = module.git.endpoints_targets.exports.relabelings.output
+      forward_to = [module.git.relabelings_kube_state_metrics.exports.metric_relabelings.receiver]
+
+      clustering {
+        enabled = argument.clustering.value
+      }
+    }
+
+    // metric relabelings
+    module.git "relabelings_kube_state_metrics" {
+      repository = argument.git_repo.value
+      revision = argument.git_rev.value
+      pull_frequency = argument.git_pull_freq.value
+      path = "modules/kubernetes/metrics/relabelings/kube-state-metrics.river"
+
+      arguments {
+        forward_to = [module.git.relabelings_node_exporter.exports.metric_relabelings.receiver]
+      }
+    }
+
+    module.git "relabelings_node_exporter" {
+      repository = argument.git_repo.value
+      revision = argument.git_rev.value
+      pull_frequency = argument.git_pull_freq.value
+      path = "modules/kubernetes/metrics/relabelings/node-exporter.river"
+
+      arguments {
+        forward_to = [module.git.relabelings_opencost.exports.metric_relabelings.receiver]
+      }
+    }
+
+    module.git "relabelings_opencost" {
+      repository = argument.git_repo.value
+      revision = argument.git_rev.value
+      pull_frequency = argument.git_pull_freq.value
+      path = "modules/kubernetes/metrics/relabelings/opencost.river"
+
+      arguments {
+        forward_to = [module.git.relabelings_auto_scrape.exports.metric_relabelings.receiver]
+      }
+    }
+
+    // metric relabelings
+    module.git "relabelings_auto_scrape" {
+      repository = argument.git_repo.value
+      revision = argument.git_rev.value
+      pull_frequency = argument.git_pull_freq.value
+      path = "modules/kubernetes/metrics/relabelings/auto-scrape.river"
+
+      arguments {
+        forward_to = argument.forward_to.value
+        job_label = "kubernetes-endpoint-auto-scrape"
+      }
+    }
+  auto-scrape-pods.river: |
+    /*
+    Module: scrape-pods
+    Description:
+      Kubernetes Pods Auto-Scraping
+      -------------------------------------------------------------------------------------------------------
+      !!! IMPORTANT !!!
+      The annotations described below for auto-scraping of metrics should NOT be added to the both
+      Service/Endpoints and to the Pods/Controller.  Metric scraping should be done at the endpoint level
+      if at all possible.  The following annotations should only be added to a pod if the pod is not
+      associated to a service
+      !!! IMPORTANT !!!
+
+      Each port attached to a pod container is an eligible target, oftentimes pods will have multiple ports.
+      There may be instances when you want to scrape all ports or some ports and not others. To support this
+      the following annotations are available:
+
+      only scrape pods with scrape set to true, this can be single valued i.e. scrape all ports for
+      the endpoint:
+
+      metrics.agent.grafana.com/scrape: true
+      prometheus.io/scrape: true
+
+      the default scraping scheme is http, this can be specified as a single value which would override,
+      the schema being used for all ports attached to the endpoint:
+
+      metrics.agent.grafana.com/scheme: https
+      prometheus.io/scheme: https
+
+      the default path to scrape is /metrics, this can be specified as a single value which would override,
+      the scrape path being used for all ports attached to the endpoint:
+
+      metrics.agent.grafana.com/path: /metrics/some_path
+      prometheus.io/path: /metrics/some_path
+
+      the default port to scrape is the endpoint port, this can be specified as a single value which would
+      override the scrape port being used for all ports attached to the endpoint, note that even if aan endpoint had
+      multiple targets, the relabel_config targets are deduped before scraping:
+
+      metrics.agent.grafana.com/port: 8080
+      prometheus.io/port: 8080
+
+      the default interval to scrape is 1m, this can be specified as a single value which would override,
+      the scrape interval being used for all ports attached to the endpoint:
+
+      metrics.agent.grafana.com/interval: 5m
+      prometheus.io/interval: 5m
+
+      the default timeout for scraping is 10s, this can be specified as a single value which would override,
+      the scrape interval being used for all ports attached to the endpoint:
+
+      metrics.agent.grafana.com/timeout: 30s
+      prometheus.io/timeout: 30s
+    */
+    argument "forward_to" {
+      // comment = "Must be a list(MetricssReceiver) where collected logs should be forwarded to"
+      optional = false
+    }
+
+    argument "tenant" {
+      // comment = "The tenant to filter logs to.  This does not have to be the tenantId, this is the value to look for in the logs.agent.grafana.com/tenant annotation, and this can be a regex."
+      optional = true
+      default = ".*"
+    }
+
+    argument "clustering" {
+      // comment = "Whether or not clustering should be enabled"
+      optional = true
+      default = false
+    }
+
+    argument "git_repo" {
+      optional = true
+      default = coalesce(env("GIT_REPO"), "https://github.com/grafana/agent-modules.git")
+    }
+
+    argument "git_rev" {
+      optional = true
+      default = coalesce(env("GIT_REV"), env("GIT_REVISION"), env("GIT_BRANCH"), "main")
+    }
+
+    argument "git_pull_freq" {
+      optional = true
+      default = "0s"
+    }
+
+    module.git "pod_targets" {
+      repository = argument.git_repo.value
+      revision = argument.git_rev.value
+      pull_frequency = argument.git_pull_freq.value
+      path = "modules/kubernetes/metrics/targets/pods.river"
+
+      arguments {
+        tenant = argument.tenant.value
+        git_repo = argument.git_repo.value
+        git_rev = argument.git_rev.value
+        git_pull_freq = argument.git_pull_freq.value
+      }
+    }
+
+    prometheus.scrape "scrape_pods" {
+      targets = module.git.pod_targets.exports.relabelings.output
+      forward_to = [module.git.relabelings_auto_scrape.exports.metric_relabelings.receiver]
+
+      clustering {
+        enabled = argument.clustering.value
+      }
+    }
+
+    // metric relabelings
+    module.git "relabelings_auto_scrape" {
+      repository = argument.git_repo.value
+      revision = argument.git_rev.value
+      pull_frequency = argument.git_pull_freq.value
+      path = "modules/kubernetes/metrics/relabelings/auto-scrape.river"
+
+      arguments {
+        forward_to = argument.forward_to.value
+        job_label = "kubernetes-pod-auto-scrape"
+      }
+    }
+  grafana-cloud.river: "\n/********************************************\n * ARGUMENTS\n
+    ********************************************/\nargument \"stack_name\" { }\n\nargument
+    \"token\" { }\n\n/********************************************\n * EXPORTS\n ********************************************/\n\nexport
+    \"metrics_receiver\" {\n\tvalue = prometheus.remote_write.default.receiver\n}\n\nexport
+    \"logs_receiver\" {\n\tvalue = loki.write.default.receiver\n}\n\nexport \"traces_receiver\"
+    {\n\tvalue = otelcol.exporter.otlp.default.input\n}\n\nexport \"profiles_receiver\"
+    {\n\tvalue = pyroscope.write.default.receiver\n}\n\nexport \"stack_information\"
+    {\n\tvalue = json_decode(remote.http.config_file.content)\n}\n\n/********************************************\n
+    * External information\n ********************************************/\n\nremote.http
+    \"config_file\" {\n\turl = \"https://grafana.com/api/instances/\" + argument.stack_name.value\n\n\tclient
+    {\n\t\tbearer_token = argument.token.value\n\t}\n\tpoll_frequency = \"24h\"\n}\n\n/********************************************\n
+    * Endpoints\n ********************************************/\n\n// Metrics\nprometheus.remote_write
+    \"default\" {\n\tendpoint {\n\t\turl = json_decode(remote.http.config_file.content)[\"hmInstancePromUrl\"]
+    + \"/api/prom/push\"\n\n\t\tbasic_auth {\n\t\t\tusername = json_decode(remote.http.config_file.content)[\"hmInstancePromId\"]\n\t\t\tpassword
+    = argument.token.value\n\t\t}\n\t}\n}\n\n// Logs\nloki.write \"default\" {\n\tendpoint
+    {\n\t\turl = json_decode(remote.http.config_file.content)[\"hlInstanceUrl\"] +
+    \"/loki/api/v1/push\"\n\n\t\tbasic_auth {\n\t\t\tusername = json_decode(remote.http.config_file.content)[\"hlInstanceId\"]\n\t\t\tpassword
+    = argument.token.value\n\t\t}\n\t}\n}\n\n// Traces\notelcol.auth.basic \"default\"
+    {\n\tusername = json_decode(remote.http.config_file.content)[\"htInstanceId\"]\n\tpassword
+    = argument.token.value\n}\n\notelcol.exporter.otlp \"default\" {\n\tclient {\n\t\tendpoint
+    = json_decode(remote.http.config_file.content)[\"htInstanceUrl\"] + \":443\"\n\t\tauth
+    \    = otelcol.auth.basic.default.handler\n\t}\n}\n\n// Profiles\npyroscope.write
+    \"default\" {\n\tendpoint {\n\t\turl = json_decode(remote.http.config_file.content)[\"hpInstanceUrl\"]\n\n\t\tbasic_auth
+    {\n\t\t\tusername = json_decode(remote.http.config_file.content)[\"hpInstanceId\"]\n\t\t\tpassword
+    = argument.token.value\n\t\t}\n\t}\n}\n"
+  kube-apiserver.river: |-
+    /*
+    Module: scrape-kube-apiserver
+    Description: Scrapes Kube apiserver, most of these same metrics can come from cAdvisor use only if necessary
+    */
+    argument "forward_to" {
+      // comment = "Must be a list(MetricssReceiver) where collected logs should be forwarded to"
+      optional = false
+    }
+
+    argument "clustering" {
+      // comment = "Whether or not clustering should be enabled"
+      optional = true
+      default = false
+    }
+
+    argument "job_label" {
+      optional = true
+      default = "integrations/kubernetes/apiserver"
+      // comment = "The job label to add for all apiserver"
+    }
+
+    // drop metrics and les from kube-prometheus
+    // https://github.com/prometheus-operator/kube-prometheus/blob/main/manifests/kubernetesControlPlane-serviceMonitorApiserver.yaml
+    argument "drop_metrics" {
+      optional = true
+      default = "kubelet_(pod_worker_latency_microseconds|pod_start_latency_microseconds|cgroup_manager_latency_microseconds|pod_worker_start_latency_microseconds|pleg_relist_latency_microseconds|pleg_relist_interval_microseconds|runtime_operations|runtime_operations_latency_microseconds|runtime_operations_errors|eviction_stats_age_microseconds|device_plugin_registration_count|device_plugin_alloc_latency_microseconds|network_plugin_operations_latency_microseconds)|scheduler_(e2e_scheduling_latency_microseconds|scheduling_algorithm_predicate_evaluation|scheduling_algorithm_priority_evaluation|scheduling_algorithm_preemption_evaluation|scheduling_algorithm_latency_microseconds|binding_latency_microseconds|scheduling_latency_seconds)|apiserver_(request_count|request_latencies|request_latencies_summary|dropped_requests|storage_data_key_generation_latencies_microseconds|storage_transformation_failures_total|storage_transformation_latencies_microseconds|proxy_tunnel_sync_latency_secs|longrunning_gauge|registered_watchers)|kubelet_docker_(operations|operations_latency_microseconds|operations_errors|operations_timeout)|reflector_(items_per_list|items_per_watch|list_duration_seconds|lists_total|short_watches_total|watch_duration_seconds|watches_total)|etcd_(helper_cache_hit_count|helper_cache_miss_count|helper_cache_entry_count|object_counts|request_cache_get_latencies_summary|request_cache_add_latencies_summary|request_latencies_summary)|transformation_(transformation_latencies_microseconds|failures_total)|(admission_quota_controller_adds|admission_quota_controller_depth|admission_quota_controller_longest_running_processor_microseconds|admission_quota_controller_queue_latency|admission_quota_controller_unfinished_work_seconds|admission_quota_controller_work_duration|APIServiceOpenAPIAggregationControllerQueue1_adds|APIServiceOpenAPIAggregationControllerQueue1_depth|APIServiceOpenAPIAggregationControllerQueue1_longest_running_processor_microseconds|APIServiceOpenAPIAggregationControllerQueue1_queue_latency|APIServiceOpenAPIAggregationControllerQueue1_retries|APIServiceOpenAPIAggregationControllerQueue1_unfinished_work_seconds|APIServiceOpenAPIAggregationControllerQueue1_work_duration|APIServiceRegistrationController_adds|APIServiceRegistrationController_depth|APIServiceRegistrationController_longest_running_processor_microseconds|APIServiceRegistrationController_queue_latency|APIServiceRegistrationController_retries|APIServiceRegistrationController_unfinished_work_seconds|APIServiceRegistrationController_work_duration|autoregister_adds|autoregister_depth|autoregister_longest_running_processor_microseconds|autoregister_queue_latency|autoregister_retries|autoregister_unfinished_work_seconds|autoregister_work_duration|AvailableConditionController_adds|AvailableConditionController_depth|AvailableConditionController_longest_running_processor_microseconds|AvailableConditionController_queue_latency|AvailableConditionController_retries|AvailableConditionController_unfinished_work_seconds|AvailableConditionController_work_duration|crd_autoregistration_controller_adds|crd_autoregistration_controller_depth|crd_autoregistration_controller_longest_running_processor_microseconds|crd_autoregistration_controller_queue_latency|crd_autoregistration_controller_retries|crd_autoregistration_controller_unfinished_work_seconds|crd_autoregistration_controller_work_duration|crdEstablishing_adds|crdEstablishing_depth|crdEstablishing_longest_running_processor_microseconds|crdEstablishing_queue_latency|crdEstablishing_retries|crdEstablishing_unfinished_work_seconds|crdEstablishing_work_duration|crd_finalizer_adds|crd_finalizer_depth|crd_finalizer_longest_running_processor_microseconds|crd_finalizer_queue_latency|crd_finalizer_retries|crd_finalizer_unfinished_work_seconds|crd_finalizer_work_duration|crd_naming_condition_controller_adds|crd_naming_condition_controller_depth|crd_naming_condition_controller_longest_running_processor_microseconds|crd_naming_condition_controller_queue_latency|crd_naming_condition_controller_retries|crd_naming_condition_controller_unfinished_work_seconds|crd_naming_condition_controller_work_duration|crd_openapi_controller_adds|crd_openapi_controller_depth|crd_openapi_controller_longest_running_processor_microseconds|crd_openapi_controller_queue_latency|crd_openapi_controller_retries|crd_openapi_controller_unfinished_work_seconds|crd_openapi_controller_work_duration|DiscoveryController_adds|DiscoveryController_depth|DiscoveryController_longest_running_processor_microseconds|DiscoveryController_queue_latency|DiscoveryController_retries|DiscoveryController_unfinished_work_seconds|DiscoveryController_work_duration|kubeproxy_sync_proxy_rules_latency_microseconds|non_structural_schema_condition_controller_adds|non_structural_schema_condition_controller_depth|non_structural_schema_condition_controller_longest_running_processor_microseconds|non_structural_schema_condition_controller_queue_latency|non_structural_schema_condition_controller_retries|non_structural_schema_condition_controller_unfinished_work_seconds|non_structural_schema_condition_controller_work_duration|rest_client_request_latency_seconds|storage_operation_errors_total|storage_operation_status_count)|etcd_(debugging|disk|server).*|apiserver_admission_controller_admission_latencies_seconds_.*|apiserver_admission_step_admission_latencies_seconds_.*"
+      // comment = "Regex of metrics to drop"
+    }
+
+    argument "drop_les" {
+      optional = true
+      default = "apiserver_request_duration_seconds_bucket;(0.15|0.25|0.3|0.35|0.4|0.45|0.6|0.7|0.8|0.9|1.25|1.5|1.75|2.5|3|3.5|4.5|6|7|8|9|15|25|30|50)"
+      // comment = "Regex of metric les to drop"
+    }
+
+    // get the available endpoints
+    discovery.kubernetes "endpoints" {
+      role = "endpoints"
+    }
+
+    /********************************************
+     * Discovery the targets
+     ********************************************/
+    discovery.relabel "kube_apiserver" {
+      targets = discovery.kubernetes.endpoints.targets
+
+      // only keep namespace=default, service=kubernetes, port=https
+      rule {
+        action = "keep"
+        source_labels = [
+          "__meta_kubernetes_namespace",
+          "__meta_kubernetes_service_name",
+          "__meta_kubernetes_endpoint_port_name",
+        ]
+        regex = "default;kubernetes;https"
+      }
+
+      // set the namespace
+      rule {
+        action = "replace"
+        source_labels = ["__meta_kubernetes_namespace"]
+        target_label = "namespace"
+      }
+
+      // set the service_name
+      rule {
+        action = "replace"
+        source_labels = ["__meta_kubernetes_service_name"]
+        target_label = "service"
+      }
+
+    }
+
+    /********************************************
+     * Scrape metric
+     ********************************************/
+    prometheus.scrape "kube_apiserver" {
+      targets = discovery.relabel.kube_apiserver.output
+      scheme = "https"
+      bearer_token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+      forward_to = [prometheus.relabel.kube_apiserver.receiver]
+
+      tls_config {
+        ca_file = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+        insecure_skip_verify = false
+        server_name = "kubernetes"
+      }
+
+      clustering {
+        enabled = argument.clustering.value
+      }
+    }
+
+    /********************************************
+     * Metric relabelings
+     ********************************************/
+    prometheus.relabel "kube_apiserver" {
+      forward_to = argument.forward_to.value
+
+      // drop metrics
+      rule {
+        action = "drop"
+        source_labels = ["__name__"]
+        regex = argument.drop_metrics.value
+      }
+
+      // drop les
+      rule {
+        action = "drop"
+        source_labels = [
+          "__name__",
+          "le",
+        ]
+        regex = argument.drop_les.value
+      }
+
+      // set the job label, only if job label is not set or contains "module." is not specified
+      rule {
+        action = "replace"
+        source_labels = ["job"]
+        regex = "|.*module\\..*"
+        replacement = argument.job_label.value
+        target_label = "job"
+      }
+
+    }
+  lgtmp.river: "/********************************************\n * ARGUMENTS\n ********************************************/\nargument
+    \"cluster\" {\n\toptional = true\n\tdefault  = \"monitoring-system\"\n}\n\nargument
+    \"metrics_endpoint\" {\n\toptional = true\n\tdefault  = \"http://mimir:8080\"\n\t//comment
+    = \"Where to send collected metrics.\"\n}\n\nargument \"logs_endpoint\" {\n\toptional
+    = true\n\tdefault  = \"http://loki:3100\"\n\t//comment = \"Where to send collected
+    logs.\"\n}\n\nargument \"traces_endpoint\" {\n\toptional = true\n\tdefault  =
+    \"tempo:4317\"\n\t//comment = \"Where to send collected traces.\"\n}\n\nargument
+    \"profiles_endpoint\" {\n\toptional = true\n\tdefault  = \"http://pyroscope:4040\"\n\t//comment
+    \ = \"Where to send collected profiles.\"\n}\n\n/********************************************\n
+    * EXPORTS\n ********************************************/\n\nexport \"metrics_receiver\"
+    {\n\tvalue = prometheus.remote_write.mimir.receiver\n}\n\nexport \"logs_receiver\"
+    {\n\tvalue = loki.write.loki.receiver\n}\n\nexport \"traces_receiver\" {\n\tvalue
+    = otelcol.exporter.otlp.tempo.input\n}\n\nexport \"profiles_receiver\" {\n\tvalue
+    = pyroscope.write.pyroscope.receiver\n}\n\n/********************************************\n
+    * Endpoints\n ********************************************/\n\n// Metrics\nprometheus.remote_write
+    \"mimir\" {\n\tendpoint {\n\t\turl = argument.metrics_endpoint.value + \"/api/v1/push\"\n\t}\n\n\texternal_labels
+    = {\n\t\t\"scraped_by\" = \"grafana-agent\",\n\t\t\"cluster\" \t = argument.cluster.value,\n\t}\n}\n\n//
+    Logs\nloki.write \"loki\" {\n\tendpoint {\n\t\turl = argument.logs_endpoint.value
+    + \"/loki/api/v1/push\"\n\t}\n\n\texternal_labels = {\n\t\t\"scraped_by\" = \"grafana-agent\",\n\t\t\"cluster\"
+    \t = argument.cluster.value,\n\t}\n}\n\n// Traces\notelcol.exporter.otlp \"tempo\"
+    {\n\tclient {\n\t\tendpoint = argument.traces_endpoint.value\n\n\t\ttls {\n\t\t\tinsecure
+    \            = true\n\t\t\tinsecure_skip_verify = true\n\t\t}\n\t}\n}\n\n// Profiles\npyroscope.write
+    \"pyroscope\" {\n\tendpoint {\n\t\turl = argument.profiles_endpoint.value\n\t}\n\n\texternal_labels
+    = {\n\t\t\"scraped_by\" = \"grafana-agent\",\n\t\t\"cluster\" \t = argument.cluster.value,\n\t}\n}\n"
+  metrics-all.river: "/*\nModule: metrics-all\nDescription: Wrapper module to include
+    all kubernetes metric modules and use cri parsing\n*/\nargument \"forward_to\"
+    {\n  // comment = \"Must be a list(MetricssReceiver) where collected logs should
+    be forwarded to\"\n\toptional = false\n}\n\nargument \"agent_config_folder\" {\n
+    \ // comment = \"Whether or not clustering should be enabled\"\n  optional = true\n
+    \ default = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent\")\n}\n\nargument
+    \"scrape_port_named_metrics\" {\n  // comment = \"Whether or not to automatically
+    scrape endpoints that have a port with 'metrics' in the name\"\n  optional = true\n
+    \ default = false\n}\n\nargument \"clustering\" {\n  // comment = \"Whether or
+    not clustering should be enabled\"\n  optional = true\n  default = false\n}\n\nargument
+    \"tenant\" {\n  // comment = \"The tenant to filter logs to.  This does not have
+    to be the tenantId, this is the value to look for in the logs.agent.grafana.com/tenant
+    annotation, and this can be a regex.\"\n  optional = true\n  default = \".*\"\n}\n\nargument
+    \"git_repo\" {\n  optional = true\n  default = coalesce(env(\"GIT_REPO\"), \"https://github.com/grafana/agent-modules.git\")\n}\n\nargument
+    \"git_rev\" {\n  optional = true\n  default = coalesce(env(\"GIT_REV\"), env(\"GIT_REVISION\"),
+    env(\"GIT_BRANCH\"), \"main\")\n}\n\nargument \"git_pull_freq\" {\n  optional
+    = true\n  default = \"0s\"\n}\n\n\n/********************************************\n
+    * Scrape Kube API Server\n ********************************************/\nmodule.file
+    \"scrape_kube_apiserver\" {\n\tfilename = argument.agent_config_folder.value +
+    \"/kube-apiserver.river\"\n\n  arguments {\n    forward_to = argument.forward_to.value\n
+    \   clustering = argument.clustering.value\n  }\n}\n\n/********************************************\n
+    * Scrape Kubelet\n ********************************************/\nmodule.git \"scrape_kubelet_cadvisor\"
+    {\n  repository = argument.git_repo.value\n  revision = argument.git_rev.value\n
+    \ pull_frequency = argument.git_pull_freq.value\n  path = \"modules/kubernetes/metrics/scrapes/kubelet-cadvisor.river\"\n\n
+    \ arguments {\n    forward_to = argument.forward_to.value\n    tenant = argument.tenant.value\n
+    \   clustering = argument.clustering.value\n    git_repo = argument.git_repo.value\n
+    \   git_rev = argument.git_rev.value\n    git_pull_freq = argument.git_pull_freq.value\n
+    \ }\n}\n\nmodule.git \"scrape_kubelet\" {\n  repository = argument.git_repo.value\n
+    \ revision = argument.git_rev.value\n  pull_frequency = argument.git_pull_freq.value\n
+    \ path = \"modules/kubernetes/metrics/scrapes/kubelet.river\"\n\n  arguments {\n
+    \   forward_to = argument.forward_to.value\n    tenant = argument.tenant.value\n
+    \   clustering = argument.clustering.value\n    git_repo = argument.git_repo.value\n
+    \   git_rev = argument.git_rev.value\n    git_pull_freq = argument.git_pull_freq.value\n
+    \ }\n}\n\nmodule.git \"scrape_kubelet_probes\" {\n  repository = argument.git_repo.value\n
+    \ revision = argument.git_rev.value\n  pull_frequency = argument.git_pull_freq.value\n
+    \ path = \"modules/kubernetes/metrics/scrapes/kubelet-probes.river\"\n\n  arguments
+    {\n    forward_to = argument.forward_to.value\n    tenant = argument.tenant.value\n
+    \   clustering = argument.clustering.value\n    git_repo = argument.git_repo.value\n
+    \   git_rev = argument.git_rev.value\n    git_pull_freq = argument.git_pull_freq.value\n
+    \ }\n}\n\n/********************************************\n * Kubernetes Auto Scrape
+    Endpoints\n ********************************************/\nmodule.file \"auto_scrape_endpoints\"
+    {\n\tfilename = argument.agent_config_folder.value + \"/auto-scrape-endpoints.river\"\n\n
+    \ arguments {\n    forward_to = argument.forward_to.value\n    tenant = argument.tenant.value\n
+    \   clustering = argument.clustering.value\n    scrape_port_named_metrics = argument.scrape_port_named_metrics.value\n
+    \ }\n}\n\n/********************************************\n * Kubernetes Auto Scrape
+    Pods\n ********************************************/\nmodule.file \"auto_scrape_pods\"
+    {\n\tfilename = argument.agent_config_folder.value + \"/auto-scrape-pods.river\"\n\n
+    \ arguments {\n    forward_to = argument.forward_to.value\n    tenant = argument.tenant.value\n
+    \   clustering = argument.clustering.value\n  }\n}\n"
+kind: ConfigMap
+metadata:
+  name: agent-modules-24tb9t4dfh
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  AGENT_CONFIG_FOLDER: L2V0Yy9hZ2VudC1tb2R1bGVz
+  AGENT_LOG_LEVEL: aW5mbw==
+  CLUSTER: azNkLWszcy1jb2RlbGFi
+  METRICS_ENDPOINT: aHR0cDovL25naW54Lm1vbml0b3Jpbmctc3lzdGVtOjgwODA=
+kind: Secret
+metadata:
+  name: agent-metrics-env-c9685b4855
+  namespace: monitoring-system
+type: Opaque
 ---
 apiVersion: v1
 kind: Service
@@ -222,6 +741,9 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
+        envFrom:
+        - secretRef:
+            name: agent-metrics-env-c9685b4855
         image: docker.io/grafana/agent:v0.37.4
         imagePullPolicy: IfNotPresent
         name: grafana-agent
@@ -237,6 +759,8 @@ spec:
         volumeMounts:
         - mountPath: /etc/agent
           name: config
+        - mountPath: /etc/agent-modules
+          name: agent-modules
       - args:
         - --volume-dir=/etc/agent
         - --webhook-url=http://localhost:80/-/reload
@@ -255,5 +779,8 @@ spec:
       serviceAccountName: grafana-agent
       volumes:
       - configMap:
-          name: grafana-agent-metrics-config-m75g754mc5
+          name: agent-metrics-config-t5d9gg7fc6
         name: config
+      - configMap:
+          name: agent-modules-24tb9t4dfh
+        name: agent-modules

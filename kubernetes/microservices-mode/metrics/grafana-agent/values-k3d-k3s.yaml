@@ -5,21 +5,38 @@ agent:
   mode: 'flow'
   configMap:
     create: false
-    name: grafana-agent-metrics-config
+    name: agent-metrics-config
     key: metrics.river
   clustering:
     enabled: true
+  envFrom:
+  - secretRef:
+      name: agent-metrics-env
+  mounts:
+    extra:
+    # - name: agent-metrics-credentials
+    #   mountPath: /etc/agent-metrics-credentials
+    - name: agent-modules
+      mountPath: /etc/agent-modules
 
 controller:
   type: statefulset
+  volumes:
+    extra:
+    # - name: agent-metrics-credentials
+    #   secret:
+    #     secretName: agent-metrics-credentials
+    - name: agent-modules
+      configMap:
+        name: agent-modules
   podAnnotations:
     metrics.agent.grafana.com/scrape: "true"
+    metrics.agent.grafana.com/interval: "15s"   # The default interval to scrape is 1m
     # metrics.agent.grafana.com/scheme: "http"    # The default scraping scheme is http
     # metrics.agent.grafana.com/path: "/metrics"  # The default path to scrape is /metrics
     # metrics.agent.grafana.com/port: "80"
     # metrics.agent.grafana.com/tenant: ".*"
     # metrics.agent.grafana.com/job: "agent"
-    metrics.agent.grafana.com/interval: "15s"   # The default interval to scrape is 1m
     # metrics.agent.grafana.com/timeout: "10s"    # The default timeout for scraping is 10s
   nodeSelector:
     kubernetes.io/os: linux

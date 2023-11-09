@@ -13,6 +13,22 @@ helmCharts:
   valuesFile: values-k3d-k3s.yaml
 
 configMapGenerator:
-- name: grafana-agent-metrics-config
+- name: agent-metrics-config
   files:
   - configs/metrics.river
+- name: agent-modules
+  files:
+  - configs/modules/auto-scrape-endpoints.river
+  - configs/modules/auto-scrape-pods.river
+  - configs/modules/grafana-cloud.river
+  - configs/modules/kube-apiserver.river
+  - configs/modules/lgtmp.river
+  - configs/modules/metrics-all.river
+
+secretGenerator:
+- name: agent-metrics-env
+  literals:
+  - AGENT_LOG_LEVEL=info
+  - AGENT_CONFIG_FOLDER=/etc/agent-modules
+  - CLUSTER=k3d-k3s-codelab
+  - METRICS_ENDPOINT=http://nginx.monitoring-system:8080

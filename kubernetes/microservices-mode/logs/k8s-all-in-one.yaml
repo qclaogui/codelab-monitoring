@@ -1,0 +1,1784 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    team: team-infra
+  name: logging-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/instance: grafana
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/version: 10.1.5
+    helm.sh/chart: grafana-7.0.3
+    team: team-infra
+  name: grafana
+  namespace: logging-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/instance: grafana-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: grafana-agent
+    app.kubernetes.io/version: v0.37.4
+    helm.sh/chart: grafana-agent-0.27.2
+    team: team-infra
+  name: grafana-agent
+  namespace: logging-system
+---
+apiVersion: v1
+automountServiceAccountToken: true
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 2.9.2
+    helm.sh/chart: loki-5.36.3
+    team: team-infra
+  name: loki
+  namespace: logging-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    team: team-infra
+  name: minio-sa
+  namespace: logging-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/instance: grafana
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/version: 10.1.5
+    helm.sh/chart: grafana-7.0.3
+    team: team-infra
+  name: grafana
+  namespace: logging-system
+rules: []
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/instance: grafana-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: grafana-agent
+    app.kubernetes.io/version: v0.37.4
+    helm.sh/chart: grafana-agent-0.27.2
+    team: team-infra
+  name: grafana-agent
+rules:
+- apiGroups:
+  - ""
+  - discovery.k8s.io
+  - networking.k8s.io
+  resources:
+  - endpoints
+  - endpointslices
+  - ingresses
+  - nodes
+  - nodes/proxy
+  - nodes/metrics
+  - pods
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - pods/log
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - monitoring.grafana.com
+  resources:
+  - podlogs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - prometheusrules
+  verbs:
+  - get
+  - list
+  - watch
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - podmonitors
+  - servicemonitors
+  - probes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/instance: grafana
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/version: 10.1.5
+    helm.sh/chart: grafana-7.0.3
+    team: team-infra
+  name: grafana-clusterrole
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  verbs:
+  - get
+  - watch
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 2.9.2
+    helm.sh/chart: loki-5.36.3
+    team: team-infra
+  name: loki-clusterrole
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  verbs:
+  - get
+  - watch
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/instance: grafana
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/version: 10.1.5
+    helm.sh/chart: grafana-7.0.3
+    team: team-infra
+  name: grafana
+  namespace: logging-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: grafana
+subjects:
+- kind: ServiceAccount
+  name: grafana
+  namespace: logging-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/instance: grafana-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: grafana-agent
+    app.kubernetes.io/version: v0.37.4
+    helm.sh/chart: grafana-agent-0.27.2
+    team: team-infra
+  name: grafana-agent
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: grafana-agent
+subjects:
+- kind: ServiceAccount
+  name: grafana-agent
+  namespace: logging-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/instance: grafana
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/version: 10.1.5
+    helm.sh/chart: grafana-7.0.3
+    team: team-infra
+  name: grafana-clusterrolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: grafana-clusterrole
+subjects:
+- kind: ServiceAccount
+  name: grafana
+  namespace: logging-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 2.9.2
+    helm.sh/chart: loki-5.36.3
+    team: team-infra
+  name: loki-clusterrolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: loki-clusterrole
+subjects:
+- kind: ServiceAccount
+  name: loki
+  namespace: logging-system
+---
+apiVersion: v1
+data:
+  logs.river: "/*\nThe following example shows using the default all logs processing
+    module, for\na single tenant and specifying the destination url/credentials via
+    environment\nvariables.\n*/\nlogging {\n  level  = coalesce(env(\"AGENT_LOG_LEVEL\"),
+    \"info\")\n  format = \"logfmt\"\n}\n\nmodule.file \"lgtmp\" {\n\tfilename = env(\"AGENT_CONFIG_FOLDER\")
+    + \"/lgtmp.river\"\n\n\targuments {\n    cluster       = coalesce(env(\"CLUSTER\"),
+    \"k3d-k3s-codelab\")\n    logs_endpoint = coalesce(env(\"LOGS_ENDPOINT\"), \"http://nginx.monitoring-system:3100\")\n\t}\n}\n\nmodule.git
+    \"event_logs\" {\n  repository = \"https://github.com/grafana/agent-modules.git\"\n
+    \ revision   = \"main\"\n  path       = \"modules/kubernetes/logs/events.river\"\n\n
+    \ arguments {\n    forward_to = [module.file.lgtmp.exports.logs_receiver]\n    git_pull_freq
+    = \"0s\"\n  }\n}\n"
+kind: ConfigMap
+metadata:
+  labels:
+    team: team-infra
+  name: agent-logs-config-8kgtm6f297
+  namespace: logging-system
+---
+apiVersion: v1
+data:
+  grafana-cloud.river: "\n/********************************************\n * ARGUMENTS\n
+    ********************************************/\nargument \"stack_name\" { }\n\nargument
+    \"token\" { }\n\n/********************************************\n * EXPORTS\n ********************************************/\n\nexport
+    \"metrics_receiver\" {\n\tvalue = prometheus.remote_write.default.receiver\n}\n\nexport
+    \"logs_receiver\" {\n\tvalue = loki.write.default.receiver\n}\n\nexport \"traces_receiver\"
+    {\n\tvalue = otelcol.exporter.otlp.default.input\n}\n\nexport \"profiles_receiver\"
+    {\n\tvalue = pyroscope.write.default.receiver\n}\n\nexport \"stack_information\"
+    {\n\tvalue = json_decode(remote.http.config_file.content)\n}\n\n/********************************************\n
+    * External information\n ********************************************/\n\nremote.http
+    \"config_file\" {\n\turl = \"https://grafana.com/api/instances/\" + argument.stack_name.value\n\n\tclient
+    {\n\t\tbearer_token = argument.token.value\n\t}\n\tpoll_frequency = \"24h\"\n}\n\n/********************************************\n
+    * Endpoints\n ********************************************/\n\n// Metrics\nprometheus.remote_write
+    \"default\" {\n\tendpoint {\n\t\turl = json_decode(remote.http.config_file.content)[\"hmInstancePromUrl\"]
+    + \"/api/prom/push\"\n\n\t\tbasic_auth {\n\t\t\tusername = json_decode(remote.http.config_file.content)[\"hmInstancePromId\"]\n\t\t\tpassword
+    = argument.token.value\n\t\t}\n\t}\n}\n\n// Logs\nloki.write \"default\" {\n\tendpoint
+    {\n\t\turl = json_decode(remote.http.config_file.content)[\"hlInstanceUrl\"] +
+    \"/loki/api/v1/push\"\n\n\t\tbasic_auth {\n\t\t\tusername = json_decode(remote.http.config_file.content)[\"hlInstanceId\"]\n\t\t\tpassword
+    = argument.token.value\n\t\t}\n\t}\n}\n\n// Traces\notelcol.auth.basic \"default\"
+    {\n\tusername = json_decode(remote.http.config_file.content)[\"htInstanceId\"]\n\tpassword
+    = argument.token.value\n}\n\notelcol.exporter.otlp \"default\" {\n\tclient {\n\t\tendpoint
+    = json_decode(remote.http.config_file.content)[\"htInstanceUrl\"] + \":443\"\n\t\tauth
+    \    = otelcol.auth.basic.default.handler\n\t}\n}\n\n// Profiles\npyroscope.write
+    \"default\" {\n\tendpoint {\n\t\turl = json_decode(remote.http.config_file.content)[\"hpInstanceUrl\"]\n\n\t\tbasic_auth
+    {\n\t\t\tusername = json_decode(remote.http.config_file.content)[\"hpInstanceId\"]\n\t\t\tpassword
+    = argument.token.value\n\t\t}\n\t}\n}\n"
+  lgtmp.river: "/********************************************\n * ARGUMENTS\n ********************************************/\nargument
+    \"cluster\" {\n\toptional = true\n\tdefault  = \"monitoring-system\"\n}\n\nargument
+    \"metrics_endpoint\" {\n\toptional = true\n\tdefault  = \"http://mimir:8080\"\n\t//comment
+    = \"Where to send collected metrics.\"\n}\n\nargument \"logs_endpoint\" {\n\toptional
+    = true\n\tdefault  = \"http://loki:3100\"\n\t//comment = \"Where to send collected
+    logs.\"\n}\n\nargument \"traces_endpoint\" {\n\toptional = true\n\tdefault  =
+    \"tempo:4317\"\n\t//comment = \"Where to send collected traces.\"\n}\n\nargument
+    \"profiles_endpoint\" {\n\toptional = true\n\tdefault  = \"http://pyroscope:4040\"\n\t//comment
+    \ = \"Where to send collected profiles.\"\n}\n\n/********************************************\n
+    * EXPORTS\n ********************************************/\n\nexport \"metrics_receiver\"
+    {\n\tvalue = prometheus.remote_write.mimir.receiver\n}\n\nexport \"logs_receiver\"
+    {\n\tvalue = loki.write.loki.receiver\n}\n\nexport \"traces_receiver\" {\n\tvalue
+    = otelcol.exporter.otlp.tempo.input\n}\n\nexport \"profiles_receiver\" {\n\tvalue
+    = pyroscope.write.pyroscope.receiver\n}\n\n/********************************************\n
+    * Endpoints\n ********************************************/\n\n// Metrics\nprometheus.remote_write
+    \"mimir\" {\n\tendpoint {\n\t\turl = argument.metrics_endpoint.value + \"/api/v1/push\"\n\t}\n\n\texternal_labels
+    = {\n\t\t\"scraped_by\" = \"grafana-agent\",\n\t\t\"cluster\" \t = argument.cluster.value,\n\t}\n}\n\n//
+    Logs\nloki.write \"loki\" {\n\tendpoint {\n\t\turl = argument.logs_endpoint.value
+    + \"/loki/api/v1/push\"\n\t}\n\n\texternal_labels = {\n\t\t\"scraped_by\" = \"grafana-agent\",\n\t\t\"cluster\"
+    \t = argument.cluster.value,\n\t}\n}\n\n// Traces\notelcol.exporter.otlp \"tempo\"
+    {\n\tclient {\n\t\tendpoint = argument.traces_endpoint.value\n\n\t\ttls {\n\t\t\tinsecure
+    \            = true\n\t\t\tinsecure_skip_verify = true\n\t\t}\n\t}\n}\n\n// Profiles\npyroscope.write
+    \"pyroscope\" {\n\tendpoint {\n\t\turl = argument.profiles_endpoint.value\n\t}\n\n\texternal_labels
+    = {\n\t\t\"scraped_by\" = \"grafana-agent\",\n\t\t\"cluster\" \t = argument.cluster.value,\n\t}\n}\n"
+  logs-all.river: "/*\nModule: log-all\nDescription: Wrapper module to include all
+    kubernetes logging modules and use cri parsing\n*/\nargument \"forward_to\" {\n
+    \ // comment = \"Must be a list(LogsReceiver) where collected logs should be forwarded
+    to\"\n\toptional = false\n}\n\nargument \"tenant\" {\n  // comment = \"The tenant
+    to filter logs to.  This does not have to be the tenantId, this is the value to
+    look for in the logs.agent.grafana.com/tenant annotation, and this can be a regex.\"\n
+    \ optional = true\n  default = \".*\"\n}\n\nargument \"keep_labels\" {\n  // comment
+    = \"List of labels to keep before the log message is written to Loki\"\n  optional
+    = true\n  default = [\n    \"app\",\n    \"cluster\",\n    \"component\",\n    \"container\",\n
+    \   \"deployment\",\n    \"env\",\n    \"filename\",\n    \"instance\",\n    \"job\",\n
+    \   \"level\",\n    \"log_type\",\n    \"namespace\",\n    \"region\",\n    \"service\",\n
+    \   \"squad\",\n    \"team\",\n  ]\n}\n\nargument \"git_repo\" {\n  optional =
+    true\n  default = coalesce(env(\"GIT_REPO\"), \"https://github.com/grafana/agent-modules.git\")\n}\n\nargument
+    \"git_rev\" {\n  optional = true\n  default = coalesce(env(\"GIT_REV\"), env(\"GIT_REVISION\"),
+    env(\"GIT_BRANCH\"), \"main\")\n}\n\nargument \"git_pull_freq\" {\n  // comment
+    = \"How often to pull the git repo, the default is 0s which means never pull\"\n
+    \ optional = true\n  default = \"0s\"\n}\n\nmodule.git \"log_targets\" {\n  repository
+    = argument.git_repo.value\n  revision = argument.git_rev.value\n  pull_frequency
+    = argument.git_pull_freq.value\n  path = \"modules/kubernetes/logs/targets/logs-from-worker.river\"\n\n
+    \ arguments {\n    forward_to = [module.git.log_formats_all.exports.process.receiver]\n
+    \   tenant = argument.tenant.value\n    git_repo = argument.git_repo.value\n    git_rev
+    = argument.git_rev.value\n    git_pull_freq = argument.git_pull_freq.value\n  }\n}\n\nmodule.git
+    \"log_formats_all\" {\n  repository = argument.git_repo.value\n  revision = argument.git_rev.value\n
+    \ pull_frequency = argument.git_pull_freq.value\n  path = \"modules/kubernetes/logs/log-formats/all.river\"\n\n
+    \ arguments {\n    forward_to = [module.git.log_level_default.exports.process.receiver]\n
+    \   git_repo = argument.git_repo.value\n    git_rev = argument.git_rev.value\n
+    \   git_pull_freq = argument.git_pull_freq.value\n  }\n}\n\nmodule.git \"log_level_default\"
+    {\n  repository = argument.git_repo.value\n  revision = argument.git_rev.value\n
+    \ pull_frequency = argument.git_pull_freq.value\n  path = \"modules/kubernetes/logs/labels/log-level.river\"\n\n
+    \ arguments {\n    forward_to = [module.git.drop_levels.exports.process.receiver]\n
+    \ }\n}\n\nmodule.git \"drop_levels\" {\n  repository = argument.git_repo.value\n
+    \ revision = argument.git_rev.value\n  pull_frequency = argument.git_pull_freq.value\n
+    \ path = \"modules/kubernetes/logs/drops/levels.river\"\n\n  arguments {\n    forward_to
+    = [module.git.scrub_all.exports.process.receiver]\n    git_repo = argument.git_repo.value\n
+    \   git_rev = argument.git_rev.value\n    git_pull_freq = argument.git_pull_freq.value\n
+    \ }\n}\n\nmodule.git \"scrub_all\" {\n  repository = argument.git_repo.value\n
+    \ revision = argument.git_rev.value\n  pull_frequency = argument.git_pull_freq.value\n
+    \ path = \"modules/kubernetes/logs/scrubs/all.river\"\n\n  arguments {\n    forward_to
+    = [module.git.embed_pod.exports.process.receiver]\n    git_repo = argument.git_repo.value\n
+    \   git_rev = argument.git_rev.value\n    git_pull_freq = argument.git_pull_freq.value\n
+    \ }\n}\n\nmodule.git \"embed_pod\" {\n  repository = argument.git_repo.value\n
+    \ revision = argument.git_rev.value\n  pull_frequency = argument.git_pull_freq.value\n
+    \ path = \"modules/kubernetes/logs/embed/pod.river\"\n\n  arguments {\n    forward_to
+    = [module.git.mask_all.exports.process.receiver]\n  }\n}\n\nmodule.git \"mask_all\"
+    {\n  repository = argument.git_repo.value\n  revision = argument.git_rev.value\n
+    \ pull_frequency = argument.git_pull_freq.value\n  path = \"modules/kubernetes/logs/masks/all.river\"\n\n
+    \ arguments {\n    forward_to = [module.git.label_normalize_filename.exports.process.receiver]\n
+    \   git_repo = argument.git_repo.value\n    git_rev = argument.git_rev.value\n
+    \   git_pull_freq = argument.git_pull_freq.value\n  }\n}\n\nmodule.git \"label_normalize_filename\"
+    {\n  repository = argument.git_repo.value\n  revision = argument.git_rev.value\n
+    \ pull_frequency = argument.git_pull_freq.value\n  path = \"modules/kubernetes/logs/labels/normalize-filename.river\"\n\n
+    \ arguments {\n    forward_to = [module.git.label_keep.exports.process.receiver]\n
+    \ }\n}\n\nmodule.git \"label_keep\" {\n  repository = argument.git_repo.value\n
+    \ revision = argument.git_rev.value\n  pull_frequency = argument.git_pull_freq.value\n
+    \ path = \"modules/kubernetes/logs/labels/keep-labels.river\"\n\n  arguments {\n
+    \   forward_to = argument.forward_to.value\n    keep_labels = argument.keep_labels.value\n
+    \ }\n}\n"
+kind: ConfigMap
+metadata:
+  labels:
+    team: team-infra
+  name: agent-modules-58gc95m2bc
+  namespace: logging-system
+---
+apiVersion: v1
+data:
+  grafana.ini: |
+    [log]
+    level = warn
+    [log.frontend]
+    enabled = false
+    provider = grafana
+
+    [analytics]
+    reporting_enabled = false
+    check_for_updates = false
+    check_for_plugin_updates = false
+
+    [auth.anonymous]
+    enabled = true
+    org_role = Admin
+
+    [security]
+    disable_gravatar = true
+    angular_support_enabled = false
+
+    [explore]
+    enabled = true
+
+    [users]
+    default_theme = dark
+
+    [metrics]
+    enabled = true
+    disable_total_stats = false
+
+    [date_formats]
+    use_browser_locale = true
+    date_format_use_browser_locale = true
+
+    [server]
+    enable_gzip = true
+
+    [dashboards]
+    default_home_dashboard_path = /dashboards/minio-dashboard.json
+    ;default_home_dashboard_path = /var/lib/grafana/dashboards/minio-dashboard.json
+kind: ConfigMap
+metadata:
+  labels:
+    team: team-infra
+  name: grafana-8bg2h9g669
+  namespace: logging-system
+---
+apiVersion: v1
+data:
+  provider.yaml: |-
+    apiVersion: 1
+    providers:
+      - name: 'sidecarProvider'
+        orgId: 1
+        type: file
+        disableDeletion: false
+        allowUiUpdates: false
+        updateIntervalSeconds: 30
+        options:
+          foldersFromFilesStructure: true
+          path: /dashboards
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: grafana
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/version: 10.1.5
+    helm.sh/chart: grafana-7.0.3
+    team: team-infra
+  name: grafana-config-dashboards
+  namespace: logging-system
+---
+apiVersion: v1
+data:
+  datasources.yaml: |
+    apiVersion: 1
+
+    datasources:
+    # Mimir for metrics
+    - name: Metrics
+      type: prometheus
+      uid: metrics
+      access: proxy
+      orgId: 1
+      url: http://nginx:8080/prometheus
+      basicAuth: false
+      isDefault: true
+      version: 1
+      editable: true
+
+    # Loki for logs
+    - name: Logs
+      type: loki
+      access: proxy
+      orgId: 1
+      uid: logs
+      url: http://loki:3100
+      basicAuth: false
+      isDefault: false
+      version: 1
+      editable: true
+
+    # Tempo for traces
+    - name: Traces
+      type: tempo
+      access: proxy
+      orgId: 1
+      uid: traces
+      url: http://nginx:3200
+      basicAuth: false
+      isDefault: false
+      version: 1
+      editable: true
+      apiVersion: 1
+kind: ConfigMap
+metadata:
+  labels:
+    grafana_datasource: "1"
+    team: team-infra
+  name: grafana-datasources-tkgfc6mtck
+  namespace: logging-system
+---
+apiVersion: v1
+data:
+  GF_LOG_LEVEL: error
+  NAMESPACE: logging-system
+kind: ConfigMap
+metadata:
+  labels:
+    team: team-infra
+  name: grafana-env-44k485gt29
+  namespace: logging-system
+---
+apiVersion: v1
+data:
+  config.yaml: |2
+
+    auth_enabled: false
+    common:
+      compactor_address: 'loki'
+      path_prefix: /var/loki
+      replication_factor: 1
+      storage:
+        s3:
+          access_key_id: enterprise-logs
+          bucketnames: chunks
+          endpoint: loki-minio.logging-system.svc:9000
+          insecure: true
+          s3forcepathstyle: true
+          secret_access_key: supersecret
+    frontend:
+      scheduler_address: ""
+    frontend_worker:
+      scheduler_address: ""
+    index_gateway:
+      mode: ring
+    limits_config:
+      enforce_metric_name: false
+      max_cache_freshness_per_query: 10m
+      reject_old_samples: true
+      reject_old_samples_max_age: 168h
+      split_queries_by_interval: 15m
+    memberlist:
+      join_members:
+      - loki-memberlist
+    query_range:
+      align_queries_with_step: true
+    ruler:
+      storage:
+        s3:
+          bucketnames: ruler
+        type: s3
+    runtime_config:
+      file: /etc/loki/runtime-config/runtime-config.yaml
+    schema_config:
+      configs:
+      - from: "2022-01-11"
+        index:
+          period: 24h
+          prefix: loki_index_
+        object_store: s3
+        schema: v12
+        store: boltdb-shipper
+    server:
+      grpc_listen_port: 9095
+      http_listen_port: 3100
+    storage_config:
+      hedging:
+        at: 250ms
+        max_per_second: 20
+        up_to: 3
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 2.9.2
+    helm.sh/chart: loki-5.36.3
+    team: team-infra
+  name: loki
+  namespace: logging-system
+---
+apiVersion: v1
+data:
+  add-policy: |-
+    #!/bin/sh
+    set -e ; # Have script exit in the event of a failed command.
+    MC_CONFIG_DIR="/etc/minio/mc/"
+    MC="/usr/bin/mc --insecure --config-dir ${MC_CONFIG_DIR}"
+
+    # connectToMinio
+    # Use a check-sleep-check loop to wait for MinIO service to be available
+    connectToMinio() {
+      SCHEME=$1
+      ATTEMPTS=0 ; LIMIT=29 ; # Allow 30 attempts
+      set -e ; # fail if we can't read the keys.
+      ACCESS=$(cat /config/rootUser) ; SECRET=$(cat /config/rootPassword) ;
+      set +e ; # The connections to minio are allowed to fail.
+      echo "Connecting to MinIO server: $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT" ;
+      MC_COMMAND="${MC} alias set myminio $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT $ACCESS $SECRET" ;
+      $MC_COMMAND ;
+      STATUS=$? ;
+      until [ $STATUS = 0 ]
+      do
+        ATTEMPTS=`expr $ATTEMPTS + 1` ;
+        echo \"Failed attempts: $ATTEMPTS\" ;
+        if [ $ATTEMPTS -gt $LIMIT ]; then
+          exit 1 ;
+        fi ;
+        sleep 2 ; # 1 second intervals between attempts
+        $MC_COMMAND ;
+        STATUS=$? ;
+      done ;
+      set -e ; # reset `e` as active
+      return 0
+    }
+
+    # checkPolicyExists ($policy)
+    # Check if the policy exists, by using the exit code of `mc admin policy info`
+    checkPolicyExists() {
+      POLICY=$1
+      CMD=$(${MC} admin policy info myminio $POLICY > /dev/null 2>&1)
+      return $?
+    }
+
+    # createPolicy($name, $filename)
+    createPolicy () {
+      NAME=$1
+      FILENAME=$2
+
+      # Create the name if it does not exist
+      echo "Checking policy: $NAME (in /config/$FILENAME.json)"
+      if ! checkPolicyExists $NAME ; then
+        echo "Creating policy '$NAME'"
+      else
+        echo "Policy '$NAME' already exists."
+      fi
+      ${MC} admin policy add myminio $NAME /config/$FILENAME.json
+
+    }
+
+    # Try connecting to MinIO instance
+    scheme=http
+    connectToMinio $scheme
+  add-user: |-
+    #!/bin/sh
+    set -e ; # Have script exit in the event of a failed command.
+    MC_CONFIG_DIR="/etc/minio/mc/"
+    MC="/usr/bin/mc --insecure --config-dir ${MC_CONFIG_DIR}"
+
+    # AccessKey and secretkey credentials file are added to prevent shell execution errors caused by special characters.
+    # Special characters for example : ',",<,>,{,}
+    MINIO_ACCESSKEY_SECRETKEY_TMP="/tmp/accessKey_and_secretKey_tmp"
+
+    # connectToMinio
+    # Use a check-sleep-check loop to wait for MinIO service to be available
+    connectToMinio() {
+      SCHEME=$1
+      ATTEMPTS=0 ; LIMIT=29 ; # Allow 30 attempts
+      set -e ; # fail if we can't read the keys.
+      ACCESS=$(cat /config/rootUser) ; SECRET=$(cat /config/rootPassword) ;
+      set +e ; # The connections to minio are allowed to fail.
+      echo "Connecting to MinIO server: $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT" ;
+      MC_COMMAND="${MC} alias set myminio $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT $ACCESS $SECRET" ;
+      $MC_COMMAND ;
+      STATUS=$? ;
+      until [ $STATUS = 0 ]
+      do
+        ATTEMPTS=`expr $ATTEMPTS + 1` ;
+        echo \"Failed attempts: $ATTEMPTS\" ;
+        if [ $ATTEMPTS -gt $LIMIT ]; then
+          exit 1 ;
+        fi ;
+        sleep 2 ; # 1 second intervals between attempts
+        $MC_COMMAND ;
+        STATUS=$? ;
+      done ;
+      set -e ; # reset `e` as active
+      return 0
+    }
+
+    # checkUserExists ()
+    # Check if the user exists, by using the exit code of `mc admin user info`
+    checkUserExists() {
+      CMD=$(${MC} admin user info myminio $(head -1 $MINIO_ACCESSKEY_SECRETKEY_TMP) > /dev/null 2>&1)
+      return $?
+    }
+
+    # createUser ($policy)
+    createUser() {
+      POLICY=$1
+      #check accessKey_and_secretKey_tmp file
+      if [[ ! -f $MINIO_ACCESSKEY_SECRETKEY_TMP ]];then
+        echo "credentials file does not exist"
+        return 1
+      fi
+      if [[ $(cat $MINIO_ACCESSKEY_SECRETKEY_TMP|wc -l) -ne 2 ]];then
+        echo "credentials file is invalid"
+        rm -f $MINIO_ACCESSKEY_SECRETKEY_TMP
+        return 1
+      fi
+      USER=$(head -1 $MINIO_ACCESSKEY_SECRETKEY_TMP)
+      # Create the user if it does not exist
+      if ! checkUserExists ; then
+        echo "Creating user '$USER'"
+        cat $MINIO_ACCESSKEY_SECRETKEY_TMP | ${MC} admin user add myminio
+      else
+        echo "User '$USER' already exists."
+      fi
+      #clean up credentials files.
+      rm -f $MINIO_ACCESSKEY_SECRETKEY_TMP
+
+      # set policy for user
+      if [ ! -z $POLICY -a $POLICY != " " ] ; then
+          echo "Adding policy '$POLICY' for '$USER'"
+          ${MC} admin policy set myminio $POLICY user=$USER
+      else
+          echo "User '$USER' has no policy attached."
+      fi
+    }
+
+    # Try connecting to MinIO instance
+    scheme=http
+    connectToMinio $scheme
+
+
+
+    # Create the users
+    echo console > $MINIO_ACCESSKEY_SECRETKEY_TMP
+    echo console123 >> $MINIO_ACCESSKEY_SECRETKEY_TMP
+    createUser consoleAdmin
+  custom-command: |-
+    #!/bin/sh
+    set -e ; # Have script exit in the event of a failed command.
+    MC_CONFIG_DIR="/etc/minio/mc/"
+    MC="/usr/bin/mc --insecure --config-dir ${MC_CONFIG_DIR}"
+
+    # connectToMinio
+    # Use a check-sleep-check loop to wait for MinIO service to be available
+    connectToMinio() {
+      SCHEME=$1
+      ATTEMPTS=0 ; LIMIT=29 ; # Allow 30 attempts
+      set -e ; # fail if we can't read the keys.
+      ACCESS=$(cat /config/rootUser) ; SECRET=$(cat /config/rootPassword) ;
+      set +e ; # The connections to minio are allowed to fail.
+      echo "Connecting to MinIO server: $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT" ;
+      MC_COMMAND="${MC} alias set myminio $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT $ACCESS $SECRET" ;
+      $MC_COMMAND ;
+      STATUS=$? ;
+      until [ $STATUS = 0 ]
+      do
+        ATTEMPTS=`expr $ATTEMPTS + 1` ;
+        echo \"Failed attempts: $ATTEMPTS\" ;
+        if [ $ATTEMPTS -gt $LIMIT ]; then
+          exit 1 ;
+        fi ;
+        sleep 2 ; # 1 second intervals between attempts
+        $MC_COMMAND ;
+        STATUS=$? ;
+      done ;
+      set -e ; # reset `e` as active
+      return 0
+    }
+
+    # runCommand ($@)
+    # Run custom mc command
+    runCommand() {
+      ${MC} "$@"
+      return $?
+    }
+
+    # Try connecting to MinIO instance
+    scheme=http
+    connectToMinio $scheme
+  initialize: "#!/bin/sh\nset -e ; # Have script exit in the event of a failed command.\nMC_CONFIG_DIR=\"/etc/minio/mc/\"\nMC=\"/usr/bin/mc
+    --insecure --config-dir ${MC_CONFIG_DIR}\"\n\n# connectToMinio\n# Use a check-sleep-check
+    loop to wait for MinIO service to be available\nconnectToMinio() {\n  SCHEME=$1\n
+    \ ATTEMPTS=0 ; LIMIT=29 ; # Allow 30 attempts\n  set -e ; # fail if we can't read
+    the keys.\n  ACCESS=$(cat /config/rootUser) ; SECRET=$(cat /config/rootPassword)
+    ;\n  set +e ; # The connections to minio are allowed to fail.\n  echo \"Connecting
+    to MinIO server: $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT\" ;\n  MC_COMMAND=\"${MC}
+    alias set myminio $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT $ACCESS $SECRET\" ;\n
+    \ $MC_COMMAND ;\n  STATUS=$? ;\n  until [ $STATUS = 0 ]\n  do\n    ATTEMPTS=`expr
+    $ATTEMPTS + 1` ;\n    echo \\\"Failed attempts: $ATTEMPTS\\\" ;\n    if [ $ATTEMPTS
+    -gt $LIMIT ]; then\n      exit 1 ;\n    fi ;\n    sleep 2 ; # 1 second intervals
+    between attempts\n    $MC_COMMAND ;\n    STATUS=$? ;\n  done ;\n  set -e ; # reset
+    `e` as active\n  return 0\n}\n\n# checkBucketExists ($bucket)\n# Check if the
+    bucket exists, by using the exit code of `mc ls`\ncheckBucketExists() {\n  BUCKET=$1\n
+    \ CMD=$(${MC} ls myminio/$BUCKET > /dev/null 2>&1)\n  return $?\n}\n\n# createBucket
+    ($bucket, $policy, $purge)\n# Ensure bucket exists, purging if asked to\ncreateBucket()
+    {\n  BUCKET=$1\n  POLICY=$2\n  PURGE=$3\n  VERSIONING=$4\n  OBJECTLOCKING=$5\n\n
+    \ # Purge the bucket, if set & exists\n  # Since PURGE is user input, check explicitly
+    for `true`\n  if [ $PURGE = true ]; then\n    if checkBucketExists $BUCKET ; then\n
+    \     echo \"Purging bucket '$BUCKET'.\"\n      set +e ; # don't exit if this
+    fails\n      ${MC} rm -r --force myminio/$BUCKET\n      set -e ; # reset `e` as
+    active\n    else\n      echo \"Bucket '$BUCKET' does not exist, skipping purge.\"\n
+    \   fi\n  fi\n\n# Create the bucket if it does not exist and set objectlocking
+    if enabled (NOTE: versioning will be not changed if OBJECTLOCKING is set because
+    it enables versioning to the Buckets created)\nif ! checkBucketExists $BUCKET
+    ; then\n    if [ ! -z $OBJECTLOCKING ] ; then\n      if [ $OBJECTLOCKING = true
+    ] ; then\n          echo \"Creating bucket with OBJECTLOCKING '$BUCKET'\"\n          ${MC}
+    mb --with-lock myminio/$BUCKET\n      elif [ $OBJECTLOCKING = false ] ; then\n
+    \           echo \"Creating bucket '$BUCKET'\"\n            ${MC} mb myminio/$BUCKET\n
+    \     fi\n  elif [ -z $OBJECTLOCKING ] ; then\n        echo \"Creating bucket
+    '$BUCKET'\"\n        ${MC} mb myminio/$BUCKET\n  else\n    echo \"Bucket '$BUCKET'
+    already exists.\"  \n  fi\n  fi\n\n\n  # set versioning for bucket if objectlocking
+    is disabled or not set\n  if [ -z $OBJECTLOCKING ] ; then\n  if [ ! -z $VERSIONING
+    ] ; then\n    if [ $VERSIONING = true ] ; then\n        echo \"Enabling versioning
+    for '$BUCKET'\"\n        ${MC} version enable myminio/$BUCKET\n    elif [ $VERSIONING
+    = false ] ; then\n        echo \"Suspending versioning for '$BUCKET'\"\n        ${MC}
+    version suspend myminio/$BUCKET\n    fi\n    fi\n  else\n      echo \"Bucket '$BUCKET'
+    versioning unchanged.\"\n  fi\n\n\n  # At this point, the bucket should exist,
+    skip checking for existence\n  # Set policy on the bucket\n  echo \"Setting policy
+    of bucket '$BUCKET' to '$POLICY'.\"\n  ${MC} policy set $POLICY myminio/$BUCKET\n}\n\n#
+    Try connecting to MinIO instance\nscheme=http\nconnectToMinio $scheme\n\n\n\n#
+    Create the buckets\ncreateBucket chunks none false  \ncreateBucket ruler none
+    false  \ncreateBucket admin none false  "
+kind: ConfigMap
+metadata:
+  labels:
+    app: minio
+    chart: minio-4.0.12
+    heritage: Helm
+    release: loki
+    team: team-infra
+  name: loki-minio
+  namespace: logging-system
+---
+apiVersion: v1
+data:
+  runtime-config.yaml: |
+    {}
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 2.9.2
+    helm.sh/chart: loki-5.36.3
+    team: team-infra
+  name: loki-runtime
+  namespace: logging-system
+---
+apiVersion: v1
+data:
+  AGENT_CONFIG_FOLDER: L2V0Yy9hZ2VudC1tb2R1bGVz
+  AGENT_LOG_LEVEL: aW5mbw==
+  CLUSTER: azNkLWszcy1jb2RlbGFi
+  LOGS_ENDPOINT: aHR0cDovL2xva2kubG9nZ2luZy1zeXN0ZW06MzEwMA==
+kind: Secret
+metadata:
+  labels:
+    team: team-infra
+  name: agent-logs-env-899fh89gmf
+  namespace: logging-system
+type: Opaque
+---
+apiVersion: v1
+data:
+  admin-password: YWRtaW5fcGFzc3dvcmQ=
+  admin-user: YWRtaW4=
+kind: Secret
+metadata:
+  labels:
+    team: team-infra
+  name: grafana-secret-55dh9ff969
+  namespace: logging-system
+type: Opaque
+---
+apiVersion: v1
+data:
+  rootPassword: c3VwZXJzZWNyZXQ=
+  rootUser: ZW50ZXJwcmlzZS1sb2dz
+kind: Secret
+metadata:
+  labels:
+    app: minio
+    chart: minio-4.0.12
+    heritage: Helm
+    release: loki
+    team: team-infra
+  name: loki-minio
+  namespace: logging-system
+type: Opaque
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: grafana
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/version: 10.1.5
+    helm.sh/chart: grafana-7.0.3
+    team: team-infra
+  name: grafana
+  namespace: logging-system
+spec:
+  ports:
+  - name: http-metrics
+    port: 80
+    protocol: TCP
+    targetPort: 3000
+  selector:
+    app.kubernetes.io/instance: grafana
+    app.kubernetes.io/name: grafana
+    team: team-infra
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: grafana-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: grafana-agent
+    app.kubernetes.io/version: v0.37.4
+    helm.sh/chart: grafana-agent-0.27.2
+    team: team-infra
+  name: grafana-agent
+  namespace: logging-system
+spec:
+  ports:
+  - name: http-metrics
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app.kubernetes.io/instance: grafana-agent
+    app.kubernetes.io/name: grafana-agent
+    team: team-infra
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: grafana-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: grafana-agent
+    app.kubernetes.io/version: v0.37.4
+    helm.sh/chart: grafana-agent-0.27.2
+    team: team-infra
+  name: grafana-agent-cluster
+  namespace: logging-system
+spec:
+  clusterIP: None
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app.kubernetes.io/instance: grafana-agent
+    app.kubernetes.io/name: grafana-agent
+    team: team-infra
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 2.9.2
+    helm.sh/chart: loki-5.36.3
+    team: team-infra
+  name: loki
+  namespace: logging-system
+spec:
+  ports:
+  - name: http-metrics
+    port: 3100
+    protocol: TCP
+    targetPort: http-metrics
+  - name: grpc
+    port: 9095
+    protocol: TCP
+    targetPort: grpc
+  selector:
+    app.kubernetes.io/component: single-binary
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/name: loki
+    team: team-infra
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 2.9.2
+    helm.sh/chart: loki-5.36.3
+    prometheus.io/service-monitor: "false"
+    team: team-infra
+    variant: headless
+  name: loki-headless
+  namespace: logging-system
+spec:
+  clusterIP: None
+  ports:
+  - name: http-metrics
+    port: 3100
+    protocol: TCP
+    targetPort: http-metrics
+  selector:
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/name: loki
+    team: team-infra
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 2.9.2
+    helm.sh/chart: loki-5.36.3
+    team: team-infra
+  name: loki-memberlist
+  namespace: logging-system
+spec:
+  clusterIP: None
+  ports:
+  - name: tcp
+    port: 7946
+    protocol: TCP
+    targetPort: http-memberlist
+  selector:
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/part-of: memberlist
+    team: team-infra
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: minio
+    chart: minio-4.0.12
+    heritage: Helm
+    monitoring: "true"
+    release: loki
+    team: team-infra
+  name: loki-minio
+  namespace: logging-system
+spec:
+  ports:
+  - name: http
+    port: 9000
+    protocol: TCP
+    targetPort: 9000
+  selector:
+    app: minio
+    release: loki
+    team: team-infra
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: minio
+    chart: minio-4.0.12
+    heritage: Helm
+    release: loki
+    team: team-infra
+  name: loki-minio-console
+  namespace: logging-system
+spec:
+  ports:
+  - name: http
+    port: 9001
+    protocol: TCP
+    targetPort: 9001
+  selector:
+    app: minio
+    release: loki
+    team: team-infra
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: minio
+    chart: minio-4.0.12
+    heritage: Helm
+    release: loki
+    team: team-infra
+  name: loki-minio-svc
+  namespace: logging-system
+spec:
+  clusterIP: None
+  ports:
+  - name: http
+    port: 9000
+    protocol: TCP
+    targetPort: 9000
+  publishNotReadyAddresses: true
+  selector:
+    app: minio
+    release: loki
+    team: team-infra
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: grafana
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/version: 10.1.5
+    helm.sh/chart: grafana-7.0.3
+    team: team-infra
+  name: grafana
+  namespace: logging-system
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: grafana
+      app.kubernetes.io/name: grafana
+      team: team-infra
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        checksum/config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/dashboards-json-config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/sc-dashboard-provider-config: 57319b3e69ebafb8662527f34647aedce44a8dd0080dff9dfcbee81525ca8d06
+        kubectl.kubernetes.io/default-container: grafana
+        logs.agent.grafana.com/scrape: "true"
+        logs.agent.grafana.com/scrub-level: debug
+      labels:
+        app.kubernetes.io/instance: grafana
+        app.kubernetes.io/name: grafana
+        team: team-infra
+    spec:
+      automountServiceAccountToken: true
+      containers:
+      - env:
+        - name: METHOD
+          value: WATCH
+        - name: LABEL
+          value: grafana_dashboard
+        - name: LABEL_VALUE
+          value: "1"
+        - name: FOLDER
+          value: /dashboards
+        - name: RESOURCE
+          value: both
+        - name: NAMESPACE
+          value: logging-system
+        - name: FOLDER_ANNOTATION
+          value: grafana_dashboard_folder
+        - name: REQ_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: admin-user
+              name: grafana-secret-55dh9ff969
+        - name: REQ_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: admin-password
+              name: grafana-secret-55dh9ff969
+        - name: REQ_URL
+          value: http://localhost:3000/api/admin/provisioning/dashboards/reload
+        - name: REQ_METHOD
+          value: POST
+        image: quay.io/kiwigrid/k8s-sidecar:1.25.2
+        imagePullPolicy: IfNotPresent
+        name: grafana-sc-dashboard
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - mountPath: /dashboards
+          name: sc-dashboard-volume
+      - env:
+        - name: METHOD
+          value: WATCH
+        - name: LABEL
+          value: grafana_datasource
+        - name: LABEL_VALUE
+          value: "1"
+        - name: FOLDER
+          value: /etc/grafana/provisioning/datasources
+        - name: RESOURCE
+          value: both
+        - name: NAMESPACE
+          value: logging-system
+        - name: REQ_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: admin-user
+              name: grafana-secret-55dh9ff969
+        - name: REQ_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: admin-password
+              name: grafana-secret-55dh9ff969
+        - name: REQ_URL
+          value: http://localhost:3000/api/admin/provisioning/datasources/reload
+        - name: REQ_METHOD
+          value: POST
+        image: quay.io/kiwigrid/k8s-sidecar:1.25.2
+        imagePullPolicy: IfNotPresent
+        name: grafana-sc-datasources
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - mountPath: /etc/grafana/provisioning/datasources
+          name: sc-datasources-volume
+      - env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: GF_SECURITY_ADMIN_USER
+          valueFrom:
+            secretKeyRef:
+              key: admin-user
+              name: grafana-secret-55dh9ff969
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: admin-password
+              name: grafana-secret-55dh9ff969
+        - name: GF_PATHS_DATA
+          value: /var/lib/grafana/
+        - name: GF_PATHS_LOGS
+          value: /var/log/grafana
+        - name: GF_PATHS_PLUGINS
+          value: /var/lib/grafana/plugins
+        - name: GF_PATHS_PROVISIONING
+          value: /etc/grafana/provisioning
+        envFrom:
+        - configMapRef:
+            name: grafana-env-44k485gt29
+            optional: true
+        image: docker.io/grafana/grafana:10.1.5
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 60
+          timeoutSeconds: 30
+        name: grafana
+        ports:
+        - containerPort: 3000
+          name: grafana
+          protocol: TCP
+        - containerPort: 9094
+          name: gossip-tcp
+          protocol: TCP
+        - containerPort: 9094
+          name: gossip-udp
+          protocol: UDP
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - mountPath: /etc/grafana/grafana.ini
+          name: config
+          subPath: grafana.ini
+        - mountPath: /var/lib/grafana
+          name: storage
+        - mountPath: /dashboards
+          name: sc-dashboard-volume
+        - mountPath: /etc/grafana/provisioning/dashboards/sc-dashboardproviders.yaml
+          name: sc-dashboard-provider
+          subPath: provider.yaml
+        - mountPath: /etc/grafana/provisioning/datasources
+          name: sc-datasources-volume
+      enableServiceLinks: true
+      securityContext:
+        fsGroup: 472
+        runAsGroup: 472
+        runAsNonRoot: true
+        runAsUser: 472
+      serviceAccountName: grafana
+      volumes:
+      - configMap:
+          name: grafana-8bg2h9g669
+        name: config
+      - emptyDir: {}
+        name: storage
+      - emptyDir: {}
+        name: sc-dashboard-volume
+      - configMap:
+          name: grafana-config-dashboards
+        name: sc-dashboard-provider
+      - emptyDir: {}
+        name: sc-datasources-volume
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app.kubernetes.io/component: single-binary
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/part-of: memberlist
+    app.kubernetes.io/version: 2.9.2
+    helm.sh/chart: loki-5.36.3
+    team: team-infra
+  name: loki
+  namespace: logging-system
+spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Delete
+    whenScaled: Delete
+  podManagementPolicy: Parallel
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: single-binary
+      app.kubernetes.io/instance: loki
+      app.kubernetes.io/name: loki
+      team: team-infra
+  serviceName: loki-headless
+  template:
+    metadata:
+      annotations:
+        checksum/config: 2cb0578ad9a4d4ae6b5db7218d6aade9a87037cbf9f32affc2fa76f755cbd696
+      labels:
+        app.kubernetes.io/component: single-binary
+        app.kubernetes.io/instance: loki
+        app.kubernetes.io/name: loki
+        app.kubernetes.io/part-of: memberlist
+        team: team-infra
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/component: single-binary
+                app.kubernetes.io/instance: loki
+                app.kubernetes.io/name: loki
+                team: team-infra
+            topologyKey: kubernetes.io/hostname
+      automountServiceAccountToken: true
+      containers:
+      - args:
+        - -config.file=/etc/loki/config/config.yaml
+        - -target=all
+        image: docker.io/grafana/loki:2.9.2
+        imagePullPolicy: IfNotPresent
+        name: loki
+        ports:
+        - containerPort: 3100
+          name: http-metrics
+          protocol: TCP
+        - containerPort: 9095
+          name: grpc
+          protocol: TCP
+        - containerPort: 7946
+          name: http-memberlist
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http-metrics
+          initialDelaySeconds: 30
+          timeoutSeconds: 1
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp
+        - mountPath: /etc/loki/config
+          name: config
+        - mountPath: /etc/loki/runtime-config
+          name: runtime-config
+        - mountPath: /var/loki
+          name: storage
+      enableServiceLinks: true
+      securityContext:
+        fsGroup: 10001
+        runAsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+      serviceAccountName: loki
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir: {}
+        name: tmp
+      - configMap:
+          items:
+          - key: config.yaml
+            path: config.yaml
+          name: loki
+        name: config
+      - configMap:
+          name: loki-runtime
+        name: runtime-config
+  updateStrategy:
+    rollingUpdate:
+      partition: 0
+  volumeClaimTemplates:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      labels:
+        team: team-infra
+      name: storage
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: minio
+    chart: minio-4.0.12
+    heritage: Helm
+    release: loki
+    team: team-infra
+  name: loki-minio
+  namespace: logging-system
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minio
+      release: loki
+      team: team-infra
+  serviceName: loki-minio-svc
+  template:
+    metadata:
+      annotations:
+        checksum/config: 704e412925c10bbce379756e0d3abe2db696d5802a5fd54c71c45d67aeeeb77d
+        checksum/secrets: 21a460439317a08be9942e0300b3563da5652a87a270a9256c1d5905d9814821
+      labels:
+        app: minio
+        release: loki
+        team: team-infra
+      name: loki-minio
+    spec:
+      containers:
+      - command:
+        - /bin/sh
+        - -ce
+        - /usr/bin/docker-entrypoint.sh minio server  http://loki-minio-{0...0}.loki-minio-svc.logging-system.svc.cluster.local/export-{0...1}
+          -S /etc/minio/certs/ --address :9000 --console-address :9001
+        env:
+        - name: MINIO_ROOT_USER
+          valueFrom:
+            secretKeyRef:
+              key: rootUser
+              name: loki-minio
+        - name: MINIO_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: rootPassword
+              name: loki-minio
+        - name: MINIO_PROMETHEUS_AUTH_TYPE
+          value: public
+        image: quay.io/minio/minio:RELEASE.2022-08-13T21-54-44Z
+        imagePullPolicy: IfNotPresent
+        name: minio
+        ports:
+        - containerPort: 9000
+          name: http
+        - containerPort: 9001
+          name: http-console
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        volumeMounts:
+        - mountPath: /export-0
+          name: export-0
+        - mountPath: /export-1
+          name: export-1
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 1000
+        runAsUser: 1000
+      serviceAccountName: minio-sa
+      volumes:
+      - name: minio-user
+        secret:
+          secretName: loki-minio
+  updateStrategy:
+    type: RollingUpdate
+  volumeClaimTemplates:
+  - metadata:
+      labels:
+        team: team-infra
+      name: export-0
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 5Gi
+  - metadata:
+      labels:
+        team: team-infra
+      name: export-1
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 5Gi
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app.kubernetes.io/instance: grafana-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: grafana-agent
+    app.kubernetes.io/version: v0.37.4
+    helm.sh/chart: grafana-agent-0.27.2
+    team: team-infra
+  name: grafana-agent
+  namespace: logging-system
+spec:
+  minReadySeconds: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: grafana-agent
+      app.kubernetes.io/name: grafana-agent
+      team: team-infra
+  template:
+    metadata:
+      annotations:
+        logs.agent.grafana.com/scrape: "true"
+        logs.agent.grafana.com/scrub-level: debug
+      labels:
+        app.kubernetes.io/instance: grafana-agent
+        app.kubernetes.io/name: grafana-agent
+        team: team-infra
+    spec:
+      containers:
+      - args:
+        - run
+        - /etc/agent/logs.river
+        - --storage.path=/tmp/agent
+        - --server.http.listen-addr=0.0.0.0:80
+        - --server.http.ui-path-prefix=/
+        - --disable-reporting
+        - --cluster.enabled=true
+        - --cluster.join-addresses=grafana-agent-cluster
+        env:
+        - name: AGENT_MODE
+          value: flow
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        envFrom:
+        - secretRef:
+            name: agent-logs-env-899fh89gmf
+        image: docker.io/grafana/agent:v0.37.4
+        imagePullPolicy: IfNotPresent
+        name: grafana-agent
+        ports:
+        - containerPort: 80
+          name: http-metrics
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: 80
+          initialDelaySeconds: 10
+          timeoutSeconds: 1
+        volumeMounts:
+        - mountPath: /etc/agent
+          name: config
+        - mountPath: /var/log
+          name: varlog
+          readOnly: true
+        - mountPath: /etc/agent-modules
+          name: agent-modules
+      - args:
+        - --volume-dir=/etc/agent
+        - --webhook-url=http://localhost:80/-/reload
+        image: docker.io/jimmidyson/configmap-reload:v0.8.0
+        name: config-reloader
+        resources:
+          requests:
+            cpu: 1m
+            memory: 5Mi
+        volumeMounts:
+        - mountPath: /etc/agent
+          name: config
+      dnsPolicy: ClusterFirst
+      nodeSelector:
+        kubernetes.io/os: linux
+      serviceAccountName: grafana-agent
+      volumes:
+      - configMap:
+          name: agent-logs-config-8kgtm6f297
+        name: config
+      - hostPath:
+          path: /var/log
+        name: varlog
+      - configMap:
+          name: agent-modules-58gc95m2bc
+        name: agent-modules
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: hook-succeeded,before-hook-creation
+  labels:
+    app: minio-make-bucket-job
+    chart: minio-4.0.12
+    heritage: Helm
+    release: loki
+    team: team-infra
+  name: loki-minio-make-bucket-job
+  namespace: logging-system
+spec:
+  template:
+    metadata:
+      labels:
+        app: minio-job
+        release: loki
+        team: team-infra
+    spec:
+      containers:
+      - command:
+        - /bin/sh
+        - /config/initialize
+        env:
+        - name: MINIO_ENDPOINT
+          value: loki-minio
+        - name: MINIO_PORT
+          value: "9000"
+        image: quay.io/minio/mc:RELEASE.2022-08-11T00-30-48Z
+        imagePullPolicy: IfNotPresent
+        name: minio-mc
+        resources:
+          requests:
+            memory: 128Mi
+        volumeMounts:
+        - mountPath: /config
+          name: minio-configuration
+      restartPolicy: OnFailure
+      volumes:
+      - name: minio-configuration
+        projected:
+          sources:
+          - configMap:
+              name: loki-minio
+          - secret:
+              name: loki-minio
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: hook-succeeded,before-hook-creation
+  labels:
+    app: minio-make-user-job
+    chart: minio-4.0.12
+    heritage: Helm
+    release: loki
+    team: team-infra
+  name: loki-minio-make-user-job
+  namespace: logging-system
+spec:
+  template:
+    metadata:
+      labels:
+        app: minio-job
+        release: loki
+        team: team-infra
+    spec:
+      containers:
+      - command:
+        - /bin/sh
+        - /config/add-user
+        env:
+        - name: MINIO_ENDPOINT
+          value: loki-minio
+        - name: MINIO_PORT
+          value: "9000"
+        image: quay.io/minio/mc:RELEASE.2022-08-11T00-30-48Z
+        imagePullPolicy: IfNotPresent
+        name: minio-mc
+        resources:
+          requests:
+            memory: 128Mi
+        volumeMounts:
+        - mountPath: /config
+          name: minio-configuration
+      restartPolicy: OnFailure
+      volumes:
+      - name: minio-configuration
+        projected:
+          sources:
+          - configMap:
+              name: loki-minio
+          - secret:
+              name: loki-minio
