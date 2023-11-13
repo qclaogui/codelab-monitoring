@@ -47,6 +47,13 @@ These instructions will get you through the deploying samples with Docker Compos
 
 [cortex-kustomize](https://github.com/qclaogui/cortex-kustomize) provides a common `base` for Mimir deployment to Kubernetes.
 
+### [Monolithic mode (单体模式)](./kubernetes/monolithic-mode)
+
+- [Logs [Loki]](./kubernetes/monolithic-mode/logs)
+- [Traces [Tempo]](./kubernetes/monolithic-mode/traces) // TODO(qc)
+- [Metrics [Mimir]](./kubernetes/monolithic-mode/metrics) // TODO(qc)
+- [Profiles [Pyroscope]](./kubernetes/monolithic-mode/profiles) // TODO(qc)
+
 ### [Microservices mode (微服务模式)](./kubernetes/microservices-mode)
 
 - Logs

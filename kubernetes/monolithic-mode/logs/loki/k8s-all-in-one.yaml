@@ -1,24 +1,4 @@
 apiVersion: v1
-kind: Namespace
-metadata:
-  labels:
-    team: team-infra
-  name: logging-system
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  labels:
-    app.kubernetes.io/instance: grafana-agent
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: grafana-agent
-    app.kubernetes.io/version: v0.37.4
-    helm.sh/chart: grafana-agent-0.27.2
-    team: team-infra
-  name: grafana-agent
-  namespace: logging-system
----
-apiVersion: v1
 automountServiceAccountToken: true
 kind: ServiceAccount
 metadata:
@@ -28,104 +8,14 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
     helm.sh/chart: loki-5.36.3
-    team: team-infra
   name: loki
   namespace: logging-system
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  labels:
-    team: team-infra
   name: minio-sa
   namespace: logging-system
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  labels:
-    app.kubernetes.io/instance: grafana-agent
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: grafana-agent
-    app.kubernetes.io/version: v0.37.4
-    helm.sh/chart: grafana-agent-0.27.2
-    team: team-infra
-  name: grafana-agent
-rules:
-- apiGroups:
-  - ""
-  - discovery.k8s.io
-  - networking.k8s.io
-  resources:
-  - endpoints
-  - endpointslices
-  - ingresses
-  - nodes
-  - nodes/proxy
-  - nodes/metrics
-  - pods
-  - services
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  - pods/log
-  - namespaces
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - monitoring.grafana.com
-  resources:
-  - podlogs
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - monitoring.coreos.com
-  resources:
-  - prometheusrules
-  verbs:
-  - get
-  - list
-  - watch
-- nonResourceURLs:
-  - /metrics
-  verbs:
-  - get
-- apiGroups:
-  - monitoring.coreos.com
-  resources:
-  - podmonitors
-  - servicemonitors
-  - probes
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - events
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  - secrets
-  verbs:
-  - get
-  - list
-  - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -136,7 +26,6 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
     helm.sh/chart: loki-5.36.3
-    team: team-infra
   name: loki-clusterrole
 rules:
 - apiGroups:
@@ -153,32 +42,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    app.kubernetes.io/instance: grafana-agent
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: grafana-agent
-    app.kubernetes.io/version: v0.37.4
-    helm.sh/chart: grafana-agent-0.27.2
-    team: team-infra
-  name: grafana-agent
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: grafana-agent
-subjects:
-- kind: ServiceAccount
-  name: grafana-agent
-  namespace: logging-system
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  labels:
     app.kubernetes.io/instance: loki
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
     helm.sh/chart: loki-5.36.3
-    team: team-infra
   name: loki-clusterrolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -187,140 +55,6 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: loki
-  namespace: logging-system
----
-apiVersion: v1
-data:
-  logs.river: "/*\nThe following example shows using the default all logs processing
-    module, for\na single tenant and specifying the destination url/credentials via
-    environment\nvariables.\n*/\nlogging {\n  level  = coalesce(env(\"AGENT_LOG_LEVEL\"),
-    \"info\")\n  format = \"logfmt\"\n}\n\nmodule.file \"lgtmp\" {\n\tfilename = env(\"AGENT_CONFIG_FOLDER\")
-    + \"/lgtmp.river\"\n\n\targuments {\n    cluster       = coalesce(env(\"CLUSTER\"),
-    \"k3d-k3s-codelab\")\n    logs_endpoint = coalesce(env(\"LOGS_ENDPOINT\"), \"http://nginx.monitoring-system:3100\")\n\t}\n}\n\nmodule.git
-    \"event_logs\" {\n  repository = \"https://github.com/grafana/agent-modules.git\"\n
-    \ revision   = \"main\"\n  path       = \"modules/kubernetes/logs/events.river\"\n\n
-    \ arguments {\n    forward_to = [module.file.lgtmp.exports.logs_receiver]\n    git_pull_freq
-    = \"0s\"\n  }\n}\n"
-kind: ConfigMap
-metadata:
-  labels:
-    team: team-infra
-  name: agent-logs-config-8kgtm6f297
-  namespace: logging-system
----
-apiVersion: v1
-data:
-  grafana-cloud.river: "\n/********************************************\n * ARGUMENTS\n
-    ********************************************/\nargument \"stack_name\" { }\n\nargument
-    \"token\" { }\n\n/********************************************\n * EXPORTS\n ********************************************/\n\nexport
-    \"metrics_receiver\" {\n\tvalue = prometheus.remote_write.default.receiver\n}\n\nexport
-    \"logs_receiver\" {\n\tvalue = loki.write.default.receiver\n}\n\nexport \"traces_receiver\"
-    {\n\tvalue = otelcol.exporter.otlp.default.input\n}\n\nexport \"profiles_receiver\"
-    {\n\tvalue = pyroscope.write.default.receiver\n}\n\nexport \"stack_information\"
-    {\n\tvalue = json_decode(remote.http.config_file.content)\n}\n\n/********************************************\n
-    * External information\n ********************************************/\n\nremote.http
-    \"config_file\" {\n\turl = \"https://grafana.com/api/instances/\" + argument.stack_name.value\n\n\tclient
-    {\n\t\tbearer_token = argument.token.value\n\t}\n\tpoll_frequency = \"24h\"\n}\n\n/********************************************\n
-    * Endpoints\n ********************************************/\n\n// Metrics\nprometheus.remote_write
-    \"default\" {\n\tendpoint {\n\t\turl = json_decode(remote.http.config_file.content)[\"hmInstancePromUrl\"]
-    + \"/api/prom/push\"\n\n\t\tbasic_auth {\n\t\t\tusername = json_decode(remote.http.config_file.content)[\"hmInstancePromId\"]\n\t\t\tpassword
-    = argument.token.value\n\t\t}\n\t}\n}\n\n// Logs\nloki.write \"default\" {\n\tendpoint
-    {\n\t\turl = json_decode(remote.http.config_file.content)[\"hlInstanceUrl\"] +
-    \"/loki/api/v1/push\"\n\n\t\tbasic_auth {\n\t\t\tusername = json_decode(remote.http.config_file.content)[\"hlInstanceId\"]\n\t\t\tpassword
-    = argument.token.value\n\t\t}\n\t}\n}\n\n// Traces\notelcol.auth.basic \"default\"
-    {\n\tusername = json_decode(remote.http.config_file.content)[\"htInstanceId\"]\n\tpassword
-    = argument.token.value\n}\n\notelcol.exporter.otlp \"default\" {\n\tclient {\n\t\tendpoint
-    = json_decode(remote.http.config_file.content)[\"htInstanceUrl\"] + \":443\"\n\t\tauth
-    \    = otelcol.auth.basic.default.handler\n\t}\n}\n\n// Profiles\npyroscope.write
-    \"default\" {\n\tendpoint {\n\t\turl = json_decode(remote.http.config_file.content)[\"hpInstanceUrl\"]\n\n\t\tbasic_auth
-    {\n\t\t\tusername = json_decode(remote.http.config_file.content)[\"hpInstanceId\"]\n\t\t\tpassword
-    = argument.token.value\n\t\t}\n\t}\n}\n"
-  lgtmp.river: "/********************************************\n * ARGUMENTS\n ********************************************/\nargument
-    \"cluster\" {\n\toptional = true\n\tdefault  = \"monitoring-system\"\n}\n\nargument
-    \"metrics_endpoint\" {\n\toptional = true\n\tdefault  = \"http://mimir:8080\"\n\t//comment
-    = \"Where to send collected metrics.\"\n}\n\nargument \"logs_endpoint\" {\n\toptional
-    = true\n\tdefault  = \"http://loki:3100\"\n\t//comment = \"Where to send collected
-    logs.\"\n}\n\nargument \"traces_endpoint\" {\n\toptional = true\n\tdefault  =
-    \"tempo:4317\"\n\t//comment = \"Where to send collected traces.\"\n}\n\nargument
-    \"profiles_endpoint\" {\n\toptional = true\n\tdefault  = \"http://pyroscope:4040\"\n\t//comment
-    \ = \"Where to send collected profiles.\"\n}\n\n/********************************************\n
-    * EXPORTS\n ********************************************/\n\nexport \"metrics_receiver\"
-    {\n\tvalue = prometheus.remote_write.mimir.receiver\n}\n\nexport \"logs_receiver\"
-    {\n\tvalue = loki.write.loki.receiver\n}\n\nexport \"traces_receiver\" {\n\tvalue
-    = otelcol.exporter.otlp.tempo.input\n}\n\nexport \"profiles_receiver\" {\n\tvalue
-    = pyroscope.write.pyroscope.receiver\n}\n\n/********************************************\n
-    * Endpoints\n ********************************************/\n\n// Metrics\nprometheus.remote_write
-    \"mimir\" {\n\tendpoint {\n\t\turl = argument.metrics_endpoint.value + \"/api/v1/push\"\n\t}\n\n\texternal_labels
-    = {\n\t\t\"scraped_by\" = \"grafana-agent\",\n\t\t\"cluster\" \t = argument.cluster.value,\n\t}\n}\n\n//
-    Logs\nloki.write \"loki\" {\n\tendpoint {\n\t\turl = argument.logs_endpoint.value
-    + \"/loki/api/v1/push\"\n\t}\n\n\texternal_labels = {\n\t\t\"scraped_by\" = \"grafana-agent\",\n\t\t\"cluster\"
-    \t = argument.cluster.value,\n\t}\n}\n\n// Traces\notelcol.exporter.otlp \"tempo\"
-    {\n\tclient {\n\t\tendpoint = argument.traces_endpoint.value\n\n\t\ttls {\n\t\t\tinsecure
-    \            = true\n\t\t\tinsecure_skip_verify = true\n\t\t}\n\t}\n}\n\n// Profiles\npyroscope.write
-    \"pyroscope\" {\n\tendpoint {\n\t\turl = argument.profiles_endpoint.value\n\t}\n\n\texternal_labels
-    = {\n\t\t\"scraped_by\" = \"grafana-agent\",\n\t\t\"cluster\" \t = argument.cluster.value,\n\t}\n}\n"
-  logs-all.river: "/*\nModule: log-all\nDescription: Wrapper module to include all
-    kubernetes logging modules and use cri parsing\n*/\nargument \"forward_to\" {\n
-    \ // comment = \"Must be a list(LogsReceiver) where collected logs should be forwarded
-    to\"\n\toptional = false\n}\n\nargument \"tenant\" {\n  // comment = \"The tenant
-    to filter logs to.  This does not have to be the tenantId, this is the value to
-    look for in the logs.agent.grafana.com/tenant annotation, and this can be a regex.\"\n
-    \ optional = true\n  default = \".*\"\n}\n\nargument \"keep_labels\" {\n  // comment
-    = \"List of labels to keep before the log message is written to Loki\"\n  optional
-    = true\n  default = [\n    \"app\",\n    \"cluster\",\n    \"component\",\n    \"container\",\n
-    \   \"deployment\",\n    \"env\",\n    \"filename\",\n    \"instance\",\n    \"job\",\n
-    \   \"level\",\n    \"log_type\",\n    \"namespace\",\n    \"region\",\n    \"service\",\n
-    \   \"squad\",\n    \"team\",\n  ]\n}\n\nargument \"git_repo\" {\n  optional =
-    true\n  default = coalesce(env(\"GIT_REPO\"), \"https://github.com/grafana/agent-modules.git\")\n}\n\nargument
-    \"git_rev\" {\n  optional = true\n  default = coalesce(env(\"GIT_REV\"), env(\"GIT_REVISION\"),
-    env(\"GIT_BRANCH\"), \"main\")\n}\n\nargument \"git_pull_freq\" {\n  // comment
-    = \"How often to pull the git repo, the default is 0s which means never pull\"\n
-    \ optional = true\n  default = \"0s\"\n}\n\nmodule.git \"log_targets\" {\n  repository
-    = argument.git_repo.value\n  revision = argument.git_rev.value\n  pull_frequency
-    = argument.git_pull_freq.value\n  path = \"modules/kubernetes/logs/targets/logs-from-worker.river\"\n\n
-    \ arguments {\n    forward_to = [module.git.log_formats_all.exports.process.receiver]\n
-    \   tenant = argument.tenant.value\n    git_repo = argument.git_repo.value\n    git_rev
-    = argument.git_rev.value\n    git_pull_freq = argument.git_pull_freq.value\n  }\n}\n\nmodule.git
-    \"log_formats_all\" {\n  repository = argument.git_repo.value\n  revision = argument.git_rev.value\n
-    \ pull_frequency = argument.git_pull_freq.value\n  path = \"modules/kubernetes/logs/log-formats/all.river\"\n\n
-    \ arguments {\n    forward_to = [module.git.log_level_default.exports.process.receiver]\n
-    \   git_repo = argument.git_repo.value\n    git_rev = argument.git_rev.value\n
-    \   git_pull_freq = argument.git_pull_freq.value\n  }\n}\n\nmodule.git \"log_level_default\"
-    {\n  repository = argument.git_repo.value\n  revision = argument.git_rev.value\n
-    \ pull_frequency = argument.git_pull_freq.value\n  path = \"modules/kubernetes/logs/labels/log-level.river\"\n\n
-    \ arguments {\n    forward_to = [module.git.drop_levels.exports.process.receiver]\n
-    \ }\n}\n\nmodule.git \"drop_levels\" {\n  repository = argument.git_repo.value\n
-    \ revision = argument.git_rev.value\n  pull_frequency = argument.git_pull_freq.value\n
-    \ path = \"modules/kubernetes/logs/drops/levels.river\"\n\n  arguments {\n    forward_to
-    = [module.git.scrub_all.exports.process.receiver]\n    git_repo = argument.git_repo.value\n
-    \   git_rev = argument.git_rev.value\n    git_pull_freq = argument.git_pull_freq.value\n
-    \ }\n}\n\nmodule.git \"scrub_all\" {\n  repository = argument.git_repo.value\n
-    \ revision = argument.git_rev.value\n  pull_frequency = argument.git_pull_freq.value\n
-    \ path = \"modules/kubernetes/logs/scrubs/all.river\"\n\n  arguments {\n    forward_to
-    = [module.git.embed_pod.exports.process.receiver]\n    git_repo = argument.git_repo.value\n
-    \   git_rev = argument.git_rev.value\n    git_pull_freq = argument.git_pull_freq.value\n
-    \ }\n}\n\nmodule.git \"embed_pod\" {\n  repository = argument.git_repo.value\n
-    \ revision = argument.git_rev.value\n  pull_frequency = argument.git_pull_freq.value\n
-    \ path = \"modules/kubernetes/logs/embed/pod.river\"\n\n  arguments {\n    forward_to
-    = [module.git.mask_all.exports.process.receiver]\n  }\n}\n\nmodule.git \"mask_all\"
-    {\n  repository = argument.git_repo.value\n  revision = argument.git_rev.value\n
-    \ pull_frequency = argument.git_pull_freq.value\n  path = \"modules/kubernetes/logs/masks/all.river\"\n\n
-    \ arguments {\n    forward_to = [module.git.label_normalize_filename.exports.process.receiver]\n
-    \   git_repo = argument.git_repo.value\n    git_rev = argument.git_rev.value\n
-    \   git_pull_freq = argument.git_pull_freq.value\n  }\n}\n\nmodule.git \"label_normalize_filename\"
-    {\n  repository = argument.git_repo.value\n  revision = argument.git_rev.value\n
-    \ pull_frequency = argument.git_pull_freq.value\n  path = \"modules/kubernetes/logs/labels/normalize-filename.river\"\n\n
-    \ arguments {\n    forward_to = [module.git.label_keep.exports.process.receiver]\n
-    \ }\n}\n\nmodule.git \"label_keep\" {\n  repository = argument.git_repo.value\n
-    \ revision = argument.git_rev.value\n  pull_frequency = argument.git_pull_freq.value\n
-    \ path = \"modules/kubernetes/logs/labels/keep-labels.river\"\n\n  arguments {\n
-    \   forward_to = argument.forward_to.value\n    keep_labels = argument.keep_labels.value\n
-    \ }\n}\n"
-kind: ConfigMap
-metadata:
-  labels:
-    team: team-infra
-  name: agent-modules-58gc95m2bc
   namespace: logging-system
 ---
 apiVersion: v1
@@ -389,7 +123,6 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
     helm.sh/chart: loki-5.36.3
-    team: team-infra
   name: loki
   namespace: logging-system
 ---
@@ -635,7 +368,6 @@ metadata:
     chart: minio-4.0.12
     heritage: Helm
     release: loki
-    team: team-infra
   name: loki-minio
   namespace: logging-system
 ---
@@ -651,23 +383,8 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
     helm.sh/chart: loki-5.36.3
-    team: team-infra
   name: loki-runtime
   namespace: logging-system
----
-apiVersion: v1
-data:
-  AGENT_CONFIG_FOLDER: L2V0Yy9hZ2VudC1tb2R1bGVz
-  AGENT_LOG_LEVEL: aW5mbw==
-  CLUSTER: azNkLWszcy1jb2RlbGFi
-  LOGS_ENDPOINT: aHR0cDovL2xva2kubG9nZ2luZy1zeXN0ZW06MzEwMA==
-kind: Secret
-metadata:
-  labels:
-    team: team-infra
-  name: agent-logs-env-899fh89gmf
-  namespace: logging-system
-type: Opaque
 ---
 apiVersion: v1
 data:
@@ -680,59 +397,9 @@ metadata:
     chart: minio-4.0.12
     heritage: Helm
     release: loki
-    team: team-infra
   name: loki-minio
   namespace: logging-system
 type: Opaque
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    app.kubernetes.io/instance: grafana-agent
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: grafana-agent
-    app.kubernetes.io/version: v0.37.4
-    helm.sh/chart: grafana-agent-0.27.2
-    team: team-infra
-  name: grafana-agent
-  namespace: logging-system
-spec:
-  ports:
-  - name: http-metrics
-    port: 80
-    protocol: TCP
-    targetPort: 80
-  selector:
-    app.kubernetes.io/instance: grafana-agent
-    app.kubernetes.io/name: grafana-agent
-    team: team-infra
-  type: ClusterIP
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    app.kubernetes.io/instance: grafana-agent
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: grafana-agent
-    app.kubernetes.io/version: v0.37.4
-    helm.sh/chart: grafana-agent-0.27.2
-    team: team-infra
-  name: grafana-agent-cluster
-  namespace: logging-system
-spec:
-  clusterIP: None
-  ports:
-  - name: http
-    port: 80
-    protocol: TCP
-    targetPort: 80
-  selector:
-    app.kubernetes.io/instance: grafana-agent
-    app.kubernetes.io/name: grafana-agent
-    team: team-infra
-  type: ClusterIP
 ---
 apiVersion: v1
 kind: Service
@@ -743,7 +410,6 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
     helm.sh/chart: loki-5.36.3
-    team: team-infra
   name: loki
   namespace: logging-system
 spec:
@@ -760,7 +426,6 @@ spec:
     app.kubernetes.io/component: single-binary
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
-    team: team-infra
   type: ClusterIP
 ---
 apiVersion: v1
@@ -773,7 +438,6 @@ metadata:
     app.kubernetes.io/version: 2.9.2
     helm.sh/chart: loki-5.36.3
     prometheus.io/service-monitor: "false"
-    team: team-infra
     variant: headless
   name: loki-headless
   namespace: logging-system
@@ -787,7 +451,6 @@ spec:
   selector:
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
-    team: team-infra
 ---
 apiVersion: v1
 kind: Service
@@ -798,7 +461,6 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
     helm.sh/chart: loki-5.36.3
-    team: team-infra
   name: loki-memberlist
   namespace: logging-system
 spec:
@@ -812,7 +474,6 @@ spec:
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
     app.kubernetes.io/part-of: memberlist
-    team: team-infra
   type: ClusterIP
 ---
 apiVersion: v1
@@ -824,7 +485,6 @@ metadata:
     heritage: Helm
     monitoring: "true"
     release: loki
-    team: team-infra
   name: loki-minio
   namespace: logging-system
 spec:
@@ -836,7 +496,6 @@ spec:
   selector:
     app: minio
     release: loki
-    team: team-infra
   type: ClusterIP
 ---
 apiVersion: v1
@@ -847,7 +506,6 @@ metadata:
     chart: minio-4.0.12
     heritage: Helm
     release: loki
-    team: team-infra
   name: loki-minio-console
   namespace: logging-system
 spec:
@@ -859,7 +517,6 @@ spec:
   selector:
     app: minio
     release: loki
-    team: team-infra
   type: ClusterIP
 ---
 apiVersion: v1
@@ -870,7 +527,6 @@ metadata:
     chart: minio-4.0.12
     heritage: Helm
     release: loki
-    team: team-infra
   name: loki-minio-svc
   namespace: logging-system
 spec:
@@ -884,7 +540,6 @@ spec:
   selector:
     app: minio
     release: loki
-    team: team-infra
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -897,7 +552,6 @@ metadata:
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 2.9.2
     helm.sh/chart: loki-5.36.3
-    team: team-infra
   name: loki
   namespace: logging-system
 spec:
@@ -912,7 +566,6 @@ spec:
       app.kubernetes.io/component: single-binary
       app.kubernetes.io/instance: loki
       app.kubernetes.io/name: loki
-      team: team-infra
   serviceName: loki-headless
   template:
     metadata:
@@ -923,7 +576,6 @@ spec:
         app.kubernetes.io/instance: loki
         app.kubernetes.io/name: loki
         app.kubernetes.io/part-of: memberlist
-        team: team-infra
     spec:
       affinity:
         podAntiAffinity:
@@ -933,7 +585,6 @@ spec:
                 app.kubernetes.io/component: single-binary
                 app.kubernetes.io/instance: loki
                 app.kubernetes.io/name: loki
-                team: team-infra
             topologyKey: kubernetes.io/hostname
       automountServiceAccountToken: true
       containers:
@@ -1002,8 +653,6 @@ spec:
   - apiVersion: v1
     kind: PersistentVolumeClaim
     metadata:
-      labels:
-        team: team-infra
       name: storage
     spec:
       accessModes:
@@ -1020,7 +669,6 @@ metadata:
     chart: minio-4.0.12
     heritage: Helm
     release: loki
-    team: team-infra
   name: loki-minio
   namespace: logging-system
 spec:
@@ -1030,7 +678,6 @@ spec:
     matchLabels:
       app: minio
       release: loki
-      team: team-infra
   serviceName: loki-minio-svc
   template:
     metadata:
@@ -1040,7 +687,6 @@ spec:
       labels:
         app: minio
         release: loki
-        team: team-infra
       name: loki-minio
     spec:
       containers:
@@ -1093,8 +739,6 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      labels:
-        team: team-infra
       name: export-0
     spec:
       accessModes:
@@ -1103,8 +747,6 @@ spec:
         requests:
           storage: 5Gi
   - metadata:
-      labels:
-        team: team-infra
       name: export-1
     spec:
       accessModes:
@@ -1112,102 +754,6 @@ spec:
       resources:
         requests:
           storage: 5Gi
----
-apiVersion: apps/v1
-kind: DaemonSet
-metadata:
-  labels:
-    app.kubernetes.io/instance: grafana-agent
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: grafana-agent
-    app.kubernetes.io/version: v0.37.4
-    helm.sh/chart: grafana-agent-0.27.2
-    team: team-infra
-  name: grafana-agent
-  namespace: logging-system
-spec:
-  minReadySeconds: 10
-  selector:
-    matchLabels:
-      app.kubernetes.io/instance: grafana-agent
-      app.kubernetes.io/name: grafana-agent
-      team: team-infra
-  template:
-    metadata:
-      annotations:
-        logs.agent.grafana.com/scrape: "true"
-        logs.agent.grafana.com/scrub-level: debug
-      labels:
-        app.kubernetes.io/instance: grafana-agent
-        app.kubernetes.io/name: grafana-agent
-        team: team-infra
-    spec:
-      containers:
-      - args:
-        - run
-        - /etc/agent/logs.river
-        - --storage.path=/tmp/agent
-        - --server.http.listen-addr=0.0.0.0:80
-        - --server.http.ui-path-prefix=/
-        - --disable-reporting
-        - --cluster.enabled=true
-        - --cluster.join-addresses=grafana-agent-cluster
-        env:
-        - name: AGENT_MODE
-          value: flow
-        - name: HOSTNAME
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.nodeName
-        envFrom:
-        - secretRef:
-            name: agent-logs-env-899fh89gmf
-        image: docker.io/grafana/agent:v0.37.4
-        imagePullPolicy: IfNotPresent
-        name: grafana-agent
-        ports:
-        - containerPort: 80
-          name: http-metrics
-        readinessProbe:
-          httpGet:
-            path: /-/ready
-            port: 80
-          initialDelaySeconds: 10
-          timeoutSeconds: 1
-        volumeMounts:
-        - mountPath: /etc/agent
-          name: config
-        - mountPath: /var/log
-          name: varlog
-          readOnly: true
-        - mountPath: /etc/agent-modules
-          name: agent-modules
-      - args:
-        - --volume-dir=/etc/agent
-        - --webhook-url=http://localhost:80/-/reload
-        image: docker.io/jimmidyson/configmap-reload:v0.8.0
-        name: config-reloader
-        resources:
-          requests:
-            cpu: 1m
-            memory: 5Mi
-        volumeMounts:
-        - mountPath: /etc/agent
-          name: config
-      dnsPolicy: ClusterFirst
-      nodeSelector:
-        kubernetes.io/os: linux
-      serviceAccountName: grafana-agent
-      volumes:
-      - configMap:
-          name: agent-logs-config-8kgtm6f297
-        name: config
-      - hostPath:
-          path: /var/log
-        name: varlog
-      - configMap:
-          name: agent-modules-58gc95m2bc
-        name: agent-modules
 ---
 apiVersion: batch/v1
 kind: Job
@@ -1220,7 +766,6 @@ metadata:
     chart: minio-4.0.12
     heritage: Helm
     release: loki
-    team: team-infra
   name: loki-minio-make-bucket-job
   namespace: logging-system
 spec:
@@ -1229,7 +774,6 @@ spec:
       labels:
         app: minio-job
         release: loki
-        team: team-infra
     spec:
       containers:
       - command:
@@ -1270,7 +814,6 @@ metadata:
     chart: minio-4.0.12
     heritage: Helm
     release: loki
-    team: team-infra
   name: loki-minio-make-user-job
   namespace: logging-system
 spec:
@@ -1279,7 +822,6 @@ spec:
       labels:
         app: minio-job
         release: loki
-        team: team-infra
     spec:
       containers:
       - command:

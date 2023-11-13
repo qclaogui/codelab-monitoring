@@ -1,4 +1,4 @@
-include ../../../../.bingo/Variables.mk
+include ../../.bingo/Variables.mk
 
 all: update build
 

@@ -1,0 +1,24 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    grafana_datasource: "1"
+  name: grafana-datasources-mimir
+  namespace: monitoring-system
+data:
+  datasources.yaml: |
+    apiVersion: 1
+
+    datasources:
+    # Mimir for metrics
+    - name: Mimir
+      type: prometheus
+      uid: mimir
+      access: proxy
+      orgId: 1
+      url: http://nginx:8080/prometheus
+      basicAuth: false
+      isDefault: true
+      version: 1
+      editable: true
