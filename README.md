@@ -60,3 +60,35 @@ These instructions will get you through the deploying samples with Docker Compos
 - Traces
 - [Metrics [Mimir (Query-Frontend + Querier + Store-Gateway + Distributor + Ingester + Compactor)]](./kubernetes/microservices-mode/metrics)
 - Profiles
+
+```shell
+make help
+
+Usage:
+  make <target>
+
+Dependencies
+  install-build-deps                        Install dependencies tools
+
+Dashboards
+  dashboards_out                            Copy app's dashboards to grafana dashboards provision path
+
+Lint & fmt
+  check                                     Check all the mixin files
+  copyright                                 Add Copyright header to .go files.
+
+Kubernetes
+  cluster                                   Create k3s cluster
+  clean                                     Clean cluster
+  manifests                                 Generates k8s manifests
+  manifests-monolithic-mode                 Generates monolithic-mode manifests
+  manifests-microservices-mode              Generates microservices-mode manifests
+  deploy-monolithic-mode-logs               Deploy monolithic-mode logs
+  clean-monolithic-mode-logs                Clean monolithic-mode logs manifests
+  deploy-microservices-mode-metrics         Deploy microservices-mode metrics
+  clean-microservices-mode-metrics          Clean microservices-mode metrics
+
+General
+  help                                      Display this help. Thanks to https://www.thapaliya.com/en/writings/well-documented-makefiles/
+
+```

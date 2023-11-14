@@ -5,6 +5,7 @@
 ``` shell
 make help
 
+
 Usage:
   make <target>
 
@@ -22,11 +23,12 @@ Kubernetes
   cluster                                   Create k3s cluster
   clean                                     Clean cluster
   manifests                                 Generates k8s manifests
-  monolithic-mode-manifests                 Generates monolithic-mode manifests
-  microservices-mode-manifests              Generates microservices-mode manifests
-  logs-monolithic-mode-deploy               Deploy monolithic-mode logs
-  logs-monolithic-mode-clean                Clean monolithic-mode logs manifests
-  metrics-microservices-mode-deploy         Deploy microservices-mode metrics
+  manifests-monolithic-mode                 Generates monolithic-mode manifests
+  manifests-microservices-mode              Generates microservices-mode manifests
+  deploy-monolithic-mode-logs               Deploy monolithic-mode logs
+  clean-monolithic-mode-logs                Clean monolithic-mode logs manifests
+  deploy-microservices-mode-metrics         Deploy microservices-mode metrics
+  clean-microservices-mode-metrics          Clean microservices-mode metrics
 
 General
   help                                      Display this help. Thanks to https://www.thapaliya.com/en/writings/well-documented-makefiles/
@@ -36,13 +38,13 @@ General
 ## Create k3s cluster
 
 ``` shell
-make k3s
+make cluster
 ```
 
 ## Deploy manifests
 
 ```shell
-make logs-monolithic-mode-deploy
+make deploy-monolithic-mode-logs
 ```
 
 ## Open browser
@@ -52,5 +54,5 @@ make logs-monolithic-mode-deploy
 ## Clean manifests
 
 ```shell
-make logs-monolithic-mode-clean
+make clean-monolithic-mode-logs
 ```

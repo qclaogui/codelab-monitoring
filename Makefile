@@ -59,31 +59,31 @@ clean: ## Clean cluster
 
 .PHONY: manifests
 manifests: ## Generates k8s manifests
-manifests: $(KUSTOMIZE) monolithic-mode-manifests microservices-mode-manifests
+manifests: $(KUSTOMIZE) manifests-monolithic-mode manifests-microservices-mode
 	@$(KUSTOMIZE) build monitoring-mixins > monitoring-mixins/k8s-all-in-one.yaml
 
-.PHONY: monolithic-mode-manifests
-monolithic-mode-manifests: $(KUSTOMIZE)  ## Generates monolithic-mode manifests
+.PHONY: manifests-monolithic-mode
+manifests-monolithic-mode: $(KUSTOMIZE)  ## Generates monolithic-mode manifests
 	$(info ******************** generates monolithic-mode manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/logs > kubernetes/monolithic-mode/logs/k8s-all-in-one.yaml
 
 
-.PHONY: microservices-mode-manifests
-microservices-mode-manifests: $(KUSTOMIZE)  ## Generates microservices-mode manifests
+.PHONY: manifests-microservices-mode
+manifests-microservices-mode: $(KUSTOMIZE)  ## Generates microservices-mode manifests
 	$(info ******************** generates microservices-mode manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/microservices-mode/metrics > kubernetes/microservices-mode/metrics/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build kubernetes/microservices-mode/logs > kubernetes/microservices-mode/logs/k8s-all-in-one.yaml
 
-.PHONY: logs-monolithic-mode-deploy
-logs-monolithic-mode-deploy: manifests ## Deploy monolithic-mode logs
+.PHONY: deploy-monolithic-mode-logs
+deploy-monolithic-mode-logs: manifests ## Deploy monolithic-mode logs
 	$(info ******************** deploy manifests ********************)
 	@kubectl apply -f kubernetes/grafana/k8s-all-in-one.yaml
 	@kubectl apply -f kubernetes/monolithic-mode/logs/k8s-all-in-one.yaml
 	@kubectl apply -f kubernetes/monolithic-mode/logs/grafana-datasources-loki.yaml 
 	@kubectl apply -f monitoring-mixins/k8s-all-in-one.yaml
 
-.PHONY: logs-monolithic-mode-clean
-logs-monolithic-mode-clean:  ## Clean monolithic-mode logs manifests
+.PHONY: clean-monolithic-mode-logs
+clean-monolithic-mode-logs:  ## Clean monolithic-mode logs manifests
 	$(info ******************** clean manifests ********************)
 	@kubectl delete -f kubernetes/grafana/k8s-all-in-one.yaml
 	@kubectl delete -f kubernetes/monolithic-mode/logs/k8s-all-in-one.yaml
@@ -91,16 +91,16 @@ logs-monolithic-mode-clean:  ## Clean monolithic-mode logs manifests
 	@kubectl delete -f monitoring-mixins/k8s-all-in-one.yaml
 
 
-.PHONY: metrics-microservices-mode-deploy
-metrics-microservices-mode-deploy: manifests ## Deploy microservices-mode metrics
+.PHONY: deploy-microservices-mode-metrics
+deploy-microservices-mode-metrics: manifests ## Deploy microservices-mode metrics
 	$(info ******************** deploy manifests ********************)
 	kubectl apply -f kubernetes/grafana/k8s-all-in-one.yaml
 	kubectl apply -f kubernetes/microservices-mode/metrics/k8s-all-in-one.yaml
 	kubectl apply -f kubernetes/microservices-mode/metrics/grafana-datasources-mimir.yaml 
 	kubectl apply -f monitoring-mixins/k8s-all-in-one.yaml
 
-.PHONY: metrics-microservices-mode-clean
-metrics-microservices-mode-clean:  ## Clean microservices-mode metrics
+.PHONY: clean-microservices-mode-metrics
+clean-microservices-mode-metrics:  ## Clean microservices-mode metrics
 	$(info ******************** clean manifests ********************)
 	kubectl delete -f kubernetes/grafana/k8s-all-in-one.yaml
 	kubectl delete -f kubernetes/microservices-mode/metrics/k8s-all-in-one.yaml
