@@ -67,44 +67,81 @@ manifests-monolithic-mode: $(KUSTOMIZE)  ## Generates monolithic-mode manifests
 	$(info ******************** generates monolithic-mode manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/logs > kubernetes/monolithic-mode/logs/k8s-all-in-one.yaml
 
-
 .PHONY: manifests-microservices-mode
 manifests-microservices-mode: $(KUSTOMIZE)  ## Generates microservices-mode manifests
 	$(info ******************** generates microservices-mode manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/microservices-mode/metrics > kubernetes/microservices-mode/metrics/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build kubernetes/microservices-mode/logs > kubernetes/microservices-mode/logs/k8s-all-in-one.yaml
 
+
+
+# prometheus-operator-crds
+.PHONY: deploy-prometheus-operator-crds
+deploy-prometheus-operator-crds: ## Deploy prometheus-operator-crds manifests
+	$(info ******************** deploy prometheus-operator-crds manifests ********************)
+	@kubectl replace -f kubernetes/common/prometheus-operator-crds/k8s-all-in-one.yaml || kubectl create -f kubernetes/common/prometheus-operator-crds/k8s-all-in-one.yaml
+
+# kube-prometheus-stack
+.PHONY: deploy-kube-prometheus-stack
+deploy-kube-prometheus-stack: ## Deploy kube-prometheus-stack manifests
+	@cd kubernetes/common/kube-prometheus-stack && make build && cd -
+	$(info ******************** deploy kube-prometheus-stack manifests ********************)
+	@kubectl apply -f kubernetes/common/kube-prometheus-stack/k8s-all-in-one.yaml
+	@kubectl apply -f kubernetes/common/rancher-pushprox/k8s-all-in-one.yaml
+
+.PHONY: clean-kube-prometheus-stack
+clean-kube-prometheus-stack: ## Clean kube-prometheus-stack manifests
+	$(info ******************** clean kube-prometheus-stack manifests ********************)
+	@kubectl delete -f kubernetes/common/kube-prometheus-stack/k8s-all-in-one.yaml
+	@kubectl delete -f kubernetes/common/rancher-pushprox/k8s-all-in-one.yaml
+
+
+# grafana
+.PHONY: deploy-grafana
+deploy-grafana: manifests ## Deploy grafana manifests
+	@cd kubernetes/common/grafana && make build && cd -
+	$(info ******************** deploy grafana manifests ********************)
+	@kubectl apply -f kubernetes/common/grafana/k8s-all-in-one.yaml
+
+.PHONY: clean-grafana
+clean-grafana: ## Clean grafana manifests
+	$(info ******************** clean grafana manifests ********************)
+	@kubectl delete -f kubernetes/common/grafana/k8s-all-in-one.yaml
+
+
+# # prometheus-blackbox-exporter
+# .PHONY: deploy-blackbox-exporter
+# deploy-blackbox-exporter: ## Deploy blackbox-exporter manifests
+# 	@cd kubernetes/common/prometheus-blackbox-exporter && make build && cd -
+# 	$(info ******************** deploy blackbox-exporter manifests ********************)
+# 	@kubectl apply -f kubernetes/common/prometheus-blackbox-exporter/k8s-all-in-one.yaml
+
+
 .PHONY: deploy-monolithic-mode-logs
-deploy-monolithic-mode-logs: manifests ## Deploy monolithic-mode logs
+deploy-monolithic-mode-logs: deploy-grafana ## Deploy monolithic-mode logs
 	$(info ******************** deploy manifests ********************)
-	@kubectl apply -f kubernetes/grafana/k8s-all-in-one.yaml
 	@kubectl apply -f kubernetes/monolithic-mode/logs/k8s-all-in-one.yaml
-	@kubectl apply -f kubernetes/monolithic-mode/logs/grafana-datasources-loki.yaml 
+	@kubectl apply -f kubernetes/monolithic-mode/logs/grafana-datasources-loki.yaml
 	@kubectl apply -f monitoring-mixins/k8s-all-in-one.yaml
 
 .PHONY: clean-monolithic-mode-logs
 clean-monolithic-mode-logs:  ## Clean monolithic-mode logs manifests
 	$(info ******************** clean manifests ********************)
-	@kubectl delete -f kubernetes/grafana/k8s-all-in-one.yaml
 	@kubectl delete -f kubernetes/monolithic-mode/logs/k8s-all-in-one.yaml
 	@kubectl delete -f kubernetes/monolithic-mode/logs/grafana-datasources-loki.yaml 
 	@kubectl delete -f monitoring-mixins/k8s-all-in-one.yaml
 
 
 .PHONY: deploy-microservices-mode-metrics
-deploy-microservices-mode-metrics: manifests ## Deploy microservices-mode metrics
+deploy-microservices-mode-metrics: deploy-grafana ## Deploy microservices-mode metrics
 	$(info ******************** deploy manifests ********************)
-	kubectl apply -f kubernetes/grafana/k8s-all-in-one.yaml
 	kubectl apply -f kubernetes/microservices-mode/metrics/k8s-all-in-one.yaml
-	kubectl apply -f kubernetes/microservices-mode/metrics/grafana-datasources-mimir.yaml 
 	kubectl apply -f monitoring-mixins/k8s-all-in-one.yaml
 
 .PHONY: clean-microservices-mode-metrics
 clean-microservices-mode-metrics:  ## Clean microservices-mode metrics
 	$(info ******************** clean manifests ********************)
-	kubectl delete -f kubernetes/grafana/k8s-all-in-one.yaml
 	kubectl delete -f kubernetes/microservices-mode/metrics/k8s-all-in-one.yaml
-	kubectl delete -f kubernetes/microservices-mode/metrics/grafana-datasources-mimir.yaml 
 	kubectl delete -f monitoring-mixins/k8s-all-in-one.yaml
 
 

@@ -13,14 +13,17 @@ envFromConfigMaps:
     optional: true
 
 podAnnotations:
-  metrics.agent.grafana.com/scrape: "true"
-  metrics.agent.grafana.com/port: "3000"
-  metrics.agent.grafana.com/interval: "15s"   # The default interval to scrape is 1m
   logs.agent.grafana.com/scrape: "true"
   logs.agent.grafana.com/scrub-level: "debug" # Boolean whether or not the level should be dropped from the log message (as it is a label).
 
 service:
   portName: http-metrics
+
+serviceMonitor:
+  enabled: true
+  labels:
+    team: team-infra
+  interval: 30s
 
 ingress:
   enabled: true
@@ -38,7 +41,7 @@ sidecar:
     label: grafana_dashboard
     labelValue: 1
     folder: /dashboards
-    searchNamespace: monitoring-system
+    searchNamespace: ALL
     folderAnnotation: grafana_dashboard_folder
     provider:
       name: sidecarProvider

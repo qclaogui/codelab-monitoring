@@ -1,0 +1,25 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: ruler
+spec:
+  endpoints:
+  - port: http-metrics
+    relabelings:
+    - replacement: monitoring-system/ruler
+      sourceLabels:
+      - job
+      targetLabel: job
+    scheme: http
+  namespaceSelector:
+    matchNames:
+    - monitoring-system
+  selector:
+    matchExpressions:
+    - key: prometheus.io/service-monitor
+      operator: NotIn
+      values:
+      - "false"
+    matchLabels:
+      app: ruler

@@ -1,0 +1,42 @@
+component: "kubelet"
+metricsPort: 10250
+
+serviceMonitor:
+  endpoints:
+  - port: metrics
+    honorLabels: true
+    relabelings:
+    - sourceLabels: [__metrics_path__]
+      targetLabel: metrics_path
+  - port: metrics
+    path: /metrics/cadvisor
+    honorLabels: true
+    relabelings:
+    - sourceLabels: [__metrics_path__]
+      targetLabel: metrics_path
+  - port: metrics
+    path: /metrics/probes
+    honorLabels: true
+    relabelings:
+    - sourceLabels: [__metrics_path__]
+      targetLabel: metrics_path
+
+clients:
+  port: 10013
+  useLocalhost: true
+  https:
+    enabled: true
+    useServiceAccountCredentials: true
+    insecureSkipVerify: true
+  rbac:
+    additionalRules:
+    - nonResourceURLs: ["/metrics/cadvisor"]
+      verbs: ["get"]
+    - apiGroups: [""]
+      resources: ["nodes/metrics"]
+      verbs: ["get"]
+  tolerations:
+  - effect: "NoExecute"
+    operator: "Exists"
+  - effect: "NoSchedule"
+    operator: "Exists"

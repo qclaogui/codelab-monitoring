@@ -1,11 +1,4 @@
 apiVersion: v1
-kind: Namespace
-metadata:
-  labels:
-    team: team-infra
-  name: monitoring-system
----
-apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
@@ -16,34 +9,6 @@ metadata:
     helm.sh/chart: grafana-agent-0.27.2
     team: team-infra
   name: grafana-agent
-  namespace: monitoring-system
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  labels:
-    app.kubernetes.io/instance: prometheus-blackbox-exporter
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: prometheus-blackbox-exporter
-    app.kubernetes.io/version: v0.24.0
-    helm.sh/chart: prometheus-blackbox-exporter-8.4.0
-    team: team-infra
-  name: prometheus-blackbox-exporter
-  namespace: monitoring-system
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  labels:
-    app.kubernetes.io/component: metrics
-    app.kubernetes.io/instance: prometheus-node-exporter
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: prometheus-node-exporter
-    app.kubernetes.io/part-of: prometheus-node-exporter
-    app.kubernetes.io/version: 1.6.1
-    helm.sh/chart: prometheus-node-exporter-4.23.2
-    team: team-infra
-  name: prometheus-node-exporter
   namespace: monitoring-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -162,292 +127,16 @@ data:
     \"http://nginx.monitoring-system:8080\")\n\t}\n}\n\nmodule.file \"metrics_primary\"
     {\n\tfilename = env(\"AGENT_CONFIG_FOLDER\") + \"/metrics-all.river\"\n\n  arguments
     {\n    forward_to = [module.file.lgtmp.exports.metrics_receiver]\n    clustering
-    = true\n    scrape_port_named_metrics = true\n  }\n}"
+    = true\n  }\n}"
 kind: ConfigMap
 metadata:
   labels:
     team: team-infra
-  name: agent-metrics-config-t5d9gg7fc6
+  name: agent-metrics-config-2dch2ttm97
   namespace: monitoring-system
 ---
 apiVersion: v1
 data:
-  auto-scrape-endpoints.river: |
-    /*
-    Module: scrape-endpoints
-    Description:
-      Kubernetes Service Endpoints Auto-Scraping
-      ------------------------------------------------------------------------------------------------------------------------------------
-      Each port attached to an endpoint is an eligible target, oftentimes endpoint will have multiple ports.
-      There may be instances when you want to scrape all ports or some ports and not others. To support this
-      the following annotations are available:
-
-      only scrape endpoints with scrape set to true, this can be single valued i.e. scrape all ports for
-      the endpoint:
-
-      metrics.agent.grafana.com/scrape: true
-      prometheus.io/scrape: true
-
-      the default scraping scheme is http, this can be specified as a single value which would override,
-      the schema being used for all ports attached to the endpoint:
-
-      metrics.agent.grafana.com/scheme: https
-      prometheus.io/scheme: https
-
-      the default path to scrape is /metrics, this can be specified as a single value which would override,
-      the scrape path being used for all ports attached to the endpoint:
-
-      metrics.agent.grafana.com/path: /metrics/some_path
-      prometheus.io/path: /metrics/some_path
-
-      the default port to scrape is the endpoint port, this can be specified as a single value which would
-      override the scrape port being used for all ports attached to the endpoint, note that even if aan endpoint had
-      multiple targets, the relabel_config targets are deduped before scraping:
-
-      metrics.agent.grafana.com/port: 8080
-      prometheus.io/port: 8080
-
-      the default interval to scrape is 1m, this can be specified as a single value which would override,
-      the scrape interval being used for all ports attached to the endpoint:
-
-      metrics.agent.grafana.com/interval: 5m
-      prometheus.io/interval: 5m
-
-      the default timeout for scraping is 10s, this can be specified as a single value which would override,
-      the scrape interval being used for all ports attached to the endpoint:
-
-      metrics.agent.grafana.com/timeout: 30s
-      prometheus.io/timeout: 30s
-    */
-    argument "forward_to" {
-      // comment = "Must be a list(MetricssReceiver) where collected logs should be forwarded to"
-      optional = false
-    }
-
-    argument "tenant" {
-      // comment = "The tenant to filter logs to.  This does not have to be the tenantId, this is the value to look for in the logs.agent.grafana.com/tenant annotation, and this can be a regex."
-      optional = true
-      default = ".*"
-    }
-
-    argument "scrape_port_named_metrics" {
-      // comment = "Whether or not to automatically scrape endpoints that have a port with 'metrics' in the name"
-      optional = true
-      default = false
-    }
-
-    argument "clustering" {
-      // comment = "Whether or not clustering should be enabled"
-      optional = true
-      default = false
-    }
-
-    argument "git_repo" {
-      optional = true
-      default = coalesce(env("GIT_REPO"), "https://github.com/grafana/agent-modules.git")
-    }
-
-    argument "git_rev" {
-      optional = true
-      default = coalesce(env("GIT_REV"), env("GIT_REVISION"), env("GIT_BRANCH"), "main")
-    }
-
-    argument "git_pull_freq" {
-      optional = true
-      default = "0s"
-    }
-
-    module.git "endpoints_targets" {
-      repository = argument.git_repo.value
-      revision = argument.git_rev.value
-      pull_frequency = argument.git_pull_freq.value
-      path = "modules/kubernetes/metrics/targets/endpoints.river"
-
-      arguments {
-        tenant = argument.tenant.value
-        git_repo = argument.git_repo.value
-        git_rev = argument.git_rev.value
-        git_pull_freq = argument.git_pull_freq.value
-        scrape_port_named_metrics = argument.scrape_port_named_metrics.value
-      }
-    }
-
-    prometheus.scrape "scrape_endpoints" {
-      targets = module.git.endpoints_targets.exports.relabelings.output
-      forward_to = [module.git.relabelings_kube_state_metrics.exports.metric_relabelings.receiver]
-
-      clustering {
-        enabled = argument.clustering.value
-      }
-    }
-
-    // metric relabelings
-    module.git "relabelings_kube_state_metrics" {
-      repository = argument.git_repo.value
-      revision = argument.git_rev.value
-      pull_frequency = argument.git_pull_freq.value
-      path = "modules/kubernetes/metrics/relabelings/kube-state-metrics.river"
-
-      arguments {
-        forward_to = [module.git.relabelings_node_exporter.exports.metric_relabelings.receiver]
-      }
-    }
-
-    module.git "relabelings_node_exporter" {
-      repository = argument.git_repo.value
-      revision = argument.git_rev.value
-      pull_frequency = argument.git_pull_freq.value
-      path = "modules/kubernetes/metrics/relabelings/node-exporter.river"
-
-      arguments {
-        forward_to = [module.git.relabelings_opencost.exports.metric_relabelings.receiver]
-      }
-    }
-
-    module.git "relabelings_opencost" {
-      repository = argument.git_repo.value
-      revision = argument.git_rev.value
-      pull_frequency = argument.git_pull_freq.value
-      path = "modules/kubernetes/metrics/relabelings/opencost.river"
-
-      arguments {
-        forward_to = [module.git.relabelings_auto_scrape.exports.metric_relabelings.receiver]
-      }
-    }
-
-    // metric relabelings
-    module.git "relabelings_auto_scrape" {
-      repository = argument.git_repo.value
-      revision = argument.git_rev.value
-      pull_frequency = argument.git_pull_freq.value
-      path = "modules/kubernetes/metrics/relabelings/auto-scrape.river"
-
-      arguments {
-        forward_to = argument.forward_to.value
-        job_label = "kubernetes-endpoint-auto-scrape"
-      }
-    }
-  auto-scrape-pods.river: |
-    /*
-    Module: scrape-pods
-    Description:
-      Kubernetes Pods Auto-Scraping
-      -------------------------------------------------------------------------------------------------------
-      !!! IMPORTANT !!!
-      The annotations described below for auto-scraping of metrics should NOT be added to the both
-      Service/Endpoints and to the Pods/Controller.  Metric scraping should be done at the endpoint level
-      if at all possible.  The following annotations should only be added to a pod if the pod is not
-      associated to a service
-      !!! IMPORTANT !!!
-
-      Each port attached to a pod container is an eligible target, oftentimes pods will have multiple ports.
-      There may be instances when you want to scrape all ports or some ports and not others. To support this
-      the following annotations are available:
-
-      only scrape pods with scrape set to true, this can be single valued i.e. scrape all ports for
-      the endpoint:
-
-      metrics.agent.grafana.com/scrape: true
-      prometheus.io/scrape: true
-
-      the default scraping scheme is http, this can be specified as a single value which would override,
-      the schema being used for all ports attached to the endpoint:
-
-      metrics.agent.grafana.com/scheme: https
-      prometheus.io/scheme: https
-
-      the default path to scrape is /metrics, this can be specified as a single value which would override,
-      the scrape path being used for all ports attached to the endpoint:
-
-      metrics.agent.grafana.com/path: /metrics/some_path
-      prometheus.io/path: /metrics/some_path
-
-      the default port to scrape is the endpoint port, this can be specified as a single value which would
-      override the scrape port being used for all ports attached to the endpoint, note that even if aan endpoint had
-      multiple targets, the relabel_config targets are deduped before scraping:
-
-      metrics.agent.grafana.com/port: 8080
-      prometheus.io/port: 8080
-
-      the default interval to scrape is 1m, this can be specified as a single value which would override,
-      the scrape interval being used for all ports attached to the endpoint:
-
-      metrics.agent.grafana.com/interval: 5m
-      prometheus.io/interval: 5m
-
-      the default timeout for scraping is 10s, this can be specified as a single value which would override,
-      the scrape interval being used for all ports attached to the endpoint:
-
-      metrics.agent.grafana.com/timeout: 30s
-      prometheus.io/timeout: 30s
-    */
-    argument "forward_to" {
-      // comment = "Must be a list(MetricssReceiver) where collected logs should be forwarded to"
-      optional = false
-    }
-
-    argument "tenant" {
-      // comment = "The tenant to filter logs to.  This does not have to be the tenantId, this is the value to look for in the logs.agent.grafana.com/tenant annotation, and this can be a regex."
-      optional = true
-      default = ".*"
-    }
-
-    argument "clustering" {
-      // comment = "Whether or not clustering should be enabled"
-      optional = true
-      default = false
-    }
-
-    argument "git_repo" {
-      optional = true
-      default = coalesce(env("GIT_REPO"), "https://github.com/grafana/agent-modules.git")
-    }
-
-    argument "git_rev" {
-      optional = true
-      default = coalesce(env("GIT_REV"), env("GIT_REVISION"), env("GIT_BRANCH"), "main")
-    }
-
-    argument "git_pull_freq" {
-      optional = true
-      default = "0s"
-    }
-
-    module.git "pod_targets" {
-      repository = argument.git_repo.value
-      revision = argument.git_rev.value
-      pull_frequency = argument.git_pull_freq.value
-      path = "modules/kubernetes/metrics/targets/pods.river"
-
-      arguments {
-        tenant = argument.tenant.value
-        git_repo = argument.git_repo.value
-        git_rev = argument.git_rev.value
-        git_pull_freq = argument.git_pull_freq.value
-      }
-    }
-
-    prometheus.scrape "scrape_pods" {
-      targets = module.git.pod_targets.exports.relabelings.output
-      forward_to = [module.git.relabelings_auto_scrape.exports.metric_relabelings.receiver]
-
-      clustering {
-        enabled = argument.clustering.value
-      }
-    }
-
-    // metric relabelings
-    module.git "relabelings_auto_scrape" {
-      repository = argument.git_repo.value
-      revision = argument.git_rev.value
-      pull_frequency = argument.git_pull_freq.value
-      path = "modules/kubernetes/metrics/relabelings/auto-scrape.river"
-
-      arguments {
-        forward_to = argument.forward_to.value
-        job_label = "kubernetes-pod-auto-scrape"
-      }
-    }
   grafana-cloud.river: "\n/********************************************\n * ARGUMENTS\n
     ********************************************/\nargument \"stack_name\" { }\n\nargument
     \"token\" { }\n\n/********************************************\n * EXPORTS\n ********************************************/\n\nexport
@@ -473,133 +162,6 @@ data:
     \"default\" {\n\tendpoint {\n\t\turl = json_decode(remote.http.config_file.content)[\"hpInstanceUrl\"]\n\n\t\tbasic_auth
     {\n\t\t\tusername = json_decode(remote.http.config_file.content)[\"hpInstanceId\"]\n\t\t\tpassword
     = argument.token.value\n\t\t}\n\t}\n}\n"
-  kube-apiserver.river: |-
-    /*
-    Module: scrape-kube-apiserver
-    Description: Scrapes Kube apiserver, most of these same metrics can come from cAdvisor use only if necessary
-    */
-    argument "forward_to" {
-      // comment = "Must be a list(MetricssReceiver) where collected logs should be forwarded to"
-      optional = false
-    }
-
-    argument "clustering" {
-      // comment = "Whether or not clustering should be enabled"
-      optional = true
-      default = false
-    }
-
-    argument "job_label" {
-      optional = true
-      default = "integrations/kubernetes/apiserver"
-      // comment = "The job label to add for all apiserver"
-    }
-
-    // drop metrics and les from kube-prometheus
-    // https://github.com/prometheus-operator/kube-prometheus/blob/main/manifests/kubernetesControlPlane-serviceMonitorApiserver.yaml
-    argument "drop_metrics" {
-      optional = true
-      default = "kubelet_(pod_worker_latency_microseconds|pod_start_latency_microseconds|cgroup_manager_latency_microseconds|pod_worker_start_latency_microseconds|pleg_relist_latency_microseconds|pleg_relist_interval_microseconds|runtime_operations|runtime_operations_latency_microseconds|runtime_operations_errors|eviction_stats_age_microseconds|device_plugin_registration_count|device_plugin_alloc_latency_microseconds|network_plugin_operations_latency_microseconds)|scheduler_(e2e_scheduling_latency_microseconds|scheduling_algorithm_predicate_evaluation|scheduling_algorithm_priority_evaluation|scheduling_algorithm_preemption_evaluation|scheduling_algorithm_latency_microseconds|binding_latency_microseconds|scheduling_latency_seconds)|apiserver_(request_count|request_latencies|request_latencies_summary|dropped_requests|storage_data_key_generation_latencies_microseconds|storage_transformation_failures_total|storage_transformation_latencies_microseconds|proxy_tunnel_sync_latency_secs|longrunning_gauge|registered_watchers)|kubelet_docker_(operations|operations_latency_microseconds|operations_errors|operations_timeout)|reflector_(items_per_list|items_per_watch|list_duration_seconds|lists_total|short_watches_total|watch_duration_seconds|watches_total)|etcd_(helper_cache_hit_count|helper_cache_miss_count|helper_cache_entry_count|object_counts|request_cache_get_latencies_summary|request_cache_add_latencies_summary|request_latencies_summary)|transformation_(transformation_latencies_microseconds|failures_total)|(admission_quota_controller_adds|admission_quota_controller_depth|admission_quota_controller_longest_running_processor_microseconds|admission_quota_controller_queue_latency|admission_quota_controller_unfinished_work_seconds|admission_quota_controller_work_duration|APIServiceOpenAPIAggregationControllerQueue1_adds|APIServiceOpenAPIAggregationControllerQueue1_depth|APIServiceOpenAPIAggregationControllerQueue1_longest_running_processor_microseconds|APIServiceOpenAPIAggregationControllerQueue1_queue_latency|APIServiceOpenAPIAggregationControllerQueue1_retries|APIServiceOpenAPIAggregationControllerQueue1_unfinished_work_seconds|APIServiceOpenAPIAggregationControllerQueue1_work_duration|APIServiceRegistrationController_adds|APIServiceRegistrationController_depth|APIServiceRegistrationController_longest_running_processor_microseconds|APIServiceRegistrationController_queue_latency|APIServiceRegistrationController_retries|APIServiceRegistrationController_unfinished_work_seconds|APIServiceRegistrationController_work_duration|autoregister_adds|autoregister_depth|autoregister_longest_running_processor_microseconds|autoregister_queue_latency|autoregister_retries|autoregister_unfinished_work_seconds|autoregister_work_duration|AvailableConditionController_adds|AvailableConditionController_depth|AvailableConditionController_longest_running_processor_microseconds|AvailableConditionController_queue_latency|AvailableConditionController_retries|AvailableConditionController_unfinished_work_seconds|AvailableConditionController_work_duration|crd_autoregistration_controller_adds|crd_autoregistration_controller_depth|crd_autoregistration_controller_longest_running_processor_microseconds|crd_autoregistration_controller_queue_latency|crd_autoregistration_controller_retries|crd_autoregistration_controller_unfinished_work_seconds|crd_autoregistration_controller_work_duration|crdEstablishing_adds|crdEstablishing_depth|crdEstablishing_longest_running_processor_microseconds|crdEstablishing_queue_latency|crdEstablishing_retries|crdEstablishing_unfinished_work_seconds|crdEstablishing_work_duration|crd_finalizer_adds|crd_finalizer_depth|crd_finalizer_longest_running_processor_microseconds|crd_finalizer_queue_latency|crd_finalizer_retries|crd_finalizer_unfinished_work_seconds|crd_finalizer_work_duration|crd_naming_condition_controller_adds|crd_naming_condition_controller_depth|crd_naming_condition_controller_longest_running_processor_microseconds|crd_naming_condition_controller_queue_latency|crd_naming_condition_controller_retries|crd_naming_condition_controller_unfinished_work_seconds|crd_naming_condition_controller_work_duration|crd_openapi_controller_adds|crd_openapi_controller_depth|crd_openapi_controller_longest_running_processor_microseconds|crd_openapi_controller_queue_latency|crd_openapi_controller_retries|crd_openapi_controller_unfinished_work_seconds|crd_openapi_controller_work_duration|DiscoveryController_adds|DiscoveryController_depth|DiscoveryController_longest_running_processor_microseconds|DiscoveryController_queue_latency|DiscoveryController_retries|DiscoveryController_unfinished_work_seconds|DiscoveryController_work_duration|kubeproxy_sync_proxy_rules_latency_microseconds|non_structural_schema_condition_controller_adds|non_structural_schema_condition_controller_depth|non_structural_schema_condition_controller_longest_running_processor_microseconds|non_structural_schema_condition_controller_queue_latency|non_structural_schema_condition_controller_retries|non_structural_schema_condition_controller_unfinished_work_seconds|non_structural_schema_condition_controller_work_duration|rest_client_request_latency_seconds|storage_operation_errors_total|storage_operation_status_count)|etcd_(debugging|disk|server).*|apiserver_admission_controller_admission_latencies_seconds_.*|apiserver_admission_step_admission_latencies_seconds_.*"
-      // comment = "Regex of metrics to drop"
-    }
-
-    argument "drop_les" {
-      optional = true
-      default = "apiserver_request_duration_seconds_bucket;(0.15|0.25|0.3|0.35|0.4|0.45|0.6|0.7|0.8|0.9|1.25|1.5|1.75|2.5|3|3.5|4.5|6|7|8|9|15|25|30|50)"
-      // comment = "Regex of metric les to drop"
-    }
-
-    // get the available endpoints
-    discovery.kubernetes "endpoints" {
-      role = "endpoints"
-    }
-
-    /********************************************
-     * Discovery the targets
-     ********************************************/
-    discovery.relabel "kube_apiserver" {
-      targets = discovery.kubernetes.endpoints.targets
-
-      // only keep namespace=default, service=kubernetes, port=https
-      rule {
-        action = "keep"
-        source_labels = [
-          "__meta_kubernetes_namespace",
-          "__meta_kubernetes_service_name",
-          "__meta_kubernetes_endpoint_port_name",
-        ]
-        regex = "default;kubernetes;https"
-      }
-
-      // set the namespace
-      rule {
-        action = "replace"
-        source_labels = ["__meta_kubernetes_namespace"]
-        target_label = "namespace"
-      }
-
-      // set the service_name
-      rule {
-        action = "replace"
-        source_labels = ["__meta_kubernetes_service_name"]
-        target_label = "service"
-      }
-
-    }
-
-    /********************************************
-     * Scrape metric
-     ********************************************/
-    prometheus.scrape "kube_apiserver" {
-      targets = discovery.relabel.kube_apiserver.output
-      scheme = "https"
-      bearer_token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
-      forward_to = [prometheus.relabel.kube_apiserver.receiver]
-
-      tls_config {
-        ca_file = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
-        insecure_skip_verify = false
-        server_name = "kubernetes"
-      }
-
-      clustering {
-        enabled = argument.clustering.value
-      }
-    }
-
-    /********************************************
-     * Metric relabelings
-     ********************************************/
-    prometheus.relabel "kube_apiserver" {
-      forward_to = argument.forward_to.value
-
-      // drop metrics
-      rule {
-        action = "drop"
-        source_labels = ["__name__"]
-        regex = argument.drop_metrics.value
-      }
-
-      // drop les
-      rule {
-        action = "drop"
-        source_labels = [
-          "__name__",
-          "le",
-        ]
-        regex = argument.drop_les.value
-      }
-
-      // set the job label, only if job label is not set or contains "module." is not specified
-      rule {
-        action = "replace"
-        source_labels = ["job"]
-        regex = "|.*module\\..*"
-        replacement = argument.job_label.value
-        target_label = "job"
-      }
-
-    }
   lgtmp.river: "/********************************************\n * ARGUMENTS\n ********************************************/\nargument
     \"cluster\" {\n\toptional = true\n\tdefault  = \"monitoring-system\"\n}\n\nargument
     \"metrics_endpoint\" {\n\toptional = true\n\tdefault  = \"http://mimir:8080\"\n\t//comment
@@ -627,57 +189,50 @@ data:
   metrics-all.river: "/*\nModule: metrics-all\nDescription: Wrapper module to include
     all kubernetes metric modules and use cri parsing\n*/\nargument \"forward_to\"
     {\n  // comment = \"Must be a list(MetricssReceiver) where collected logs should
-    be forwarded to\"\n\toptional = false\n}\n\nargument \"agent_config_folder\" {\n
-    \ // comment = \"Whether or not clustering should be enabled\"\n  optional = true\n
-    \ default = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent\")\n}\n\nargument
-    \"scrape_port_named_metrics\" {\n  // comment = \"Whether or not to automatically
-    scrape endpoints that have a port with 'metrics' in the name\"\n  optional = true\n
-    \ default = false\n}\n\nargument \"clustering\" {\n  // comment = \"Whether or
-    not clustering should be enabled\"\n  optional = true\n  default = false\n}\n\nargument
-    \"tenant\" {\n  // comment = \"The tenant to filter logs to.  This does not have
-    to be the tenantId, this is the value to look for in the logs.agent.grafana.com/tenant
-    annotation, and this can be a regex.\"\n  optional = true\n  default = \".*\"\n}\n\nargument
-    \"git_repo\" {\n  optional = true\n  default = coalesce(env(\"GIT_REPO\"), \"https://github.com/grafana/agent-modules.git\")\n}\n\nargument
-    \"git_rev\" {\n  optional = true\n  default = coalesce(env(\"GIT_REV\"), env(\"GIT_REVISION\"),
-    env(\"GIT_BRANCH\"), \"main\")\n}\n\nargument \"git_pull_freq\" {\n  optional
-    = true\n  default = \"0s\"\n}\n\n\n/********************************************\n
-    * Scrape Kube API Server\n ********************************************/\nmodule.file
-    \"scrape_kube_apiserver\" {\n\tfilename = argument.agent_config_folder.value +
-    \"/kube-apiserver.river\"\n\n  arguments {\n    forward_to = argument.forward_to.value\n
-    \   clustering = argument.clustering.value\n  }\n}\n\n/********************************************\n
-    * Scrape Kubelet\n ********************************************/\nmodule.git \"scrape_kubelet_cadvisor\"
-    {\n  repository = argument.git_repo.value\n  revision = argument.git_rev.value\n
-    \ pull_frequency = argument.git_pull_freq.value\n  path = \"modules/kubernetes/metrics/scrapes/kubelet-cadvisor.river\"\n\n
-    \ arguments {\n    forward_to = argument.forward_to.value\n    tenant = argument.tenant.value\n
-    \   clustering = argument.clustering.value\n    git_repo = argument.git_repo.value\n
-    \   git_rev = argument.git_rev.value\n    git_pull_freq = argument.git_pull_freq.value\n
-    \ }\n}\n\nmodule.git \"scrape_kubelet\" {\n  repository = argument.git_repo.value\n
-    \ revision = argument.git_rev.value\n  pull_frequency = argument.git_pull_freq.value\n
-    \ path = \"modules/kubernetes/metrics/scrapes/kubelet.river\"\n\n  arguments {\n
-    \   forward_to = argument.forward_to.value\n    tenant = argument.tenant.value\n
-    \   clustering = argument.clustering.value\n    git_repo = argument.git_repo.value\n
-    \   git_rev = argument.git_rev.value\n    git_pull_freq = argument.git_pull_freq.value\n
-    \ }\n}\n\nmodule.git \"scrape_kubelet_probes\" {\n  repository = argument.git_repo.value\n
-    \ revision = argument.git_rev.value\n  pull_frequency = argument.git_pull_freq.value\n
-    \ path = \"modules/kubernetes/metrics/scrapes/kubelet-probes.river\"\n\n  arguments
-    {\n    forward_to = argument.forward_to.value\n    tenant = argument.tenant.value\n
-    \   clustering = argument.clustering.value\n    git_repo = argument.git_repo.value\n
-    \   git_rev = argument.git_rev.value\n    git_pull_freq = argument.git_pull_freq.value\n
-    \ }\n}\n\n/********************************************\n * Kubernetes Auto Scrape
-    Endpoints\n ********************************************/\nmodule.file \"auto_scrape_endpoints\"
-    {\n\tfilename = argument.agent_config_folder.value + \"/auto-scrape-endpoints.river\"\n\n
-    \ arguments {\n    forward_to = argument.forward_to.value\n    tenant = argument.tenant.value\n
-    \   clustering = argument.clustering.value\n    scrape_port_named_metrics = argument.scrape_port_named_metrics.value\n
-    \ }\n}\n\n/********************************************\n * Kubernetes Auto Scrape
-    Pods\n ********************************************/\nmodule.file \"auto_scrape_pods\"
-    {\n\tfilename = argument.agent_config_folder.value + \"/auto-scrape-pods.river\"\n\n
-    \ arguments {\n    forward_to = argument.forward_to.value\n    tenant = argument.tenant.value\n
-    \   clustering = argument.clustering.value\n  }\n}\n"
+    be forwarded to\"\n\toptional = false\n}\n\nargument \"clustering\" {\n  // comment
+    = \"Whether or not clustering should be enabled\"\n  optional = true\n  default
+    = false\n}\n\n/********************************************\n * Kubernetes Auto
+    Scrape ServiceMonitor\n ********************************************/\nprometheus.operator.servicemonitors
+    \"auto_scrape_servicemonitors\" {\n  forward_to = argument.forward_to.value\n
+    \ \n  clustering {\n    enabled = argument.clustering.value\n  }\n}\n\n\n/********************************************\n
+    * Kubernetes Auto Scrape PodMonitors\n ********************************************/\nprometheus.operator.podmonitors
+    \"auto_scrape_podmonitors\" {\n  forward_to = argument.forward_to.value\n    \n
+    \ clustering {\n    enabled = argument.clustering.value\n  }\n  \n  selector {\n
+    \     match_expression {\n          key = \"team\"\n          operator = \"In\"\n
+    \         values = [\"team-infra\"]\n      }\n  }\n}\n\n/********************************************\n
+    * Kubernetes Prometheus Rules To Mimir\n ********************************************/\nmimir.rules.kubernetes
+    \"prometheus_rules_to_mimir\" {\n    address = coalesce(env(\"METRICS_ENDPOINT\"),
+    \"http://nginx.monitoring-system:8080\")\n    tenant_id = \"anonymous\"\n}"
 kind: ConfigMap
 metadata:
   labels:
     team: team-infra
-  name: agent-modules-24tb9t4dfh
+  name: agent-modules-42g2925446
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  datasources.yaml: |
+    apiVersion: 1
+
+    datasources:
+    # Mimir for metrics
+    - name: Mimir
+      type: prometheus
+      uid: mimir
+      access: proxy
+      orgId: 1
+      url: http://nginx:8080/prometheus
+      basicAuth: false
+      isDefault: true
+      version: 1
+      editable: true
+kind: ConfigMap
+metadata:
+  labels:
+    grafana_datasource: "1"
+    team: team-infra
+  name: grafana-datasources-mimir
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -778,32 +333,8 @@ metadata:
 ---
 apiVersion: v1
 data:
-  blackbox.yaml: |
-    modules:
-      http_2xx:
-        http:
-          follow_redirects: true
-          preferred_ip_protocol: ip4
-          valid_http_versions:
-          - HTTP/1.1
-          - HTTP/2.0
-        prober: http
-        timeout: 5s
-kind: ConfigMap
-metadata:
-  labels:
-    app.kubernetes.io/instance: prometheus-blackbox-exporter
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: prometheus-blackbox-exporter
-    app.kubernetes.io/version: v0.24.0
-    helm.sh/chart: prometheus-blackbox-exporter-8.4.0
-    team: team-infra
-  name: prometheus-blackbox-exporter
-  namespace: monitoring-system
----
-apiVersion: v1
-data:
   runtime.yaml: |-
+    # https://grafana.com/docs/mimir/latest/configure/about-runtime-configuration/
     ingester_limits: # limits that each ingester replica enforces
       max_ingestion_rate: 20000
       max_series: 1500000
@@ -819,13 +350,16 @@ data:
       anonymous: # limits for anonymous that the whole cluster enforces
         # ingestion_tenant_shard_size: 9
         max_global_series_per_user: 1500000
+        max_global_series_per_metric: 50000
         max_fetched_series_per_query: 100000
+        ruler_max_rules_per_rule_group: 100
+        ruler_max_rule_groups_per_tenant: 100
 immutable: true
 kind: ConfigMap
 metadata:
   labels:
     team: team-infra
-  name: runtime-config-d6979bkdgd
+  name: runtime-config-88gg5gk88d
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -907,6 +441,7 @@ kind: Service
 metadata:
   labels:
     app: alertmanager
+    prometheus.io/service-monitor: "false"
     team: team-infra
   name: alertmanager-headless
   namespace: monitoring-system
@@ -970,6 +505,7 @@ kind: Service
 metadata:
   labels:
     app: gossip-ring
+    prometheus.io/service-monitor: "false"
     team: team-infra
   name: gossip-ring-headless
   namespace: monitoring-system
@@ -1057,6 +593,7 @@ kind: Service
 metadata:
   labels:
     app: ingester
+    prometheus.io/service-monitor: "false"
     team: team-infra
   name: ingester-headless
   namespace: monitoring-system
@@ -1124,62 +661,6 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  annotations:
-    prometheus.io/interval: 15s
-    prometheus.io/port: "9115"
-    prometheus.io/scrape: "true"
-  labels:
-    app.kubernetes.io/instance: prometheus-blackbox-exporter
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: prometheus-blackbox-exporter
-    app.kubernetes.io/version: v0.24.0
-    helm.sh/chart: prometheus-blackbox-exporter-8.4.0
-    team: team-infra
-  name: prometheus-blackbox-exporter
-  namespace: monitoring-system
-spec:
-  ports:
-  - name: http
-    port: 9115
-    protocol: TCP
-    targetPort: http
-  selector:
-    app.kubernetes.io/instance: prometheus-blackbox-exporter
-    app.kubernetes.io/name: prometheus-blackbox-exporter
-    team: team-infra
-  type: ClusterIP
----
-apiVersion: v1
-kind: Service
-metadata:
-  annotations:
-    prometheus.io/scrape: "true"
-  labels:
-    app.kubernetes.io/component: metrics
-    app.kubernetes.io/instance: prometheus-node-exporter
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: prometheus-node-exporter
-    app.kubernetes.io/part-of: prometheus-node-exporter
-    app.kubernetes.io/version: 1.6.1
-    helm.sh/chart: prometheus-node-exporter-4.23.2
-    team: team-infra
-  name: prometheus-node-exporter
-  namespace: monitoring-system
-spec:
-  ports:
-  - name: metrics
-    port: 9100
-    protocol: TCP
-    targetPort: 9100
-  selector:
-    app.kubernetes.io/instance: prometheus-node-exporter
-    app.kubernetes.io/name: prometheus-node-exporter
-    team: team-infra
-  type: ClusterIP
----
-apiVersion: v1
-kind: Service
-metadata:
   labels:
     app: querier
     team: team-infra
@@ -1236,6 +717,7 @@ kind: Service
 metadata:
   labels:
     app: query-scheduler
+    prometheus.io/service-monitor: "false"
     team: team-infra
   name: query-scheduler-headless
   namespace: monitoring-system
@@ -1290,6 +772,7 @@ kind: Service
 metadata:
   labels:
     app: store-gateway
+    prometheus.io/service-monitor: "false"
     team: team-infra
   name: store-gateway-headless
   namespace: monitoring-system
@@ -1336,7 +819,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
-        image: grafana/mimir:2.10.3
+        image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         name: distributor
         ports:
@@ -1362,7 +845,7 @@ spec:
         secret:
           secretName: mimir-config-6f5cgttm66
       - configMap:
-          name: runtime-config-d6979bkdgd
+          name: runtime-config-88gg5gk88d
         name: runtime-config
 ---
 apiVersion: apps/v1
@@ -1384,7 +867,7 @@ spec:
       annotations:
         prometheus.io.path: /minio/v2/metrics/cluster
         prometheus.io.port: "9000"
-        prometheus.io.scrape: "true"
+        prometheus.io.scrape: "false"
       labels:
         app: minio
         team: team-infra
@@ -1487,7 +970,7 @@ spec:
         - -target=overrides-exporter
         - -config.file=/etc/mimir/mimir.yaml
         - -config.expand-env=true
-        image: grafana/mimir:2.10.3
+        image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         name: overrides-exporter
         ports:
@@ -1511,84 +994,8 @@ spec:
         secret:
           secretName: mimir-config-6f5cgttm66
       - configMap:
-          name: runtime-config-d6979bkdgd
+          name: runtime-config-88gg5gk88d
         name: runtime-config
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  labels:
-    app.kubernetes.io/instance: prometheus-blackbox-exporter
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: prometheus-blackbox-exporter
-    app.kubernetes.io/version: v0.24.0
-    helm.sh/chart: prometheus-blackbox-exporter-8.4.0
-    team: team-infra
-  name: prometheus-blackbox-exporter
-  namespace: monitoring-system
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app.kubernetes.io/instance: prometheus-blackbox-exporter
-      app.kubernetes.io/name: prometheus-blackbox-exporter
-      team: team-infra
-  strategy:
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
-    type: RollingUpdate
-  template:
-    metadata:
-      annotations:
-        checksum/config: 7af4981bbd5242641843c724fd5fd6b2de154a64e7fcfcddc55be1fb8099e6a9
-      labels:
-        app.kubernetes.io/instance: prometheus-blackbox-exporter
-        app.kubernetes.io/managed-by: Helm
-        app.kubernetes.io/name: prometheus-blackbox-exporter
-        app.kubernetes.io/version: v0.24.0
-        helm.sh/chart: prometheus-blackbox-exporter-8.4.0
-        team: team-infra
-    spec:
-      automountServiceAccountToken: false
-      containers:
-      - args:
-        - --config.file=/config/blackbox.yaml
-        env: null
-        image: quay.io/prometheus/blackbox-exporter:v0.24.0
-        imagePullPolicy: IfNotPresent
-        livenessProbe:
-          failureThreshold: 3
-          httpGet:
-            path: /-/healthy
-            port: http
-        name: blackbox-exporter
-        ports:
-        - containerPort: 9115
-          name: http
-        readinessProbe:
-          httpGet:
-            path: /-/healthy
-            port: http
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          readOnlyRootFilesystem: true
-          runAsGroup: 1000
-          runAsNonRoot: true
-          runAsUser: 1000
-        volumeMounts:
-        - mountPath: /config
-          name: config
-      hostNetwork: false
-      restartPolicy: Always
-      serviceAccountName: prometheus-blackbox-exporter
-      volumes:
-      - configMap:
-          name: prometheus-blackbox-exporter
-        name: config
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -1622,7 +1029,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
-        image: grafana/mimir:2.10.3
+        image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         name: querier
         ports:
@@ -1648,7 +1055,7 @@ spec:
         secret:
           secretName: mimir-config-6f5cgttm66
       - configMap:
-          name: runtime-config-d6979bkdgd
+          name: runtime-config-88gg5gk88d
         name: runtime-config
 ---
 apiVersion: apps/v1
@@ -1676,7 +1083,7 @@ spec:
         - -target=query-frontend
         - -config.file=/etc/mimir/mimir.yaml
         - -config.expand-env=true
-        image: grafana/mimir:2.10.3
+        image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         name: query-frontend
         ports:
@@ -1700,7 +1107,7 @@ spec:
         secret:
           secretName: mimir-config-6f5cgttm66
       - configMap:
-          name: runtime-config-d6979bkdgd
+          name: runtime-config-88gg5gk88d
         name: runtime-config
 ---
 apiVersion: apps/v1
@@ -1730,7 +1137,7 @@ spec:
         - -config.expand-env=true
         - -server.grpc.keepalive.max-connection-age=2562047h
         - -server.grpc.keepalive.max-connection-age-grace=2562047h
-        image: grafana/mimir:2.10.3
+        image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         name: query-scheduler
         ports:
@@ -1754,7 +1161,7 @@ spec:
         secret:
           secretName: mimir-config-6f5cgttm66
       - configMap:
-          name: runtime-config-d6979bkdgd
+          name: runtime-config-88gg5gk88d
         name: runtime-config
 ---
 apiVersion: apps/v1
@@ -1789,7 +1196,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
-        image: grafana/mimir:2.10.3
+        image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         name: ruler
         ports:
@@ -1817,7 +1224,7 @@ spec:
         secret:
           secretName: mimir-config-6f5cgttm66
       - configMap:
-          name: runtime-config-d6979bkdgd
+          name: runtime-config-88gg5gk88d
         name: runtime-config
       - emptyDir: {}
         name: rule-path
@@ -1855,7 +1262,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
-        image: grafana/mimir:2.10.3
+        image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         name: alertmanager
         ports:
@@ -1888,7 +1295,7 @@ spec:
         secret:
           secretName: mimir-config-6f5cgttm66
       - configMap:
-          name: runtime-config-d6979bkdgd
+          name: runtime-config-88gg5gk88d
         name: runtime-config
 ---
 apiVersion: apps/v1
@@ -1925,7 +1332,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
-        image: grafana/mimir:2.10.3
+        image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         name: compactor
         ports:
@@ -1951,7 +1358,7 @@ spec:
         secret:
           secretName: mimir-config-6f5cgttm66
       - configMap:
-          name: runtime-config-d6979bkdgd
+          name: runtime-config-88gg5gk88d
         name: runtime-config
 ---
 apiVersion: apps/v1
@@ -1978,9 +1385,6 @@ spec:
   serviceName: grafana-agent
   template:
     metadata:
-      annotations:
-        metrics.agent.grafana.com/interval: 15s
-        metrics.agent.grafana.com/scrape: "true"
       labels:
         app.kubernetes.io/instance: grafana-agent
         app.kubernetes.io/name: grafana-agent
@@ -2041,10 +1445,10 @@ spec:
       serviceAccountName: grafana-agent
       volumes:
       - configMap:
-          name: agent-metrics-config-t5d9gg7fc6
+          name: agent-metrics-config-2dch2ttm97
         name: config
       - configMap:
-          name: agent-modules-24tb9t4dfh
+          name: agent-modules-42g2925446
         name: agent-modules
 ---
 apiVersion: apps/v1
@@ -2082,7 +1486,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
-        image: grafana/mimir:2.10.3
+        image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         name: ingester
         ports:
@@ -2108,7 +1512,7 @@ spec:
         secret:
           secretName: mimir-config-6f5cgttm66
       - configMap:
-          name: runtime-config-d6979bkdgd
+          name: runtime-config-88gg5gk88d
         name: runtime-config
 ---
 apiVersion: apps/v1
@@ -2145,7 +1549,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
-        image: grafana/mimir:2.10.3
+        image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         name: store-gateway
         ports:
@@ -2174,126 +1578,339 @@ spec:
         secret:
           secretName: mimir-config-6f5cgttm66
       - configMap:
-          name: runtime-config-d6979bkdgd
+          name: runtime-config-88gg5gk88d
         name: runtime-config
 ---
-apiVersion: apps/v1
-kind: DaemonSet
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
 metadata:
   labels:
-    app.kubernetes.io/component: metrics
-    app.kubernetes.io/instance: prometheus-node-exporter
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: prometheus-node-exporter
-    app.kubernetes.io/part-of: prometheus-node-exporter
-    app.kubernetes.io/version: 1.6.1
-    helm.sh/chart: prometheus-node-exporter-4.23.2
     team: team-infra
-  name: prometheus-node-exporter
+  name: alertmanager
   namespace: monitoring-system
 spec:
-  revisionHistoryLimit: 10
+  endpoints:
+  - port: http-metrics
+    relabelings:
+    - replacement: monitoring-system/alertmanager
+      sourceLabels:
+      - job
+      targetLabel: job
+    scheme: http
+  namespaceSelector:
+    matchNames:
+    - monitoring-system
+  selector:
+    matchExpressions:
+    - key: prometheus.io/service-monitor
+      operator: NotIn
+      values:
+      - "false"
+    matchLabels:
+      app: alertmanager
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    team: team-infra
+  name: compactor
+  namespace: monitoring-system
+spec:
+  endpoints:
+  - port: http-metrics
+    relabelings:
+    - replacement: monitoring-system/compactor
+      sourceLabels:
+      - job
+      targetLabel: job
+    scheme: http
+  namespaceSelector:
+    matchNames:
+    - monitoring-system
+  selector:
+    matchExpressions:
+    - key: prometheus.io/service-monitor
+      operator: NotIn
+      values:
+      - "false"
+    matchLabels:
+      app: compactor
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    team: team-infra
+  name: distributor
+  namespace: monitoring-system
+spec:
+  endpoints:
+  - port: http-metrics
+    relabelings:
+    - replacement: monitoring-system/distributor
+      sourceLabels:
+      - job
+      targetLabel: job
+    scheme: http
+  namespaceSelector:
+    matchNames:
+    - monitoring-system
+  selector:
+    matchExpressions:
+    - key: prometheus.io/service-monitor
+      operator: NotIn
+      values:
+      - "false"
+    matchLabels:
+      app: distributor
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/instance: grafana-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: grafana-agent
+    app.kubernetes.io/version: v0.37.4
+    helm.sh/chart: grafana-agent-0.27.2
+    team: team-infra
+  name: grafana-agent
+  namespace: monitoring-system
+spec:
+  endpoints:
+  - honorLabels: true
+    interval: 15s
+    port: http-metrics
   selector:
     matchLabels:
-      app.kubernetes.io/instance: prometheus-node-exporter
-      app.kubernetes.io/name: prometheus-node-exporter
-      team: team-infra
-  template:
-    metadata:
-      annotations:
-        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
-      labels:
-        app.kubernetes.io/component: metrics
-        app.kubernetes.io/instance: prometheus-node-exporter
-        app.kubernetes.io/managed-by: Helm
-        app.kubernetes.io/name: prometheus-node-exporter
-        app.kubernetes.io/part-of: prometheus-node-exporter
-        app.kubernetes.io/version: 1.6.1
-        helm.sh/chart: prometheus-node-exporter-4.23.2
-        team: team-infra
-    spec:
-      automountServiceAccountToken: false
-      containers:
-      - args:
-        - --path.procfs=/host/proc
-        - --path.sysfs=/host/sys
-        - --path.rootfs=/host/root
-        - --path.udev.data=/host/root/run/udev/data
-        - --web.listen-address=[$(HOST_IP)]:9100
-        env:
-        - name: HOST_IP
-          value: 0.0.0.0
-        image: quay.io/prometheus/node-exporter:v1.6.1
-        imagePullPolicy: IfNotPresent
-        livenessProbe:
-          failureThreshold: 3
-          httpGet:
-            httpHeaders: null
-            path: /
-            port: 9100
-            scheme: HTTP
-          initialDelaySeconds: 0
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 1
-        name: node-exporter
-        ports:
-        - containerPort: 9100
-          name: metrics
-          protocol: TCP
-        readinessProbe:
-          failureThreshold: 3
-          httpGet:
-            httpHeaders: null
-            path: /
-            port: 9100
-            scheme: HTTP
-          initialDelaySeconds: 0
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 1
-        securityContext:
-          readOnlyRootFilesystem: true
-        volumeMounts:
-        - mountPath: /host/proc
-          name: proc
-          readOnly: true
-        - mountPath: /host/sys
-          name: sys
-          readOnly: true
-        - mountPath: /host/root
-          mountPropagation: HostToContainer
-          name: root
-          readOnly: true
-      hostNetwork: true
-      hostPID: true
-      nodeSelector:
-        kubernetes.io/os: linux
-      securityContext:
-        fsGroup: 65534
-        runAsGroup: 65534
-        runAsNonRoot: true
-        runAsUser: 65534
-      serviceAccountName: prometheus-node-exporter
-      tolerations:
-      - effect: NoSchedule
-        operator: Exists
-      - effect: NoExecute
-        operator: Exists
-      volumes:
-      - hostPath:
-          path: /proc
-        name: proc
-      - hostPath:
-          path: /sys
-        name: sys
-      - hostPath:
-          path: /
-        name: root
-  updateStrategy:
-    rollingUpdate:
-      maxUnavailable: 1
-    type: RollingUpdate
+      app.kubernetes.io/instance: grafana-agent
+      app.kubernetes.io/name: grafana-agent
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    team: team-infra
+  name: ingester
+  namespace: monitoring-system
+spec:
+  endpoints:
+  - port: http-metrics
+    relabelings:
+    - replacement: monitoring-system/ingester
+      sourceLabels:
+      - job
+      targetLabel: job
+    scheme: http
+  namespaceSelector:
+    matchNames:
+    - monitoring-system
+  selector:
+    matchExpressions:
+    - key: prometheus.io/service-monitor
+      operator: NotIn
+      values:
+      - "false"
+    matchLabels:
+      app: ingester
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    team: team-infra
+  name: minio
+  namespace: monitoring-system
+spec:
+  endpoints:
+  - path: /minio/v2/metrics/cluster
+    port: http-metrics
+    relabelings:
+    - replacement: monitoring-system/minio
+      sourceLabels:
+      - job
+      targetLabel: job
+    scheme: http
+  namespaceSelector:
+    matchNames:
+    - monitoring-system
+  selector:
+    matchExpressions:
+    - key: prometheus.io/service-monitor
+      operator: NotIn
+      values:
+      - "false"
+    matchLabels:
+      app: minio
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    team: team-infra
+  name: overrides-exporter
+  namespace: monitoring-system
+spec:
+  endpoints:
+  - port: http-metrics
+    relabelings:
+    - replacement: monitoring-system/overrides-exporter
+      sourceLabels:
+      - job
+      targetLabel: job
+    scheme: http
+  namespaceSelector:
+    matchNames:
+    - monitoring-system
+  selector:
+    matchExpressions:
+    - key: prometheus.io/service-monitor
+      operator: NotIn
+      values:
+      - "false"
+    matchLabels:
+      app: overrides-exporter
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    team: team-infra
+  name: querier
+  namespace: monitoring-system
+spec:
+  endpoints:
+  - port: http-metrics
+    relabelings:
+    - replacement: monitoring-system/querier
+      sourceLabels:
+      - job
+      targetLabel: job
+    scheme: http
+  namespaceSelector:
+    matchNames:
+    - monitoring-system
+  selector:
+    matchExpressions:
+    - key: prometheus.io/service-monitor
+      operator: NotIn
+      values:
+      - "false"
+    matchLabels:
+      app: querier
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    team: team-infra
+  name: query-frontend
+  namespace: monitoring-system
+spec:
+  endpoints:
+  - port: http-metrics
+    relabelings:
+    - replacement: monitoring-system/query-frontend
+      sourceLabels:
+      - job
+      targetLabel: job
+    scheme: http
+  namespaceSelector:
+    matchNames:
+    - monitoring-system
+  selector:
+    matchExpressions:
+    - key: prometheus.io/service-monitor
+      operator: NotIn
+      values:
+      - "false"
+    matchLabels:
+      app: query-frontend
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    team: team-infra
+  name: query-scheduler
+  namespace: monitoring-system
+spec:
+  endpoints:
+  - port: http-metrics
+    relabelings:
+    - replacement: monitoring-system/query-scheduler
+      sourceLabels:
+      - job
+      targetLabel: job
+    scheme: http
+  namespaceSelector:
+    matchNames:
+    - monitoring-system
+  selector:
+    matchExpressions:
+    - key: prometheus.io/service-monitor
+      operator: NotIn
+      values:
+      - "false"
+    matchLabels:
+      app: query-scheduler
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    team: team-infra
+  name: ruler
+  namespace: monitoring-system
+spec:
+  endpoints:
+  - port: http-metrics
+    relabelings:
+    - replacement: monitoring-system/ruler
+      sourceLabels:
+      - job
+      targetLabel: job
+    scheme: http
+  namespaceSelector:
+    matchNames:
+    - monitoring-system
+  selector:
+    matchExpressions:
+    - key: prometheus.io/service-monitor
+      operator: NotIn
+      values:
+      - "false"
+    matchLabels:
+      app: ruler
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    team: team-infra
+  name: store-gateway
+  namespace: monitoring-system
+spec:
+  endpoints:
+  - port: http-metrics
+    relabelings:
+    - replacement: monitoring-system/store-gateway
+      sourceLabels:
+      - job
+      targetLabel: job
+    scheme: http
+  namespaceSelector:
+    matchNames:
+    - monitoring-system
+  selector:
+    matchExpressions:
+    - key: prometheus.io/service-monitor
+      operator: NotIn
+      values:
+      - "false"
+    matchLabels:
+      app: store-gateway
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress

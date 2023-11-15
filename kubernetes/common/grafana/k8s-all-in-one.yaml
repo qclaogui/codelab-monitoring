@@ -186,7 +186,7 @@ data:
       orgId: 1
       url: http://nginx:3100
       basicAuth: false
-      isDefault: true
+      isDefault: false
       version: 1
       editable: true
 
@@ -206,7 +206,7 @@ kind: ConfigMap
 metadata:
   labels:
     grafana_datasource: "1"
-  name: grafana-datasources-98mdcb84bg
+  name: grafana-datasources-4dbd6mm46h
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -3393,9 +3393,6 @@ spec:
         kubectl.kubernetes.io/default-container: grafana
         logs.agent.grafana.com/scrape: "true"
         logs.agent.grafana.com/scrub-level: debug
-        metrics.agent.grafana.com/interval: 15s
-        metrics.agent.grafana.com/port: "3000"
-        metrics.agent.grafana.com/scrape: "true"
       labels:
         app.kubernetes.io/instance: grafana
         app.kubernetes.io/name: grafana
@@ -3414,7 +3411,7 @@ spec:
         - name: RESOURCE
           value: both
         - name: NAMESPACE
-          value: monitoring-system
+          value: ALL
         - name: FOLDER_ANNOTATION
           value: grafana_dashboard_folder
         - name: REQ_USERNAME
@@ -3575,6 +3572,35 @@ spec:
         name: sc-dashboard-provider
       - emptyDir: {}
         name: sc-datasources-volume
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/instance: grafana
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/version: 10.1.5
+    helm.sh/chart: grafana-7.0.4
+    team: team-infra
+  name: grafana
+  namespace: monitoring-system
+spec:
+  endpoints:
+  - honorLabels: true
+    interval: 30s
+    path: /metrics
+    port: http-metrics
+    scheme: http
+    scrapeTimeout: 30s
+  jobLabel: grafana
+  namespaceSelector:
+    matchNames:
+    - monitoring-system
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: grafana
+      app.kubernetes.io/name: grafana
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress

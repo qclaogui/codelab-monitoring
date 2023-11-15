@@ -19,6 +19,12 @@ agent:
     - name: agent-modules
       mountPath: /etc/agent-modules
 
+serviceMonitor:
+  enabled: true
+  additionalLabels:
+    team: team-infra
+  interval: 15s
+
 ingress:
   enabled: true
   faroPort: 80
@@ -35,14 +41,5 @@ controller:
     - name: agent-modules
       configMap:
         name: agent-modules
-  podAnnotations:
-    metrics.agent.grafana.com/scrape: "true"
-    metrics.agent.grafana.com/interval: "15s"   # The default interval to scrape is 1m
-    # metrics.agent.grafana.com/scheme: "http"    # The default scraping scheme is http
-    # metrics.agent.grafana.com/path: "/metrics"  # The default path to scrape is /metrics
-    # metrics.agent.grafana.com/port: "80"
-    # metrics.agent.grafana.com/tenant: ".*"
-    # metrics.agent.grafana.com/job: "agent"
-    # metrics.agent.grafana.com/timeout: "10s"    # The default timeout for scraping is 10s
   nodeSelector:
     kubernetes.io/os: linux
