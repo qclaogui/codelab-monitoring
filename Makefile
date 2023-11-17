@@ -53,6 +53,10 @@ copyright: $(COPYRIGHT) ## Add Copyright header to .go files.
 cluster: ## Create k3s cluster
 	k3d cluster create k3s-codelab --config kubernetes/k3d-k3s-config.yaml
 
+.PHONY: image-import
+image-import: ## Import image(s) from docker into k3d cluster(s).
+	k3d image import -c k3s-codelab grafana/pyroscope:1.2.0
+
 .PHONY: clean
 clean: ## Clean cluster
 	k3d cluster delete k3s-codelab
