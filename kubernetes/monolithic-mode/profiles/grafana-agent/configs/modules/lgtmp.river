@@ -1,0 +1,103 @@
+/********************************************
+ * ARGUMENTS
+ ********************************************/
+argument "cluster" {
+	optional = true
+	default  = "monitoring-system"
+}
+
+argument "metrics_endpoint" {
+	optional = true
+	default  = "http://mimir:8080"
+	//comment = "Where to send collected metrics."
+}
+
+argument "logs_endpoint" {
+	optional = true
+	default  = "http://loki:3100"
+	//comment = "Where to send collected logs."
+}
+
+argument "traces_endpoint" {
+	optional = true
+	default  = "tempo:4317"
+	//comment = "Where to send collected traces."
+}
+
+argument "profiles_endpoint" {
+	optional = true
+	default  = "http://pyroscope:4040"
+	//comment  = "Where to send collected profiles."
+}
+
+/********************************************
+ * EXPORTS
+ ********************************************/
+
+export "metrics_receiver" {
+	value = prometheus.remote_write.mimir.receiver
+}
+
+export "logs_receiver" {
+	value = loki.write.loki.receiver
+}
+
+export "traces_receiver" {
+	value = otelcol.exporter.otlp.tempo.input
+}
+
+export "profiles_receiver" {
+	value = pyroscope.write.pyroscope.receiver
+}
+
+/********************************************
+ * Endpoints
+ ********************************************/
+
+// Metrics
+prometheus.remote_write "mimir" {
+	endpoint {
+		url = argument.metrics_endpoint.value + "/api/v1/push"
+	}
+
+	external_labels = {
+		"scraped_by" = "grafana-agent",
+		"cluster" 	 = argument.cluster.value,
+	}
+}
+
+// Logs
+loki.write "loki" {
+	endpoint {
+		url = argument.logs_endpoint.value + "/loki/api/v1/push"
+	}
+
+	external_labels = {
+		"scraped_by" = "grafana-agent",
+		"cluster" 	 = argument.cluster.value,
+	}
+}
+
+// Traces
+otelcol.exporter.otlp "tempo" {
+	client {
+		endpoint = argument.traces_endpoint.value
+
+		tls {
+			insecure             = true
+			insecure_skip_verify = true
+		}
+	}
+}
+
+// Profiles
+pyroscope.write "pyroscope" {
+	endpoint {
+		url = argument.profiles_endpoint.value
+	}
+
+	external_labels = {
+		"scraped_by" = "grafana-agent",
+		"cluster" 	 = argument.cluster.value,
+	}
+}

@@ -1,0 +1,269 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+  name: pyroscope
+  namespace: profiles-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+  name: profiles-system-pyroscope
+  namespace: profiles-system
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+  name: profiles-system-pyroscope
+  namespace: profiles-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: profiles-system-pyroscope
+subjects:
+- kind: ServiceAccount
+  name: pyroscope
+  namespace: profiles-system
+---
+apiVersion: v1
+data:
+  config.yaml: |
+    {}
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+  name: pyroscope-config
+  namespace: profiles-system
+---
+apiVersion: v1
+data:
+  overrides.yaml: |
+    overrides:
+      {}
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+  name: pyroscope-overrides-config
+  namespace: profiles-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: all
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+  name: pyroscope
+  namespace: profiles-system
+spec:
+  ports:
+  - name: http2
+    port: 4040
+    protocol: TCP
+    targetPort: http2
+  selector:
+    app.kubernetes.io/component: all
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/name: pyroscope
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: all
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+  name: pyroscope-headless
+  namespace: profiles-system
+spec:
+  clusterIP: None
+  ports:
+  - name: http2
+    port: 4040
+    protocol: TCP
+    targetPort: http2
+  selector:
+    app.kubernetes.io/component: all
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/name: pyroscope
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+  name: pyroscope-memberlist
+  namespace: profiles-system
+spec:
+  clusterIP: None
+  ports:
+  - name: memberlist
+    port: 7946
+    protocol: TCP
+    targetPort: 7946
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/name: pyroscope
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app.kubernetes.io/component: all
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+  name: pyroscope
+  namespace: profiles-system
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: all
+      app.kubernetes.io/instance: pyroscope
+      app.kubernetes.io/name: pyroscope
+  serviceName: pyroscope-headless
+  template:
+    metadata:
+      annotations:
+        checksum/config: 95e7b3f4c657c5b13693d8080c0906f6572480887ed2d8b760bfb2d98e95cd0c
+        profiles.grafana.com/cpu.port_name: http2
+        profiles.grafana.com/cpu.scrape: "true"
+        profiles.grafana.com/goroutine.port_name: http2
+        profiles.grafana.com/goroutine.scrape: "true"
+        profiles.grafana.com/memory.port_name: http2
+        profiles.grafana.com/memory.scrape: "true"
+      labels:
+        app.kubernetes.io/component: all
+        app.kubernetes.io/instance: pyroscope
+        app.kubernetes.io/name: pyroscope
+        name: pyroscope
+    spec:
+      containers:
+      - args:
+        - -target=all
+        - -self-profiling.disable-push=true
+        - -server.http-listen-port=4040
+        - -memberlist.cluster-label=profiles-system-pyroscope
+        - -memberlist.join=dns+pyroscope-memberlist.profiles-system.svc.cluster.local.:7946
+        - -config.file=/etc/pyroscope/config.yaml
+        - -runtime-config.file=/etc/pyroscope/overrides/overrides.yaml
+        - -log.level=debug
+        image: grafana/pyroscope:1.1.5
+        imagePullPolicy: IfNotPresent
+        name: pyroscope
+        ports:
+        - containerPort: 4040
+          name: http2
+          protocol: TCP
+        - containerPort: 7946
+          name: memberlist
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http2
+            scheme: HTTP
+        resources: {}
+        securityContext: {}
+        volumeMounts:
+        - mountPath: /etc/pyroscope/config.yaml
+          name: config
+          subPath: config.yaml
+        - mountPath: /etc/pyroscope/overrides/
+          name: overrides-config
+        - mountPath: /data
+          name: data
+      dnsPolicy: ClusterFirst
+      securityContext:
+        fsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+      serviceAccountName: pyroscope
+      volumes:
+      - configMap:
+          name: pyroscope-config
+        name: config
+      - configMap:
+          name: pyroscope-overrides-config
+        name: overrides-config
+      - emptyDir: {}
+        name: data
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app.kubernetes.io/component: all
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+  name: pyroscope
+  namespace: profiles-system
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: all
+      app.kubernetes.io/instance: pyroscope
+      app.kubernetes.io/name: pyroscope

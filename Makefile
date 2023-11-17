@@ -66,13 +66,13 @@ manifests: $(KUSTOMIZE) manifests-monolithic-mode manifests-microservices-mode
 manifests-monolithic-mode: $(KUSTOMIZE)  ## Generates monolithic-mode manifests
 	$(info ******************** generates monolithic-mode manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/logs > kubernetes/monolithic-mode/logs/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build kubernetes/monolithic-mode/profiles > kubernetes/monolithic-mode/profiles/k8s-all-in-one.yaml
 
 .PHONY: manifests-microservices-mode
 manifests-microservices-mode: $(KUSTOMIZE)  ## Generates microservices-mode manifests
 	$(info ******************** generates microservices-mode manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/microservices-mode/metrics > kubernetes/microservices-mode/metrics/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build kubernetes/microservices-mode/logs > kubernetes/microservices-mode/logs/k8s-all-in-one.yaml
-
 
 
 # prometheus-operator-crds
@@ -96,53 +96,38 @@ clean-kube-prometheus-stack: ## Clean kube-prometheus-stack manifests
 	@kubectl delete -f kubernetes/common/rancher-pushprox/k8s-all-in-one.yaml
 
 
-# grafana
 .PHONY: deploy-grafana
 deploy-grafana: manifests ## Deploy grafana manifests
 	@cd kubernetes/common/grafana && make build && cd -
 	$(info ******************** deploy grafana manifests ********************)
 	@kubectl apply -f kubernetes/common/grafana/k8s-all-in-one.yaml
 
-.PHONY: clean-grafana
-clean-grafana: ## Clean grafana manifests
-	$(info ******************** clean grafana manifests ********************)
-	@kubectl delete -f kubernetes/common/grafana/k8s-all-in-one.yaml
 
+.PHONY: deploy-blackbox-exporter
+deploy-blackbox-exporter: ## Deploy blackbox-exporter manifests
+	@cd kubernetes/common/prometheus-blackbox-exporter && make build && cd -
+	$(info ******************** deploy blackbox-exporter manifests ********************)
+	@kubectl apply -f kubernetes/common/prometheus-blackbox-exporter/k8s-all-in-one.yaml
 
-# # prometheus-blackbox-exporter
-# .PHONY: deploy-blackbox-exporter
-# deploy-blackbox-exporter: ## Deploy blackbox-exporter manifests
-# 	@cd kubernetes/common/prometheus-blackbox-exporter && make build && cd -
-# 	$(info ******************** deploy blackbox-exporter manifests ********************)
-# 	@kubectl apply -f kubernetes/common/prometheus-blackbox-exporter/k8s-all-in-one.yaml
-
-
+# Kubernetes monolithic-mode
 .PHONY: deploy-monolithic-mode-logs
 deploy-monolithic-mode-logs: deploy-grafana ## Deploy monolithic-mode logs
 	$(info ******************** deploy manifests ********************)
 	@kubectl apply -f kubernetes/monolithic-mode/logs/k8s-all-in-one.yaml
 	@kubectl apply -f kubernetes/monolithic-mode/logs/grafana-datasources-loki.yaml
-	@kubectl apply -f monitoring-mixins/k8s-all-in-one.yaml
 
-.PHONY: clean-monolithic-mode-logs
-clean-monolithic-mode-logs:  ## Clean monolithic-mode logs manifests
-	$(info ******************** clean manifests ********************)
-	@kubectl delete -f kubernetes/monolithic-mode/logs/k8s-all-in-one.yaml
-	@kubectl delete -f kubernetes/monolithic-mode/logs/grafana-datasources-loki.yaml 
-	@kubectl delete -f monitoring-mixins/k8s-all-in-one.yaml
+.PHONY: deploy-monolithic-mode-profiles
+deploy-monolithic-mode-profiles: deploy-grafana ## Deploy monolithic-mode profiles
+	$(info ******************** deploy manifests ********************)
+	@kubectl apply -f kubernetes/monolithic-mode/profiles/k8s-all-in-one.yaml
 
 
+# Kubernetes microservices-mode
 .PHONY: deploy-microservices-mode-metrics
 deploy-microservices-mode-metrics: deploy-grafana ## Deploy microservices-mode metrics
 	$(info ******************** deploy manifests ********************)
 	kubectl apply -f kubernetes/microservices-mode/metrics/k8s-all-in-one.yaml
 	kubectl apply -f monitoring-mixins/k8s-all-in-one.yaml
-
-.PHONY: clean-microservices-mode-metrics
-clean-microservices-mode-metrics:  ## Clean microservices-mode metrics
-	$(info ******************** clean manifests ********************)
-	kubectl delete -f kubernetes/microservices-mode/metrics/k8s-all-in-one.yaml
-	kubectl delete -f monitoring-mixins/k8s-all-in-one.yaml
 
 
 ##@ General
