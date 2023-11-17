@@ -103,18 +103,17 @@ deploy-grafana: manifests ## Deploy grafana manifests
 	@kubectl apply -f kubernetes/common/grafana/k8s-all-in-one.yaml
 
 
-.PHONY: deploy-blackbox-exporter
-deploy-blackbox-exporter: ## Deploy blackbox-exporter manifests
-	@cd kubernetes/common/prometheus-blackbox-exporter && make build && cd -
-	$(info ******************** deploy blackbox-exporter manifests ********************)
-	@kubectl apply -f kubernetes/common/prometheus-blackbox-exporter/k8s-all-in-one.yaml
+# .PHONY: deploy-blackbox-exporter
+# deploy-blackbox-exporter: ## Deploy blackbox-exporter manifests
+# 	@cd kubernetes/common/prometheus-blackbox-exporter && make build && cd -
+# 	$(info ******************** deploy blackbox-exporter manifests ********************)
+# 	@kubectl apply -f kubernetes/common/prometheus-blackbox-exporter/k8s-all-in-one.yaml
 
 # Kubernetes monolithic-mode
 .PHONY: deploy-monolithic-mode-logs
 deploy-monolithic-mode-logs: deploy-grafana ## Deploy monolithic-mode logs
 	$(info ******************** deploy manifests ********************)
 	@kubectl apply -f kubernetes/monolithic-mode/logs/k8s-all-in-one.yaml
-	@kubectl apply -f kubernetes/monolithic-mode/logs/grafana-datasources-loki.yaml
 
 .PHONY: deploy-monolithic-mode-profiles
 deploy-monolithic-mode-profiles: deploy-grafana ## Deploy monolithic-mode profiles

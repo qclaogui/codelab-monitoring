@@ -28,11 +28,9 @@ Kubernetes
   deploy-kube-prometheus-stack              Deploy kube-prometheus-stack manifests
   clean-kube-prometheus-stack               Clean kube-prometheus-stack manifests
   deploy-grafana                            Deploy grafana manifests
-  clean-grafana                             Clean grafana manifests
   deploy-monolithic-mode-logs               Deploy monolithic-mode logs
-  clean-monolithic-mode-logs                Clean monolithic-mode logs manifests
+  deploy-monolithic-mode-profiles           Deploy monolithic-mode profiles
   deploy-microservices-mode-metrics         Deploy microservices-mode metrics
-  clean-microservices-mode-metrics          Clean microservices-mode metrics
 
 General
   help                                      Display this help. Thanks to https://www.thapaliya.com/en/writings/well-documented-makefiles/
