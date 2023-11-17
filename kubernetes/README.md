@@ -5,7 +5,6 @@
 ``` shell
 make help
 
-
 Usage:
   make <target>
 
@@ -25,6 +24,11 @@ Kubernetes
   manifests                                 Generates k8s manifests
   manifests-monolithic-mode                 Generates monolithic-mode manifests
   manifests-microservices-mode              Generates microservices-mode manifests
+  deploy-prometheus-operator-crds           Deploy prometheus-operator-crds manifests
+  deploy-kube-prometheus-stack              Deploy kube-prometheus-stack manifests
+  clean-kube-prometheus-stack               Clean kube-prometheus-stack manifests
+  deploy-grafana                            Deploy grafana manifests
+  clean-grafana                             Clean grafana manifests
   deploy-monolithic-mode-logs               Deploy monolithic-mode logs
   clean-monolithic-mode-logs                Clean monolithic-mode logs manifests
   deploy-microservices-mode-metrics         Deploy microservices-mode metrics
