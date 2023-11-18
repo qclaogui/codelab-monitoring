@@ -1,0 +1,22 @@
+# ----------------------------------------------------
+# apiVersion and kind of Kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# namespace: logging-system
+
+labels:
+- includeSelectors: true
+  pairs:
+    team: team-infra
+
+resources:
+- namespace.yaml
+- grafana-agent/k8s-all-in-one.yaml
+- grafana-datasources-loki.yaml
+- loki/k8s-all-in-one.yaml
+
+
+images:
+- name: docker.io/grafana/agent
+  newTag: v0.37.4

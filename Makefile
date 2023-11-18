@@ -63,7 +63,7 @@ clean: ## Clean cluster
 
 .PHONY: manifests
 manifests: ## Generates k8s manifests
-manifests: $(KUSTOMIZE) manifests-monolithic-mode manifests-microservices-mode
+manifests: $(KUSTOMIZE) manifests-monolithic-mode manifests-read-write-mode manifests-microservices-mode
 	@$(KUSTOMIZE) build monitoring-mixins > monitoring-mixins/k8s-all-in-one.yaml
 
 .PHONY: manifests-monolithic-mode
@@ -71,6 +71,11 @@ manifests-monolithic-mode: $(KUSTOMIZE)  ## Generates monolithic-mode manifests
 	$(info ******************** generates monolithic-mode manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/logs > kubernetes/monolithic-mode/logs/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/profiles > kubernetes/monolithic-mode/profiles/k8s-all-in-one.yaml
+
+.PHONY: manifests-read-write-mode
+manifests-read-write-mode: $(KUSTOMIZE)  ## Generates read-write-mode manifests
+	$(info ******************** generates read-write-mode manifests ********************)
+	@$(KUSTOMIZE) build kubernetes/read-write-mode/logs > kubernetes/read-write-mode/logs/k8s-all-in-one.yaml
 
 .PHONY: manifests-microservices-mode
 manifests-microservices-mode: $(KUSTOMIZE)  ## Generates microservices-mode manifests
@@ -101,8 +106,7 @@ clean-kube-prometheus-stack: ## Clean kube-prometheus-stack manifests
 
 
 .PHONY: deploy-grafana
-deploy-grafana: manifests ## Deploy grafana manifests
-	@cd kubernetes/common/grafana && make build && cd -
+deploy-grafana: deploy-prometheus-operator-crds ## Deploy grafana manifests
 	$(info ******************** deploy grafana manifests ********************)
 	@kubectl apply -f kubernetes/common/grafana/k8s-all-in-one.yaml
 
@@ -115,19 +119,26 @@ deploy-grafana: manifests ## Deploy grafana manifests
 
 # Kubernetes monolithic-mode
 .PHONY: deploy-monolithic-mode-logs
-deploy-monolithic-mode-logs: deploy-grafana ## Deploy monolithic-mode logs
+deploy-monolithic-mode-logs: manifests-monolithic-mode deploy-grafana ## Deploy monolithic-mode logs
 	$(info ******************** deploy manifests ********************)
 	@kubectl apply -f kubernetes/monolithic-mode/logs/k8s-all-in-one.yaml
 
 .PHONY: deploy-monolithic-mode-profiles
-deploy-monolithic-mode-profiles: deploy-grafana ## Deploy monolithic-mode profiles
+deploy-monolithic-mode-profiles: manifests-monolithic-mode deploy-grafana ## Deploy monolithic-mode profiles
 	$(info ******************** deploy manifests ********************)
 	@kubectl apply -f kubernetes/monolithic-mode/profiles/k8s-all-in-one.yaml
 
 
+# Kubernetes read-write-mode
+.PHONY: deploy-read-write-mode-logs
+deploy-read-write-mode-logs: manifests-read-write-mode deploy-grafana ## Deploy read-write-mode logs
+	$(info ******************** deploy manifests ********************)
+	@kubectl apply -f kubernetes/read-write-mode/logs/k8s-all-in-one.yaml
+
+
 # Kubernetes microservices-mode
 .PHONY: deploy-microservices-mode-metrics
-deploy-microservices-mode-metrics: deploy-grafana ## Deploy microservices-mode metrics
+deploy-microservices-mode-metrics: manifests-microservices-mode deploy-grafana ## Deploy microservices-mode metrics
 	$(info ******************** deploy manifests ********************)
 	kubectl apply -f kubernetes/microservices-mode/metrics/k8s-all-in-one.yaml
 	kubectl apply -f monitoring-mixins/k8s-all-in-one.yaml

@@ -195,17 +195,16 @@ data:
     module, for\na single tenant and specifying the destination url/credentials via
     environment\nvariables.\n*/\nlogging {\n  level  = coalesce(env(\"AGENT_LOG_LEVEL\"),
     \"info\")\n  format = \"logfmt\"\n}\n\nmodule.file \"lgtmp\" {\n\tfilename = env(\"AGENT_CONFIG_FOLDER\")
-    + \"/lgtmp.river\"\n\n\targuments {\n    cluster       = coalesce(env(\"CLUSTER\"),
-    \"k3d-k3s-codelab\")\n    logs_endpoint = coalesce(env(\"LOGS_ENDPOINT\"), \"http://nginx.monitoring-system:3100\")\n\t}\n}\n\nmodule.git
-    \"event_logs\" {\n  repository = \"https://github.com/grafana/agent-modules.git\"\n
-    \ revision   = \"main\"\n  path       = \"modules/kubernetes/logs/events.river\"\n\n
-    \ arguments {\n    forward_to = [module.file.lgtmp.exports.logs_receiver]\n    git_pull_freq
-    = \"0s\"\n  }\n}\n"
+    + \"/lgtmp.river\"\n\n\targuments {\n    cluster       = env(\"CLUSTER\")\n    logs_endpoint
+    = env(\"LOGS_ENDPOINT\")\n\t}\n}\n\nmodule.git \"event_logs\" {\n  repository
+    = \"https://github.com/grafana/agent-modules.git\"\n  revision   = \"main\"\n
+    \ path       = \"modules/kubernetes/logs/events.river\"\n\n  arguments {\n    forward_to
+    = [module.file.lgtmp.exports.logs_receiver]\n    git_pull_freq = \"0s\"\n  }\n}\n"
 kind: ConfigMap
 metadata:
   labels:
     team: team-infra
-  name: agent-config-t4mbf46bfh
+  name: agent-config-fdgh726fb4
   namespace: logging-system
 ---
 apiVersion: v1
@@ -1200,7 +1199,7 @@ spec:
       serviceAccountName: grafana-agent
       volumes:
       - configMap:
-          name: agent-config-t4mbf46bfh
+          name: agent-config-fdgh726fb4
         name: config
       - hostPath:
           path: /var/log

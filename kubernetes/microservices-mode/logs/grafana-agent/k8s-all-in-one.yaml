@@ -117,48 +117,22 @@ subjects:
 ---
 apiVersion: v1
 data:
-  logs.river: "/*\nThe following example shows using the default all logs processing
+  config.river: "/*\nThe following example shows using the default all logs processing
     module, for\na single tenant and specifying the destination url/credentials via
     environment\nvariables.\n*/\nlogging {\n  level  = coalesce(env(\"AGENT_LOG_LEVEL\"),
     \"info\")\n  format = \"logfmt\"\n}\n\nmodule.file \"lgtmp\" {\n\tfilename = env(\"AGENT_CONFIG_FOLDER\")
-    + \"/lgtmp.river\"\n\n\targuments {\n    cluster       = coalesce(env(\"CLUSTER\"),
-    \"k3d-k3s-codelab\")\n    logs_endpoint = coalesce(env(\"LOGS_ENDPOINT\"), \"http://nginx.monitoring-system:3100\")\n\t}\n}\n\nmodule.git
-    \"event_logs\" {\n  repository = \"https://github.com/grafana/agent-modules.git\"\n
-    \ revision   = \"main\"\n  path       = \"modules/kubernetes/logs/events.river\"\n\n
-    \ arguments {\n    forward_to = [module.file.lgtmp.exports.logs_receiver]\n    git_pull_freq
-    = \"0s\"\n  }\n}\n"
+    + \"/lgtmp.river\"\n\n\targuments {\n    cluster       = env(\"CLUSTER\")\n    logs_endpoint
+    = env(\"LOGS_ENDPOINT\")\n\t}\n}\n\nmodule.git \"event_logs\" {\n  repository
+    = \"https://github.com/grafana/agent-modules.git\"\n  revision   = \"main\"\n
+    \ path       = \"modules/kubernetes/logs/events.river\"\n\n  arguments {\n    forward_to
+    = [module.file.lgtmp.exports.logs_receiver]\n    git_pull_freq = \"0s\"\n  }\n}\n"
 kind: ConfigMap
 metadata:
-  name: agent-logs-config-8kgtm6f297
+  name: agent-config-fdgh726fb4
   namespace: logging-system
 ---
 apiVersion: v1
 data:
-  grafana-cloud.river: "\n/********************************************\n * ARGUMENTS\n
-    ********************************************/\nargument \"stack_name\" { }\n\nargument
-    \"token\" { }\n\n/********************************************\n * EXPORTS\n ********************************************/\n\nexport
-    \"metrics_receiver\" {\n\tvalue = prometheus.remote_write.default.receiver\n}\n\nexport
-    \"logs_receiver\" {\n\tvalue = loki.write.default.receiver\n}\n\nexport \"traces_receiver\"
-    {\n\tvalue = otelcol.exporter.otlp.default.input\n}\n\nexport \"profiles_receiver\"
-    {\n\tvalue = pyroscope.write.default.receiver\n}\n\nexport \"stack_information\"
-    {\n\tvalue = json_decode(remote.http.config_file.content)\n}\n\n/********************************************\n
-    * External information\n ********************************************/\n\nremote.http
-    \"config_file\" {\n\turl = \"https://grafana.com/api/instances/\" + argument.stack_name.value\n\n\tclient
-    {\n\t\tbearer_token = argument.token.value\n\t}\n\tpoll_frequency = \"24h\"\n}\n\n/********************************************\n
-    * Endpoints\n ********************************************/\n\n// Metrics\nprometheus.remote_write
-    \"default\" {\n\tendpoint {\n\t\turl = json_decode(remote.http.config_file.content)[\"hmInstancePromUrl\"]
-    + \"/api/prom/push\"\n\n\t\tbasic_auth {\n\t\t\tusername = json_decode(remote.http.config_file.content)[\"hmInstancePromId\"]\n\t\t\tpassword
-    = argument.token.value\n\t\t}\n\t}\n}\n\n// Logs\nloki.write \"default\" {\n\tendpoint
-    {\n\t\turl = json_decode(remote.http.config_file.content)[\"hlInstanceUrl\"] +
-    \"/loki/api/v1/push\"\n\n\t\tbasic_auth {\n\t\t\tusername = json_decode(remote.http.config_file.content)[\"hlInstanceId\"]\n\t\t\tpassword
-    = argument.token.value\n\t\t}\n\t}\n}\n\n// Traces\notelcol.auth.basic \"default\"
-    {\n\tusername = json_decode(remote.http.config_file.content)[\"htInstanceId\"]\n\tpassword
-    = argument.token.value\n}\n\notelcol.exporter.otlp \"default\" {\n\tclient {\n\t\tendpoint
-    = json_decode(remote.http.config_file.content)[\"htInstanceUrl\"] + \":443\"\n\t\tauth
-    \    = otelcol.auth.basic.default.handler\n\t}\n}\n\n// Profiles\npyroscope.write
-    \"default\" {\n\tendpoint {\n\t\turl = json_decode(remote.http.config_file.content)[\"hpInstanceUrl\"]\n\n\t\tbasic_auth
-    {\n\t\t\tusername = json_decode(remote.http.config_file.content)[\"hpInstanceId\"]\n\t\t\tpassword
-    = argument.token.value\n\t\t}\n\t}\n}\n"
   lgtmp.river: "/********************************************\n * ARGUMENTS\n ********************************************/\nargument
     \"cluster\" {\n\toptional = true\n\tdefault  = \"monitoring-system\"\n}\n\nargument
     \"metrics_endpoint\" {\n\toptional = true\n\tdefault  = \"http://mimir:8080\"\n\t//comment
@@ -183,15 +157,15 @@ data:
     \            = true\n\t\t\tinsecure_skip_verify = true\n\t\t}\n\t}\n}\n\n// Profiles\npyroscope.write
     \"pyroscope\" {\n\tendpoint {\n\t\turl = argument.profiles_endpoint.value\n\t}\n\n\texternal_labels
     = {\n\t\t\"scraped_by\" = \"grafana-agent\",\n\t\t\"cluster\" \t = argument.cluster.value,\n\t}\n}\n"
-  logs-all.river: "/*\nModule: log-all\nDescription: Wrapper module to include all
-    kubernetes logging modules and use cri parsing\n*/\nargument \"forward_to\" {\n
-    \ // comment = \"Must be a list(LogsReceiver) where collected logs should be forwarded
-    to\"\n\toptional = false\n}\n\nargument \"tenant\" {\n  // comment = \"The tenant
-    to filter logs to.  This does not have to be the tenantId, this is the value to
-    look for in the logs.agent.grafana.com/tenant annotation, and this can be a regex.\"\n
-    \ optional = true\n  default = \".*\"\n}\n\nargument \"keep_labels\" {\n  // comment
-    = \"List of labels to keep before the log message is written to Loki\"\n  optional
-    = true\n  default = [\n    \"app\",\n    \"cluster\",\n    \"component\",\n    \"container\",\n
+  logs.river: "/*\nModule: log-all\nDescription: Wrapper module to include all kubernetes
+    logging modules and use cri parsing\n*/\nargument \"forward_to\" {\n  // comment
+    = \"Must be a list(LogsReceiver) where collected logs should be forwarded to\"\n\toptional
+    = false\n}\n\nargument \"tenant\" {\n  // comment = \"The tenant to filter logs
+    to.  This does not have to be the tenantId, this is the value to look for in the
+    logs.agent.grafana.com/tenant annotation, and this can be a regex.\"\n  optional
+    = true\n  default = \".*\"\n}\n\nargument \"keep_labels\" {\n  // comment = \"List
+    of labels to keep before the log message is written to Loki\"\n  optional = true\n
+    \ default = [\n    \"app\",\n    \"cluster\",\n    \"component\",\n    \"container\",\n
     \   \"deployment\",\n    \"env\",\n    \"filename\",\n    \"instance\",\n    \"job\",\n
     \   \"level\",\n    \"log_type\",\n    \"namespace\",\n    \"region\",\n    \"service\",\n
     \   \"squad\",\n    \"team\",\n  ]\n}\n\nargument \"git_repo\" {\n  optional =
@@ -242,7 +216,7 @@ data:
     \ }\n}\n"
 kind: ConfigMap
 metadata:
-  name: agent-modules-58gc95m2bc
+  name: agent-modules-h8kk56kc57
   namespace: logging-system
 ---
 apiVersion: v1
@@ -253,7 +227,7 @@ data:
   LOGS_ENDPOINT: aHR0cDovL2xva2kubG9nZ2luZy1zeXN0ZW06MzEwMA==
 kind: Secret
 metadata:
-  name: agent-logs-env-899fh89gmf
+  name: agent-env-899fh89gmf
   namespace: logging-system
 type: Opaque
 ---
@@ -331,7 +305,7 @@ spec:
       containers:
       - args:
         - run
-        - /etc/agent/logs.river
+        - /etc/agent/config.river
         - --storage.path=/tmp/agent
         - --server.http.listen-addr=0.0.0.0:80
         - --server.http.ui-path-prefix=/
@@ -347,7 +321,7 @@ spec:
               fieldPath: spec.nodeName
         envFrom:
         - secretRef:
-            name: agent-logs-env-899fh89gmf
+            name: agent-env-899fh89gmf
         image: docker.io/grafana/agent:v0.37.4
         imagePullPolicy: IfNotPresent
         name: grafana-agent
@@ -386,11 +360,11 @@ spec:
       serviceAccountName: grafana-agent
       volumes:
       - configMap:
-          name: agent-logs-config-8kgtm6f297
+          name: agent-config-fdgh726fb4
         name: config
       - hostPath:
           path: /var/log
         name: varlog
       - configMap:
-          name: agent-modules-58gc95m2bc
+          name: agent-modules-h8kk56kc57
         name: agent-modules
