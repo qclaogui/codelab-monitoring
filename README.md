@@ -50,9 +50,16 @@ These instructions will get you through the deploying samples with Docker Compos
 ### [Monolithic mode (单体模式)](./kubernetes/monolithic-mode)
 
 - [Logs [Loki]](./kubernetes/monolithic-mode/logs)
-- [Traces [Tempo]](./kubernetes/monolithic-mode/traces) // TODO(qc)
-- [Metrics [Mimir]](./kubernetes/monolithic-mode/metrics) // TODO(qc)
+- Traces
+- Metrics
 - [Profiles [Pyroscope]](./kubernetes/monolithic-mode/profiles)
+
+### [Read-Write mode (读写模式)](./kubernetes/read-write-mode)
+
+- [Logs [Loki (Read + Write + Backend)]](./kubernetes/read-write-mode/logs)
+- Traces
+- Metrics
+- Profiles
 
 ### [Microservices mode (微服务模式)](./kubernetes/microservices-mode)
 
