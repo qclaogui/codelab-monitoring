@@ -63,8 +63,19 @@ clean: ## Clean cluster
 
 .PHONY: manifests
 manifests: ## Generates k8s manifests
-manifests: $(KUSTOMIZE) manifests-monolithic-mode manifests-read-write-mode manifests-microservices-mode
+manifests: $(KUSTOMIZE) manifests-common manifests-monolithic-mode manifests-read-write-mode manifests-microservices-mode
 	@$(KUSTOMIZE) build monitoring-mixins > monitoring-mixins/k8s-all-in-one.yaml
+
+.PHONY: manifests-common
+manifests-common: $(KUSTOMIZE)  ## Generates manifests-common manifests
+	$(info ******************** generates manifests-common manifests ********************)
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana-agent > kubernetes/common/grafana-agent/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana > kubernetes/common/grafana/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/kube-prometheus-stack > kubernetes/common/kube-prometheus-stack/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/prometheus-blackbox-exporter > kubernetes/common/prometheus-blackbox-exporter/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/prometheus-operator-crds > kubernetes/common/prometheus-operator-crds/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/rancher-pushprox > kubernetes/common/rancher-pushprox/k8s-all-in-one.yaml
+
 
 .PHONY: manifests-monolithic-mode
 manifests-monolithic-mode: $(KUSTOMIZE)  ## Generates monolithic-mode manifests
@@ -93,55 +104,56 @@ deploy-prometheus-operator-crds: ## Deploy prometheus-operator-crds manifests
 # kube-prometheus-stack
 .PHONY: deploy-kube-prometheus-stack
 deploy-kube-prometheus-stack: ## Deploy kube-prometheus-stack manifests
-	@cd kubernetes/common/kube-prometheus-stack && make build && cd -
 	$(info ******************** deploy kube-prometheus-stack manifests ********************)
-	@kubectl apply -f kubernetes/common/kube-prometheus-stack/k8s-all-in-one.yaml
-	@kubectl apply -f kubernetes/common/rancher-pushprox/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/kube-prometheus-stack | kubectl apply -f -
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/rancher-pushprox | kubectl apply -f -
 
 .PHONY: clean-kube-prometheus-stack
 clean-kube-prometheus-stack: ## Clean kube-prometheus-stack manifests
 	$(info ******************** clean kube-prometheus-stack manifests ********************)
-	@kubectl delete -f kubernetes/common/kube-prometheus-stack/k8s-all-in-one.yaml
-	@kubectl delete -f kubernetes/common/rancher-pushprox/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/kube-prometheus-stack | kubectl delete -f -
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/rancher-pushprox | kubectl delete -f -
 
 
 .PHONY: deploy-grafana
 deploy-grafana: deploy-prometheus-operator-crds ## Deploy grafana manifests
 	$(info ******************** deploy grafana manifests ********************)
-	@kubectl apply -f kubernetes/common/grafana/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana | kubectl apply -f -
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana-agent | kubectl apply -f -
 
 
 # .PHONY: deploy-blackbox-exporter
 # deploy-blackbox-exporter: ## Deploy blackbox-exporter manifests
-# 	@cd kubernetes/common/prometheus-blackbox-exporter && make build && cd -
 # 	$(info ******************** deploy blackbox-exporter manifests ********************)
-# 	@kubectl apply -f kubernetes/common/prometheus-blackbox-exporter/k8s-all-in-one.yaml
+# 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/prometheus-blackbox-exporter | kubectl apply -f -
+
 
 # Kubernetes monolithic-mode
 .PHONY: deploy-monolithic-mode-logs
-deploy-monolithic-mode-logs: manifests-monolithic-mode deploy-grafana ## Deploy monolithic-mode logs
+deploy-monolithic-mode-logs: deploy-grafana ## Deploy monolithic-mode logs
 	$(info ******************** deploy manifests ********************)
-	@kubectl apply -f kubernetes/monolithic-mode/logs/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build kubernetes/monolithic-mode/logs | kubectl apply -f -
 
 .PHONY: deploy-monolithic-mode-profiles
-deploy-monolithic-mode-profiles: manifests-monolithic-mode deploy-grafana ## Deploy monolithic-mode profiles
+deploy-monolithic-mode-profiles: deploy-grafana ## Deploy monolithic-mode profiles
 	$(info ******************** deploy manifests ********************)
-	@kubectl apply -f kubernetes/monolithic-mode/profiles/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build kubernetes/monolithic-mode/profiles | kubectl apply -f -
+
 
 
 # Kubernetes read-write-mode
 .PHONY: deploy-read-write-mode-logs
 deploy-read-write-mode-logs: manifests-read-write-mode deploy-grafana ## Deploy read-write-mode logs
 	$(info ******************** deploy manifests ********************)
-	@kubectl apply -f kubernetes/read-write-mode/logs/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build kubernetes/read-write-mode/logs | kubectl apply -f -
 
 
 # Kubernetes microservices-mode
 .PHONY: deploy-microservices-mode-metrics
-deploy-microservices-mode-metrics: manifests-microservices-mode deploy-grafana ## Deploy microservices-mode metrics
+deploy-microservices-mode-metrics: deploy-grafana ## Deploy microservices-mode metrics
 	$(info ******************** deploy manifests ********************)
-	kubectl apply -f kubernetes/microservices-mode/metrics/k8s-all-in-one.yaml
-	kubectl apply -f monitoring-mixins/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build kubernetes/microservices-mode/metrics | kubectl apply -f -
+	@$(KUSTOMIZE) build monitoring-mixins | kubectl apply -f -
 
 
 ##@ General
