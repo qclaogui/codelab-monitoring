@@ -42,16 +42,23 @@ replicas:
 - count: 2
   name: ingester
 
-# https://kubernetes.io/docs/concepts/configuration/configmap/#configmap-immutable
-generatorOptions:
-  immutable: true
+# # https://kubernetes.io/docs/concepts/configuration/configmap/#configmap-immutable
+# generatorOptions:
+#   immutable: true
 
-# secretGenerator:
-# # # just use mimir.yaml in base
-# # - name: mimir-config
-# #   behavior: replace
-# #   files:
-# #   - configs/mimir.yaml
+secretGenerator:
+- name: agent-env
+  namespace: monitoring-system
+  options:
+    disableNameSuffixHash: true
+  literals:
+  - CLUSTER=k3d-k3s-codelab
+  - METRICS_ENDPOINT=http://nginx.monitoring-system:8080
+# # just use mimir.yaml in base
+# - name: mimir-config
+#   behavior: replace
+#   files:
+#   - configs/mimir.yaml
 
 configMapGenerator:
 - name: runtime-config

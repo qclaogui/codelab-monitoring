@@ -53,11 +53,9 @@ copyright: $(COPYRIGHT) ## Add Copyright header to .go files.
 cluster: ## Create k3s cluster
 	k3d cluster create k3s-codelab --config kubernetes/k3d-k3s-config.yaml
 
-.PHONY: image-import
 image-import: ## Import image(s) from docker into k3d cluster(s).
 	k3d image import -c k3s-codelab grafana/pyroscope:1.2.0
 
-.PHONY: clean
 clean: ## Clean cluster
 	k3d cluster delete k3s-codelab
 
@@ -109,9 +107,8 @@ deploy-kube-prometheus-stack: ## Deploy kube-prometheus-stack manifests
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/kube-prometheus-stack | kubectl apply -f -
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/rancher-pushprox | kubectl apply -f -
 
-.PHONY: clean-kube-prometheus-stack
-clean-kube-prometheus-stack: ## Clean kube-prometheus-stack manifests
-	$(info ******************** clean kube-prometheus-stack manifests ********************)
+delete-kube-prometheus-stack: ## Delete kube-prometheus-stack manifests
+	$(info ******************** delete kube-prometheus-stack manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/kube-prometheus-stack | kubectl delete -f -
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/rancher-pushprox | kubectl delete -f -
 
@@ -122,6 +119,9 @@ deploy-grafana: deploy-prometheus-operator-crds ## Deploy grafana manifests
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana | kubectl apply -f -
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana-agent | kubectl apply -f -
 
+delete-grafana: ## Delete grafana manifests
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana-agent | kubectl delete --ignore-not-found -f -
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana | kubectl delete --ignore-not-found -f -
 
 # .PHONY: deploy-blackbox-exporter
 # deploy-blackbox-exporter: ## Deploy blackbox-exporter manifests
@@ -132,30 +132,52 @@ deploy-grafana: deploy-prometheus-operator-crds ## Deploy grafana manifests
 # Kubernetes monolithic-mode
 .PHONY: deploy-monolithic-mode-logs
 deploy-monolithic-mode-logs: deploy-grafana ## Deploy monolithic-mode logs
-	$(info ******************** deploy manifests ********************)
+	$(info ******************** deploy monolithic-mode logs manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/logs | kubectl apply -f -
+
+delete-monolithic-mode-logs: ## Delete monolithic-mode logs
+	@$(KUSTOMIZE) build kubernetes/monolithic-mode/logs | kubectl delete -f -
 
 .PHONY: deploy-monolithic-mode-profiles
 deploy-monolithic-mode-profiles: deploy-grafana ## Deploy monolithic-mode profiles
-	$(info ******************** deploy manifests ********************)
+	$(info ******************** deploy monolithic-mode profiles manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/profiles | kubectl apply -f -
+
+delete-monolithic-mode-profiles: ## Delete monolithic-mode profiles
+	@$(KUSTOMIZE) build kubernetes/monolithic-mode/profiles | kubectl delete -f -
 
 
 
 # Kubernetes read-write-mode
 .PHONY: deploy-read-write-mode-logs
-deploy-read-write-mode-logs: manifests-read-write-mode deploy-grafana ## Deploy read-write-mode logs
-	$(info ******************** deploy manifests ********************)
+deploy-read-write-mode-logs: deploy-grafana ## Deploy read-write-mode logs
+	$(info ******************** deploy read-write-mode logs manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/read-write-mode/logs | kubectl apply -f -
+
+delete-read-write-mode-logs: ## Delete read-write-mode logs
+	@$(KUSTOMIZE) build kubernetes/read-write-mode/logs | kubectl delete -f -
+
 
 
 # Kubernetes microservices-mode
 .PHONY: deploy-microservices-mode-metrics
 deploy-microservices-mode-metrics: deploy-grafana ## Deploy microservices-mode metrics
-	$(info ******************** deploy manifests ********************)
+	$(info ******************** deploy microservices-mode metrics manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/microservices-mode/metrics | kubectl apply -f -
 	@$(KUSTOMIZE) build monitoring-mixins | kubectl apply -f -
 
+delete-microservices-mode-metrics: ## Delete microservices-mode metrics
+	@$(KUSTOMIZE) build kubernetes/microservices-mode/metrics | kubectl delete -f -
+	@$(KUSTOMIZE) build monitoring-mixins | kubectl delete -f -
+
+
+.PHONY: deploy-microservices-mode-profiles
+deploy-microservices-mode-profiles: deploy-grafana ## Deploy microservices-mode profiles
+	$(info ******************** deploy microservices-mode profiles manifests ********************)
+	@$(KUSTOMIZE) build kubernetes/microservices-mode/profiles | kubectl apply -f -
+
+delete-microservices-mode-profiles: ## Delete microservices-mode profiles
+	@$(KUSTOMIZE) build kubernetes/microservices-mode/profiles | kubectl delete -f -
 
 ##@ General
 
