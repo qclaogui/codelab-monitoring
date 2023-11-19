@@ -93,6 +93,7 @@ manifests-microservices-mode: $(KUSTOMIZE)  ## Generates microservices-mode mani
 	$(info ******************** generates microservices-mode manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/microservices-mode/metrics > kubernetes/microservices-mode/metrics/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build kubernetes/microservices-mode/logs > kubernetes/microservices-mode/logs/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build kubernetes/microservices-mode/profiles > kubernetes/microservices-mode/profiles/k8s-all-in-one.yaml
 
 
 # prometheus-operator-crds

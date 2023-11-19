@@ -9,10 +9,10 @@ logging {
 }
 
 module.file "lgtmp" {
-	filename = env("AGENT_CONFIG_FOLDER") + "/lgtmp.river"
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-modules") + "/lgtmp.river"
 
 	arguments {
-    cluster           = env("CLUSTER")
+    cluster           = coalesce(env("CLUSTER"), "k3d-k3s")
     metrics_endpoint  = env("METRICS_ENDPOINT")
     logs_endpoint     = env("LOGS_ENDPOINT")
     profiles_endpoint = env("PROFILES_ENDPOINT")
@@ -23,7 +23,7 @@ module.file "lgtmp" {
  * Metrics
  ********************************************/
 module.file "metrics_primary" {
-	filename = env("AGENT_CONFIG_FOLDER") + "/metrics.river"
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-modules") + "/metrics.river"
 
   arguments {
     forward_to = [module.file.lgtmp.exports.metrics_receiver]
@@ -49,7 +49,7 @@ module.git "event_logs" {
  * Profiles
  ********************************************/
 module.file "profiles_primary" {
-	filename = env("AGENT_CONFIG_FOLDER") + "/profiles.river"
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-modules") + "/profiles.river"
 
   arguments {
     forward_to = [module.file.lgtmp.exports.profiles_receiver]

@@ -1,0 +1,47 @@
+agent:
+  enabled: false
+
+minio:
+  enabled: true
+
+pyroscope:
+  components:
+    querier:
+      kind: Deployment
+      replicaCount: 2
+    query-frontend:
+      kind: Deployment
+      replicaCount: 2
+    query-scheduler:
+      kind: Deployment
+      replicaCount: 2
+    distributor:
+      kind: Deployment
+      replicaCount: 2
+    ingester:
+      kind: StatefulSet
+      replicaCount: 3
+      terminationGracePeriodSeconds: 300
+    compactor:
+      kind: StatefulSet
+      replicaCount: 1
+      persistence:
+        enabled: false
+    store-gateway:
+      kind: StatefulSet
+      replicaCount: 3
+      persistence:
+        enabled: false
+
+  podDisruptionBudget:
+    enabled: false
+    maxUnavailable: 1
+
+  extraArgs:
+    log.level: warn
+    store-gateway.sharding-ring.replication-factor: "3"
+
+  tenantOverrides:
+    "anonymous":
+      ingestion_rate_mb: 5
+      ingestion_burst_size_mb: 10

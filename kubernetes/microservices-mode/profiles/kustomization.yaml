@@ -1,0 +1,27 @@
+# ----------------------------------------------------
+# apiVersion and kind of Kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+labels:
+- includeSelectors: true
+  pairs:
+    team: team-infra
+
+resources:
+- namespace.yaml
+- pyroscope/k8s-all-in-one.yaml
+- grafana-datasources-pyroscope.yaml
+
+images:
+- name: grafana/pyroscope
+  newTag: 1.2.0
+
+secretGenerator:
+- name: agent-env
+  namespace: monitoring-system
+  options:
+    disableNameSuffixHash: true
+  literals:
+  - CLUSTER=k3d-k3s-codelab
+  - PROFILES_ENDPOINT=http://pyroscope-distributor.profiles-system.svc.cluster.local:4040

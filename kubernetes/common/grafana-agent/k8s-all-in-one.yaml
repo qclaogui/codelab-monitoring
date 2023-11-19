@@ -120,25 +120,26 @@ data:
   config.river: "/*\nThe following example shows using the default all logs processing
     module, for\na single tenant and specifying the destination url/credentials via
     environment\nvariables.\n*/\nlogging {\n  level  = coalesce(env(\"AGENT_LOG_LEVEL\"),
-    \"info\")\n  format = \"logfmt\"\n}\n\nmodule.file \"lgtmp\" {\n\tfilename = env(\"AGENT_CONFIG_FOLDER\")
-    + \"/lgtmp.river\"\n\n\targuments {\n    cluster           = env(\"CLUSTER\")\n
-    \   metrics_endpoint  = env(\"METRICS_ENDPOINT\")\n    logs_endpoint     = env(\"LOGS_ENDPOINT\")\n
-    \   profiles_endpoint = env(\"PROFILES_ENDPOINT\")\n\t}\n}\n\n/********************************************\n
+    \"info\")\n  format = \"logfmt\"\n}\n\nmodule.file \"lgtmp\" {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"),
+    \"/etc/agent-modules\") + \"/lgtmp.river\"\n\n\targuments {\n    cluster           =
+    coalesce(env(\"CLUSTER\"), \"k3d-k3s\")\n    metrics_endpoint  = env(\"METRICS_ENDPOINT\")\n
+    \   logs_endpoint     = env(\"LOGS_ENDPOINT\")\n    profiles_endpoint = env(\"PROFILES_ENDPOINT\")\n\t}\n}\n\n/********************************************\n
     * Metrics\n ********************************************/\nmodule.file \"metrics_primary\"
-    {\n\tfilename = env(\"AGENT_CONFIG_FOLDER\") + \"/metrics.river\"\n\n  arguments
-    {\n    forward_to = [module.file.lgtmp.exports.metrics_receiver]\n    clustering
-    = true\n  }\n}\n\n/********************************************\n * Logs\n ********************************************/\nmodule.git
-    \"event_logs\" {\n  repository = \"https://github.com/grafana/agent-modules.git\"\n
-    \ revision   = \"main\"\n  path       = \"modules/kubernetes/logs/events.river\"\n\n
-    \ arguments {\n    forward_to = [module.file.lgtmp.exports.logs_receiver]\n    git_pull_freq
+    {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent-modules\")
+    + \"/metrics.river\"\n\n  arguments {\n    forward_to = [module.file.lgtmp.exports.metrics_receiver]\n
+    \   clustering = true\n  }\n}\n\n/********************************************\n
+    * Logs\n ********************************************/\nmodule.git \"event_logs\"
+    {\n  repository = \"https://github.com/grafana/agent-modules.git\"\n  revision
+    \  = \"main\"\n  path       = \"modules/kubernetes/logs/events.river\"\n\n  arguments
+    {\n    forward_to = [module.file.lgtmp.exports.logs_receiver]\n    git_pull_freq
     = \"0s\"\n  }\n}\n\n/********************************************\n * Profiles\n
     ********************************************/\nmodule.file \"profiles_primary\"
-    {\n\tfilename = env(\"AGENT_CONFIG_FOLDER\") + \"/profiles.river\"\n\n  arguments
-    {\n    forward_to = [module.file.lgtmp.exports.profiles_receiver]\n    clustering
-    = true\n  }\n}\n"
+    {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent-modules\")
+    + \"/profiles.river\"\n\n  arguments {\n    forward_to = [module.file.lgtmp.exports.profiles_receiver]\n
+    \   clustering = true\n  }\n}\n"
 kind: ConfigMap
 metadata:
-  name: agent-config-gh9mm4ct2h
+  name: agent-config-24fkcmk5t9
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -612,7 +613,7 @@ spec:
       serviceAccountName: grafana-agent
       volumes:
       - configMap:
-          name: agent-config-gh9mm4ct2h
+          name: agent-config-24fkcmk5t9
         name: config
       - hostPath:
           path: /var/log

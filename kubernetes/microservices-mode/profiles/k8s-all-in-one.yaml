@@ -1,0 +1,1729 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    team: team-infra
+  name: profiles-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    team: team-infra
+  name: minio-sa
+  namespace: profiles-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+    team: team-infra
+  name: pyroscope
+  namespace: profiles-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+    team: team-infra
+  name: profiles-system-pyroscope
+  namespace: profiles-system
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+    team: team-infra
+  name: profiles-system-pyroscope
+  namespace: profiles-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: profiles-system-pyroscope
+subjects:
+- kind: ServiceAccount
+  name: pyroscope
+  namespace: profiles-system
+---
+apiVersion: v1
+data:
+  datasources.yaml: |
+    apiVersion: 1
+
+    datasources:
+    # Pyroscope for profiles
+    - name: Pyroscope
+      type: grafana-pyroscope-datasource
+      uid: pyroscope
+      access: proxy
+      orgId: 1
+      url: http://pyroscope-query-frontend.profiles-system.svc.cluster.local:4040
+      basicAuth: false
+      isDefault: true
+      version: 1
+      editable: true
+kind: ConfigMap
+metadata:
+  labels:
+    grafana_datasource: "1"
+    team: team-infra
+  name: grafana-datasources-pyroscope
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  config.yaml: |
+    storage:
+      backend: s3
+      s3:
+        access_key_id: grafana-pyroscope
+        bucket_name: grafana-pyroscope-data
+        endpoint: pyroscope-minio:9000
+        insecure: true
+        secret_access_key: supersecret
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+    team: team-infra
+  name: pyroscope-config
+  namespace: profiles-system
+---
+apiVersion: v1
+data:
+  add-policy: |-
+    #!/bin/sh
+    set -e ; # Have script exit in the event of a failed command.
+    MC_CONFIG_DIR="/etc/minio/mc/"
+    MC="/usr/bin/mc --insecure --config-dir ${MC_CONFIG_DIR}"
+
+    # connectToMinio
+    # Use a check-sleep-check loop to wait for MinIO service to be available
+    connectToMinio() {
+      SCHEME=$1
+      ATTEMPTS=0 ; LIMIT=29 ; # Allow 30 attempts
+      set -e ; # fail if we can't read the keys.
+      ACCESS=$(cat /config/rootUser) ; SECRET=$(cat /config/rootPassword) ;
+      set +e ; # The connections to minio are allowed to fail.
+      echo "Connecting to MinIO server: $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT" ;
+      MC_COMMAND="${MC} alias set myminio $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT $ACCESS $SECRET" ;
+      $MC_COMMAND ;
+      STATUS=$? ;
+      until [ $STATUS = 0 ]
+      do
+        ATTEMPTS=`expr $ATTEMPTS + 1` ;
+        echo \"Failed attempts: $ATTEMPTS\" ;
+        if [ $ATTEMPTS -gt $LIMIT ]; then
+          exit 1 ;
+        fi ;
+        sleep 2 ; # 1 second intervals between attempts
+        $MC_COMMAND ;
+        STATUS=$? ;
+      done ;
+      set -e ; # reset `e` as active
+      return 0
+    }
+
+    # checkPolicyExists ($policy)
+    # Check if the policy exists, by using the exit code of `mc admin policy info`
+    checkPolicyExists() {
+      POLICY=$1
+      CMD=$(${MC} admin policy info myminio $POLICY > /dev/null 2>&1)
+      return $?
+    }
+
+    # createPolicy($name, $filename)
+    createPolicy () {
+      NAME=$1
+      FILENAME=$2
+
+      # Create the name if it does not exist
+      echo "Checking policy: $NAME (in /config/$FILENAME.json)"
+      if ! checkPolicyExists $NAME ; then
+        echo "Creating policy '$NAME'"
+      else
+        echo "Policy '$NAME' already exists."
+      fi
+      ${MC} admin policy add myminio $NAME /config/$FILENAME.json
+
+    }
+
+    # Try connecting to MinIO instance
+    scheme=http
+    connectToMinio $scheme
+  add-user: |-
+    #!/bin/sh
+    set -e ; # Have script exit in the event of a failed command.
+    MC_CONFIG_DIR="/etc/minio/mc/"
+    MC="/usr/bin/mc --insecure --config-dir ${MC_CONFIG_DIR}"
+
+    # AccessKey and secretkey credentials file are added to prevent shell execution errors caused by special characters.
+    # Special characters for example : ',",<,>,{,}
+    MINIO_ACCESSKEY_SECRETKEY_TMP="/tmp/accessKey_and_secretKey_tmp"
+
+    # connectToMinio
+    # Use a check-sleep-check loop to wait for MinIO service to be available
+    connectToMinio() {
+      SCHEME=$1
+      ATTEMPTS=0 ; LIMIT=29 ; # Allow 30 attempts
+      set -e ; # fail if we can't read the keys.
+      ACCESS=$(cat /config/rootUser) ; SECRET=$(cat /config/rootPassword) ;
+      set +e ; # The connections to minio are allowed to fail.
+      echo "Connecting to MinIO server: $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT" ;
+      MC_COMMAND="${MC} alias set myminio $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT $ACCESS $SECRET" ;
+      $MC_COMMAND ;
+      STATUS=$? ;
+      until [ $STATUS = 0 ]
+      do
+        ATTEMPTS=`expr $ATTEMPTS + 1` ;
+        echo \"Failed attempts: $ATTEMPTS\" ;
+        if [ $ATTEMPTS -gt $LIMIT ]; then
+          exit 1 ;
+        fi ;
+        sleep 2 ; # 1 second intervals between attempts
+        $MC_COMMAND ;
+        STATUS=$? ;
+      done ;
+      set -e ; # reset `e` as active
+      return 0
+    }
+
+    # checkUserExists ()
+    # Check if the user exists, by using the exit code of `mc admin user info`
+    checkUserExists() {
+      CMD=$(${MC} admin user info myminio $(head -1 $MINIO_ACCESSKEY_SECRETKEY_TMP) > /dev/null 2>&1)
+      return $?
+    }
+
+    # createUser ($policy)
+    createUser() {
+      POLICY=$1
+      #check accessKey_and_secretKey_tmp file
+      if [[ ! -f $MINIO_ACCESSKEY_SECRETKEY_TMP ]];then
+        echo "credentials file does not exist"
+        return 1
+      fi
+      if [[ $(cat $MINIO_ACCESSKEY_SECRETKEY_TMP|wc -l) -ne 2 ]];then
+        echo "credentials file is invalid"
+        rm -f $MINIO_ACCESSKEY_SECRETKEY_TMP
+        return 1
+      fi
+      USER=$(head -1 $MINIO_ACCESSKEY_SECRETKEY_TMP)
+      # Create the user if it does not exist
+      if ! checkUserExists ; then
+        echo "Creating user '$USER'"
+        cat $MINIO_ACCESSKEY_SECRETKEY_TMP | ${MC} admin user add myminio
+      else
+        echo "User '$USER' already exists."
+      fi
+      #clean up credentials files.
+      rm -f $MINIO_ACCESSKEY_SECRETKEY_TMP
+
+      # set policy for user
+      if [ ! -z $POLICY -a $POLICY != " " ] ; then
+          echo "Adding policy '$POLICY' for '$USER'"
+          ${MC} admin policy set myminio $POLICY user=$USER
+      else
+          echo "User '$USER' has no policy attached."
+      fi
+    }
+
+    # Try connecting to MinIO instance
+    scheme=http
+    connectToMinio $scheme
+
+
+
+    # Create the users
+    echo console > $MINIO_ACCESSKEY_SECRETKEY_TMP
+    echo console123 >> $MINIO_ACCESSKEY_SECRETKEY_TMP
+    createUser consoleAdmin
+  custom-command: |-
+    #!/bin/sh
+    set -e ; # Have script exit in the event of a failed command.
+    MC_CONFIG_DIR="/etc/minio/mc/"
+    MC="/usr/bin/mc --insecure --config-dir ${MC_CONFIG_DIR}"
+
+    # connectToMinio
+    # Use a check-sleep-check loop to wait for MinIO service to be available
+    connectToMinio() {
+      SCHEME=$1
+      ATTEMPTS=0 ; LIMIT=29 ; # Allow 30 attempts
+      set -e ; # fail if we can't read the keys.
+      ACCESS=$(cat /config/rootUser) ; SECRET=$(cat /config/rootPassword) ;
+      set +e ; # The connections to minio are allowed to fail.
+      echo "Connecting to MinIO server: $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT" ;
+      MC_COMMAND="${MC} alias set myminio $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT $ACCESS $SECRET" ;
+      $MC_COMMAND ;
+      STATUS=$? ;
+      until [ $STATUS = 0 ]
+      do
+        ATTEMPTS=`expr $ATTEMPTS + 1` ;
+        echo \"Failed attempts: $ATTEMPTS\" ;
+        if [ $ATTEMPTS -gt $LIMIT ]; then
+          exit 1 ;
+        fi ;
+        sleep 2 ; # 1 second intervals between attempts
+        $MC_COMMAND ;
+        STATUS=$? ;
+      done ;
+      set -e ; # reset `e` as active
+      return 0
+    }
+
+    # runCommand ($@)
+    # Run custom mc command
+    runCommand() {
+      ${MC} "$@"
+      return $?
+    }
+
+    # Try connecting to MinIO instance
+    scheme=http
+    connectToMinio $scheme
+  initialize: "#!/bin/sh\nset -e ; # Have script exit in the event of a failed command.\nMC_CONFIG_DIR=\"/etc/minio/mc/\"\nMC=\"/usr/bin/mc
+    --insecure --config-dir ${MC_CONFIG_DIR}\"\n\n# connectToMinio\n# Use a check-sleep-check
+    loop to wait for MinIO service to be available\nconnectToMinio() {\n  SCHEME=$1\n
+    \ ATTEMPTS=0 ; LIMIT=29 ; # Allow 30 attempts\n  set -e ; # fail if we can't read
+    the keys.\n  ACCESS=$(cat /config/rootUser) ; SECRET=$(cat /config/rootPassword)
+    ;\n  set +e ; # The connections to minio are allowed to fail.\n  echo \"Connecting
+    to MinIO server: $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT\" ;\n  MC_COMMAND=\"${MC}
+    alias set myminio $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT $ACCESS $SECRET\" ;\n
+    \ $MC_COMMAND ;\n  STATUS=$? ;\n  until [ $STATUS = 0 ]\n  do\n    ATTEMPTS=`expr
+    $ATTEMPTS + 1` ;\n    echo \\\"Failed attempts: $ATTEMPTS\\\" ;\n    if [ $ATTEMPTS
+    -gt $LIMIT ]; then\n      exit 1 ;\n    fi ;\n    sleep 2 ; # 1 second intervals
+    between attempts\n    $MC_COMMAND ;\n    STATUS=$? ;\n  done ;\n  set -e ; # reset
+    `e` as active\n  return 0\n}\n\n# checkBucketExists ($bucket)\n# Check if the
+    bucket exists, by using the exit code of `mc ls`\ncheckBucketExists() {\n  BUCKET=$1\n
+    \ CMD=$(${MC} ls myminio/$BUCKET > /dev/null 2>&1)\n  return $?\n}\n\n# createBucket
+    ($bucket, $policy, $purge)\n# Ensure bucket exists, purging if asked to\ncreateBucket()
+    {\n  BUCKET=$1\n  POLICY=$2\n  PURGE=$3\n  VERSIONING=$4\n  OBJECTLOCKING=$5\n\n
+    \ # Purge the bucket, if set & exists\n  # Since PURGE is user input, check explicitly
+    for `true`\n  if [ $PURGE = true ]; then\n    if checkBucketExists $BUCKET ; then\n
+    \     echo \"Purging bucket '$BUCKET'.\"\n      set +e ; # don't exit if this
+    fails\n      ${MC} rm -r --force myminio/$BUCKET\n      set -e ; # reset `e` as
+    active\n    else\n      echo \"Bucket '$BUCKET' does not exist, skipping purge.\"\n
+    \   fi\n  fi\n\n# Create the bucket if it does not exist and set objectlocking
+    if enabled (NOTE: versioning will be not changed if OBJECTLOCKING is set because
+    it enables versioning to the Buckets created)\nif ! checkBucketExists $BUCKET
+    ; then\n    if [ ! -z $OBJECTLOCKING ] ; then\n      if [ $OBJECTLOCKING = true
+    ] ; then\n          echo \"Creating bucket with OBJECTLOCKING '$BUCKET'\"\n          ${MC}
+    mb --with-lock myminio/$BUCKET\n      elif [ $OBJECTLOCKING = false ] ; then\n
+    \           echo \"Creating bucket '$BUCKET'\"\n            ${MC} mb myminio/$BUCKET\n
+    \     fi\n  elif [ -z $OBJECTLOCKING ] ; then\n        echo \"Creating bucket
+    '$BUCKET'\"\n        ${MC} mb myminio/$BUCKET\n  else\n    echo \"Bucket '$BUCKET'
+    already exists.\"  \n  fi\n  fi\n\n\n  # set versioning for bucket if objectlocking
+    is disabled or not set\n  if [ -z $OBJECTLOCKING ] ; then\n  if [ ! -z $VERSIONING
+    ] ; then\n    if [ $VERSIONING = true ] ; then\n        echo \"Enabling versioning
+    for '$BUCKET'\"\n        ${MC} version enable myminio/$BUCKET\n    elif [ $VERSIONING
+    = false ] ; then\n        echo \"Suspending versioning for '$BUCKET'\"\n        ${MC}
+    version suspend myminio/$BUCKET\n    fi\n    fi\n  else\n      echo \"Bucket '$BUCKET'
+    versioning unchanged.\"\n  fi\n\n\n  # At this point, the bucket should exist,
+    skip checking for existence\n  # Set policy on the bucket\n  echo \"Setting policy
+    of bucket '$BUCKET' to '$POLICY'.\"\n  ${MC} policy set $POLICY myminio/$BUCKET\n}\n\n#
+    Try connecting to MinIO instance\nscheme=http\nconnectToMinio $scheme\n\n\n\n#
+    Create the buckets\ncreateBucket grafana-pyroscope-data none false  "
+kind: ConfigMap
+metadata:
+  labels:
+    app: minio
+    chart: minio-4.0.12
+    heritage: Helm
+    release: pyroscope
+    team: team-infra
+  name: pyroscope-minio
+  namespace: profiles-system
+---
+apiVersion: v1
+data:
+  overrides.yaml: |
+    overrides:
+      anonymous:
+        ingestion_burst_size_mb: 10
+        ingestion_rate_mb: 5
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+    team: team-infra
+  name: pyroscope-overrides-config
+  namespace: profiles-system
+---
+apiVersion: v1
+data:
+  CLUSTER: azNkLWszcy1jb2RlbGFi
+  PROFILES_ENDPOINT: |
+    aHR0cDovL3B5cm9zY29wZS1kaXN0cmlidXRvci5wcm9maWxlcy1zeXN0ZW0uc3ZjLmNsdX
+    N0ZXIubG9jYWw6NDA0MA==
+kind: Secret
+metadata:
+  labels:
+    team: team-infra
+  name: agent-env
+  namespace: monitoring-system
+type: Opaque
+---
+apiVersion: v1
+data:
+  rootPassword: c3VwZXJzZWNyZXQ=
+  rootUser: Z3JhZmFuYS1weXJvc2NvcGU=
+kind: Secret
+metadata:
+  labels:
+    app: minio
+    chart: minio-4.0.12
+    heritage: Helm
+    release: pyroscope
+    team: team-infra
+  name: pyroscope-minio
+  namespace: profiles-system
+type: Opaque
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: compactor
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+    team: team-infra
+  name: pyroscope-compactor
+  namespace: profiles-system
+spec:
+  ports:
+  - name: http2
+    port: 4040
+    protocol: TCP
+    targetPort: http2
+  selector:
+    app.kubernetes.io/component: compactor
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/name: pyroscope
+    team: team-infra
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: compactor
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+    team: team-infra
+  name: pyroscope-compactor-headless
+  namespace: profiles-system
+spec:
+  clusterIP: None
+  ports:
+  - name: http2
+    port: 4040
+    protocol: TCP
+    targetPort: http2
+  selector:
+    app.kubernetes.io/component: compactor
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/name: pyroscope
+    team: team-infra
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: distributor
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+    team: team-infra
+  name: pyroscope-distributor
+  namespace: profiles-system
+spec:
+  ports:
+  - name: http2
+    port: 4040
+    protocol: TCP
+    targetPort: http2
+  selector:
+    app.kubernetes.io/component: distributor
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/name: pyroscope
+    team: team-infra
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: distributor
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+    team: team-infra
+  name: pyroscope-distributor-headless
+  namespace: profiles-system
+spec:
+  clusterIP: None
+  ports:
+  - name: http2
+    port: 4040
+    protocol: TCP
+    targetPort: http2
+  selector:
+    app.kubernetes.io/component: distributor
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/name: pyroscope
+    team: team-infra
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: ingester
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+    team: team-infra
+  name: pyroscope-ingester
+  namespace: profiles-system
+spec:
+  ports:
+  - name: http2
+    port: 4040
+    protocol: TCP
+    targetPort: http2
+  selector:
+    app.kubernetes.io/component: ingester
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/name: pyroscope
+    team: team-infra
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: ingester
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+    team: team-infra
+  name: pyroscope-ingester-headless
+  namespace: profiles-system
+spec:
+  clusterIP: None
+  ports:
+  - name: http2
+    port: 4040
+    protocol: TCP
+    targetPort: http2
+  selector:
+    app.kubernetes.io/component: ingester
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/name: pyroscope
+    team: team-infra
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+    team: team-infra
+  name: pyroscope-memberlist
+  namespace: profiles-system
+spec:
+  clusterIP: None
+  ports:
+  - name: memberlist
+    port: 7946
+    protocol: TCP
+    targetPort: 7946
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/name: pyroscope
+    team: team-infra
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: minio
+    chart: minio-4.0.12
+    heritage: Helm
+    monitoring: "true"
+    release: pyroscope
+    team: team-infra
+  name: pyroscope-minio
+  namespace: profiles-system
+spec:
+  ports:
+  - name: http
+    port: 9000
+    protocol: TCP
+    targetPort: 9000
+  selector:
+    app: minio
+    release: pyroscope
+    team: team-infra
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: minio
+    chart: minio-4.0.12
+    heritage: Helm
+    release: pyroscope
+    team: team-infra
+  name: pyroscope-minio-console
+  namespace: profiles-system
+spec:
+  ports:
+  - name: http
+    port: 9001
+    protocol: TCP
+    targetPort: 9001
+  selector:
+    app: minio
+    release: pyroscope
+    team: team-infra
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: minio
+    chart: minio-4.0.12
+    heritage: Helm
+    release: pyroscope
+    team: team-infra
+  name: pyroscope-minio-svc
+  namespace: profiles-system
+spec:
+  clusterIP: None
+  ports:
+  - name: http
+    port: 9000
+    protocol: TCP
+    targetPort: 9000
+  publishNotReadyAddresses: true
+  selector:
+    app: minio
+    release: pyroscope
+    team: team-infra
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: querier
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+    team: team-infra
+  name: pyroscope-querier
+  namespace: profiles-system
+spec:
+  ports:
+  - name: http2
+    port: 4040
+    protocol: TCP
+    targetPort: http2
+  selector:
+    app.kubernetes.io/component: querier
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/name: pyroscope
+    team: team-infra
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: querier
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+    team: team-infra
+  name: pyroscope-querier-headless
+  namespace: profiles-system
+spec:
+  clusterIP: None
+  ports:
+  - name: http2
+    port: 4040
+    protocol: TCP
+    targetPort: http2
+  selector:
+    app.kubernetes.io/component: querier
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/name: pyroscope
+    team: team-infra
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: query-frontend
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+    team: team-infra
+  name: pyroscope-query-frontend
+  namespace: profiles-system
+spec:
+  ports:
+  - name: http2
+    port: 4040
+    protocol: TCP
+    targetPort: http2
+  selector:
+    app.kubernetes.io/component: query-frontend
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/name: pyroscope
+    team: team-infra
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: query-frontend
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+    team: team-infra
+  name: pyroscope-query-frontend-headless
+  namespace: profiles-system
+spec:
+  clusterIP: None
+  ports:
+  - name: http2
+    port: 4040
+    protocol: TCP
+    targetPort: http2
+  selector:
+    app.kubernetes.io/component: query-frontend
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/name: pyroscope
+    team: team-infra
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: query-scheduler
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+    team: team-infra
+  name: pyroscope-query-scheduler
+  namespace: profiles-system
+spec:
+  ports:
+  - name: http2
+    port: 4040
+    protocol: TCP
+    targetPort: http2
+  selector:
+    app.kubernetes.io/component: query-scheduler
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/name: pyroscope
+    team: team-infra
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: query-scheduler
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+    team: team-infra
+  name: pyroscope-query-scheduler-headless
+  namespace: profiles-system
+spec:
+  clusterIP: None
+  ports:
+  - name: http2
+    port: 4040
+    protocol: TCP
+    targetPort: http2
+  selector:
+    app.kubernetes.io/component: query-scheduler
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/name: pyroscope
+    team: team-infra
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: store-gateway
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+    team: team-infra
+  name: pyroscope-store-gateway
+  namespace: profiles-system
+spec:
+  ports:
+  - name: http2
+    port: 4040
+    protocol: TCP
+    targetPort: http2
+  selector:
+    app.kubernetes.io/component: store-gateway
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/name: pyroscope
+    team: team-infra
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: store-gateway
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+    team: team-infra
+  name: pyroscope-store-gateway-headless
+  namespace: profiles-system
+spec:
+  clusterIP: None
+  ports:
+  - name: http2
+    port: 4040
+    protocol: TCP
+    targetPort: http2
+  selector:
+    app.kubernetes.io/component: store-gateway
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/name: pyroscope
+    team: team-infra
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: distributor
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+    team: team-infra
+  name: pyroscope-distributor
+  namespace: profiles-system
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: distributor
+      app.kubernetes.io/instance: pyroscope
+      app.kubernetes.io/name: pyroscope
+      team: team-infra
+  template:
+    metadata:
+      annotations:
+        checksum/config: 66b252325ac08331c225fd12ad3b3a5aabe8e92d3c482750a9764a5fd1835452
+        profiles.grafana.com/cpu.port_name: http2
+        profiles.grafana.com/cpu.scrape: "true"
+        profiles.grafana.com/goroutine.port_name: http2
+        profiles.grafana.com/goroutine.scrape: "true"
+        profiles.grafana.com/memory.port_name: http2
+        profiles.grafana.com/memory.scrape: "true"
+      labels:
+        app.kubernetes.io/component: distributor
+        app.kubernetes.io/instance: pyroscope
+        app.kubernetes.io/name: pyroscope
+        name: distributor
+        team: team-infra
+    spec:
+      containers:
+      - args:
+        - -target=distributor
+        - -self-profiling.disable-push=true
+        - -server.http-listen-port=4040
+        - -memberlist.cluster-label=profiles-system-pyroscope
+        - -memberlist.join=dns+pyroscope-memberlist.profiles-system.svc.cluster.local.:7946
+        - -config.file=/etc/pyroscope/config.yaml
+        - -runtime-config.file=/etc/pyroscope/overrides/overrides.yaml
+        - -log.level=warn
+        - -store-gateway.sharding-ring.replication-factor=3
+        image: grafana/pyroscope:1.2.0
+        imagePullPolicy: IfNotPresent
+        name: distributor
+        ports:
+        - containerPort: 4040
+          name: http2
+          protocol: TCP
+        - containerPort: 7946
+          name: memberlist
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http2
+            scheme: HTTP
+        resources: {}
+        securityContext: {}
+        volumeMounts:
+        - mountPath: /etc/pyroscope/config.yaml
+          name: config
+          subPath: config.yaml
+        - mountPath: /etc/pyroscope/overrides/
+          name: overrides-config
+        - mountPath: /data
+          name: data
+      dnsPolicy: ClusterFirst
+      securityContext:
+        fsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+      serviceAccountName: pyroscope
+      volumes:
+      - configMap:
+          name: pyroscope-config
+        name: config
+      - configMap:
+          name: pyroscope-overrides-config
+        name: overrides-config
+      - emptyDir: {}
+        name: data
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: querier
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+    team: team-infra
+  name: pyroscope-querier
+  namespace: profiles-system
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: querier
+      app.kubernetes.io/instance: pyroscope
+      app.kubernetes.io/name: pyroscope
+      team: team-infra
+  template:
+    metadata:
+      annotations:
+        checksum/config: 66b252325ac08331c225fd12ad3b3a5aabe8e92d3c482750a9764a5fd1835452
+        profiles.grafana.com/cpu.port_name: http2
+        profiles.grafana.com/cpu.scrape: "true"
+        profiles.grafana.com/goroutine.port_name: http2
+        profiles.grafana.com/goroutine.scrape: "true"
+        profiles.grafana.com/memory.port_name: http2
+        profiles.grafana.com/memory.scrape: "true"
+      labels:
+        app.kubernetes.io/component: querier
+        app.kubernetes.io/instance: pyroscope
+        app.kubernetes.io/name: pyroscope
+        name: querier
+        team: team-infra
+    spec:
+      containers:
+      - args:
+        - -target=querier
+        - -self-profiling.disable-push=true
+        - -server.http-listen-port=4040
+        - -memberlist.cluster-label=profiles-system-pyroscope
+        - -memberlist.join=dns+pyroscope-memberlist.profiles-system.svc.cluster.local.:7946
+        - -config.file=/etc/pyroscope/config.yaml
+        - -runtime-config.file=/etc/pyroscope/overrides/overrides.yaml
+        - -log.level=warn
+        - -store-gateway.sharding-ring.replication-factor=3
+        image: grafana/pyroscope:1.2.0
+        imagePullPolicy: IfNotPresent
+        name: querier
+        ports:
+        - containerPort: 4040
+          name: http2
+          protocol: TCP
+        - containerPort: 7946
+          name: memberlist
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http2
+            scheme: HTTP
+        resources: {}
+        securityContext: {}
+        volumeMounts:
+        - mountPath: /etc/pyroscope/config.yaml
+          name: config
+          subPath: config.yaml
+        - mountPath: /etc/pyroscope/overrides/
+          name: overrides-config
+        - mountPath: /data
+          name: data
+      dnsPolicy: ClusterFirst
+      securityContext:
+        fsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+      serviceAccountName: pyroscope
+      volumes:
+      - configMap:
+          name: pyroscope-config
+        name: config
+      - configMap:
+          name: pyroscope-overrides-config
+        name: overrides-config
+      - emptyDir: {}
+        name: data
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: query-frontend
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+    team: team-infra
+  name: pyroscope-query-frontend
+  namespace: profiles-system
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: query-frontend
+      app.kubernetes.io/instance: pyroscope
+      app.kubernetes.io/name: pyroscope
+      team: team-infra
+  template:
+    metadata:
+      annotations:
+        checksum/config: 66b252325ac08331c225fd12ad3b3a5aabe8e92d3c482750a9764a5fd1835452
+        profiles.grafana.com/cpu.port_name: http2
+        profiles.grafana.com/cpu.scrape: "true"
+        profiles.grafana.com/goroutine.port_name: http2
+        profiles.grafana.com/goroutine.scrape: "true"
+        profiles.grafana.com/memory.port_name: http2
+        profiles.grafana.com/memory.scrape: "true"
+      labels:
+        app.kubernetes.io/component: query-frontend
+        app.kubernetes.io/instance: pyroscope
+        app.kubernetes.io/name: pyroscope
+        name: query-frontend
+        team: team-infra
+    spec:
+      containers:
+      - args:
+        - -target=query-frontend
+        - -self-profiling.disable-push=true
+        - -server.http-listen-port=4040
+        - -memberlist.cluster-label=profiles-system-pyroscope
+        - -memberlist.join=dns+pyroscope-memberlist.profiles-system.svc.cluster.local.:7946
+        - -config.file=/etc/pyroscope/config.yaml
+        - -runtime-config.file=/etc/pyroscope/overrides/overrides.yaml
+        - -log.level=warn
+        - -store-gateway.sharding-ring.replication-factor=3
+        image: grafana/pyroscope:1.2.0
+        imagePullPolicy: IfNotPresent
+        name: query-frontend
+        ports:
+        - containerPort: 4040
+          name: http2
+          protocol: TCP
+        - containerPort: 7946
+          name: memberlist
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http2
+            scheme: HTTP
+        resources: {}
+        securityContext: {}
+        volumeMounts:
+        - mountPath: /etc/pyroscope/config.yaml
+          name: config
+          subPath: config.yaml
+        - mountPath: /etc/pyroscope/overrides/
+          name: overrides-config
+        - mountPath: /data
+          name: data
+      dnsPolicy: ClusterFirst
+      securityContext:
+        fsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+      serviceAccountName: pyroscope
+      volumes:
+      - configMap:
+          name: pyroscope-config
+        name: config
+      - configMap:
+          name: pyroscope-overrides-config
+        name: overrides-config
+      - emptyDir: {}
+        name: data
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: query-scheduler
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+    team: team-infra
+  name: pyroscope-query-scheduler
+  namespace: profiles-system
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: query-scheduler
+      app.kubernetes.io/instance: pyroscope
+      app.kubernetes.io/name: pyroscope
+      team: team-infra
+  template:
+    metadata:
+      annotations:
+        checksum/config: 66b252325ac08331c225fd12ad3b3a5aabe8e92d3c482750a9764a5fd1835452
+        profiles.grafana.com/cpu.port_name: http2
+        profiles.grafana.com/cpu.scrape: "true"
+        profiles.grafana.com/goroutine.port_name: http2
+        profiles.grafana.com/goroutine.scrape: "true"
+        profiles.grafana.com/memory.port_name: http2
+        profiles.grafana.com/memory.scrape: "true"
+      labels:
+        app.kubernetes.io/component: query-scheduler
+        app.kubernetes.io/instance: pyroscope
+        app.kubernetes.io/name: pyroscope
+        name: query-scheduler
+        team: team-infra
+    spec:
+      containers:
+      - args:
+        - -target=query-scheduler
+        - -self-profiling.disable-push=true
+        - -server.http-listen-port=4040
+        - -memberlist.cluster-label=profiles-system-pyroscope
+        - -memberlist.join=dns+pyroscope-memberlist.profiles-system.svc.cluster.local.:7946
+        - -config.file=/etc/pyroscope/config.yaml
+        - -runtime-config.file=/etc/pyroscope/overrides/overrides.yaml
+        - -log.level=warn
+        - -store-gateway.sharding-ring.replication-factor=3
+        image: grafana/pyroscope:1.2.0
+        imagePullPolicy: IfNotPresent
+        name: query-scheduler
+        ports:
+        - containerPort: 4040
+          name: http2
+          protocol: TCP
+        - containerPort: 7946
+          name: memberlist
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http2
+            scheme: HTTP
+        resources: {}
+        securityContext: {}
+        volumeMounts:
+        - mountPath: /etc/pyroscope/config.yaml
+          name: config
+          subPath: config.yaml
+        - mountPath: /etc/pyroscope/overrides/
+          name: overrides-config
+        - mountPath: /data
+          name: data
+      dnsPolicy: ClusterFirst
+      securityContext:
+        fsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+      serviceAccountName: pyroscope
+      volumes:
+      - configMap:
+          name: pyroscope-config
+        name: config
+      - configMap:
+          name: pyroscope-overrides-config
+        name: overrides-config
+      - emptyDir: {}
+        name: data
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app.kubernetes.io/component: compactor
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+    team: team-infra
+  name: pyroscope-compactor
+  namespace: profiles-system
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: compactor
+      app.kubernetes.io/instance: pyroscope
+      app.kubernetes.io/name: pyroscope
+      team: team-infra
+  serviceName: pyroscope-compactor-headless
+  template:
+    metadata:
+      annotations:
+        checksum/config: 66b252325ac08331c225fd12ad3b3a5aabe8e92d3c482750a9764a5fd1835452
+        profiles.grafana.com/cpu.port_name: http2
+        profiles.grafana.com/cpu.scrape: "true"
+        profiles.grafana.com/goroutine.port_name: http2
+        profiles.grafana.com/goroutine.scrape: "true"
+        profiles.grafana.com/memory.port_name: http2
+        profiles.grafana.com/memory.scrape: "true"
+      labels:
+        app.kubernetes.io/component: compactor
+        app.kubernetes.io/instance: pyroscope
+        app.kubernetes.io/name: pyroscope
+        name: compactor
+        team: team-infra
+    spec:
+      containers:
+      - args:
+        - -target=compactor
+        - -self-profiling.disable-push=true
+        - -server.http-listen-port=4040
+        - -memberlist.cluster-label=profiles-system-pyroscope
+        - -memberlist.join=dns+pyroscope-memberlist.profiles-system.svc.cluster.local.:7946
+        - -config.file=/etc/pyroscope/config.yaml
+        - -runtime-config.file=/etc/pyroscope/overrides/overrides.yaml
+        - -log.level=warn
+        - -store-gateway.sharding-ring.replication-factor=3
+        image: grafana/pyroscope:1.2.0
+        imagePullPolicy: IfNotPresent
+        name: compactor
+        ports:
+        - containerPort: 4040
+          name: http2
+          protocol: TCP
+        - containerPort: 7946
+          name: memberlist
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http2
+            scheme: HTTP
+        resources: {}
+        securityContext: {}
+        volumeMounts:
+        - mountPath: /etc/pyroscope/config.yaml
+          name: config
+          subPath: config.yaml
+        - mountPath: /etc/pyroscope/overrides/
+          name: overrides-config
+        - mountPath: /data
+          name: data
+          subPath: default
+        - mountPath: /data-compactor
+          name: data
+          subPath: compactor
+      dnsPolicy: ClusterFirst
+      securityContext:
+        fsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+      serviceAccountName: pyroscope
+      volumes:
+      - configMap:
+          name: pyroscope-config
+        name: config
+      - configMap:
+          name: pyroscope-overrides-config
+        name: overrides-config
+      - emptyDir: {}
+        name: data
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app.kubernetes.io/component: ingester
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+    team: team-infra
+  name: pyroscope-ingester
+  namespace: profiles-system
+spec:
+  podManagementPolicy: Parallel
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: ingester
+      app.kubernetes.io/instance: pyroscope
+      app.kubernetes.io/name: pyroscope
+      team: team-infra
+  serviceName: pyroscope-ingester-headless
+  template:
+    metadata:
+      annotations:
+        checksum/config: 66b252325ac08331c225fd12ad3b3a5aabe8e92d3c482750a9764a5fd1835452
+        profiles.grafana.com/cpu.port_name: http2
+        profiles.grafana.com/cpu.scrape: "true"
+        profiles.grafana.com/goroutine.port_name: http2
+        profiles.grafana.com/goroutine.scrape: "true"
+        profiles.grafana.com/memory.port_name: http2
+        profiles.grafana.com/memory.scrape: "true"
+      labels:
+        app.kubernetes.io/component: ingester
+        app.kubernetes.io/instance: pyroscope
+        app.kubernetes.io/name: pyroscope
+        name: ingester
+        team: team-infra
+    spec:
+      containers:
+      - args:
+        - -target=ingester
+        - -self-profiling.disable-push=true
+        - -server.http-listen-port=4040
+        - -memberlist.cluster-label=profiles-system-pyroscope
+        - -memberlist.join=dns+pyroscope-memberlist.profiles-system.svc.cluster.local.:7946
+        - -config.file=/etc/pyroscope/config.yaml
+        - -runtime-config.file=/etc/pyroscope/overrides/overrides.yaml
+        - -log.level=warn
+        - -store-gateway.sharding-ring.replication-factor=3
+        image: grafana/pyroscope:1.2.0
+        imagePullPolicy: IfNotPresent
+        name: ingester
+        ports:
+        - containerPort: 4040
+          name: http2
+          protocol: TCP
+        - containerPort: 7946
+          name: memberlist
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http2
+            scheme: HTTP
+        resources: {}
+        securityContext: {}
+        volumeMounts:
+        - mountPath: /etc/pyroscope/config.yaml
+          name: config
+          subPath: config.yaml
+        - mountPath: /etc/pyroscope/overrides/
+          name: overrides-config
+        - mountPath: /data
+          name: data
+      dnsPolicy: ClusterFirst
+      securityContext:
+        fsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+      serviceAccountName: pyroscope
+      terminationGracePeriodSeconds: 300
+      volumes:
+      - configMap:
+          name: pyroscope-config
+        name: config
+      - configMap:
+          name: pyroscope-overrides-config
+        name: overrides-config
+      - emptyDir: {}
+        name: data
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: minio
+    chart: minio-4.0.12
+    heritage: Helm
+    release: pyroscope
+    team: team-infra
+  name: pyroscope-minio
+  namespace: profiles-system
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minio
+      release: pyroscope
+      team: team-infra
+  serviceName: pyroscope-minio-svc
+  template:
+    metadata:
+      annotations:
+        checksum/config: 519c05ed034cc56a0f727c4bafe7f2b3e4907dcd11e6d6c91e3802ff6f5f6e55
+        checksum/secrets: 1b590e3fe0ba5c914db6d9dd203a034b484a53955f855d330256b2c2cf3207ea
+        phlare.grafana.com/port: "9000"
+        phlare.grafana.com/scrape: "true"
+      labels:
+        app: minio
+        release: pyroscope
+        team: team-infra
+      name: pyroscope-minio
+    spec:
+      containers:
+      - command:
+        - /bin/sh
+        - -ce
+        - /usr/bin/docker-entrypoint.sh minio server  http://pyroscope-minio-{0...0}.pyroscope-minio-svc.profiles-system.svc.cluster.local/export-{0...1}
+          -S /etc/minio/certs/ --address :9000 --console-address :9001
+        env:
+        - name: MINIO_ROOT_USER
+          valueFrom:
+            secretKeyRef:
+              key: rootUser
+              name: pyroscope-minio
+        - name: MINIO_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: rootPassword
+              name: pyroscope-minio
+        - name: MINIO_PROMETHEUS_AUTH_TYPE
+          value: public
+        image: quay.io/minio/minio:RELEASE.2022-08-13T21-54-44Z
+        imagePullPolicy: IfNotPresent
+        name: minio
+        ports:
+        - containerPort: 9000
+          name: http
+        - containerPort: 9001
+          name: http-console
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        volumeMounts:
+        - mountPath: /export-0
+          name: export-0
+        - mountPath: /export-1
+          name: export-1
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 1000
+        runAsUser: 1000
+      serviceAccountName: minio-sa
+      volumes:
+      - name: minio-user
+        secret:
+          secretName: pyroscope-minio
+  updateStrategy:
+    type: RollingUpdate
+  volumeClaimTemplates:
+  - metadata:
+      labels:
+        team: team-infra
+      name: export-0
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 5Gi
+  - metadata:
+      labels:
+        team: team-infra
+      name: export-1
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 5Gi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app.kubernetes.io/component: store-gateway
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.1.5
+    helm.sh/chart: pyroscope-1.2.0
+    team: team-infra
+  name: pyroscope-store-gateway
+  namespace: profiles-system
+spec:
+  podManagementPolicy: Parallel
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: store-gateway
+      app.kubernetes.io/instance: pyroscope
+      app.kubernetes.io/name: pyroscope
+      team: team-infra
+  serviceName: pyroscope-store-gateway-headless
+  template:
+    metadata:
+      annotations:
+        checksum/config: 66b252325ac08331c225fd12ad3b3a5aabe8e92d3c482750a9764a5fd1835452
+        profiles.grafana.com/cpu.port_name: http2
+        profiles.grafana.com/cpu.scrape: "true"
+        profiles.grafana.com/goroutine.port_name: http2
+        profiles.grafana.com/goroutine.scrape: "true"
+        profiles.grafana.com/memory.port_name: http2
+        profiles.grafana.com/memory.scrape: "true"
+      labels:
+        app.kubernetes.io/component: store-gateway
+        app.kubernetes.io/instance: pyroscope
+        app.kubernetes.io/name: pyroscope
+        name: store-gateway
+        team: team-infra
+    spec:
+      containers:
+      - args:
+        - -target=store-gateway
+        - -self-profiling.disable-push=true
+        - -server.http-listen-port=4040
+        - -memberlist.cluster-label=profiles-system-pyroscope
+        - -memberlist.join=dns+pyroscope-memberlist.profiles-system.svc.cluster.local.:7946
+        - -config.file=/etc/pyroscope/config.yaml
+        - -runtime-config.file=/etc/pyroscope/overrides/overrides.yaml
+        - -log.level=warn
+        - -store-gateway.sharding-ring.replication-factor=3
+        image: grafana/pyroscope:1.2.0
+        imagePullPolicy: IfNotPresent
+        name: store-gateway
+        ports:
+        - containerPort: 4040
+          name: http2
+          protocol: TCP
+        - containerPort: 7946
+          name: memberlist
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http2
+            scheme: HTTP
+        resources: {}
+        securityContext: {}
+        volumeMounts:
+        - mountPath: /etc/pyroscope/config.yaml
+          name: config
+          subPath: config.yaml
+        - mountPath: /etc/pyroscope/overrides/
+          name: overrides-config
+        - mountPath: /data
+          name: data
+      dnsPolicy: ClusterFirst
+      securityContext:
+        fsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+      serviceAccountName: pyroscope
+      volumes:
+      - configMap:
+          name: pyroscope-config
+        name: config
+      - configMap:
+          name: pyroscope-overrides-config
+        name: overrides-config
+      - emptyDir: {}
+        name: data
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: hook-succeeded,before-hook-creation
+  labels:
+    app: minio-make-bucket-job
+    chart: minio-4.0.12
+    heritage: Helm
+    release: pyroscope
+    team: team-infra
+  name: pyroscope-minio-make-bucket-job
+  namespace: profiles-system
+spec:
+  template:
+    metadata:
+      labels:
+        app: minio-job
+        release: pyroscope
+        team: team-infra
+    spec:
+      containers:
+      - command:
+        - /bin/sh
+        - /config/initialize
+        env:
+        - name: MINIO_ENDPOINT
+          value: pyroscope-minio
+        - name: MINIO_PORT
+          value: "9000"
+        image: quay.io/minio/mc:RELEASE.2022-08-11T00-30-48Z
+        imagePullPolicy: IfNotPresent
+        name: minio-mc
+        resources:
+          requests:
+            memory: 128Mi
+        volumeMounts:
+        - mountPath: /config
+          name: minio-configuration
+      restartPolicy: OnFailure
+      volumes:
+      - name: minio-configuration
+        projected:
+          sources:
+          - configMap:
+              name: pyroscope-minio
+          - secret:
+              name: pyroscope-minio
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: hook-succeeded,before-hook-creation
+  labels:
+    app: minio-make-user-job
+    chart: minio-4.0.12
+    heritage: Helm
+    release: pyroscope
+    team: team-infra
+  name: pyroscope-minio-make-user-job
+  namespace: profiles-system
+spec:
+  template:
+    metadata:
+      labels:
+        app: minio-job
+        release: pyroscope
+        team: team-infra
+    spec:
+      containers:
+      - command:
+        - /bin/sh
+        - /config/add-user
+        env:
+        - name: MINIO_ENDPOINT
+          value: pyroscope-minio
+        - name: MINIO_PORT
+          value: "9000"
+        image: quay.io/minio/mc:RELEASE.2022-08-11T00-30-48Z
+        imagePullPolicy: IfNotPresent
+        name: minio-mc
+        resources:
+          requests:
+            memory: 128Mi
+        volumeMounts:
+        - mountPath: /config
+          name: minio-configuration
+      restartPolicy: OnFailure
+      volumes:
+      - name: minio-configuration
+        projected:
+          sources:
+          - configMap:
+              name: pyroscope-minio
+          - secret:
+              name: pyroscope-minio
