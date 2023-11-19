@@ -47,13 +47,112 @@ copyright: $(COPYRIGHT) ## Add Copyright header to .go files.
 	@$(COPYRIGHT) $(shell go list -f "{{.Dir}}" ./... | xargs -I {} find {} -name "*.go")
 	@echo ">> ensured all .go files have copyright headers"
 
+##@ Docker compose
+
+# Docker monolithic-mode
+.PHONY: up-monolithic-mode-metrics
+up-monolithic-mode-metrics: ## Run monolithic-mode metrics
+	$(info ******************** run monolithic-mode metrics ********************)
+	docker compose --project-directory docker-compose/monolithic-mode/metrics --file docker-compose/monolithic-mode/metrics/docker-compose.yaml up -d --remove-orphans
+down-monolithic-mode-metrics:
+	docker compose --project-directory docker-compose/monolithic-mode/metrics --file docker-compose/monolithic-mode/metrics/docker-compose.yaml down
+
+.PHONY: up-monolithic-mode-logs
+up-monolithic-mode-logs: ## Run monolithic-mode logs
+	$(info ******************** run monolithic-mode logs ********************)
+	docker compose --project-directory docker-compose/monolithic-mode/logs --file docker-compose/monolithic-mode/logs/docker-compose.yaml up -d --remove-orphans
+down-monolithic-mode-logs:
+	docker compose --project-directory docker-compose/monolithic-mode/logs --file docker-compose/monolithic-mode/logs/docker-compose.yaml down
+
+.PHONY: up-monolithic-mode-traces
+up-monolithic-mode-traces: ## Run monolithic-mode traces
+	$(info ******************** run monolithic-mode traces ********************)
+	docker compose --project-directory docker-compose/monolithic-mode/traces --file docker-compose/monolithic-mode/traces/docker-compose.yaml up -d --remove-orphans
+down-monolithic-mode-traces:
+	docker compose --project-directory docker-compose/monolithic-mode/traces --file docker-compose/monolithic-mode/traces/docker-compose.yaml down
+
+.PHONY: up-monolithic-mode-profiles
+up-monolithic-mode-profiles: ## Run monolithic-mode profiles
+	$(info ******************** run monolithic-mode profiles ********************)
+	docker compose --project-directory docker-compose/monolithic-mode/profiles --file docker-compose/monolithic-mode/profiles/docker-compose.yaml up -d --remove-orphans
+down-monolithic-mode-profiles:
+	docker compose --project-directory docker-compose/monolithic-mode/profiles --file docker-compose/monolithic-mode/profiles/docker-compose.yaml down
+
+.PHONY: up-monolithic-mode-all-in-one
+up-monolithic-mode-all-in-one: ## Run monolithic-mode all-in-one
+	$(info ******************** run monolithic-mode all-in-one ********************)
+	docker compose --project-directory docker-compose/monolithic-mode/all-in-one --file docker-compose/monolithic-mode/all-in-one/docker-compose.yaml up -d --remove-orphans
+down-monolithic-mode-all-in-one:
+	docker compose --project-directory docker-compose/monolithic-mode/all-in-one --file docker-compose/monolithic-mode/all-in-one/docker-compose.yaml down
+
+# Docker read-write-mode
+.PHONY: up-read-write-mode-metrics
+up-read-write-mode-metrics: ## Run read-write-mode metrics
+	$(info ******************** run read-write-mode metrics ********************)
+	docker compose --project-directory docker-compose/read-write-mode/metrics --file docker-compose/read-write-mode/metrics/docker-compose.yaml up -d --remove-orphans
+down-read-write-mode-metrics:
+	docker compose --project-directory docker-compose/read-write-mode/metrics --file docker-compose/read-write-mode/metrics/docker-compose.yaml down
+
+.PHONY: up-read-write-mode-logs
+up-read-write-mode-logs: ## Run read-write-mode logs
+	$(info ******************** run read-write-mode logs ********************)
+	docker compose --project-directory docker-compose/read-write-mode/logs --file docker-compose/read-write-mode/logs/docker-compose.yaml up -d --remove-orphans
+down-read-write-mode-logs:
+	docker compose --project-directory docker-compose/read-write-mode/logs --file docker-compose/read-write-mode/logs/docker-compose.yaml down
+
+.PHONY: up-read-write-mode-traces
+up-read-write-mode-traces: ## Run read-write-mode traces
+	$(info ******************** run read-write-mode traces ********************)
+	docker compose --project-directory docker-compose/read-write-mode/traces --file docker-compose/read-write-mode/traces/docker-compose.yaml up -d --remove-orphans
+down-read-write-mode-traces:
+	docker compose --project-directory docker-compose/read-write-mode/traces --file docker-compose/read-write-mode/traces/docker-compose.yaml down
+
+.PHONY: up-read-write-mode-profiles
+up-read-write-mode-profiles: ## Run read-write-mode profiles
+	$(info ******************** run read-write-mode profiles ********************)
+	docker compose --project-directory docker-compose/read-write-mode/profiles --file docker-compose/read-write-mode/profiles/docker-compose.yaml up -d --remove-orphans
+down-read-write-mode-profiles:
+	docker compose --project-directory docker-compose/read-write-mode/profiles --file docker-compose/read-write-mode/profiles/docker-compose.yaml down
+
+
+# Docker microservices-mode
+.PHONY: up-microservices-mode-metrics
+up-microservices-mode-metrics: ## Run microservices-mode metrics
+	$(info ******************** run microservices-mode metrics ********************)
+	docker compose --project-directory docker-compose/microservices-mode/metrics --file docker-compose/microservices-mode/metrics/docker-compose.yaml up -d --remove-orphans
+down-microservices-mode-metrics:
+	docker compose --project-directory docker-compose/microservices-mode/metrics --file docker-compose/microservices-mode/metrics/docker-compose.yaml down
+
+.PHONY: up-microservices-mode-logs
+up-microservices-mode-logs: ## Run microservices-mode logs
+	$(info ******************** run microservices-mode logs ********************)
+	docker compose --project-directory docker-compose/microservices-mode/logs --file docker-compose/microservices-mode/logs/docker-compose.yaml up -d --remove-orphans
+down-microservices-mode-logs:
+	docker compose --project-directory docker-compose/microservices-mode/logs --file docker-compose/microservices-mode/logs/docker-compose.yaml down
+
+.PHONY: up-microservices-mode-traces
+up-microservices-mode-traces: ## Run microservices-mode traces
+	$(info ******************** run microservices-mode traces ********************)
+	docker compose --project-directory docker-compose/microservices-mode/traces --file docker-compose/microservices-mode/traces/docker-compose.yaml up -d --remove-orphans
+down-microservices-mode-traces:
+	docker compose --project-directory docker-compose/microservices-mode/traces --file docker-compose/microservices-mode/traces/docker-compose.yaml down
+
+.PHONY: up-microservices-mode-profiles
+up-microservices-mode-profiles: ## Run microservices-mode profiles
+	$(info ******************** run microservices-mode profiles ********************)
+	docker compose --project-directory docker-compose/microservices-mode/profiles --file docker-compose/microservices-mode/profiles/docker-compose.yaml up -d --remove-orphans
+down-microservices-mode-profiles:
+	docker compose --project-directory docker-compose/microservices-mode/profiles --file docker-compose/microservices-mode/profiles/docker-compose.yaml down
+
+
 ##@ Kubernetes
 
 .PHONY: cluster
 cluster: ## Create k3s cluster
 	k3d cluster create k3s-codelab --config kubernetes/k3d-k3s-config.yaml
 
-image-import: ## Import image(s) from docker into k3d cluster(s).
+image-import:
+# Import image(s) from docker into k3d cluster(s).
 	k3d image import -c k3s-codelab grafana/pyroscope:1.2.0
 
 clean: ## Clean cluster
@@ -64,8 +163,7 @@ manifests: ## Generates k8s manifests
 manifests: $(KUSTOMIZE) manifests-common manifests-monolithic-mode manifests-read-write-mode manifests-microservices-mode
 	@$(KUSTOMIZE) build monitoring-mixins > monitoring-mixins/k8s-all-in-one.yaml
 
-.PHONY: manifests-common
-manifests-common: $(KUSTOMIZE)  ## Generates manifests-common manifests
+manifests-common: $(KUSTOMIZE)
 	$(info ******************** generates manifests-common manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana-agent > kubernetes/common/grafana-agent/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana > kubernetes/common/grafana/k8s-all-in-one.yaml
@@ -106,8 +204,7 @@ deploy-kube-prometheus-stack: ## Deploy kube-prometheus-stack manifests
 	$(info ******************** deploy kube-prometheus-stack manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/kube-prometheus-stack | kubectl apply -f -
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/rancher-pushprox | kubectl apply -f -
-
-delete-kube-prometheus-stack: ## Delete kube-prometheus-stack manifests
+delete-kube-prometheus-stack:
 	$(info ******************** delete kube-prometheus-stack manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/kube-prometheus-stack | kubectl delete -f -
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/rancher-pushprox | kubectl delete -f -
@@ -118,8 +215,7 @@ deploy-grafana: deploy-prometheus-operator-crds ## Deploy grafana manifests
 	$(info ******************** deploy grafana manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana | kubectl apply -f -
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana-agent | kubectl apply -f -
-
-delete-grafana: ## Delete grafana manifests
+delete-grafana:
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana-agent | kubectl delete --ignore-not-found -f -
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana | kubectl delete --ignore-not-found -f -
 
@@ -134,16 +230,14 @@ delete-grafana: ## Delete grafana manifests
 deploy-monolithic-mode-logs: deploy-grafana ## Deploy monolithic-mode logs
 	$(info ******************** deploy monolithic-mode logs manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/logs | kubectl apply -f -
-
-delete-monolithic-mode-logs: ## Delete monolithic-mode logs
+delete-monolithic-mode-logs:
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/logs | kubectl delete -f -
 
 .PHONY: deploy-monolithic-mode-profiles
 deploy-monolithic-mode-profiles: deploy-grafana ## Deploy monolithic-mode profiles
 	$(info ******************** deploy monolithic-mode profiles manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/profiles | kubectl apply -f -
-
-delete-monolithic-mode-profiles: ## Delete monolithic-mode profiles
+delete-monolithic-mode-profiles:
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/profiles | kubectl delete -f -
 
 
@@ -153,8 +247,7 @@ delete-monolithic-mode-profiles: ## Delete monolithic-mode profiles
 deploy-read-write-mode-logs: deploy-grafana ## Deploy read-write-mode logs
 	$(info ******************** deploy read-write-mode logs manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/read-write-mode/logs | kubectl apply -f -
-
-delete-read-write-mode-logs: ## Delete read-write-mode logs
+delete-read-write-mode-logs:
 	@$(KUSTOMIZE) build kubernetes/read-write-mode/logs | kubectl delete -f -
 
 
@@ -165,8 +258,7 @@ deploy-microservices-mode-metrics: deploy-grafana ## Deploy microservices-mode m
 	$(info ******************** deploy microservices-mode metrics manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/microservices-mode/metrics | kubectl apply -f -
 	@$(KUSTOMIZE) build monitoring-mixins | kubectl apply -f -
-
-delete-microservices-mode-metrics: ## Delete microservices-mode metrics
+delete-microservices-mode-metrics:
 	@$(KUSTOMIZE) build kubernetes/microservices-mode/metrics | kubectl delete -f -
 	@$(KUSTOMIZE) build monitoring-mixins | kubectl delete -f -
 
@@ -175,8 +267,7 @@ delete-microservices-mode-metrics: ## Delete microservices-mode metrics
 deploy-microservices-mode-profiles: deploy-grafana ## Deploy microservices-mode profiles
 	$(info ******************** deploy microservices-mode profiles manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/microservices-mode/profiles | kubectl apply -f -
-
-delete-microservices-mode-profiles: ## Delete microservices-mode profiles
+delete-microservices-mode-profiles:
 	@$(KUSTOMIZE) build kubernetes/microservices-mode/profiles | kubectl delete -f -
 
 ##@ General
