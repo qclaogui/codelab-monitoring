@@ -100,20 +100,6 @@ up-read-write-mode-logs: ## Run read-write-mode logs
 down-read-write-mode-logs:
 	docker compose --project-directory docker-compose/read-write-mode/logs --file docker-compose/read-write-mode/logs/docker-compose.yaml down
 
-.PHONY: up-read-write-mode-traces
-up-read-write-mode-traces: ## Run read-write-mode traces
-	$(info ******************** run read-write-mode traces ********************)
-	docker compose --project-directory docker-compose/read-write-mode/traces --file docker-compose/read-write-mode/traces/docker-compose.yaml up -d --remove-orphans
-down-read-write-mode-traces:
-	docker compose --project-directory docker-compose/read-write-mode/traces --file docker-compose/read-write-mode/traces/docker-compose.yaml down
-
-.PHONY: up-read-write-mode-profiles
-up-read-write-mode-profiles: ## Run read-write-mode profiles
-	$(info ******************** run read-write-mode profiles ********************)
-	docker compose --project-directory docker-compose/read-write-mode/profiles --file docker-compose/read-write-mode/profiles/docker-compose.yaml up -d --remove-orphans
-down-read-write-mode-profiles:
-	docker compose --project-directory docker-compose/read-write-mode/profiles --file docker-compose/read-write-mode/profiles/docker-compose.yaml down
-
 
 # Docker microservices-mode
 .PHONY: up-microservices-mode-metrics
@@ -171,6 +157,7 @@ manifests-common: $(KUSTOMIZE)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/prometheus-blackbox-exporter > kubernetes/common/prometheus-blackbox-exporter/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/prometheus-operator-crds > kubernetes/common/prometheus-operator-crds/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/rancher-pushprox > kubernetes/common/rancher-pushprox/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/minio-operator > kubernetes/common/minio-operator/k8s-all-in-one.yaml
 
 
 .PHONY: manifests-monolithic-mode
