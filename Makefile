@@ -54,7 +54,7 @@ CONFIG_FILES_IN_DOCKER = $(subst ./, /data/, $(CONFIG_FILES))
 fmt: ## Uses Grafana Agent to fmt the river config
 	@for c in $(CONFIG_FILES_IN_DOCKER); do \
 		echo "$$c"; \
-		docker run -e AGENT_MODE=flow --rm --volume "$(shell pwd):/data" -u $(shell id -u) grafana/agent:v0.37.4 fmt -w $$c ; \
+		docker run -e AGENT_MODE=flow --rm --volume "$(shell pwd):/data" -u $(shell id -u) grafana/agent:v0.38.0 fmt -w $$c ; \
 	done
 
 ##@ Docker compose
