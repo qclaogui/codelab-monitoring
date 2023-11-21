@@ -19,7 +19,7 @@ build: ## Generates the mixin files
 	#../../tools/check-rules.sh "$(MIXIN_OUT_PATH)/rules.yaml" 20 ; \
 
 .PHONY: check
-check: build fmt ## Build, fmt and check the mixin files
+check: build fmt manifests## Build, fmt and check the mixin files
 	@../../tools/find-diff-or-untracked.sh . "$(MIXIN_OUT_PATH)" || (echo "Please build and fmt mixin by running 'make build fmt'" && false); \
 	# jb install && \
 	# $(MIXTOOL) lint mixin.libsonnet
