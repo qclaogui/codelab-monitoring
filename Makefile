@@ -47,6 +47,16 @@ copyright: $(COPYRIGHT) ## Add Copyright header to .go files.
 	@$(COPYRIGHT) $(shell go list -f "{{.Dir}}" ./... | xargs -I {} find {} -name "*.go")
 	@echo ">> ensured all .go files have copyright headers"
 
+
+CONFIG_FILES = $(shell find . -type f -name '*.river')
+CONFIG_FILES_IN_DOCKER = $(subst ./, /data/, $(CONFIG_FILES))
+.PHONY: fmt
+fmt: ## Uses Grafana Agent to fmt the river config
+	@for c in $(CONFIG_FILES_IN_DOCKER); do \
+		echo "$$c"; \
+		docker run -e AGENT_MODE=flow --rm --volume "$(shell pwd):/data" -u $(shell id -u) grafana/agent:v0.37.4 fmt -w $$c ; \
+	done
+
 ##@ Docker compose
 
 # Docker monolithic-mode
