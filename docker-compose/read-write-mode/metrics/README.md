@@ -61,6 +61,22 @@ flowchart LR
     end
 ```
 
-## Getting Started
+## Quick Start
 
-Simply run `docker compose up` and all the components will start.
+```shell
+git clone https://github.com/qclaogui/codelab-monitoring.git && cd "$(basename "$_" .git)"
+
+make up-read-write-mode-metrics
+```
+
+That's it.
+
+Once all containers are up and running you can search for traces in Grafana.
+
+Navigate to [http://localhost:3000/explore](http://localhost:3000/explore) and select the search tab.
+
+## Clean up
+
+```shell
+make down-read-write-mode-metrics
+```

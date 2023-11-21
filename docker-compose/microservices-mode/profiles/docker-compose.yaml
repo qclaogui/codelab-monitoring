@@ -33,7 +33,7 @@ services:
     depends_on:
       ingester:
         condition: service_started
-    image: &pyroscopeImage grafana/pyroscope:1.1.5
+    image: &pyroscopeImage grafana/pyroscope:1.2.0
     volumes:
       - ../../common/config/pyroscope/microservices-mode-profiles.yaml:/etc/config.yaml # Note: profiles use microservices-mode-profiles.yaml
     ports:
@@ -75,6 +75,26 @@ services:
         aliases:
           - pyroscope-memberlist
 
+  compactor:
+    depends_on:
+      minio:
+        condition: service_healthy
+    image: *pyroscopeImage
+    volumes:
+      - ../../common/config/pyroscope/microservices-mode-profiles.yaml:/etc/config.yaml # Note: profiles use microservices-mode-profiles.yaml
+    command:
+      - -config.file=/etc/config.yaml
+      - -target=compactor
+      - -memberlist.cluster-label=profiles-system
+      - -memberlist.join=pyroscope-memberlist:7946
+      - -log.level=warn
+    deploy:
+      replicas: 1
+    networks:
+      default:
+        aliases:
+          - pyroscope-memberlist
+
   query-frontend:
     depends_on:
       minio:
@@ -110,6 +130,7 @@ services:
       - -memberlist.cluster-label=profiles-system
       - -memberlist.join=pyroscope-memberlist:7946
       - -log.level=warn
+      - -store-gateway.sharding-ring.replication-factor=1
     networks:
       default:
         aliases:
@@ -146,6 +167,7 @@ services:
       - -memberlist.cluster-label=profiles-system
       - -memberlist.join=pyroscope-memberlist:7946
       - -log.level=error
+      - -store-gateway.sharding-ring.replication-factor=1
     networks:
       default:
         aliases:

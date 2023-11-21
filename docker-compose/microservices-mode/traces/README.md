@@ -44,5 +44,22 @@ flowchart LR
     end
 ```
 
+## Quick Start
+
+```shell
+git clone https://github.com/qclaogui/codelab-monitoring.git && cd "$(basename "$_" .git)"
+
+make up-microservices-mode-traces
+```
+
+That's it.
+
 Once all containers are up and running you can search for traces in Grafana.
+
 Navigate to [http://localhost:3000/explore](http://localhost:3000/explore) and select the search tab.
+
+## Clean up
+
+```shell
+make down-microservices-mode-traces
+```

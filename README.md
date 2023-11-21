@@ -41,7 +41,27 @@ These instructions will get you through the deploying samples with Docker Compos
 - [Logs [Loki (Query-Frontend + Querier + Ruler + Distributor + Ingester)]](./docker-compose/microservices-mode/logs)
 - [Traces [Tempo (Query-Frontend + Querier + Distributor + Ingester + Compactor)]](./docker-compose/microservices-mode/traces)
 - [Metrics [Mimir (Query-Frontend + Querier + Store-Gateway + Distributor + Ingester + Compactor)]](./docker-compose/microservices-mode/metrics)
-- [Profiles [Pyroscope (Query-Frontend + Query-Scheduler + Querier + Distributor + Ingester)]](./docker-compose/microservices-mode/profiles)
+- [Profiles [Pyroscope (Query-Frontend + Query-Scheduler + Querier + Store-Gateway + Distributor + Ingester + Compactor)]](./docker-compose/microservices-mode/profiles)
+
+### Quick Start(docker-compose)
+
+```shell
+git clone https://github.com/qclaogui/codelab-monitoring.git && cd "$(basename "$_" .git)"
+
+make up-monolithic-mode-metrics
+```
+
+That's it.
+
+Once all containers are up and running you can search for traces in Grafana.
+
+Navigate to [http://localhost:3000/explore](http://localhost:3000/explore) and select the search tab.
+
+### Clean up(docker-compose)
+
+```shell
+make down-monolithic-mode-metrics
+```
 
 ## Kubernetes
 
@@ -66,11 +86,44 @@ These instructions will get you through the deploying samples with Docker Compos
 - Logs
 - Traces
 - [Metrics [Mimir (Query-Frontend + Querier + Store-Gateway + Distributor + Ingester + Compactor)]](./kubernetes/microservices-mode/metrics)
-- Profiles
+- [Profiles [Pyroscope (Query-Frontend + Query-Scheduler + Querier + Store-Gateway + Distributor + Ingester + Compactor)]](./kubernetes/microservices-mode/profiles)
+
+### Quick Start(kubernetes)
+
+Install dependencies tools
+
+```shell
+git clone https://github.com/qclaogui/codelab-monitoring.git && cd "$(basename "$_" .git)"
+
+make install-build-deps
+```
+
+Create a cluster and mapping the ingress port 80 to localhost:8080
+
+```shell
+make cluster
+```
+
+Deploy manifests
+
+```shell
+make deploy-monolithic-mode-logs
+```
+
+Once all containers are up and running you can search for traces in Grafana.
+
+Navigate to [http://localhost:8080/explore](http://localhost:8080/explore) and select the search tab.
+
+### Clean up(kubernetes)
+
+```shell
+make delete-monolithic-mode-logs
+```
+
+help
 
 ```shell
 make help
-
 
 Usage:
   make <target>
@@ -84,6 +137,7 @@ Dashboards
 Lint & fmt
   check                                     Check all the mixin files
   copyright                                 Add Copyright header to .go files.
+  fmt                                       Uses Grafana Agent to fmt the river config
 
 Docker compose
   up-monolithic-mode-metrics                Run monolithic-mode metrics
@@ -93,8 +147,6 @@ Docker compose
   up-monolithic-mode-all-in-one             Run monolithic-mode all-in-one
   up-read-write-mode-metrics                Run read-write-mode metrics
   up-read-write-mode-logs                   Run read-write-mode logs
-  up-read-write-mode-traces                 Run read-write-mode traces
-  up-read-write-mode-profiles               Run read-write-mode profiles
   up-microservices-mode-metrics             Run microservices-mode metrics
   up-microservices-mode-logs                Run microservices-mode logs
   up-microservices-mode-traces              Run microservices-mode traces

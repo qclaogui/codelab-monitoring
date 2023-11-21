@@ -28,20 +28,32 @@ flowchart LR
 
 ## Quick Start
 
+Install dependencies tools
+
 ```shell
 git clone https://github.com/qclaogui/codelab-monitoring.git && cd "$(basename "$_" .git)"
 
-make up-monolithic-mode-profiles
+make install-build-deps
 ```
 
-That's it.
+Create a cluster and mapping the ingress port 80 to localhost:8080
+
+```shell
+make cluster
+```
+
+Deploy manifests
+
+```shell
+make deploy-monolithic-mode-profiles
+```
 
 Once all containers are up and running you can search for traces in Grafana.
 
-Navigate to [http://localhost:3000/explore](http://localhost:3000/explore) and select the search tab.
+Navigate to [http://localhost:8080/explore](http://localhost:8080/explore) and select the search tab.
 
 ## Clean up
 
 ```shell
-make down-monolithic-mode-profiles
+make delete-monolithic-mode-profiles
 ```
