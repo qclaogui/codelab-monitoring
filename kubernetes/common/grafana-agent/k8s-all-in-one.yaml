@@ -119,27 +119,26 @@ apiVersion: v1
 data:
   config.river: "/*\nThe following example shows using the default all logs processing
     module, for\na single tenant and specifying the destination url/credentials via
-    environment\nvariables.\n*/\nlogging {\n  level  = coalesce(env(\"AGENT_LOG_LEVEL\"),
-    \"info\")\n  format = \"logfmt\"\n}\n\nmodule.file \"lgtmp\" {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"),
-    \"/etc/agent-modules\") + \"/lgtmp.river\"\n\n\targuments {\n    cluster           =
-    coalesce(env(\"CLUSTER\"), \"k3d-k3s\")\n    metrics_endpoint  = env(\"METRICS_ENDPOINT\")\n
-    \   logs_endpoint     = env(\"LOGS_ENDPOINT\")\n    profiles_endpoint = env(\"PROFILES_ENDPOINT\")\n\t}\n}\n\n/********************************************\n
+    environment\nvariables.\n*/\nlogging {\n\tlevel  = coalesce(env(\"AGENT_LOG_LEVEL\"),
+    \"info\")\n\tformat = \"logfmt\"\n}\n\nmodule.file \"lgtmp\" {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"),
+    \"/etc/agent-modules\") + \"/lgtmp.river\"\n\n\targuments {\n\t\tcluster           =
+    coalesce(env(\"CLUSTER\"), \"k3d-k3s\")\n\t\tmetrics_endpoint  = env(\"METRICS_ENDPOINT\")\n\t\tlogs_endpoint
+    \    = env(\"LOGS_ENDPOINT\")\n\t\tprofiles_endpoint = env(\"PROFILES_ENDPOINT\")\n\t}\n}\n\n/********************************************\n
     * Metrics\n ********************************************/\nmodule.file \"metrics_primary\"
     {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent-modules\")
-    + \"/metrics.river\"\n\n  arguments {\n    forward_to = [module.file.lgtmp.exports.metrics_receiver]\n
-    \   clustering = true\n  }\n}\n\n/********************************************\n
-    * Logs\n ********************************************/\nmodule.git \"event_logs\"
-    {\n  repository = \"https://github.com/grafana/agent-modules.git\"\n  revision
-    \  = \"main\"\n  path       = \"modules/kubernetes/logs/events.river\"\n\n  arguments
-    {\n    forward_to = [module.file.lgtmp.exports.logs_receiver]\n    git_pull_freq
-    = \"0s\"\n  }\n}\n\n/********************************************\n * Profiles\n
+    + \"/metrics.river\"\n\n\targuments {\n\t\tforward_to = [module.file.lgtmp.exports.metrics_receiver]\n\t\tclustering
+    = true\n\t}\n}\n\n/********************************************\n * Logs\n ********************************************/\nmodule.git
+    \"event_logs\" {\n\trepository = \"https://github.com/grafana/agent-modules.git\"\n\trevision
+    \  = \"main\"\n\tpath       = \"modules/kubernetes/logs/events.river\"\n\n\targuments
+    {\n\t\tforward_to    = [module.file.lgtmp.exports.logs_receiver]\n\t\tgit_pull_freq
+    = \"0s\"\n\t}\n}\n\n/********************************************\n * Profiles\n
     ********************************************/\nmodule.file \"profiles_primary\"
     {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent-modules\")
-    + \"/profiles.river\"\n\n  arguments {\n    forward_to = [module.file.lgtmp.exports.profiles_receiver]\n
-    \   clustering = true\n  }\n}\n"
+    + \"/profiles.river\"\n\n\targuments {\n\t\tforward_to = [module.file.lgtmp.exports.profiles_receiver]\n\t\tclustering
+    = true\n\t}\n}\n"
 kind: ConfigMap
 metadata:
-  name: agent-config-24fkcmk5t9
+  name: agent-config-8b4t4mhg7b
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -160,97 +159,93 @@ data:
     = pyroscope.write.pyroscope.receiver\n}\n\n/********************************************\n
     * Endpoints\n ********************************************/\n\n// Metrics\nprometheus.remote_write
     \"mimir\" {\n\tendpoint {\n\t\turl = argument.metrics_endpoint.value + \"/api/v1/push\"\n\t}\n\n\texternal_labels
-    = {\n\t\t\"scraped_by\" = \"grafana-agent\",\n\t\t\"cluster\" \t = argument.cluster.value,\n\t}\n}\n\n//
+    = {\n\t\t\"scraped_by\" = \"grafana-agent\",\n\t\t\"cluster\"    = argument.cluster.value,\n\t}\n}\n\n//
     Logs\nloki.write \"loki\" {\n\tendpoint {\n\t\turl = argument.logs_endpoint.value
     + \"/loki/api/v1/push\"\n\t}\n\n\texternal_labels = {\n\t\t\"scraped_by\" = \"grafana-agent\",\n\t\t\"cluster\"
-    \t = argument.cluster.value,\n\t}\n}\n\n// Traces\notelcol.exporter.otlp \"tempo\"
+    \   = argument.cluster.value,\n\t}\n}\n\n// Traces\notelcol.exporter.otlp \"tempo\"
     {\n\tclient {\n\t\tendpoint = argument.traces_endpoint.value\n\n\t\ttls {\n\t\t\tinsecure
     \            = true\n\t\t\tinsecure_skip_verify = true\n\t\t}\n\t}\n}\n\n// Profiles\npyroscope.write
     \"pyroscope\" {\n\tendpoint {\n\t\turl = argument.profiles_endpoint.value\n\t}\n\n\texternal_labels
-    = {\n\t\t\"scraped_by\" = \"grafana-agent\",\n\t\t\"cluster\" \t = argument.cluster.value,\n\t}\n}\n"
+    = {\n\t\t\"scraped_by\" = \"grafana-agent\",\n\t\t\"cluster\"    = argument.cluster.value,\n\t}\n}\n"
   logs.river: "/*\nModule: logs\nDescription: Wrapper module to include all kubernetes
-    logging modules and use cri parsing\n*/\nargument \"forward_to\" {\n  // comment
+    logging modules and use cri parsing\n*/\nargument \"forward_to\" {\n\t// comment
     = \"Must be a list(LogsReceiver) where collected logs should be forwarded to\"\n\toptional
-    = false\n}\n\nargument \"tenant\" {\n  // comment = \"The tenant to filter logs
+    = false\n}\n\nargument \"tenant\" {\n\t// comment = \"The tenant to filter logs
     to.  This does not have to be the tenantId, this is the value to look for in the
-    logs.agent.grafana.com/tenant annotation, and this can be a regex.\"\n  optional
-    = true\n  default = \".*\"\n}\n\nargument \"keep_labels\" {\n  // comment = \"List
-    of labels to keep before the log message is written to Loki\"\n  optional = true\n
-    \ default = [\n    \"app\",\n    \"cluster\",\n    \"component\",\n    \"container\",\n
-    \   \"deployment\",\n    \"env\",\n    \"filename\",\n    \"instance\",\n    \"job\",\n
-    \   \"level\",\n    \"log_type\",\n    \"namespace\",\n    \"region\",\n    \"service\",\n
-    \   \"squad\",\n    \"team\",\n  ]\n}\n\nargument \"git_repo\" {\n  optional =
-    true\n  default = coalesce(env(\"GIT_REPO\"), \"https://github.com/grafana/agent-modules.git\")\n}\n\nargument
-    \"git_rev\" {\n  optional = true\n  default = coalesce(env(\"GIT_REV\"), env(\"GIT_REVISION\"),
-    env(\"GIT_BRANCH\"), \"main\")\n}\n\nargument \"git_pull_freq\" {\n  // comment
-    = \"How often to pull the git repo, the default is 0s which means never pull\"\n
-    \ optional = true\n  default = \"0s\"\n}\n\nmodule.git \"log_targets\" {\n  repository
-    = argument.git_repo.value\n  revision = argument.git_rev.value\n  pull_frequency
-    = argument.git_pull_freq.value\n  path = \"modules/kubernetes/logs/targets/logs-from-worker.river\"\n\n
-    \ arguments {\n    forward_to = [module.git.log_formats_all.exports.process.receiver]\n
-    \   tenant = argument.tenant.value\n    git_repo = argument.git_repo.value\n    git_rev
-    = argument.git_rev.value\n    git_pull_freq = argument.git_pull_freq.value\n  }\n}\n\nmodule.git
-    \"log_formats_all\" {\n  repository = argument.git_repo.value\n  revision = argument.git_rev.value\n
-    \ pull_frequency = argument.git_pull_freq.value\n  path = \"modules/kubernetes/logs/log-formats/all.river\"\n\n
-    \ arguments {\n    forward_to = [module.git.log_level_default.exports.process.receiver]\n
-    \   git_repo = argument.git_repo.value\n    git_rev = argument.git_rev.value\n
-    \   git_pull_freq = argument.git_pull_freq.value\n  }\n}\n\nmodule.git \"log_level_default\"
-    {\n  repository = argument.git_repo.value\n  revision = argument.git_rev.value\n
-    \ pull_frequency = argument.git_pull_freq.value\n  path = \"modules/kubernetes/logs/labels/log-level.river\"\n\n
-    \ arguments {\n    forward_to = [module.git.drop_levels.exports.process.receiver]\n
-    \ }\n}\n\nmodule.git \"drop_levels\" {\n  repository = argument.git_repo.value\n
-    \ revision = argument.git_rev.value\n  pull_frequency = argument.git_pull_freq.value\n
-    \ path = \"modules/kubernetes/logs/drops/levels.river\"\n\n  arguments {\n    forward_to
-    = [module.git.scrub_all.exports.process.receiver]\n    git_repo = argument.git_repo.value\n
-    \   git_rev = argument.git_rev.value\n    git_pull_freq = argument.git_pull_freq.value\n
-    \ }\n}\n\nmodule.git \"scrub_all\" {\n  repository = argument.git_repo.value\n
-    \ revision = argument.git_rev.value\n  pull_frequency = argument.git_pull_freq.value\n
-    \ path = \"modules/kubernetes/logs/scrubs/all.river\"\n\n  arguments {\n    forward_to
-    = [module.git.embed_pod.exports.process.receiver]\n    git_repo = argument.git_repo.value\n
-    \   git_rev = argument.git_rev.value\n    git_pull_freq = argument.git_pull_freq.value\n
-    \ }\n}\n\nmodule.git \"embed_pod\" {\n  repository = argument.git_repo.value\n
-    \ revision = argument.git_rev.value\n  pull_frequency = argument.git_pull_freq.value\n
-    \ path = \"modules/kubernetes/logs/embed/pod.river\"\n\n  arguments {\n    forward_to
-    = [module.git.mask_all.exports.process.receiver]\n  }\n}\n\nmodule.git \"mask_all\"
-    {\n  repository = argument.git_repo.value\n  revision = argument.git_rev.value\n
-    \ pull_frequency = argument.git_pull_freq.value\n  path = \"modules/kubernetes/logs/masks/all.river\"\n\n
-    \ arguments {\n    forward_to = [module.git.label_normalize_filename.exports.process.receiver]\n
-    \   git_repo = argument.git_repo.value\n    git_rev = argument.git_rev.value\n
-    \   git_pull_freq = argument.git_pull_freq.value\n  }\n}\n\nmodule.git \"label_normalize_filename\"
-    {\n  repository = argument.git_repo.value\n  revision = argument.git_rev.value\n
-    \ pull_frequency = argument.git_pull_freq.value\n  path = \"modules/kubernetes/logs/labels/normalize-filename.river\"\n\n
-    \ arguments {\n    forward_to = [module.git.label_keep.exports.process.receiver]\n
-    \ }\n}\n\nmodule.git \"label_keep\" {\n  repository = argument.git_repo.value\n
-    \ revision = argument.git_rev.value\n  pull_frequency = argument.git_pull_freq.value\n
-    \ path = \"modules/kubernetes/logs/labels/keep-labels.river\"\n\n  arguments {\n
-    \   forward_to = argument.forward_to.value\n    keep_labels = argument.keep_labels.value\n
-    \ }\n}\n"
+    logs.agent.grafana.com/tenant annotation, and this can be a regex.\"\n\toptional
+    = true\n\tdefault  = \".*\"\n}\n\nargument \"keep_labels\" {\n\t// comment = \"List
+    of labels to keep before the log message is written to Loki\"\n\toptional = true\n\tdefault
+    \ = [\n\t\t\"app\",\n\t\t\"cluster\",\n\t\t\"component\",\n\t\t\"container\",\n\t\t\"deployment\",\n\t\t\"env\",\n\t\t\"filename\",\n\t\t\"instance\",\n\t\t\"job\",\n\t\t\"level\",\n\t\t\"log_type\",\n\t\t\"namespace\",\n\t\t\"region\",\n\t\t\"service\",\n\t\t\"squad\",\n\t\t\"team\",\n\t]\n}\n\nargument
+    \"git_repo\" {\n\toptional = true\n\tdefault  = coalesce(env(\"GIT_REPO\"), \"https://github.com/grafana/agent-modules.git\")\n}\n\nargument
+    \"git_rev\" {\n\toptional = true\n\tdefault  = coalesce(env(\"GIT_REV\"), env(\"GIT_REVISION\"),
+    env(\"GIT_BRANCH\"), \"main\")\n}\n\nargument \"git_pull_freq\" {\n\t// comment
+    = \"How often to pull the git repo, the default is 0s which means never pull\"\n\toptional
+    = true\n\tdefault  = \"0s\"\n}\n\nmodule.git \"log_targets\" {\n\trepository     =
+    argument.git_repo.value\n\trevision       = argument.git_rev.value\n\tpull_frequency
+    = argument.git_pull_freq.value\n\tpath           = \"modules/kubernetes/logs/targets/logs-from-worker.river\"\n\n\targuments
+    {\n\t\tforward_to    = [module.git.log_formats_all.exports.process.receiver]\n\t\ttenant
+    \       = argument.tenant.value\n\t\tgit_repo      = argument.git_repo.value\n\t\tgit_rev
+    \      = argument.git_rev.value\n\t\tgit_pull_freq = argument.git_pull_freq.value\n\t}\n}\n\nmodule.git
+    \"log_formats_all\" {\n\trepository     = argument.git_repo.value\n\trevision
+    \      = argument.git_rev.value\n\tpull_frequency = argument.git_pull_freq.value\n\tpath
+    \          = \"modules/kubernetes/logs/log-formats/all.river\"\n\n\targuments
+    {\n\t\tforward_to    = [module.git.log_level_default.exports.process.receiver]\n\t\tgit_repo
+    \     = argument.git_repo.value\n\t\tgit_rev       = argument.git_rev.value\n\t\tgit_pull_freq
+    = argument.git_pull_freq.value\n\t}\n}\n\nmodule.git \"log_level_default\" {\n\trepository
+    \    = argument.git_repo.value\n\trevision       = argument.git_rev.value\n\tpull_frequency
+    = argument.git_pull_freq.value\n\tpath           = \"modules/kubernetes/logs/labels/log-level.river\"\n\n\targuments
+    {\n\t\tforward_to = [module.git.drop_levels.exports.process.receiver]\n\t}\n}\n\nmodule.git
+    \"drop_levels\" {\n\trepository     = argument.git_repo.value\n\trevision       =
+    argument.git_rev.value\n\tpull_frequency = argument.git_pull_freq.value\n\tpath
+    \          = \"modules/kubernetes/logs/drops/levels.river\"\n\n\targuments {\n\t\tforward_to
+    \   = [module.git.scrub_all.exports.process.receiver]\n\t\tgit_repo      = argument.git_repo.value\n\t\tgit_rev
+    \      = argument.git_rev.value\n\t\tgit_pull_freq = argument.git_pull_freq.value\n\t}\n}\n\nmodule.git
+    \"scrub_all\" {\n\trepository     = argument.git_repo.value\n\trevision       =
+    argument.git_rev.value\n\tpull_frequency = argument.git_pull_freq.value\n\tpath
+    \          = \"modules/kubernetes/logs/scrubs/all.river\"\n\n\targuments {\n\t\tforward_to
+    \   = [module.git.embed_pod.exports.process.receiver]\n\t\tgit_repo      = argument.git_repo.value\n\t\tgit_rev
+    \      = argument.git_rev.value\n\t\tgit_pull_freq = argument.git_pull_freq.value\n\t}\n}\n\nmodule.git
+    \"embed_pod\" {\n\trepository     = argument.git_repo.value\n\trevision       =
+    argument.git_rev.value\n\tpull_frequency = argument.git_pull_freq.value\n\tpath
+    \          = \"modules/kubernetes/logs/embed/pod.river\"\n\n\targuments {\n\t\tforward_to
+    = [module.git.mask_all.exports.process.receiver]\n\t}\n}\n\nmodule.git \"mask_all\"
+    {\n\trepository     = argument.git_repo.value\n\trevision       = argument.git_rev.value\n\tpull_frequency
+    = argument.git_pull_freq.value\n\tpath           = \"modules/kubernetes/logs/masks/all.river\"\n\n\targuments
+    {\n\t\tforward_to    = [module.git.label_normalize_filename.exports.process.receiver]\n\t\tgit_repo
+    \     = argument.git_repo.value\n\t\tgit_rev       = argument.git_rev.value\n\t\tgit_pull_freq
+    = argument.git_pull_freq.value\n\t}\n}\n\nmodule.git \"label_normalize_filename\"
+    {\n\trepository     = argument.git_repo.value\n\trevision       = argument.git_rev.value\n\tpull_frequency
+    = argument.git_pull_freq.value\n\tpath           = \"modules/kubernetes/logs/labels/normalize-filename.river\"\n\n\targuments
+    {\n\t\tforward_to = [module.git.label_keep.exports.process.receiver]\n\t}\n}\n\nmodule.git
+    \"label_keep\" {\n\trepository     = argument.git_repo.value\n\trevision       =
+    argument.git_rev.value\n\tpull_frequency = argument.git_pull_freq.value\n\tpath
+    \          = \"modules/kubernetes/logs/labels/keep-labels.river\"\n\n\targuments
+    {\n\t\tforward_to  = argument.forward_to.value\n\t\tkeep_labels = argument.keep_labels.value\n\t}\n}\n"
   metrics.river: "/*\nModule: metrics-all\nDescription: Wrapper module to include
     all kubernetes metric modules and use cri parsing\n*/\nargument \"forward_to\"
-    {\n  // comment = \"Must be a list(MetricssReceiver) where collected logs should
-    be forwarded to\"\n\toptional = false\n}\n\nargument \"clustering\" {\n  // comment
-    = \"Whether or not clustering should be enabled\"\n  optional = true\n  default
-    = false\n}\n\n/********************************************\n * Kubernetes Auto
+    {\n\t// comment = \"Must be a list(MetricssReceiver) where collected logs should
+    be forwarded to\"\n\toptional = false\n}\n\nargument \"clustering\" {\n\t// comment
+    = \"Whether or not clustering should be enabled\"\n\toptional = true\n\tdefault
+    \ = false\n}\n\n/********************************************\n * Kubernetes Auto
     Scrape ServiceMonitor\n ********************************************/\nprometheus.operator.servicemonitors
-    \"auto_scrape_servicemonitors\" {\n  forward_to = argument.forward_to.value\n
-    \ \n  clustering {\n    enabled = argument.clustering.value\n  }\n}\n\n\n/********************************************\n
+    \"auto_scrape_servicemonitors\" {\n\tforward_to = argument.forward_to.value\n\n\tclustering
+    {\n\t\tenabled = argument.clustering.value\n\t}\n}\n\n/********************************************\n
     * Kubernetes Auto Scrape PodMonitors\n ********************************************/\nprometheus.operator.podmonitors
-    \"auto_scrape_podmonitors\" {\n  forward_to = argument.forward_to.value\n    \n
-    \ clustering {\n    enabled = argument.clustering.value\n  }\n  \n  selector {\n
-    \     match_expression {\n          key = \"team\"\n          operator = \"In\"\n
-    \         values = [\"team-infra\"]\n      }\n  }\n}\n\n/********************************************\n
+    \"auto_scrape_podmonitors\" {\n\tforward_to = argument.forward_to.value\n\n\tclustering
+    {\n\t\tenabled = argument.clustering.value\n\t}\n\n\tselector {\n\t\tmatch_expression
+    {\n\t\t\tkey      = \"team\"\n\t\t\toperator = \"In\"\n\t\t\tvalues   = [\"team-infra\"]\n\t\t}\n\t}\n}\n\n/********************************************\n
     * Kubernetes Prometheus Rules To Mimir\n ********************************************/\nmimir.rules.kubernetes
-    \"prometheus_rules_to_mimir\" {\n    address = coalesce(env(\"METRICS_ENDPOINT\"),
-    \"http://nginx.monitoring-system:8080\")\n    tenant_id = \"anonymous\"\n}"
+    \"prometheus_rules_to_mimir\" {\n\taddress   = coalesce(env(\"METRICS_ENDPOINT\"),
+    \"http://nginx.monitoring-system:8080\")\n\ttenant_id = \"anonymous\"\n}\n"
   profiles.river: "/*\nModule: profiles\nDescription: Wrapper module to include all
-    kubernetes profile modules and use cri parsing\n*/\nargument \"forward_to\" {\n
-    \ // comment = \"Must be a list(ProfilessReceiver) where collected logs should
-    be forwarded to\"\n\toptional = false\n}\n\nargument \"clustering\" {\n  // comment
-    = \"Whether or not clustering should be enabled\"\n  optional = true\n  default
-    = false\n}\n\n\ndiscovery.kubernetes \"pyroscope_kubernetes\" {\n\trole = \"pod\"\n}\n\n//
-    The default scrape config allows to define annotations based scraping.\n//\n//
-    For example the following annotations:\n//\n// ```\n// profiles.grafana.com/memory.scrape:
-    \"true\"\n// profiles.grafana.com/memory.port: \"8080\"\n// profiles.grafana.com/cpu.scrape:
+    kubernetes profile modules and use cri parsing\n*/\nargument \"forward_to\" {\n\t//
+    comment = \"Must be a list(ProfilessReceiver) where collected logs should be forwarded
+    to\"\n\toptional = false\n}\n\nargument \"clustering\" {\n\t// comment = \"Whether
+    or not clustering should be enabled\"\n\toptional = true\n\tdefault  = false\n}\n\ndiscovery.kubernetes
+    \"pyroscope_kubernetes\" {\n\trole = \"pod\"\n}\n\n// The default scrape config
+    allows to define annotations based scraping.\n//\n// For example the following
+    annotations:\n//\n// ```\n// profiles.grafana.com/memory.scrape: \"true\"\n//
+    profiles.grafana.com/memory.port: \"8080\"\n// profiles.grafana.com/cpu.scrape:
     \"true\"\n// profiles.grafana.com/cpu.port: \"8080\"\n// profiles.grafana.com/goroutine.scrape:
     \"true\"\n// profiles.grafana.com/goroutine.port: \"8080\"\n// ```\n//\n// will
     scrape the `memory`, `cpu` and `goroutine` profiles from the `8080` port of the
@@ -459,7 +454,7 @@ data:
     {\n\t\t\tenabled = false\n\t\t}\n\n\t\tprofile.fgprof {\n\t\t\tenabled = true\n\t\t}\n\t}\n}\n"
 kind: ConfigMap
 metadata:
-  name: agent-modules-mk2gb66f59
+  name: agent-modules-f7d98mmk7m
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -597,13 +592,13 @@ spec:
       serviceAccountName: grafana-agent
       volumes:
       - configMap:
-          name: agent-config-24fkcmk5t9
+          name: agent-config-8b4t4mhg7b
         name: config
       - hostPath:
           path: /var/log
         name: varlog
       - configMap:
-          name: agent-modules-mk2gb66f59
+          name: agent-modules-f7d98mmk7m
         name: agent-modules
 ---
 apiVersion: monitoring.coreos.com/v1
