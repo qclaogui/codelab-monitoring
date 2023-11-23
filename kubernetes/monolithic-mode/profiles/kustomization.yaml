@@ -3,15 +3,17 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-labels:
-- includeSelectors: true
-  pairs:
-    team: team-infra
-
 resources:
 - namespace.yaml
 - pyroscope/k8s-all-in-one.yaml
 - grafana-datasources-pyroscope.yaml
+
+# configMapGenerator:
+# - name: pyroscope-config
+#   namespace: profiles-system
+#   behavior: replace
+#   files:
+#   - config.yaml
 
 secretGenerator:
 - name: agent-env
@@ -21,3 +23,12 @@ secretGenerator:
   literals:
   - CLUSTER=k3d-k3s-codelab
   - PROFILES_ENDPOINT=http://pyroscope.profiles-system:4040
+
+# https://github.com/grafana/pyroscope/issues/448#issuecomment-938277234
+- name: pyroscope-env
+  namespace: profiles-system
+  options:
+    disableNameSuffixHash: true
+  literals:
+  - PYROSCOPE_LOG_LEVEL=info
+  - PYROSCOPE_ANALYTICS_REPORTING_ENABLED=false

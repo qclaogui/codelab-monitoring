@@ -1,8 +1,6 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  labels:
-    team: team-infra
   name: profiles-system
 ---
 apiVersion: v1
@@ -14,7 +12,6 @@ metadata:
     app.kubernetes.io/name: pyroscope
     app.kubernetes.io/version: 1.2.0
     helm.sh/chart: pyroscope-1.3.0
-    team: team-infra
   name: pyroscope
   namespace: profiles-system
 ---
@@ -27,7 +24,6 @@ metadata:
     app.kubernetes.io/name: pyroscope
     app.kubernetes.io/version: 1.2.0
     helm.sh/chart: pyroscope-1.3.0
-    team: team-infra
   name: profiles-system-pyroscope
   namespace: profiles-system
 rules:
@@ -54,7 +50,6 @@ metadata:
     app.kubernetes.io/name: pyroscope
     app.kubernetes.io/version: 1.2.0
     helm.sh/chart: pyroscope-1.3.0
-    team: team-infra
   name: profiles-system-pyroscope
   namespace: profiles-system
 roleRef:
@@ -87,7 +82,6 @@ kind: ConfigMap
 metadata:
   labels:
     grafana_datasource: "1"
-    team: team-infra
   name: grafana-datasources-pyroscope
   namespace: monitoring-system
 ---
@@ -103,7 +97,6 @@ metadata:
     app.kubernetes.io/name: pyroscope
     app.kubernetes.io/version: 1.2.0
     helm.sh/chart: pyroscope-1.3.0
-    team: team-infra
   name: pyroscope-config
   namespace: profiles-system
 ---
@@ -120,7 +113,6 @@ metadata:
     app.kubernetes.io/name: pyroscope
     app.kubernetes.io/version: 1.2.0
     helm.sh/chart: pyroscope-1.3.0
-    team: team-infra
   name: pyroscope-overrides-config
   namespace: profiles-system
 ---
@@ -130,10 +122,18 @@ data:
   PROFILES_ENDPOINT: aHR0cDovL3B5cm9zY29wZS5wcm9maWxlcy1zeXN0ZW06NDA0MA==
 kind: Secret
 metadata:
-  labels:
-    team: team-infra
   name: agent-env
   namespace: monitoring-system
+type: Opaque
+---
+apiVersion: v1
+data:
+  PYROSCOPE_ANALYTICS_REPORTING_ENABLED: ZmFsc2U=
+  PYROSCOPE_LOG_LEVEL: aW5mbw==
+kind: Secret
+metadata:
+  name: pyroscope-env
+  namespace: profiles-system
 type: Opaque
 ---
 apiVersion: v1
@@ -146,7 +146,6 @@ metadata:
     app.kubernetes.io/name: pyroscope
     app.kubernetes.io/version: 1.2.0
     helm.sh/chart: pyroscope-1.3.0
-    team: team-infra
   name: pyroscope
   namespace: profiles-system
 spec:
@@ -159,7 +158,6 @@ spec:
     app.kubernetes.io/component: all
     app.kubernetes.io/instance: pyroscope
     app.kubernetes.io/name: pyroscope
-    team: team-infra
   type: ClusterIP
 ---
 apiVersion: v1
@@ -172,7 +170,6 @@ metadata:
     app.kubernetes.io/name: pyroscope
     app.kubernetes.io/version: 1.2.0
     helm.sh/chart: pyroscope-1.3.0
-    team: team-infra
   name: pyroscope-headless
   namespace: profiles-system
 spec:
@@ -186,7 +183,6 @@ spec:
     app.kubernetes.io/component: all
     app.kubernetes.io/instance: pyroscope
     app.kubernetes.io/name: pyroscope
-    team: team-infra
   type: ClusterIP
 ---
 apiVersion: v1
@@ -198,7 +194,6 @@ metadata:
     app.kubernetes.io/name: pyroscope
     app.kubernetes.io/version: 1.2.0
     helm.sh/chart: pyroscope-1.3.0
-    team: team-infra
   name: pyroscope-memberlist
   namespace: profiles-system
 spec:
@@ -212,7 +207,6 @@ spec:
   selector:
     app.kubernetes.io/instance: pyroscope
     app.kubernetes.io/name: pyroscope
-    team: team-infra
   type: ClusterIP
 ---
 apiVersion: apps/v1
@@ -225,7 +219,6 @@ metadata:
     app.kubernetes.io/name: pyroscope
     app.kubernetes.io/version: 1.2.0
     helm.sh/chart: pyroscope-1.3.0
-    team: team-infra
   name: pyroscope
   namespace: profiles-system
 spec:
@@ -236,7 +229,6 @@ spec:
       app.kubernetes.io/component: all
       app.kubernetes.io/instance: pyroscope
       app.kubernetes.io/name: pyroscope
-      team: team-infra
   serviceName: pyroscope-headless
   template:
     metadata:
@@ -253,7 +245,6 @@ spec:
         app.kubernetes.io/instance: pyroscope
         app.kubernetes.io/name: pyroscope
         name: pyroscope
-        team: team-infra
     spec:
       containers:
       - args:
@@ -265,6 +256,9 @@ spec:
         - -config.file=/etc/pyroscope/config.yaml
         - -runtime-config.file=/etc/pyroscope/overrides/overrides.yaml
         - -log.level=debug
+        envFrom:
+        - secretRef:
+            name: pyroscope-env
         image: grafana/pyroscope:1.2.0
         imagePullPolicy: IfNotPresent
         name: pyroscope
@@ -316,7 +310,6 @@ metadata:
     app.kubernetes.io/name: pyroscope
     app.kubernetes.io/version: 1.2.0
     helm.sh/chart: pyroscope-1.3.0
-    team: team-infra
   name: pyroscope
   namespace: profiles-system
 spec:
@@ -326,4 +319,3 @@ spec:
       app.kubernetes.io/component: all
       app.kubernetes.io/instance: pyroscope
       app.kubernetes.io/name: pyroscope
-      team: team-infra
