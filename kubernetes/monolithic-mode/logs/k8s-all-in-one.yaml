@@ -14,7 +14,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
-    helm.sh/chart: loki-5.36.3
+    helm.sh/chart: loki-5.38.0
     team: team-infra
   name: loki
   namespace: logging-system
@@ -35,7 +35,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
-    helm.sh/chart: loki-5.36.3
+    helm.sh/chart: loki-5.38.0
     team: team-infra
   name: loki-clusterrole
 rules:
@@ -57,7 +57,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
-    helm.sh/chart: loki-5.36.3
+    helm.sh/chart: loki-5.38.0
     team: team-infra
   name: loki-clusterrolebinding
 roleRef:
@@ -93,7 +93,6 @@ data:
     index_gateway:
       mode: ring
     limits_config:
-      enforce_metric_name: false
       max_cache_freshness_per_query: 10m
       reject_old_samples: true
       reject_old_samples_max_age: 168h
@@ -127,6 +126,8 @@ data:
         at: 250ms
         max_per_second: 20
         up_to: 3
+    tracing:
+      enabled: false
 kind: ConfigMap
 metadata:
   labels:
@@ -134,7 +135,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
-    helm.sh/chart: loki-5.36.3
+    helm.sh/chart: loki-5.38.0
     team: team-infra
   name: loki
   namespace: logging-system
@@ -195,7 +196,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
-    helm.sh/chart: loki-5.36.3
+    helm.sh/chart: loki-5.38.0
     team: team-infra
   name: loki-gateway
   namespace: logging-system
@@ -439,7 +440,7 @@ kind: ConfigMap
 metadata:
   labels:
     app: minio
-    chart: minio-4.0.12
+    chart: minio-4.0.15
     heritage: Helm
     release: loki
     team: team-infra
@@ -457,7 +458,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
-    helm.sh/chart: loki-5.36.3
+    helm.sh/chart: loki-5.38.0
     team: team-infra
   name: loki-runtime
   namespace: logging-system
@@ -474,7 +475,7 @@ data:
       uid: loki
       access: proxy
       orgId: 1
-      url: http://loki.logging-system.svc.cluster.local:3100
+      url: http://loki-gateway.logging-system.svc.cluster.local:80
       basicAuth: false
       isDefault: true
       version: 1
@@ -495,7 +496,7 @@ kind: Secret
 metadata:
   labels:
     app: minio
-    chart: minio-4.0.12
+    chart: minio-4.0.15
     heritage: Helm
     release: loki
     team: team-infra
@@ -506,7 +507,9 @@ type: Opaque
 apiVersion: v1
 data:
   CLUSTER: azNkLWszcy1jb2RlbGFi
-  LOGS_ENDPOINT: aHR0cDovL2xva2kubG9nZ2luZy1zeXN0ZW0uc3ZjLmNsdXN0ZXIubG9jYWw6MzEwMA==
+  LOGS_ENDPOINT: |
+    aHR0cDovL2xva2ktZ2F0ZXdheS5sb2dnaW5nLXN5c3RlbS5zdmMuY2x1c3Rlci5sb2NhbD
+    o4MA==
 kind: Secret
 metadata:
   labels:
@@ -523,7 +526,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
-    helm.sh/chart: loki-5.36.3
+    helm.sh/chart: loki-5.38.0
     team: team-infra
   name: loki
   namespace: logging-system
@@ -553,7 +556,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
-    helm.sh/chart: loki-5.36.3
+    helm.sh/chart: loki-5.38.0
     team: team-infra
   name: loki-gateway
   namespace: logging-system
@@ -578,7 +581,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
-    helm.sh/chart: loki-5.36.3
+    helm.sh/chart: loki-5.38.0
     prometheus.io/service-monitor: "false"
     team: team-infra
     variant: headless
@@ -604,7 +607,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
-    helm.sh/chart: loki-5.36.3
+    helm.sh/chart: loki-5.38.0
     team: team-infra
   name: loki-memberlist
   namespace: logging-system
@@ -627,7 +630,7 @@ kind: Service
 metadata:
   labels:
     app: minio
-    chart: minio-4.0.12
+    chart: minio-4.0.15
     heritage: Helm
     monitoring: "true"
     release: loki
@@ -651,7 +654,7 @@ kind: Service
 metadata:
   labels:
     app: minio
-    chart: minio-4.0.12
+    chart: minio-4.0.15
     heritage: Helm
     release: loki
     team: team-infra
@@ -674,7 +677,7 @@ kind: Service
 metadata:
   labels:
     app: minio
-    chart: minio-4.0.12
+    chart: minio-4.0.15
     heritage: Helm
     release: loki
     team: team-infra
@@ -702,7 +705,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
-    helm.sh/chart: loki-5.36.3
+    helm.sh/chart: loki-5.38.0
     team: team-infra
   name: loki-gateway
   namespace: logging-system
@@ -720,7 +723,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 9e15eb03f9b54e266c9722a3dd9f369f299d9dfd301c0b74ebc41d741faa53c6
+        checksum/config: 058070fe2baddab2f17b91e07e67063042a9b9c8ed5debf695034497aac0f3c6
       labels:
         app.kubernetes.io/component: gateway
         app.kubernetes.io/instance: loki
@@ -792,7 +795,7 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 2.9.2
-    helm.sh/chart: loki-5.36.3
+    helm.sh/chart: loki-5.38.0
     team: team-infra
   name: loki
   namespace: logging-system
@@ -813,7 +816,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 2cb0578ad9a4d4ae6b5db7218d6aade9a87037cbf9f32affc2fa76f755cbd696
+        checksum/config: aa227c05f96a1d8aee962c332db2c11efac82ae081ed539d7086a5ab8f7ae667
       labels:
         app.kubernetes.io/component: single-binary
         app.kubernetes.io/instance: loki
@@ -913,7 +916,7 @@ kind: StatefulSet
 metadata:
   labels:
     app: minio
-    chart: minio-4.0.12
+    chart: minio-4.0.15
     heritage: Helm
     release: loki
     team: team-infra
@@ -931,8 +934,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 704e412925c10bbce379756e0d3abe2db696d5802a5fd54c71c45d67aeeeb77d
-        checksum/secrets: 21a460439317a08be9942e0300b3563da5652a87a270a9256c1d5905d9814821
+        checksum/config: 8ed69cbdebddeb38eba26d87d179eaff677d3077c281679b1dc24ab140ec0467
+        checksum/secrets: a2de5d84c6d9e50dddebfbbb1ebbb6775c11b4b2a3918011dd8c88ece67a51b1
       labels:
         app: minio
         release: loki
@@ -958,7 +961,7 @@ spec:
               name: loki-minio
         - name: MINIO_PROMETHEUS_AUTH_TYPE
           value: public
-        image: quay.io/minio/minio:RELEASE.2022-08-13T21-54-44Z
+        image: quay.io/minio/minio:RELEASE.2022-09-17T00-09-45Z
         imagePullPolicy: IfNotPresent
         name: minio
         ports:
@@ -1017,7 +1020,7 @@ metadata:
     helm.sh/hook-delete-policy: hook-succeeded,before-hook-creation
   labels:
     app: minio-make-bucket-job
-    chart: minio-4.0.12
+    chart: minio-4.0.15
     heritage: Helm
     release: loki
     team: team-infra
@@ -1040,7 +1043,7 @@ spec:
           value: loki-minio
         - name: MINIO_PORT
           value: "9000"
-        image: quay.io/minio/mc:RELEASE.2022-08-11T00-30-48Z
+        image: quay.io/minio/mc:RELEASE.2022-09-16T09-16-47Z
         imagePullPolicy: IfNotPresent
         name: minio-mc
         resources:
@@ -1050,6 +1053,7 @@ spec:
         - mountPath: /config
           name: minio-configuration
       restartPolicy: OnFailure
+      serviceAccountName: minio-sa
       volumes:
       - name: minio-configuration
         projected:
@@ -1067,7 +1071,7 @@ metadata:
     helm.sh/hook-delete-policy: hook-succeeded,before-hook-creation
   labels:
     app: minio-make-user-job
-    chart: minio-4.0.12
+    chart: minio-4.0.15
     heritage: Helm
     release: loki
     team: team-infra
@@ -1090,7 +1094,7 @@ spec:
           value: loki-minio
         - name: MINIO_PORT
           value: "9000"
-        image: quay.io/minio/mc:RELEASE.2022-08-11T00-30-48Z
+        image: quay.io/minio/mc:RELEASE.2022-09-16T09-16-47Z
         imagePullPolicy: IfNotPresent
         name: minio-mc
         resources:
@@ -1100,6 +1104,7 @@ spec:
         - mountPath: /config
           name: minio-configuration
       restartPolicy: OnFailure
+      serviceAccountName: minio-sa
       volumes:
       - name: minio-configuration
         projected:
