@@ -1,0 +1,37 @@
+secrets:
+  existingSecret:
+    name: codelab-minio-env
+
+tenant:
+  name: codelab
+  configuration:
+    name: codelab-minio-env
+  pools:
+  - name: pool-2gb
+    # https://github.com/minio/operator/pull/1828
+    # reclaimStorage: true
+    servers: 2
+    volumesPerServer: 2
+    size: 2Gi
+
+  features:
+    bucketDNS: false
+    domains: { }
+    enableSFTP: false
+  
+  exposeServices:
+    minio: false
+    console: false
+
+  buckets:
+  - name: mimir-data
+  - name: mimir-rules
+  - name: mimir-alertmanager
+  - name: loki-data
+  - name: loki-rules
+  - name: tempo-data
+  - name: pyroscope-data
+  
+  # Each secret should specify the ``CONSOLE_ACCESS_KEY`` and ``CONSOLE_SECRET_KEY`` as the access key and secret key for that user.
+  users:
+  - name: user-lgtmp

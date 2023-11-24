@@ -1,0 +1,49 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: minio
+  namespace: minio-system
+spec:
+  endpoints:
+  - port: https-minio
+    path: /minio/v2/metrics/cluster
+    relabelings:
+    - replacement: minio-system/minio
+      sourceLabels:
+      - job
+      targetLabel: job
+    scheme: https
+    tlsConfig:
+      insecureSkipVerify: true
+  - port: https-minio
+    path: /minio/v2/metrics/bucket
+    relabelings:
+    - replacement: minio-system/minio-bucket
+      sourceLabels:
+      - job
+      targetLabel: job
+    scheme: https
+    tlsConfig:
+      insecureSkipVerify: true
+  - port: https-minio
+    path: /minio/v2/metrics/resource
+    relabelings:
+    - replacement: minio-system/minio-resource
+      sourceLabels:
+      - job
+      targetLabel: job
+    scheme: https
+    tlsConfig:
+      insecureSkipVerify: true
+  namespaceSelector:
+    matchNames:
+    - minio-system
+  selector:
+    matchExpressions:
+    - key: prometheus.io/service-monitor
+      operator: NotIn
+      values:
+      - "false"
+    matchLabels:
+      v1.min.io/tenant: codelab

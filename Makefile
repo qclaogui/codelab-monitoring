@@ -207,8 +207,20 @@ delete-kube-prometheus-stack:
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/rancher-pushprox | kubectl delete -f -
 
 
+# minio
+.PHONY: deploy-minio
+deploy-minio: ## Deploy minio manifests
+	$(info ******************** deploy minio manifests ********************)
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/minio-operator | kubectl apply -f -
+	@kubectl wait --for condition="Ready" pod --selector=app.kubernetes.io/instance=operator -n minio-system --timeout=60s
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/minio-tenant | kubectl apply -f -
+
+# minio-operator console jwt token 
+minio-token:
+	@kubectl get secret/console-sa-secret -n minio-system -o json | jq -r ".data.token" | base64 -d
+
 .PHONY: deploy-grafana
-deploy-grafana: deploy-prometheus-operator-crds ## Deploy grafana manifests
+deploy-grafana: deploy-prometheus-operator-crds deploy-minio ## Deploy grafana manifests
 	$(info ******************** deploy grafana manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana | kubectl apply -f -
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana-agent | kubectl apply -f -

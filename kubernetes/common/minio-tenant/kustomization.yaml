@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: minio-system
+
+helmCharts:
+- name: tenant
+  version: 5.0.11
+  repo: https://operator.min.io
+  releaseName: tenant
+  namespace: minio-system
+  includeCRDs: false
+  valuesFile: values-k3d-k3s.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    v1.min.io/tenant: codelab
+
+secretGenerator:
+- name: codelab-minio-env
+  files:
+  - config.env
+
+- name: user-lgtmp
+  literals:
+  - CONSOLE_ACCESS_KEY=lgtmp
+  - CONSOLE_SECRET_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
