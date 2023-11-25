@@ -64,6 +64,9 @@ fmt: ## Uses Grafana Agent to fmt the river config
 up-monolithic-mode-metrics: ## Run monolithic-mode metrics
 	$(info ******************** run monolithic-mode metrics ********************)
 	docker compose --project-directory docker-compose/monolithic-mode/metrics --file docker-compose/monolithic-mode/metrics/docker-compose.yaml up -d --remove-orphans
+	@echo ""
+	@echo "Demo is running."
+	@echo "Go to http://localhost:3000/explore for the metrics."
 down-monolithic-mode-metrics:
 	docker compose --project-directory docker-compose/monolithic-mode/metrics --file docker-compose/monolithic-mode/metrics/docker-compose.yaml down
 
@@ -71,6 +74,10 @@ down-monolithic-mode-metrics:
 up-monolithic-mode-logs: ## Run monolithic-mode logs
 	$(info ******************** run monolithic-mode logs ********************)
 	docker compose --project-directory docker-compose/monolithic-mode/logs --file docker-compose/monolithic-mode/logs/docker-compose.yaml up -d --remove-orphans
+	@echo ""
+	@echo "Demo is running."
+	@echo "Go to http://localhost:3000/explore for the logs."
+
 down-monolithic-mode-logs:
 	docker compose --project-directory docker-compose/monolithic-mode/logs --file docker-compose/monolithic-mode/logs/docker-compose.yaml down
 
@@ -78,6 +85,9 @@ down-monolithic-mode-logs:
 up-monolithic-mode-traces: ## Run monolithic-mode traces
 	$(info ******************** run monolithic-mode traces ********************)
 	docker compose --project-directory docker-compose/monolithic-mode/traces --file docker-compose/monolithic-mode/traces/docker-compose.yaml up -d --remove-orphans
+	@echo ""
+	@echo "Demo is running."
+	@echo "Go to http://localhost:3000/explore for the traces."
 down-monolithic-mode-traces:
 	docker compose --project-directory docker-compose/monolithic-mode/traces --file docker-compose/monolithic-mode/traces/docker-compose.yaml down
 
@@ -85,6 +95,9 @@ down-monolithic-mode-traces:
 up-monolithic-mode-profiles: ## Run monolithic-mode profiles
 	$(info ******************** run monolithic-mode profiles ********************)
 	docker compose --project-directory docker-compose/monolithic-mode/profiles --file docker-compose/monolithic-mode/profiles/docker-compose.yaml up -d --remove-orphans
+	@echo ""
+	@echo "Demo is running."
+	@echo "Go to http://localhost:3000/explore for the profiles."
 down-monolithic-mode-profiles:
 	docker compose --project-directory docker-compose/monolithic-mode/profiles --file docker-compose/monolithic-mode/profiles/docker-compose.yaml down
 
@@ -100,6 +113,9 @@ down-monolithic-mode-all-in-one:
 up-read-write-mode-metrics: ## Run read-write-mode metrics
 	$(info ******************** run read-write-mode metrics ********************)
 	docker compose --project-directory docker-compose/read-write-mode/metrics --file docker-compose/read-write-mode/metrics/docker-compose.yaml up -d --remove-orphans
+	@echo ""
+	@echo "Demo is running."
+	@echo "Go to http://localhost:3000/explore for the metrics."
 down-read-write-mode-metrics:
 	docker compose --project-directory docker-compose/read-write-mode/metrics --file docker-compose/read-write-mode/metrics/docker-compose.yaml down
 
@@ -107,6 +123,9 @@ down-read-write-mode-metrics:
 up-read-write-mode-logs: ## Run read-write-mode logs
 	$(info ******************** run read-write-mode logs ********************)
 	docker compose --project-directory docker-compose/read-write-mode/logs --file docker-compose/read-write-mode/logs/docker-compose.yaml up -d --remove-orphans
+	@echo ""
+	@echo "Demo is running."
+	@echo "Go to http://localhost:3000/explore for the logs."
 down-read-write-mode-logs:
 	docker compose --project-directory docker-compose/read-write-mode/logs --file docker-compose/read-write-mode/logs/docker-compose.yaml down
 
@@ -116,6 +135,9 @@ down-read-write-mode-logs:
 up-microservices-mode-metrics: ## Run microservices-mode metrics
 	$(info ******************** run microservices-mode metrics ********************)
 	docker compose --project-directory docker-compose/microservices-mode/metrics --file docker-compose/microservices-mode/metrics/docker-compose.yaml up -d --remove-orphans
+	@echo ""
+	@echo "Demo is running."
+	@echo "Go to http://localhost:3000/explore for the metrics."
 down-microservices-mode-metrics:
 	docker compose --project-directory docker-compose/microservices-mode/metrics --file docker-compose/microservices-mode/metrics/docker-compose.yaml down
 
@@ -123,6 +145,9 @@ down-microservices-mode-metrics:
 up-microservices-mode-logs: ## Run microservices-mode logs
 	$(info ******************** run microservices-mode logs ********************)
 	docker compose --project-directory docker-compose/microservices-mode/logs --file docker-compose/microservices-mode/logs/docker-compose.yaml up -d --remove-orphans
+	@echo ""
+	@echo "Demo is running."
+	@echo "Go to http://localhost:3000/explore for the logs."
 down-microservices-mode-logs:
 	docker compose --project-directory docker-compose/microservices-mode/logs --file docker-compose/microservices-mode/logs/docker-compose.yaml down
 
@@ -130,6 +155,9 @@ down-microservices-mode-logs:
 up-microservices-mode-traces: ## Run microservices-mode traces
 	$(info ******************** run microservices-mode traces ********************)
 	docker compose --project-directory docker-compose/microservices-mode/traces --file docker-compose/microservices-mode/traces/docker-compose.yaml up -d --remove-orphans
+	@echo ""
+	@echo "Demo is running."
+	@echo "Go to http://localhost:3000/explore for the traces."
 down-microservices-mode-traces:
 	docker compose --project-directory docker-compose/microservices-mode/traces --file docker-compose/microservices-mode/traces/docker-compose.yaml down
 
@@ -137,6 +165,9 @@ down-microservices-mode-traces:
 up-microservices-mode-profiles: ## Run microservices-mode profiles
 	$(info ******************** run microservices-mode profiles ********************)
 	docker compose --project-directory docker-compose/microservices-mode/profiles --file docker-compose/microservices-mode/profiles/docker-compose.yaml up -d --remove-orphans
+	@echo ""
+	@echo "Demo is running."
+	@echo "Go to http://localhost:3000/explore for the profiles."
 down-microservices-mode-profiles:
 	docker compose --project-directory docker-compose/microservices-mode/profiles --file docker-compose/microservices-mode/profiles/docker-compose.yaml down
 
@@ -239,6 +270,9 @@ delete-grafana:
 deploy-monolithic-mode-logs: deploy-grafana ## Deploy monolithic-mode logs
 	$(info ******************** deploy monolithic-mode logs manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/logs | kubectl apply -f -
+	@echo ""
+	@echo "Demo is running."
+	@echo "Go to http://localhost:8080/explore for the logs."
 delete-monolithic-mode-logs:
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/logs | kubectl delete -f -
 
@@ -246,6 +280,9 @@ delete-monolithic-mode-logs:
 deploy-monolithic-mode-profiles: deploy-grafana ## Deploy monolithic-mode profiles
 	$(info ******************** deploy monolithic-mode profiles manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/profiles | kubectl apply -f -
+	@echo ""
+	@echo "Demo is running."
+	@echo "Go to http://localhost:8080/explore for the profiles."
 delete-monolithic-mode-profiles:
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/profiles | kubectl delete -f -
 
@@ -256,6 +293,9 @@ delete-monolithic-mode-profiles:
 deploy-read-write-mode-logs: deploy-grafana ## Deploy read-write-mode logs
 	$(info ******************** deploy read-write-mode logs manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/read-write-mode/logs | kubectl apply -f -
+	@echo ""
+	@echo "Demo is running."
+	@echo "Go to http://localhost:8080/explore for the logs."
 delete-read-write-mode-logs:
 	@$(KUSTOMIZE) build kubernetes/read-write-mode/logs | kubectl delete -f -
 
@@ -267,6 +307,9 @@ deploy-microservices-mode-metrics: deploy-grafana ## Deploy microservices-mode m
 	$(info ******************** deploy microservices-mode metrics manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/microservices-mode/metrics | kubectl apply -f -
 	@$(KUSTOMIZE) build monitoring-mixins | kubectl apply -f -
+	@echo ""
+	@echo "Demo is running."
+	@echo "Go to http://localhost:8080/explore for the metrics."
 delete-microservices-mode-metrics:
 	@$(KUSTOMIZE) build kubernetes/microservices-mode/metrics | kubectl delete -f -
 	@$(KUSTOMIZE) build monitoring-mixins | kubectl delete -f -
@@ -276,6 +319,9 @@ delete-microservices-mode-metrics:
 deploy-microservices-mode-profiles: deploy-grafana ## Deploy microservices-mode profiles
 	$(info ******************** deploy microservices-mode profiles manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/microservices-mode/profiles | kubectl apply -f -
+	@echo ""
+	@echo "Demo is running."
+	@echo "Go to http://localhost:8080/explore for the profiles."
 delete-microservices-mode-profiles:
 	@$(KUSTOMIZE) build kubernetes/microservices-mode/profiles | kubectl delete -f -
 
