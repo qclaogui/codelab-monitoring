@@ -4,19 +4,15 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-- mimir-dep.yaml
-- mimir-svc.yaml
-- gossip-ring-headless-svc.yaml
+- mimir/mimir-dep.yaml
+- mimir/mimir-svc.yaml
+- mimir/gossip-ring-headless-svc.yaml
+- mimir/mimir-servicemonitor.yaml
 - grafana-datasources-mimir.yaml
-- configs/add-sm-mimir.yaml
 
 images:
 - name: grafana/mimir
   newTag: 2.10.4
-- name: quay.io/kiwigrid/k8s-sidecar
-  newTag: 1.25.2
-- name: docker.io/jimmidyson/configmap-reload
-  newTag: v0.8.0
 
 # Horizontally scale up support(Monolithic mode)
 # https://grafana.com/docs/mimir/latest/references/architecture/deployment-modes/#monolithic-mode
@@ -33,10 +29,6 @@ secretGenerator:
   - CLUSTER=k3d-k3s-codelab
   - METRICS_ENDPOINT=http://mimir.monitoring-system:8080
 
-- name: mimir-config
-  namespace: monitoring-system
-  files:
-  - configs/mimir.yaml
 - name: mimir-env
   namespace: monitoring-system
   literals:
@@ -44,8 +36,13 @@ secretGenerator:
   - COMMON_STORAGE_S3_ACCESS_KEY_ID=lgtmp
   - COMMON_STORAGE_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
 
+- name: mimir-config
+  namespace: monitoring-system
+  files:
+  - mimir.yaml
+
 configMapGenerator:
 - name: runtime-config
   namespace: monitoring-system
   files:
-  - configs/runtime.yaml
+  - runtime.yaml

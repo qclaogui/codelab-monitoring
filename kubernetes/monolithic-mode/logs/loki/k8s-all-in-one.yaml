@@ -53,75 +53,6 @@ subjects:
 ---
 apiVersion: v1
 data:
-  config.yaml: |2
-
-    auth_enabled: false
-    common:
-      compactor_address: 'loki'
-      path_prefix: /var/loki
-      replication_factor: 1
-      storage:
-        s3:
-          bucketnames: chunks
-          insecure: false
-          s3forcepathstyle: false
-    frontend:
-      scheduler_address: ""
-    frontend_worker:
-      scheduler_address: ""
-    index_gateway:
-      mode: ring
-    limits_config:
-      max_cache_freshness_per_query: 10m
-      reject_old_samples: true
-      reject_old_samples_max_age: 168h
-      split_queries_by_interval: 15m
-    memberlist:
-      join_members:
-      - loki-memberlist
-    query_range:
-      align_queries_with_step: true
-    ruler:
-      storage:
-        s3:
-          bucketnames: ruler
-          insecure: false
-          s3forcepathstyle: false
-        type: s3
-    runtime_config:
-      file: /etc/loki/runtime-config/runtime-config.yaml
-    schema_config:
-      configs:
-      - from: "2022-01-11"
-        index:
-          period: 24h
-          prefix: loki_index_
-        object_store: s3
-        schema: v12
-        store: boltdb-shipper
-    server:
-      grpc_listen_port: 9095
-      http_listen_port: 3100
-    storage_config:
-      hedging:
-        at: 250ms
-        max_per_second: 20
-        up_to: 3
-    tracing:
-      enabled: false
-kind: ConfigMap
-metadata:
-  labels:
-    app.kubernetes.io/instance: loki
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 2.9.2
-    helm.sh/chart: loki-5.38.0
-  name: loki
-  namespace: logging-system
----
-apiVersion: v1
-data:
   nginx.conf: "worker_processes  5;  ## Default: 1\nerror_log  /dev/stderr;\npid        /tmp/nginx.pid;\nworker_rlimit_nofile
     8192;\n\nevents {\n  worker_connections  4096;  ## Default: 1024\n}\n\nhttp {\n
     \ client_body_temp_path /tmp/client_temp;\n  proxy_temp_path       /tmp/proxy_temp_path;\n
@@ -408,7 +339,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 89ade06613d39fe1a54005d84b0b7f2136b1915da329fedce7734daaa4f399f3
+        checksum/config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
       labels:
         app.kubernetes.io/component: single-binary
         app.kubernetes.io/instance: loki
@@ -429,6 +360,10 @@ spec:
       - args:
         - -config.file=/etc/loki/config/config.yaml
         - -target=all
+        - -config.expand-env=true
+        envFrom:
+        - secretRef:
+            name: loki-env
         image: docker.io/grafana/loki:2.9.2
         imagePullPolicy: IfNotPresent
         name: loki
@@ -475,12 +410,9 @@ spec:
       volumes:
       - emptyDir: {}
         name: tmp
-      - configMap:
-          items:
-          - key: config.yaml
-            path: config.yaml
-          name: loki
-        name: config
+      - name: config
+        secret:
+          secretName: loki-config
       - configMap:
           name: loki-runtime
         name: runtime-config

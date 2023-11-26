@@ -244,7 +244,7 @@ delete-kube-prometheus-stack:
 deploy-minio: ## Deploy minio manifests
 	$(info ******************** deploy minio manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/minio-operator | kubectl apply -f -
-	@kubectl wait --for condition="Ready" pod --selector=app.kubernetes.io/instance=operator -n minio-system --timeout=60s
+	@kubectl wait --for condition="Ready" pod --selector=app.kubernetes.io/instance=operator -n minio-system --timeout=300s
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/minio-tenant | kubectl apply -f -
 
 # minio-operator console jwt token 
@@ -272,7 +272,7 @@ deploy-monolithic-mode-metrics: deploy-grafana ## Deploy monolithic-mode metrics
 	$(info ******************** deploy monolithic-mode metrics manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/metrics | kubectl apply -f -
 	@$(KUSTOMIZE) build monitoring-mixins | kubectl apply -f -
-	kubectl wait --for condition="Ready" pod --selector=app=mimir -n monitoring-system --timeout=60s
+	kubectl wait --for condition="Ready" pod --selector=app=mimir -n monitoring-system --timeout=300s
 	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
 	@echo ""
 	@echo "Demo is running."
@@ -284,6 +284,7 @@ delete-monolithic-mode-metrics:
 deploy-monolithic-mode-logs: deploy-grafana ## Deploy monolithic-mode logs
 	$(info ******************** deploy monolithic-mode logs manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/logs | kubectl apply -f -
+	kubectl wait --for condition="Ready" pod --selector=app.kubernetes.io/name=loki -n logging-system --timeout=300s
 	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
 	@echo ""
 	@echo "Demo is running."

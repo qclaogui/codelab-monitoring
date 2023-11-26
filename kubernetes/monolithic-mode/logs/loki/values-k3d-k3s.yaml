@@ -1,7 +1,5 @@
 loki:
-  auth_enabled: false
-  commonConfig:
-    replication_factor: 1
+  existingSecretForConfig: loki-config
 
 minio:
   enabled: false
@@ -27,6 +25,11 @@ monitoring:
 
 singleBinary:
   replicas: 1
+  extraArgs:
+  - -config.expand-env=true
+  extraEnvFrom:
+  - secretRef:
+      name: loki-env
   persistence:
     enabled: true
     size: 5Gi

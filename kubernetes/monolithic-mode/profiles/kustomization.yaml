@@ -8,12 +8,14 @@ resources:
 - pyroscope/k8s-all-in-one.yaml
 - grafana-datasources-pyroscope.yaml
 
-# configMapGenerator:
-# - name: pyroscope-config
-#   namespace: profiles-system
-#   behavior: replace
-#   files:
-#   - config.yaml
+configMapGenerator:
+- name: pyroscope-config
+  namespace: profiles-system
+  options:
+    disableNameSuffixHash: true
+  behavior: replace
+  files:
+  - config.yaml=pyroscope.yaml
 
 secretGenerator:
 - name: agent-env
@@ -24,11 +26,10 @@ secretGenerator:
   - CLUSTER=k3d-k3s-codelab
   - PROFILES_ENDPOINT=http://pyroscope.profiles-system:4040
 
-# https://github.com/grafana/pyroscope/issues/448#issuecomment-938277234
+# https://grafana.com/docs/pyroscope/latest/configure-server/reference-configuration-parameters/#s3_storage_backend
 - name: pyroscope-env
   namespace: profiles-system
-  options:
-    disableNameSuffixHash: true
   literals:
-  - PYROSCOPE_LOG_LEVEL=info
-  - PYROSCOPE_ANALYTICS_REPORTING_ENABLED=false
+  - PYROSCOPE_STORAGE_S3_ENDPOINT=minio.minio-system.svc.cluster.local:443
+  - PYROSCOPE_STORAGE_S3_ACCESS_KEY_ID=lgtmp
+  - PYROSCOPE_STORAGE_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm

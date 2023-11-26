@@ -16,12 +16,6 @@ metadata:
   name: loki
   namespace: logging-system
 ---
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: minio-sa
-  namespace: logging-system
----
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -59,76 +53,6 @@ roleRef:
   name: loki-clusterrole
 subjects:
 - kind: ServiceAccount
-  name: loki
-  namespace: logging-system
----
-apiVersion: v1
-data:
-  config.yaml: |2
-
-    auth_enabled: false
-    common:
-      compactor_address: 'loki'
-      path_prefix: /var/loki
-      replication_factor: 1
-      storage:
-        s3:
-          access_key_id: enterprise-logs
-          bucketnames: chunks
-          endpoint: loki-minio.logging-system.svc:9000
-          insecure: true
-          s3forcepathstyle: true
-          secret_access_key: supersecret
-    frontend:
-      scheduler_address: ""
-    frontend_worker:
-      scheduler_address: ""
-    index_gateway:
-      mode: ring
-    limits_config:
-      max_cache_freshness_per_query: 10m
-      reject_old_samples: true
-      reject_old_samples_max_age: 168h
-      split_queries_by_interval: 15m
-    memberlist:
-      join_members:
-      - loki-memberlist
-    query_range:
-      align_queries_with_step: true
-    ruler:
-      storage:
-        s3:
-          bucketnames: ruler
-        type: s3
-    runtime_config:
-      file: /etc/loki/runtime-config/runtime-config.yaml
-    schema_config:
-      configs:
-      - from: "2022-01-11"
-        index:
-          period: 24h
-          prefix: loki_index_
-        object_store: s3
-        schema: v12
-        store: boltdb-shipper
-    server:
-      grpc_listen_port: 9095
-      http_listen_port: 3100
-    storage_config:
-      hedging:
-        at: 250ms
-        max_per_second: 20
-        up_to: 3
-    tracing:
-      enabled: false
-kind: ConfigMap
-metadata:
-  labels:
-    app.kubernetes.io/instance: loki
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 2.9.2
-    helm.sh/chart: loki-5.38.0
   name: loki
   namespace: logging-system
 ---
@@ -194,251 +118,6 @@ metadata:
 ---
 apiVersion: v1
 data:
-  add-policy: |-
-    #!/bin/sh
-    set -e ; # Have script exit in the event of a failed command.
-    MC_CONFIG_DIR="/etc/minio/mc/"
-    MC="/usr/bin/mc --insecure --config-dir ${MC_CONFIG_DIR}"
-
-    # connectToMinio
-    # Use a check-sleep-check loop to wait for MinIO service to be available
-    connectToMinio() {
-      SCHEME=$1
-      ATTEMPTS=0 ; LIMIT=29 ; # Allow 30 attempts
-      set -e ; # fail if we can't read the keys.
-      ACCESS=$(cat /config/rootUser) ; SECRET=$(cat /config/rootPassword) ;
-      set +e ; # The connections to minio are allowed to fail.
-      echo "Connecting to MinIO server: $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT" ;
-      MC_COMMAND="${MC} alias set myminio $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT $ACCESS $SECRET" ;
-      $MC_COMMAND ;
-      STATUS=$? ;
-      until [ $STATUS = 0 ]
-      do
-        ATTEMPTS=`expr $ATTEMPTS + 1` ;
-        echo \"Failed attempts: $ATTEMPTS\" ;
-        if [ $ATTEMPTS -gt $LIMIT ]; then
-          exit 1 ;
-        fi ;
-        sleep 2 ; # 1 second intervals between attempts
-        $MC_COMMAND ;
-        STATUS=$? ;
-      done ;
-      set -e ; # reset `e` as active
-      return 0
-    }
-
-    # checkPolicyExists ($policy)
-    # Check if the policy exists, by using the exit code of `mc admin policy info`
-    checkPolicyExists() {
-      POLICY=$1
-      CMD=$(${MC} admin policy info myminio $POLICY > /dev/null 2>&1)
-      return $?
-    }
-
-    # createPolicy($name, $filename)
-    createPolicy () {
-      NAME=$1
-      FILENAME=$2
-
-      # Create the name if it does not exist
-      echo "Checking policy: $NAME (in /config/$FILENAME.json)"
-      if ! checkPolicyExists $NAME ; then
-        echo "Creating policy '$NAME'"
-      else
-        echo "Policy '$NAME' already exists."
-      fi
-      ${MC} admin policy add myminio $NAME /config/$FILENAME.json
-
-    }
-
-    # Try connecting to MinIO instance
-    scheme=http
-    connectToMinio $scheme
-  add-user: |-
-    #!/bin/sh
-    set -e ; # Have script exit in the event of a failed command.
-    MC_CONFIG_DIR="/etc/minio/mc/"
-    MC="/usr/bin/mc --insecure --config-dir ${MC_CONFIG_DIR}"
-
-    # AccessKey and secretkey credentials file are added to prevent shell execution errors caused by special characters.
-    # Special characters for example : ',",<,>,{,}
-    MINIO_ACCESSKEY_SECRETKEY_TMP="/tmp/accessKey_and_secretKey_tmp"
-
-    # connectToMinio
-    # Use a check-sleep-check loop to wait for MinIO service to be available
-    connectToMinio() {
-      SCHEME=$1
-      ATTEMPTS=0 ; LIMIT=29 ; # Allow 30 attempts
-      set -e ; # fail if we can't read the keys.
-      ACCESS=$(cat /config/rootUser) ; SECRET=$(cat /config/rootPassword) ;
-      set +e ; # The connections to minio are allowed to fail.
-      echo "Connecting to MinIO server: $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT" ;
-      MC_COMMAND="${MC} alias set myminio $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT $ACCESS $SECRET" ;
-      $MC_COMMAND ;
-      STATUS=$? ;
-      until [ $STATUS = 0 ]
-      do
-        ATTEMPTS=`expr $ATTEMPTS + 1` ;
-        echo \"Failed attempts: $ATTEMPTS\" ;
-        if [ $ATTEMPTS -gt $LIMIT ]; then
-          exit 1 ;
-        fi ;
-        sleep 2 ; # 1 second intervals between attempts
-        $MC_COMMAND ;
-        STATUS=$? ;
-      done ;
-      set -e ; # reset `e` as active
-      return 0
-    }
-
-    # checkUserExists ()
-    # Check if the user exists, by using the exit code of `mc admin user info`
-    checkUserExists() {
-      CMD=$(${MC} admin user info myminio $(head -1 $MINIO_ACCESSKEY_SECRETKEY_TMP) > /dev/null 2>&1)
-      return $?
-    }
-
-    # createUser ($policy)
-    createUser() {
-      POLICY=$1
-      #check accessKey_and_secretKey_tmp file
-      if [[ ! -f $MINIO_ACCESSKEY_SECRETKEY_TMP ]];then
-        echo "credentials file does not exist"
-        return 1
-      fi
-      if [[ $(cat $MINIO_ACCESSKEY_SECRETKEY_TMP|wc -l) -ne 2 ]];then
-        echo "credentials file is invalid"
-        rm -f $MINIO_ACCESSKEY_SECRETKEY_TMP
-        return 1
-      fi
-      USER=$(head -1 $MINIO_ACCESSKEY_SECRETKEY_TMP)
-      # Create the user if it does not exist
-      if ! checkUserExists ; then
-        echo "Creating user '$USER'"
-        cat $MINIO_ACCESSKEY_SECRETKEY_TMP | ${MC} admin user add myminio
-      else
-        echo "User '$USER' already exists."
-      fi
-      #clean up credentials files.
-      rm -f $MINIO_ACCESSKEY_SECRETKEY_TMP
-
-      # set policy for user
-      if [ ! -z $POLICY -a $POLICY != " " ] ; then
-          echo "Adding policy '$POLICY' for '$USER'"
-          ${MC} admin policy set myminio $POLICY user=$USER
-      else
-          echo "User '$USER' has no policy attached."
-      fi
-    }
-
-    # Try connecting to MinIO instance
-    scheme=http
-    connectToMinio $scheme
-
-
-
-    # Create the users
-    echo console > $MINIO_ACCESSKEY_SECRETKEY_TMP
-    echo console123 >> $MINIO_ACCESSKEY_SECRETKEY_TMP
-    createUser consoleAdmin
-  custom-command: |-
-    #!/bin/sh
-    set -e ; # Have script exit in the event of a failed command.
-    MC_CONFIG_DIR="/etc/minio/mc/"
-    MC="/usr/bin/mc --insecure --config-dir ${MC_CONFIG_DIR}"
-
-    # connectToMinio
-    # Use a check-sleep-check loop to wait for MinIO service to be available
-    connectToMinio() {
-      SCHEME=$1
-      ATTEMPTS=0 ; LIMIT=29 ; # Allow 30 attempts
-      set -e ; # fail if we can't read the keys.
-      ACCESS=$(cat /config/rootUser) ; SECRET=$(cat /config/rootPassword) ;
-      set +e ; # The connections to minio are allowed to fail.
-      echo "Connecting to MinIO server: $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT" ;
-      MC_COMMAND="${MC} alias set myminio $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT $ACCESS $SECRET" ;
-      $MC_COMMAND ;
-      STATUS=$? ;
-      until [ $STATUS = 0 ]
-      do
-        ATTEMPTS=`expr $ATTEMPTS + 1` ;
-        echo \"Failed attempts: $ATTEMPTS\" ;
-        if [ $ATTEMPTS -gt $LIMIT ]; then
-          exit 1 ;
-        fi ;
-        sleep 2 ; # 1 second intervals between attempts
-        $MC_COMMAND ;
-        STATUS=$? ;
-      done ;
-      set -e ; # reset `e` as active
-      return 0
-    }
-
-    # runCommand ($@)
-    # Run custom mc command
-    runCommand() {
-      ${MC} "$@"
-      return $?
-    }
-
-    # Try connecting to MinIO instance
-    scheme=http
-    connectToMinio $scheme
-  initialize: "#!/bin/sh\nset -e ; # Have script exit in the event of a failed command.\nMC_CONFIG_DIR=\"/etc/minio/mc/\"\nMC=\"/usr/bin/mc
-    --insecure --config-dir ${MC_CONFIG_DIR}\"\n\n# connectToMinio\n# Use a check-sleep-check
-    loop to wait for MinIO service to be available\nconnectToMinio() {\n  SCHEME=$1\n
-    \ ATTEMPTS=0 ; LIMIT=29 ; # Allow 30 attempts\n  set -e ; # fail if we can't read
-    the keys.\n  ACCESS=$(cat /config/rootUser) ; SECRET=$(cat /config/rootPassword)
-    ;\n  set +e ; # The connections to minio are allowed to fail.\n  echo \"Connecting
-    to MinIO server: $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT\" ;\n  MC_COMMAND=\"${MC}
-    alias set myminio $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT $ACCESS $SECRET\" ;\n
-    \ $MC_COMMAND ;\n  STATUS=$? ;\n  until [ $STATUS = 0 ]\n  do\n    ATTEMPTS=`expr
-    $ATTEMPTS + 1` ;\n    echo \\\"Failed attempts: $ATTEMPTS\\\" ;\n    if [ $ATTEMPTS
-    -gt $LIMIT ]; then\n      exit 1 ;\n    fi ;\n    sleep 2 ; # 1 second intervals
-    between attempts\n    $MC_COMMAND ;\n    STATUS=$? ;\n  done ;\n  set -e ; # reset
-    `e` as active\n  return 0\n}\n\n# checkBucketExists ($bucket)\n# Check if the
-    bucket exists, by using the exit code of `mc ls`\ncheckBucketExists() {\n  BUCKET=$1\n
-    \ CMD=$(${MC} ls myminio/$BUCKET > /dev/null 2>&1)\n  return $?\n}\n\n# createBucket
-    ($bucket, $policy, $purge)\n# Ensure bucket exists, purging if asked to\ncreateBucket()
-    {\n  BUCKET=$1\n  POLICY=$2\n  PURGE=$3\n  VERSIONING=$4\n  OBJECTLOCKING=$5\n\n
-    \ # Purge the bucket, if set & exists\n  # Since PURGE is user input, check explicitly
-    for `true`\n  if [ $PURGE = true ]; then\n    if checkBucketExists $BUCKET ; then\n
-    \     echo \"Purging bucket '$BUCKET'.\"\n      set +e ; # don't exit if this
-    fails\n      ${MC} rm -r --force myminio/$BUCKET\n      set -e ; # reset `e` as
-    active\n    else\n      echo \"Bucket '$BUCKET' does not exist, skipping purge.\"\n
-    \   fi\n  fi\n\n# Create the bucket if it does not exist and set objectlocking
-    if enabled (NOTE: versioning will be not changed if OBJECTLOCKING is set because
-    it enables versioning to the Buckets created)\nif ! checkBucketExists $BUCKET
-    ; then\n    if [ ! -z $OBJECTLOCKING ] ; then\n      if [ $OBJECTLOCKING = true
-    ] ; then\n          echo \"Creating bucket with OBJECTLOCKING '$BUCKET'\"\n          ${MC}
-    mb --with-lock myminio/$BUCKET\n      elif [ $OBJECTLOCKING = false ] ; then\n
-    \           echo \"Creating bucket '$BUCKET'\"\n            ${MC} mb myminio/$BUCKET\n
-    \     fi\n  elif [ -z $OBJECTLOCKING ] ; then\n        echo \"Creating bucket
-    '$BUCKET'\"\n        ${MC} mb myminio/$BUCKET\n  else\n    echo \"Bucket '$BUCKET'
-    already exists.\"  \n  fi\n  fi\n\n\n  # set versioning for bucket if objectlocking
-    is disabled or not set\n  if [ -z $OBJECTLOCKING ] ; then\n  if [ ! -z $VERSIONING
-    ] ; then\n    if [ $VERSIONING = true ] ; then\n        echo \"Enabling versioning
-    for '$BUCKET'\"\n        ${MC} version enable myminio/$BUCKET\n    elif [ $VERSIONING
-    = false ] ; then\n        echo \"Suspending versioning for '$BUCKET'\"\n        ${MC}
-    version suspend myminio/$BUCKET\n    fi\n    fi\n  else\n      echo \"Bucket '$BUCKET'
-    versioning unchanged.\"\n  fi\n\n\n  # At this point, the bucket should exist,
-    skip checking for existence\n  # Set policy on the bucket\n  echo \"Setting policy
-    of bucket '$BUCKET' to '$POLICY'.\"\n  ${MC} policy set $POLICY myminio/$BUCKET\n}\n\n#
-    Try connecting to MinIO instance\nscheme=http\nconnectToMinio $scheme\n\n\n\n#
-    Create the buckets\ncreateBucket chunks none false  \ncreateBucket ruler none
-    false  \ncreateBucket admin none false  "
-kind: ConfigMap
-metadata:
-  labels:
-    app: minio
-    chart: minio-4.0.15
-    heritage: Helm
-    release: loki
-  name: loki-minio
-  namespace: logging-system
----
-apiVersion: v1
-data:
   runtime-config.yaml: |
     {}
 kind: ConfigMap
@@ -481,16 +160,49 @@ metadata:
 ---
 apiVersion: v1
 data:
-  rootPassword: c3VwZXJzZWNyZXQ=
-  rootUser: ZW50ZXJwcmlzZS1sb2dz
+  config.yaml: |
+    CmF1dGhfZW5hYmxlZDogZmFsc2UKCiMgLXJlcG9ydGluZy5lbmFibGVkPWZhbHNlCmFuYW
+    x5dGljczoKIHJlcG9ydGluZ19lbmFibGVkOiBmYWxzZQoKc2VydmVyOgogIGdycGNfbGlz
+    dGVuX3BvcnQ6IDkwOTUKICBodHRwX2xpc3Rlbl9wb3J0OiAzMTAwCiAgbG9nX2xldmVsOi
+    B3YXJuCgpjb21tb246CiAgY29tcGFjdG9yX2FkZHJlc3M6ICdsb2tpJwogIHBhdGhfcHJl
+    Zml4OiAvdmFyL2xva2kKICByZXBsaWNhdGlvbl9mYWN0b3I6IDEKICBzdG9yYWdlOgogIC
+    AgczM6CiAgICAgIGFjY2Vzc19rZXlfaWQ6ICR7Q09NTU9OX1NUT1JBR0VfUzNfQUNDRVNT
+    X0tFWV9JRDplbnRlcnByaXNlLWxvZ3N9CiAgICAgIGJ1Y2tldG5hbWVzOiBsb2tpLWRhdG
+    EKICAgICAgZW5kcG9pbnQ6ICR7Q09NTU9OX1NUT1JBR0VfUzNfRU5EUE9JTlQ6bWluaW86
+    OTAwMH0KICAgICAgaW5zZWN1cmU6ICR7Q09NTU9OX1NUT1JBR0VfUzNfSU5TRUNVUkU6Zm
+    Fsc2V9CiAgICAgIHMzZm9yY2VwYXRoc3R5bGU6IHRydWUKICAgICAgc2VjcmV0X2FjY2Vz
+    c19rZXk6ICR7Q09NTU9OX1NUT1JBR0VfUzNfU0VDUkVUX0FDQ0VTU19LRVk6c3VwZXJzZW
+    NyZXR9CiAgICAgIGh0dHBfY29uZmlnOgogICAgICAgIGluc2VjdXJlX3NraXBfdmVyaWZ5
+    OiB0cnVlCgpjb21wYWN0b3I6CiAgd29ya2luZ19kaXJlY3Rvcnk6IC90bXAvY29tcGFjdG
+    9yCiAgc2hhcmVkX3N0b3JlOiBzMwoKbWVtYmVybGlzdDoKICBqb2luX21lbWJlcnM6CiAg
+    LSBsb2tpLW1lbWJlcmxpc3Q6Nzk0NgoKcXVlcnlfcmFuZ2U6CiAgYWxpZ25fcXVlcmllc1
+    93aXRoX3N0ZXA6IHRydWUKICBjYWNoZV9yZXN1bHRzOiB0cnVlCiAgcmVzdWx0c19jYWNo
+    ZToKICAgIGNhY2hlOgogICAgICBlbWJlZGRlZF9jYWNoZToKICAgICAgICBlbmFibGVkOi
+    B0cnVlCgpsaW1pdHNfY29uZmlnOgogIG1heF9jYWNoZV9mcmVzaG5lc3NfcGVyX3F1ZXJ5
+    OiAxMG0KICByZWplY3Rfb2xkX3NhbXBsZXM6IHRydWUKICByZWplY3Rfb2xkX3NhbXBsZX
+    NfbWF4X2FnZTogMTY4aAogIHNwbGl0X3F1ZXJpZXNfYnlfaW50ZXJ2YWw6IDE1bQoKcnVs
+    ZXI6CiAgc3RvcmFnZToKICAgIHMzOgogICAgICBidWNrZXRuYW1lczogbG9raS1ydWxlcw
+    ogICAgdHlwZTogczMKCnJ1bnRpbWVfY29uZmlnOgogIGZpbGU6IC9ldGMvbG9raS9ydW50
+    aW1lLWNvbmZpZy9ydW50aW1lLWNvbmZpZy55YW1sCgpzY2hlbWFfY29uZmlnOgogIGNvbm
+    ZpZ3M6CiAgLSBmcm9tOiAiMjAyMy0wOC0wMSIKICAgIGluZGV4OgogICAgICBwZXJpb2Q6
+    IDI0aAogICAgICBwcmVmaXg6IGxva2lfaW5kZXhfCiAgICBvYmplY3Rfc3RvcmU6IHMzCi
+    AgICBzY2hlbWE6IHYxMgogICAgc3RvcmU6IGJvbHRkYi1zaGlwcGVyCgpzdG9yYWdlX2Nv
+    bmZpZzoKICBoZWRnaW5nOgogICAgYXQ6IDI1MG1zCiAgICBtYXhfcGVyX3NlY29uZDogMj
+    AKICAgIHVwX3RvOiAzCgp0cmFjaW5nOgogIGVuYWJsZWQ6IGZhbHNlCg==
 kind: Secret
 metadata:
-  labels:
-    app: minio
-    chart: minio-4.0.15
-    heritage: Helm
-    release: loki
-  name: loki-minio
+  name: loki-config-t6g54f7d27
+  namespace: logging-system
+type: Opaque
+---
+apiVersion: v1
+data:
+  COMMON_STORAGE_S3_ACCESS_KEY_ID: bGd0bXA=
+  COMMON_STORAGE_S3_ENDPOINT: bWluaW8ubWluaW8tc3lzdGVtLnN2Yy5jbHVzdGVyLmxvY2FsOjQ0Mw==
+  COMMON_STORAGE_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
+kind: Secret
+metadata:
+  name: loki-env-672gt6f5b4
   namespace: logging-system
 type: Opaque
 ---
@@ -604,71 +316,6 @@ spec:
     app.kubernetes.io/name: loki
     app.kubernetes.io/part-of: memberlist
   type: ClusterIP
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    app: minio
-    chart: minio-4.0.15
-    heritage: Helm
-    monitoring: "true"
-    release: loki
-  name: loki-minio
-  namespace: logging-system
-spec:
-  ports:
-  - name: http
-    port: 9000
-    protocol: TCP
-    targetPort: 9000
-  selector:
-    app: minio
-    release: loki
-  type: ClusterIP
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    app: minio
-    chart: minio-4.0.15
-    heritage: Helm
-    release: loki
-  name: loki-minio-console
-  namespace: logging-system
-spec:
-  ports:
-  - name: http
-    port: 9001
-    protocol: TCP
-    targetPort: 9001
-  selector:
-    app: minio
-    release: loki
-  type: ClusterIP
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    app: minio
-    chart: minio-4.0.15
-    heritage: Helm
-    release: loki
-  name: loki-minio-svc
-  namespace: logging-system
-spec:
-  clusterIP: None
-  ports:
-  - name: http
-    port: 9000
-    protocol: TCP
-    targetPort: 9000
-  publishNotReadyAddresses: true
-  selector:
-    app: minio
-    release: loki
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -784,7 +431,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: aa227c05f96a1d8aee962c332db2c11efac82ae081ed539d7086a5ab8f7ae667
+        checksum/config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
       labels:
         app.kubernetes.io/component: single-binary
         app.kubernetes.io/instance: loki
@@ -805,6 +452,10 @@ spec:
       - args:
         - -config.file=/etc/loki/config/config.yaml
         - -target=all
+        - -config.expand-env=true
+        envFrom:
+        - secretRef:
+            name: loki-env-672gt6f5b4
         image: docker.io/grafana/loki:2.9.2
         imagePullPolicy: IfNotPresent
         name: loki
@@ -851,12 +502,9 @@ spec:
       volumes:
       - emptyDir: {}
         name: tmp
-      - configMap:
-          items:
-          - key: config.yaml
-            path: config.yaml
-          name: loki
-        name: config
+      - name: config
+        secret:
+          secretName: loki-config-t6g54f7d27
       - configMap:
           name: loki-runtime
         name: runtime-config
@@ -874,195 +522,3 @@ spec:
       resources:
         requests:
           storage: 5Gi
----
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  labels:
-    app: minio
-    chart: minio-4.0.15
-    heritage: Helm
-    release: loki
-  name: loki-minio
-  namespace: logging-system
-spec:
-  podManagementPolicy: Parallel
-  replicas: 1
-  selector:
-    matchLabels:
-      app: minio
-      release: loki
-  serviceName: loki-minio-svc
-  template:
-    metadata:
-      annotations:
-        checksum/config: 8ed69cbdebddeb38eba26d87d179eaff677d3077c281679b1dc24ab140ec0467
-        checksum/secrets: a2de5d84c6d9e50dddebfbbb1ebbb6775c11b4b2a3918011dd8c88ece67a51b1
-      labels:
-        app: minio
-        release: loki
-      name: loki-minio
-    spec:
-      containers:
-      - command:
-        - /bin/sh
-        - -ce
-        - /usr/bin/docker-entrypoint.sh minio server  http://loki-minio-{0...0}.loki-minio-svc.logging-system.svc.cluster.local/export-{0...1}
-          -S /etc/minio/certs/ --address :9000 --console-address :9001
-        env:
-        - name: MINIO_ROOT_USER
-          valueFrom:
-            secretKeyRef:
-              key: rootUser
-              name: loki-minio
-        - name: MINIO_ROOT_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: rootPassword
-              name: loki-minio
-        - name: MINIO_PROMETHEUS_AUTH_TYPE
-          value: public
-        image: quay.io/minio/minio:RELEASE.2022-09-17T00-09-45Z
-        imagePullPolicy: IfNotPresent
-        name: minio
-        ports:
-        - containerPort: 9000
-          name: http
-        - containerPort: 9001
-          name: http-console
-        resources:
-          requests:
-            cpu: 100m
-            memory: 128Mi
-        volumeMounts:
-        - mountPath: /export-0
-          name: export-0
-        - mountPath: /export-1
-          name: export-1
-      securityContext:
-        fsGroup: 1000
-        fsGroupChangePolicy: OnRootMismatch
-        runAsGroup: 1000
-        runAsUser: 1000
-      serviceAccountName: minio-sa
-      volumes:
-      - name: minio-user
-        secret:
-          secretName: loki-minio
-  updateStrategy:
-    type: RollingUpdate
-  volumeClaimTemplates:
-  - metadata:
-      name: export-0
-    spec:
-      accessModes:
-      - ReadWriteOnce
-      resources:
-        requests:
-          storage: 5Gi
-  - metadata:
-      name: export-1
-    spec:
-      accessModes:
-      - ReadWriteOnce
-      resources:
-        requests:
-          storage: 5Gi
----
-apiVersion: batch/v1
-kind: Job
-metadata:
-  annotations:
-    helm.sh/hook: post-install,post-upgrade
-    helm.sh/hook-delete-policy: hook-succeeded,before-hook-creation
-  labels:
-    app: minio-make-bucket-job
-    chart: minio-4.0.15
-    heritage: Helm
-    release: loki
-  name: loki-minio-make-bucket-job
-  namespace: logging-system
-spec:
-  template:
-    metadata:
-      labels:
-        app: minio-job
-        release: loki
-    spec:
-      containers:
-      - command:
-        - /bin/sh
-        - /config/initialize
-        env:
-        - name: MINIO_ENDPOINT
-          value: loki-minio
-        - name: MINIO_PORT
-          value: "9000"
-        image: quay.io/minio/mc:RELEASE.2022-09-16T09-16-47Z
-        imagePullPolicy: IfNotPresent
-        name: minio-mc
-        resources:
-          requests:
-            memory: 128Mi
-        volumeMounts:
-        - mountPath: /config
-          name: minio-configuration
-      restartPolicy: OnFailure
-      serviceAccountName: minio-sa
-      volumes:
-      - name: minio-configuration
-        projected:
-          sources:
-          - configMap:
-              name: loki-minio
-          - secret:
-              name: loki-minio
----
-apiVersion: batch/v1
-kind: Job
-metadata:
-  annotations:
-    helm.sh/hook: post-install,post-upgrade
-    helm.sh/hook-delete-policy: hook-succeeded,before-hook-creation
-  labels:
-    app: minio-make-user-job
-    chart: minio-4.0.15
-    heritage: Helm
-    release: loki
-  name: loki-minio-make-user-job
-  namespace: logging-system
-spec:
-  template:
-    metadata:
-      labels:
-        app: minio-job
-        release: loki
-    spec:
-      containers:
-      - command:
-        - /bin/sh
-        - /config/add-user
-        env:
-        - name: MINIO_ENDPOINT
-          value: loki-minio
-        - name: MINIO_PORT
-          value: "9000"
-        image: quay.io/minio/mc:RELEASE.2022-09-16T09-16-47Z
-        imagePullPolicy: IfNotPresent
-        name: minio-mc
-        resources:
-          requests:
-            memory: 128Mi
-        volumeMounts:
-        - mountPath: /config
-          name: minio-configuration
-      restartPolicy: OnFailure
-      serviceAccountName: minio-sa
-      volumes:
-      - name: minio-configuration
-        projected:
-          sources:
-          - configMap:
-              name: loki-minio
-          - secret:
-              name: loki-minio

@@ -91,7 +91,19 @@ metadata:
 apiVersion: v1
 data:
   config.yaml: |
-    {}
+    analytics:
+      reporting_enabled: false
+
+    storage:
+      backend: s3
+      s3:
+        bucket_name: pyroscope-data
+        endpoint: ${PYROSCOPE_STORAGE_S3_ENDPOINT:minio:9000}
+        access_key_id: ${PYROSCOPE_STORAGE_S3_ACCESS_KEY_ID:admin}
+        secret_access_key: ${PYROSCOPE_STORAGE_S3_SECRET_ACCESS_KEY:admin_password}
+        insecure: false
+        http:
+          insecure_skip_verify: true
 kind: ConfigMap
 metadata:
   labels:
@@ -131,11 +143,12 @@ type: Opaque
 ---
 apiVersion: v1
 data:
-  PYROSCOPE_ANALYTICS_REPORTING_ENABLED: ZmFsc2U=
-  PYROSCOPE_LOG_LEVEL: aW5mbw==
+  PYROSCOPE_STORAGE_S3_ACCESS_KEY_ID: bGd0bXA=
+  PYROSCOPE_STORAGE_S3_ENDPOINT: bWluaW8ubWluaW8tc3lzdGVtLnN2Yy5jbHVzdGVyLmxvY2FsOjQ0Mw==
+  PYROSCOPE_STORAGE_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:
-  name: pyroscope-env
+  name: pyroscope-env-tgk2kdt8mh
   namespace: profiles-system
 type: Opaque
 ---
@@ -258,10 +271,11 @@ spec:
         - -memberlist.join=dns+pyroscope-memberlist.profiles-system.svc.cluster.local.:7946
         - -config.file=/etc/pyroscope/config.yaml
         - -runtime-config.file=/etc/pyroscope/overrides/overrides.yaml
+        - -config.expand-env=true
         - -log.level=debug
         envFrom:
         - secretRef:
-            name: pyroscope-env
+            name: pyroscope-env-tgk2kdt8mh
         image: grafana/pyroscope:1.2.0
         imagePullPolicy: IfNotPresent
         name: pyroscope
