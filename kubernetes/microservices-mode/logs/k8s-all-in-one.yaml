@@ -1,8 +1,6 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  labels:
-    team: team-infra
   name: logging-system
 ---
 apiVersion: v1
@@ -15,15 +13,12 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
     helm.sh/chart: loki-5.36.3
-    team: team-infra
   name: loki
   namespace: logging-system
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  labels:
-    team: team-infra
   name: minio-sa
   namespace: logging-system
 ---
@@ -36,7 +31,6 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
     helm.sh/chart: loki-5.36.3
-    team: team-infra
   name: loki-clusterrole
 rules:
 - apiGroups:
@@ -58,7 +52,6 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
     helm.sh/chart: loki-5.36.3
-    team: team-infra
   name: loki-clusterrolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -135,7 +128,6 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
     helm.sh/chart: loki-5.36.3
-    team: team-infra
   name: loki
   namespace: logging-system
 ---
@@ -381,7 +373,6 @@ metadata:
     chart: minio-4.0.12
     heritage: Helm
     release: loki
-    team: team-infra
   name: loki-minio
   namespace: logging-system
 ---
@@ -397,9 +388,35 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
     helm.sh/chart: loki-5.36.3
-    team: team-infra
   name: loki-runtime
   namespace: logging-system
+---
+apiVersion: v1
+data:
+  datasources.yaml: |
+    apiVersion: 1
+
+    deleteDatasources:
+    - name: Logs
+      uid: logs
+
+    datasources:
+    # Loki for logs
+    - name: Logs
+      type: loki
+      uid: logs
+      access: proxy
+      url: http://loki.logging-system.svc.cluster.local:3100
+      basicAuth: false
+      isDefault: true
+      version: 1
+      editable: true
+kind: ConfigMap
+metadata:
+  labels:
+    grafana_datasource: "1"
+  name: grafana-datasources-loki
+  namespace: monitoring-system
 ---
 apiVersion: v1
 data:
@@ -412,7 +429,6 @@ metadata:
     chart: minio-4.0.12
     heritage: Helm
     release: loki
-    team: team-infra
   name: loki-minio
   namespace: logging-system
 type: Opaque
@@ -423,8 +439,6 @@ data:
   LOGS_ENDPOINT: aHR0cDovL2xva2kubG9nZ2luZy1zeXN0ZW0uc3ZjLmNsdXN0ZXIubG9jYWw6MzEwMA==
 kind: Secret
 metadata:
-  labels:
-    team: team-infra
   name: agent-env
   namespace: monitoring-system
 type: Opaque
@@ -438,7 +452,6 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
     helm.sh/chart: loki-5.36.3
-    team: team-infra
   name: loki
   namespace: logging-system
 spec:
@@ -455,7 +468,6 @@ spec:
     app.kubernetes.io/component: single-binary
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
-    team: team-infra
   type: ClusterIP
 ---
 apiVersion: v1
@@ -468,7 +480,6 @@ metadata:
     app.kubernetes.io/version: 2.9.2
     helm.sh/chart: loki-5.36.3
     prometheus.io/service-monitor: "false"
-    team: team-infra
     variant: headless
   name: loki-headless
   namespace: logging-system
@@ -482,7 +493,6 @@ spec:
   selector:
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
-    team: team-infra
 ---
 apiVersion: v1
 kind: Service
@@ -493,7 +503,6 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
     helm.sh/chart: loki-5.36.3
-    team: team-infra
   name: loki-memberlist
   namespace: logging-system
 spec:
@@ -507,7 +516,6 @@ spec:
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
     app.kubernetes.io/part-of: memberlist
-    team: team-infra
   type: ClusterIP
 ---
 apiVersion: v1
@@ -519,7 +527,6 @@ metadata:
     heritage: Helm
     monitoring: "true"
     release: loki
-    team: team-infra
   name: loki-minio
   namespace: logging-system
 spec:
@@ -531,7 +538,6 @@ spec:
   selector:
     app: minio
     release: loki
-    team: team-infra
   type: ClusterIP
 ---
 apiVersion: v1
@@ -542,7 +548,6 @@ metadata:
     chart: minio-4.0.12
     heritage: Helm
     release: loki
-    team: team-infra
   name: loki-minio-console
   namespace: logging-system
 spec:
@@ -554,7 +559,6 @@ spec:
   selector:
     app: minio
     release: loki
-    team: team-infra
   type: ClusterIP
 ---
 apiVersion: v1
@@ -565,7 +569,6 @@ metadata:
     chart: minio-4.0.12
     heritage: Helm
     release: loki
-    team: team-infra
   name: loki-minio-svc
   namespace: logging-system
 spec:
@@ -579,7 +582,6 @@ spec:
   selector:
     app: minio
     release: loki
-    team: team-infra
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -592,7 +594,6 @@ metadata:
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 2.9.2
     helm.sh/chart: loki-5.36.3
-    team: team-infra
   name: loki
   namespace: logging-system
 spec:
@@ -607,7 +608,6 @@ spec:
       app.kubernetes.io/component: single-binary
       app.kubernetes.io/instance: loki
       app.kubernetes.io/name: loki
-      team: team-infra
   serviceName: loki-headless
   template:
     metadata:
@@ -618,7 +618,6 @@ spec:
         app.kubernetes.io/instance: loki
         app.kubernetes.io/name: loki
         app.kubernetes.io/part-of: memberlist
-        team: team-infra
     spec:
       affinity:
         podAntiAffinity:
@@ -628,7 +627,6 @@ spec:
                 app.kubernetes.io/component: single-binary
                 app.kubernetes.io/instance: loki
                 app.kubernetes.io/name: loki
-                team: team-infra
             topologyKey: kubernetes.io/hostname
       automountServiceAccountToken: true
       containers:
@@ -697,8 +695,6 @@ spec:
   - apiVersion: v1
     kind: PersistentVolumeClaim
     metadata:
-      labels:
-        team: team-infra
       name: storage
     spec:
       accessModes:
@@ -715,7 +711,6 @@ metadata:
     chart: minio-4.0.12
     heritage: Helm
     release: loki
-    team: team-infra
   name: loki-minio
   namespace: logging-system
 spec:
@@ -725,7 +720,6 @@ spec:
     matchLabels:
       app: minio
       release: loki
-      team: team-infra
   serviceName: loki-minio-svc
   template:
     metadata:
@@ -735,7 +729,6 @@ spec:
       labels:
         app: minio
         release: loki
-        team: team-infra
       name: loki-minio
     spec:
       containers:
@@ -788,8 +781,6 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      labels:
-        team: team-infra
       name: export-0
     spec:
       accessModes:
@@ -798,8 +789,6 @@ spec:
         requests:
           storage: 5Gi
   - metadata:
-      labels:
-        team: team-infra
       name: export-1
     spec:
       accessModes:
@@ -819,7 +808,6 @@ metadata:
     chart: minio-4.0.12
     heritage: Helm
     release: loki
-    team: team-infra
   name: loki-minio-make-bucket-job
   namespace: logging-system
 spec:
@@ -828,7 +816,6 @@ spec:
       labels:
         app: minio-job
         release: loki
-        team: team-infra
     spec:
       containers:
       - command:
@@ -869,7 +856,6 @@ metadata:
     chart: minio-4.0.12
     heritage: Helm
     release: loki
-    team: team-infra
   name: loki-minio-make-user-job
   namespace: logging-system
 spec:
@@ -878,7 +864,6 @@ spec:
       labels:
         app: minio-job
         release: loki
-        team: team-infra
     spec:
       containers:
       - command:

@@ -1,0 +1,229 @@
+apiVersion: v1
+data:
+  datasources.yaml: |
+    apiVersion: 1
+
+    deleteDatasources:
+    - name: Metrics
+      uid: metrics
+
+    datasources:
+    # Mimir for metrics
+    - name: Metrics
+      type: prometheus
+      uid: metrics
+      access: proxy
+      url: http://mimir:8080/prometheus
+      basicAuth: false
+      isDefault: true
+      version: 1
+      editable: true
+kind: ConfigMap
+metadata:
+  labels:
+    grafana_datasource: "1"
+  name: grafana-datasources-mimir
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  runtime.yaml: |-
+    # https://grafana.com/docs/mimir/latest/configure/about-runtime-configuration/
+    ingester_limits: # limits that each ingester replica enforces
+      max_ingestion_rate: 20000
+      max_series: 1500000
+      max_tenants: 1000
+      max_inflight_push_requests: 30000
+
+    distributor_limits: # limits that each distributor replica enforces
+      max_ingestion_rate: 20000
+      max_inflight_push_requests: 30000
+      max_inflight_push_requests_bytes: 50000000
+
+    overrides:
+      anonymous: # limits for anonymous that the whole cluster enforces
+        # ingestion_tenant_shard_size: 9
+        max_global_series_per_user: 1500000
+        max_global_series_per_metric: 50000
+        max_fetched_series_per_query: 100000
+        ruler_max_rules_per_rule_group: 100
+        ruler_max_rule_groups_per_tenant: 100
+kind: ConfigMap
+metadata:
+  name: runtime-config-88gg5gk88d
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  CLUSTER: azNkLWszcy1jb2RlbGFi
+  METRICS_ENDPOINT: aHR0cDovL21pbWlyLm1vbml0b3Jpbmctc3lzdGVtOjgwODA=
+kind: Secret
+metadata:
+  name: agent-env
+  namespace: monitoring-system
+type: Opaque
+---
+apiVersion: v1
+data:
+  mimir.yaml: |
+    IyBEbyBub3QgdXNlIHRoaXMgY29uZmlndXJhdGlvbiBpbiBwcm9kdWN0aW9uLgojIEl0IG
+    lzIGZvciBkZW1vbnN0cmF0aW9uIHB1cnBvc2VzIG9ubHkuCm11bHRpdGVuYW5jeV9lbmFi
+    bGVkOiBmYWxzZQoKIyAtdXNhZ2Utc3RhdHMuZW5hYmxlZD1mYWxzZQp1c2FnZV9zdGF0cz
+    oKICBlbmFibGVkOiBmYWxzZQoKc2VydmVyOgogIGh0dHBfbGlzdGVuX3BvcnQ6IDgwODAK
+    ICBncnBjX2xpc3Rlbl9wb3J0OiA5MDk1CiAgbG9nX2xldmVsOiB3YXJuCgpjb21tb246Ci
+    Agc3RvcmFnZToKICAgIGJhY2tlbmQ6IHMzCiAgICBzMzoKICAgICAgZW5kcG9pbnQ6ICAg
+    ICAgICAgICR7Q09NTU9OX1NUT1JBR0VfUzNfRU5EUE9JTlQ6bWluaW86OTAwMH0KICAgIC
+    AgYWNjZXNzX2tleV9pZDogICAgICR7Q09NTU9OX1NUT1JBR0VfUzNfQUNDRVNTX0tFWV9J
+    RDphZG1pbn0KICAgICAgc2VjcmV0X2FjY2Vzc19rZXk6ICR7Q09NTU9OX1NUT1JBR0VfUz
+    NfU0VDUkVUX0FDQ0VTU19LRVk6YWRtaW5fcGFzc3dvcmR9CiAgICAgIGluc2VjdXJlOiAg
+    ICAgICAgICAke0NPTU1PTl9TVE9SQUdFX1MzX0lOU0VDVVJFOmZhbHNlfQogICAgICBodH
+    RwOgogICAgICAgIGluc2VjdXJlX3NraXBfdmVyaWZ5OiB0cnVlCgpjb21wYWN0b3I6CiAg
+    Y29tcGFjdGlvbl9pbnRlcnZhbDogMzBzCiAgZGF0YV9kaXI6IC90bXAvbWltaXItY29tcG
+    FjdG9yCiAgY2xlYW51cF9pbnRlcnZhbDogICAgMW0KICB0ZW5hbnRfY2xlYW51cF9kZWxh
+    eTogMW0KCm1lbWJlcmxpc3Q6CiAgam9pbl9tZW1iZXJzOiBbIGdvc3NpcC1yaW5nLWhlYW
+    RsZXNzOjc5NDYgXQoKaW5nZXN0ZXI6CiAgcmluZzoKICAgIHJlcGxpY2F0aW9uX2ZhY3Rv
+    cjogMQoKc3RvcmVfZ2F0ZXdheToKICBzaGFyZGluZ19yaW5nOgogICAgcmVwbGljYXRpb2
+    5fZmFjdG9yOiAxCgphbGVydG1hbmFnZXJfc3RvcmFnZToKICBzMzoKICAgIGJ1Y2tldF9u
+    YW1lOiBtaW1pci1hbGVydG1hbmFnZXIKCmJsb2Nrc19zdG9yYWdlOgogIHMzOgogICAgYn
+    Vja2V0X25hbWU6IG1pbWlyLWRhdGEKICB0c2RiOgogICAgZGlyOiAvZGF0YS9pbmdlc3Rl
+    cgoKcnVsZXJfc3RvcmFnZToKICBzMzoKICAgIGJ1Y2tldF9uYW1lOiBtaW1pci1ydWxlcw
+    oKcnVudGltZV9jb25maWc6CiAgZmlsZTogL3Zhci9taW1pci9ydW50aW1lLnlhbWwKCmxp
+    bWl0czoKICBuYXRpdmVfaGlzdG9ncmFtc19pbmdlc3Rpb25fZW5hYmxlZDogdHJ1ZQo=
+kind: Secret
+metadata:
+  name: mimir-config-4c5fgm688t
+  namespace: monitoring-system
+type: Opaque
+---
+apiVersion: v1
+data:
+  COMMON_STORAGE_S3_ACCESS_KEY_ID: bGd0bXA=
+  COMMON_STORAGE_S3_ENDPOINT: bWluaW8ubWluaW8tc3lzdGVtLnN2Yy5jbHVzdGVyLmxvY2FsOjQ0Mw==
+  COMMON_STORAGE_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
+kind: Secret
+metadata:
+  name: mimir-env-672gt6f5b4
+  namespace: monitoring-system
+type: Opaque
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: gossip-ring
+    prometheus.io/service-monitor: "false"
+  name: gossip-ring-headless
+  namespace: monitoring-system
+spec:
+  clusterIP: None
+  ports:
+  - name: tcp-gossip-ring
+    port: 7946
+    protocol: TCP
+    targetPort: 7946
+  publishNotReadyAddresses: true
+  selector:
+    gossip_ring_member: "true"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: mimir
+  name: mimir
+  namespace: monitoring-system
+spec:
+  ports:
+  - name: http-metrics
+    port: 8080
+  - name: grpc-distribut
+    port: 9095
+  selector:
+    app: mimir
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: mimir
+  name: mimir
+  namespace: monitoring-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mimir
+  template:
+    metadata:
+      labels:
+        app: mimir
+        gossip_ring_member: "true"
+    spec:
+      containers:
+      - args:
+        - -target=all
+        - -config.expand-env=true
+        - -config.file=/etc/mimir/mimir.yaml
+        - -memberlist.bind-addr=$(POD_IP)
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        envFrom:
+        - secretRef:
+            name: mimir-env-672gt6f5b4
+        image: grafana/mimir:2.10.4
+        imagePullPolicy: IfNotPresent
+        name: mimir
+        ports:
+        - containerPort: 8080
+          name: http-metrics
+        - containerPort: 9095
+          name: grpc-distribut
+        - containerPort: 7946
+          name: http-memberlist
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http-metrics
+        resources: {}
+        volumeMounts:
+        - mountPath: /etc/mimir
+          name: mimir-config
+        - mountPath: /var/mimir
+          name: runtime-config
+      terminationGracePeriodSeconds: 60
+      volumes:
+      - name: mimir-config
+        secret:
+          secretName: mimir-config-4c5fgm688t
+      - configMap:
+          name: runtime-config-88gg5gk88d
+        name: runtime-config
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: mimir
+  namespace: monitoring-system
+spec:
+  endpoints:
+  - port: http-metrics
+    relabelings:
+    - replacement: monitoring-system/mimir
+      sourceLabels:
+      - job
+      targetLabel: job
+    scheme: http
+  namespaceSelector:
+    matchNames:
+    - monitoring-system
+  selector:
+    matchExpressions:
+    - key: prometheus.io/service-monitor
+      operator: NotIn
+      values:
+      - "false"
+    matchLabels:
+      app: mimir

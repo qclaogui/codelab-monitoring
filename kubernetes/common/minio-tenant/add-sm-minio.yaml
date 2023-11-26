@@ -9,17 +9,23 @@ spec:
   - port: https-minio
     path: /minio/v2/metrics/cluster
     relabelings:
-    - replacement: minio-system/minio
+    - replacement: minio-job
       sourceLabels:
       - job
       targetLabel: job
+    # MinIO allows reading metrics for the entire cluster from any single node
+    # https://github.com/minio/minio/blob/master/docs/metrics/README.md#prometheus-probe
+    - sourceLabels:
+      - pod
+      regex: ".*-0$"
+      action: keep
     scheme: https
     tlsConfig:
       insecureSkipVerify: true
   - port: https-minio
     path: /minio/v2/metrics/bucket
     relabelings:
-    - replacement: minio-system/minio-bucket
+    - replacement: minio-job-bucket
       sourceLabels:
       - job
       targetLabel: job
@@ -29,7 +35,7 @@ spec:
   - port: https-minio
     path: /minio/v2/metrics/resource
     relabelings:
-    - replacement: minio-system/minio-resource
+    - replacement: minio-job-resource
       sourceLabels:
       - job
       targetLabel: job
@@ -39,11 +45,13 @@ spec:
   namespaceSelector:
     matchNames:
     - minio-system
+  # podTargetLabels:
+  # - v1_min_io_tenant
   selector:
     matchExpressions:
     - key: prometheus.io/service-monitor
       operator: NotIn
       values:
       - "false"
-    matchLabels:
-      v1.min.io/tenant: codelab
+    - key: v1.min.io/tenant
+      operator: Exists

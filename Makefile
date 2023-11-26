@@ -178,9 +178,9 @@ down-microservices-mode-profiles:
 cluster: ## Create k3s cluster
 	k3d cluster create k3s-codelab --config kubernetes/k3d-k3s-config.yaml
 
-image-import:
-# Import image(s) from docker into k3d cluster(s).
-	k3d image import -c k3s-codelab grafana/pyroscope:1.2.0
+# image-import:
+# # Import image(s) from docker into k3d cluster(s).
+# 	k3d image import -c k3s-codelab grafana/pyroscope:1.2.0
 
 clean: ## Clean cluster
 	k3d cluster delete k3s-codelab
@@ -204,6 +204,7 @@ manifests-common: $(KUSTOMIZE)
 .PHONY: manifests-monolithic-mode
 manifests-monolithic-mode: $(KUSTOMIZE)  ## Generates monolithic-mode manifests
 	$(info ******************** generates monolithic-mode manifests ********************)
+	@$(KUSTOMIZE) build kubernetes/monolithic-mode/metrics > kubernetes/monolithic-mode/metrics/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/logs > kubernetes/monolithic-mode/logs/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/profiles > kubernetes/monolithic-mode/profiles/k8s-all-in-one.yaml
 
@@ -266,10 +267,24 @@ delete-grafana:
 
 
 # Kubernetes monolithic-mode
+.PHONY: deploy-monolithic-mode-metrics
+deploy-monolithic-mode-metrics: deploy-grafana ## Deploy monolithic-mode metrics
+	$(info ******************** deploy monolithic-mode metrics manifests ********************)
+	@$(KUSTOMIZE) build kubernetes/monolithic-mode/metrics | kubectl apply -f -
+	@$(KUSTOMIZE) build monitoring-mixins | kubectl apply -f -
+	kubectl wait --for condition="Ready" pod --selector=app=mimir -n monitoring-system --timeout=60s
+	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
+	@echo ""
+	@echo "Demo is running."
+	@echo "Go to http://localhost:8080 for the metrics."
+delete-monolithic-mode-metrics:
+	@$(KUSTOMIZE) build kubernetes/monolithic-mode/metrics | kubectl delete -f -
+
 .PHONY: deploy-monolithic-mode-logs
 deploy-monolithic-mode-logs: deploy-grafana ## Deploy monolithic-mode logs
 	$(info ******************** deploy monolithic-mode logs manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/logs | kubectl apply -f -
+	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
 	@echo ""
 	@echo "Demo is running."
 	@echo "Go to http://localhost:8080/explore for the logs."
@@ -280,6 +295,7 @@ delete-monolithic-mode-logs:
 deploy-monolithic-mode-profiles: deploy-grafana ## Deploy monolithic-mode profiles
 	$(info ******************** deploy monolithic-mode profiles manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/profiles | kubectl apply -f -
+	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
 	@echo ""
 	@echo "Demo is running."
 	@echo "Go to http://localhost:8080/explore for the profiles."
@@ -293,6 +309,7 @@ delete-monolithic-mode-profiles:
 deploy-read-write-mode-logs: deploy-grafana ## Deploy read-write-mode logs
 	$(info ******************** deploy read-write-mode logs manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/read-write-mode/logs | kubectl apply -f -
+	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
 	@echo ""
 	@echo "Demo is running."
 	@echo "Go to http://localhost:8080/explore for the logs."
@@ -307,6 +324,7 @@ deploy-microservices-mode-metrics: deploy-grafana ## Deploy microservices-mode m
 	$(info ******************** deploy microservices-mode metrics manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/microservices-mode/metrics | kubectl apply -f -
 	@$(KUSTOMIZE) build monitoring-mixins | kubectl apply -f -
+	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
 	@echo ""
 	@echo "Demo is running."
 	@echo "Go to http://localhost:8080/explore for the metrics."
@@ -319,6 +337,7 @@ delete-microservices-mode-metrics:
 deploy-microservices-mode-profiles: deploy-grafana ## Deploy microservices-mode profiles
 	$(info ******************** deploy microservices-mode profiles manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/microservices-mode/profiles | kubectl apply -f -
+	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
 	@echo ""
 	@echo "Demo is running."
 	@echo "Go to http://localhost:8080/explore for the profiles."

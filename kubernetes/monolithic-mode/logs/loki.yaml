@@ -1,0 +1,76 @@
+
+auth_enabled: false
+
+# -reporting.enabled=false
+analytics:
+ reporting_enabled: false
+
+server:
+  grpc_listen_port: 9095
+  http_listen_port: 3100
+  log_level: warn
+
+common:
+  compactor_address: 'loki'
+  path_prefix: /var/loki
+  replication_factor: 1
+  storage:
+    s3:
+      access_key_id: enterprise-logs
+      bucketnames: loki-data
+      endpoint: minio:9000
+      insecure: true
+      s3forcepathstyle: true
+      secret_access_key: supersecret
+      http_config:
+        insecure_skip_verify: true
+
+compactor:
+  working_directory: /tmp/compactor
+  shared_store: s3
+
+memberlist:
+  join_members:
+  - loki-memberlist:7946
+
+query_range:
+  align_queries_with_step: true
+  cache_results: true
+  results_cache:
+    cache:
+      embedded_cache:
+        enabled: true
+
+limits_config:
+  max_cache_freshness_per_query: 10m
+  reject_old_samples: true
+  reject_old_samples_max_age: 168h
+  split_queries_by_interval: 15m
+
+ruler:
+  storage:
+    s3:
+      bucketnames: loki-rules
+    type: s3
+
+runtime_config:
+  file: /etc/loki/runtime-config/runtime-config.yaml
+
+schema_config:
+  configs:
+  - from: "2023-08-01"
+    index:
+      period: 24h
+      prefix: loki_index_
+    object_store: s3
+    schema: v12
+    store: boltdb-shipper
+
+storage_config:
+  hedging:
+    at: 250ms
+    max_per_second: 20
+    up_to: 3
+
+tracing:
+  enabled: false

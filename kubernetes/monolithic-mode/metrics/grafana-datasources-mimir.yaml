@@ -4,23 +4,23 @@ kind: ConfigMap
 metadata:
   labels:
     grafana_datasource: "1"
-  name: grafana-datasources-loki
+  name: grafana-datasources-mimir
   namespace: monitoring-system
 data:
   datasources.yaml: |
     apiVersion: 1
 
     deleteDatasources:
-    - name: Logs
-      uid: logs
+    - name: Metrics
+      uid: metrics
 
     datasources:
-    # Loki for logs
-    - name: Logs
-      type: loki
-      uid: logs
+    # Mimir for metrics
+    - name: Metrics
+      type: prometheus
+      uid: metrics
       access: proxy
-      url: http://loki-gateway.logging-system.svc.cluster.local:80
+      url: http://mimir:8080/prometheus
       basicAuth: false
       isDefault: true
       version: 1
