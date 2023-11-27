@@ -4,15 +4,19 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
+- mimir/gossip-ring-headless-svc.yaml
 - mimir/mimir-dep.yaml
 - mimir/mimir-svc.yaml
-- mimir/gossip-ring-headless-svc.yaml
 - mimir/mimir-servicemonitor.yaml
-- grafana-datasources-mimir.yaml
+- nginx/nginx-dep.yaml
+- nginx/nginx-svc.yaml
 
 images:
 - name: grafana/mimir
   newTag: 2.10.4
+- name: nginx
+  newName: nginxinc/nginx-unprivileged
+  newTag: 1.25-alpine
 
 # Horizontally scale up support(Monolithic mode)
 # https://grafana.com/docs/mimir/latest/references/architecture/deployment-modes/#monolithic-mode
@@ -27,7 +31,7 @@ secretGenerator:
     disableNameSuffixHash: true
   literals:
   - CLUSTER=k3d-k3s-codelab
-  - METRICS_ENDPOINT=http://mimir.monitoring-system:8080
+  - METRICS_ENDPOINT=http://nginx.monitoring-system:8080
 
 - name: mimir-env
   namespace: monitoring-system
@@ -46,3 +50,18 @@ configMapGenerator:
   namespace: monitoring-system
   files:
   - runtime.yaml
+
+- name: nginx-templates
+  namespace: monitoring-system
+  files:
+  - nginx/nginx.conf.template
+  - nginx/gateway_mimir.conf.template
+- name: nginx-env
+  namespace: monitoring-system
+  literals:
+  - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
+  - DISTRIBUTOR_HOST=mimir.monitoring-system.svc.cluster.local
+  - QUERY_FRONTEND_HOST=mimir.monitoring-system.svc.cluster.local
+  - ALERT_MANAGER_HOST=mimir.monitoring-system.svc.cluster.local
+  - RULER_HOST=mimir.monitoring-system.svc.cluster.local
+  - COMPACTOR_HOST=mimir.monitoring-system.svc.cluster.local
