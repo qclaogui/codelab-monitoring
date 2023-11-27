@@ -70,7 +70,7 @@ make down-monolithic-mode-metrics
 ### [Monolithic mode (单体模式)](./kubernetes/monolithic-mode)
 
 - [Logs [Loki]](./kubernetes/monolithic-mode/logs)
-- Traces
+- [Traces [Tempo]](./kubernetes/monolithic-mode/traces)
 - [Metrics [Mimir]](./kubernetes/monolithic-mode/metrics)
 - [Profiles [Pyroscope]](./kubernetes/monolithic-mode/profiles)
 
