@@ -212,6 +212,7 @@ manifests-monolithic-mode: $(KUSTOMIZE)  ## Generates monolithic-mode manifests
 manifests-read-write-mode: $(KUSTOMIZE)  ## Generates read-write-mode manifests
 	$(info ******************** generates read-write-mode manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/read-write-mode/logs > kubernetes/read-write-mode/logs/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build kubernetes/read-write-mode/metrics > kubernetes/read-write-mode/metrics/k8s-all-in-one.yaml
 
 .PHONY: manifests-microservices-mode
 manifests-microservices-mode: $(KUSTOMIZE)  ## Generates microservices-mode manifests
@@ -266,6 +267,7 @@ delete-grafana:
 # 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/prometheus-blackbox-exporter | kubectl apply -f -
 
 
+
 # Kubernetes monolithic-mode
 .PHONY: deploy-monolithic-mode-metrics
 deploy-monolithic-mode-metrics: deploy-grafana ## Deploy monolithic-mode metrics
@@ -276,9 +278,10 @@ deploy-monolithic-mode-metrics: deploy-grafana ## Deploy monolithic-mode metrics
 	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
 	@echo ""
 	@echo "Demo is running."
-	@echo "Go to http://localhost:8080 for the metrics."
+	@echo "Go to http://localhost:8080/explore for the metrics."
 delete-monolithic-mode-metrics:
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/metrics | kubectl delete -f -
+
 
 .PHONY: deploy-monolithic-mode-logs
 deploy-monolithic-mode-logs: deploy-grafana ## Deploy monolithic-mode logs
@@ -291,6 +294,7 @@ deploy-monolithic-mode-logs: deploy-grafana ## Deploy monolithic-mode logs
 	@echo "Go to http://localhost:8080/explore for the logs."
 delete-monolithic-mode-logs:
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/logs | kubectl delete -f -
+
 
 .PHONY: deploy-monolithic-mode-profiles
 deploy-monolithic-mode-profiles: deploy-grafana ## Deploy monolithic-mode profiles
@@ -306,6 +310,20 @@ delete-monolithic-mode-profiles:
 
 
 # Kubernetes read-write-mode
+.PHONY: deploy-read-write-mode-metrics
+deploy-read-write-mode-metrics: deploy-grafana ## Deploy read-write-mode metrics
+	$(info ******************** deploy read-write-mode metrics manifests ********************)
+	@$(KUSTOMIZE) build kubernetes/read-write-mode/metrics | kubectl apply -f -
+	@$(KUSTOMIZE) build monitoring-mixins | kubectl apply -f -
+	kubectl wait --for condition="Ready" pod --selector=app=mimir-write -n monitoring-system --timeout=300s
+	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
+	@echo ""
+	@echo "Demo is running."
+	@echo "Go to http://localhost:8080/explore for the metrics."
+delete-read-write-mode-metrics:
+	@$(KUSTOMIZE) build kubernetes/read-write-mode/metrics | kubectl delete -f -
+
+
 .PHONY: deploy-read-write-mode-logs
 deploy-read-write-mode-logs: deploy-grafana ## Deploy read-write-mode logs
 	$(info ******************** deploy read-write-mode logs manifests ********************)
@@ -316,6 +334,7 @@ deploy-read-write-mode-logs: deploy-grafana ## Deploy read-write-mode logs
 	@echo "Go to http://localhost:8080/explore for the logs."
 delete-read-write-mode-logs:
 	@$(KUSTOMIZE) build kubernetes/read-write-mode/logs | kubectl delete -f -
+
 
 
 

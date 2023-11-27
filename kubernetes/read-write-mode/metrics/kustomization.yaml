@@ -1,0 +1,71 @@
+# ----------------------------------------------------
+# apiVersion and kind of Kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Notice: Read-Write deployment mode is experimental.
+# https://grafana.com/docs/mimir/latest/references/architecture/deployment-modes/#read-write-mode
+
+resources:
+- grafana-datasources-mimir.yaml
+- mimir/gossip-ring-headless-svc.yaml
+- mimir/mimir-backend-dep.yaml
+- mimir/mimir-backend-svc.yaml
+- mimir/mimir-backend-servicemonitor.yaml
+- mimir/mimir-read-dep.yaml
+- mimir/mimir-read-svc.yaml
+- mimir/mimir-read-servicemonitor.yaml
+- mimir/mimir-write-dep.yaml
+- mimir/mimir-write-svc.yaml
+- mimir/mimir-write-servicemonitor.yaml
+- nginx/nginx-dep.yaml
+- nginx/nginx-svc.yaml
+
+images:
+- name: grafana/mimir
+  newTag: 2.10.4
+- name: nginx
+  newName: nginxinc/nginx-unprivileged
+  newTag: 1.25-alpine
+
+secretGenerator:
+- name: agent-env
+  namespace: monitoring-system
+  options:
+    disableNameSuffixHash: true
+  literals:
+  - CLUSTER=k3d-k3s-codelab
+  - METRICS_ENDPOINT=http://nginx.monitoring-system:8080
+
+- name: mimir-env
+  namespace: monitoring-system
+  literals:
+  - COMMON_STORAGE_S3_ENDPOINT=minio.minio-system.svc.cluster.local:443
+  - COMMON_STORAGE_S3_ACCESS_KEY_ID=lgtmp
+  - COMMON_STORAGE_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
+
+- name: mimir-config
+  namespace: monitoring-system
+  files:
+  - mimir.yaml
+
+configMapGenerator:
+- name: runtime-config
+  namespace: monitoring-system
+  files:
+  - runtime.yaml
+
+- name: nginx-templates
+  namespace: monitoring-system
+  files:
+  - nginx/nginx.conf.template
+  - nginx/gateway_mimir.conf.template
+- name: nginx-env
+  namespace: monitoring-system
+  literals:
+  - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
+  - DISTRIBUTOR_HOST=mimir-write.monitoring-system.svc.cluster.local
+  - QUERY_FRONTEND_HOST=mimir-read.monitoring-system.svc.cluster.local
+  - ALERT_MANAGER_HOST=mimir-backend.monitoring-system.svc.cluster.local
+  - RULER_HOST=mimir-backend.monitoring-system.svc.cluster.local
+  - COMPACTOR_HOST=mimir-backend.monitoring-system.svc.cluster.local
