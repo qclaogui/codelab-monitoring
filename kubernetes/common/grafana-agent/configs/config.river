@@ -15,6 +15,7 @@ module.file "lgtmp" {
 		cluster           = coalesce(env("CLUSTER"), "k3d-k3s")
 		metrics_endpoint  = env("METRICS_ENDPOINT")
 		logs_endpoint     = env("LOGS_ENDPOINT")
+		traces_endpoint   = env("TRACES_ENDPOINT")
 		profiles_endpoint = env("PROFILES_ENDPOINT")
 	}
 }
@@ -42,6 +43,18 @@ module.git "event_logs" {
 	arguments {
 		forward_to    = [module.file.lgtmp.exports.logs_receiver]
 		git_pull_freq = "0s"
+	}
+}
+
+/********************************************
+ * Traces
+ ********************************************/
+module.file "traces_primary" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-modules") + "/traces.river"
+
+	arguments {
+		forward_to = [module.file.lgtmp.exports.traces_receiver]
+		cluster    = coalesce(env("CLUSTER"), "k3d-k3s")
 	}
 }
 

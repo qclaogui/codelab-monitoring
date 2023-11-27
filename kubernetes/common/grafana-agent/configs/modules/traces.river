@@ -1,0 +1,68 @@
+/*
+Module: traces
+*/
+argument "forward_to" {
+	optional = false
+}
+
+argument "cluster" {
+	optional = true
+	default  = "monitoring-system"
+}
+
+argument "otlp_http_endpoint" {
+	optional = true
+	default  = "0.0.0.0:4318"
+}
+
+argument "otlp_grpc_endpoint" {
+	optional = true
+	default  = "0.0.0.0:4317"
+}
+
+// https://grafana.com/docs/agent/latest/flow/reference/components/otelcol.receiver.otlp/
+otelcol.receiver.otlp "trace_receiver" {
+	grpc {
+		endpoint = argument.otlp_grpc_endpoint.value
+	}
+
+	http {
+		endpoint = argument.otlp_http_endpoint.value
+	}
+
+	output {
+		traces = [otelcol.processor.batch.default.input]
+	}
+}
+
+otelcol.processor.batch "default" {
+	send_batch_size     = 16384
+	send_batch_max_size = 0
+	timeout             = "2s"
+
+	output {
+		traces = [otelcol.processor.memory_limiter.default.input]
+	}
+}
+
+otelcol.processor.memory_limiter "default" {
+	check_interval = "1s"
+
+	limit = "150MiB" // alternatively, set `limit_percentage` and `spike_limit_percentage`
+
+	output {
+		traces = [otelcol.processor.attributes.default.input]
+	}
+}
+
+otelcol.processor.attributes "default" {
+	action {
+		key    = "cluster"
+		value  = argument.cluster.value
+		action = "insert"
+	}
+
+	output {
+		traces = argument.forward_to.value
+	}
+}

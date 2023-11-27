@@ -207,6 +207,7 @@ manifests-monolithic-mode: $(KUSTOMIZE)  ## Generates monolithic-mode manifests
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/metrics > kubernetes/monolithic-mode/metrics/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/logs > kubernetes/monolithic-mode/logs/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/profiles > kubernetes/monolithic-mode/profiles/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build kubernetes/monolithic-mode/traces > kubernetes/monolithic-mode/traces/k8s-all-in-one.yaml
 
 .PHONY: manifests-read-write-mode
 manifests-read-write-mode: $(KUSTOMIZE)  ## Generates read-write-mode manifests
@@ -300,12 +301,26 @@ delete-monolithic-mode-logs:
 deploy-monolithic-mode-profiles: deploy-grafana ## Deploy monolithic-mode profiles
 	$(info ******************** deploy monolithic-mode profiles manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/profiles | kubectl apply -f -
+	kubectl wait --for condition="Ready" pod --selector=app.kubernetes.io/name=pyroscope -n profiles-system --timeout=300s
 	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
 	@echo ""
 	@echo "Demo is running."
 	@echo "Go to http://localhost:8080/explore for the profiles."
 delete-monolithic-mode-profiles:
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/profiles | kubectl delete -f -
+
+
+.PHONY: deploy-monolithic-mode-traces
+deploy-monolithic-mode-traces: deploy-grafana ## Deploy monolithic-mode traces
+	$(info ******************** deploy monolithic-mode traces manifests ********************)
+	@$(KUSTOMIZE) build kubernetes/monolithic-mode/traces | kubectl apply -f -
+	kubectl wait --for condition="Ready" pod --selector=app.kubernetes.io/name=tempo -n tracing-system --timeout=300s
+	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
+	@echo ""
+	@echo "Demo is running."
+	@echo "Go to http://localhost:8080/explore for the traces."
+delete-monolithic-mode-traces:
+	@$(KUSTOMIZE) build kubernetes/monolithic-mode/traces | kubectl delete -f -
 
 
 

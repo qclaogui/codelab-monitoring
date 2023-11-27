@@ -1,0 +1,33 @@
+# ----------------------------------------------------
+# apiVersion and kind of Kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- namespace.yaml
+- grafana-datasources-tempo.yaml
+- tempo/k8s-all-in-one.yaml
+
+secretGenerator:
+- name: agent-env
+  namespace: monitoring-system
+  options:
+    disableNameSuffixHash: true
+  literals:
+  - CLUSTER=k3d-k3s-codelab
+  - TRACES_ENDPOINT=tempo.tracing-system.svc.cluster.local:4317
+
+- name: tempo-env
+  namespace: tracing-system
+  literals:
+  - STORAGE_TRACE_S3_ENDPOINT=minio.minio-system.svc.cluster.local:443
+  - STORAGE_TRACE_S3_ACCESS_KEY=lgtmp
+  - STORAGE_TRACE_S3_SECRET_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
+
+configMapGenerator:
+- name: tempo
+  namespace: tracing-system
+  behavior: replace
+  files:
+  - tempo.yaml
+  - overrides.yaml

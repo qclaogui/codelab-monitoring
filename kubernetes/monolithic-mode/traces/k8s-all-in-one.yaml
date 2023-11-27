@@ -1,0 +1,259 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tracing-system
+---
+apiVersion: v1
+automountServiceAccountToken: true
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/instance: tempo
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: tempo
+    app.kubernetes.io/version: 2.3.0
+    helm.sh/chart: tempo-1.7.1
+  name: tempo
+  namespace: tracing-system
+---
+apiVersion: v1
+data:
+  datasources.yaml: |
+    apiVersion: 1
+
+    deleteDatasources:
+    - name: Traces
+      uid: traces
+
+    datasources:
+    # Traces for traces
+    - name: Traces
+      type: tempo
+      uid: traces
+      access: proxy
+      url: http://tempo.tracing-system.svc.cluster.local:3100
+      basicAuth: false
+      isDefault: true
+      version: 1
+      editable: true
+kind: ConfigMap
+metadata:
+  labels:
+    grafana_datasource: "1"
+  name: grafana-datasources-tempo
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  overrides.yaml: |-
+    overrides:
+      {}
+  tempo.yaml: |
+    multitenancy_enabled: false
+    usage_report:
+      reporting_enabled: false
+    compactor:
+      compaction:
+        block_retention: 1h
+    distributor:
+      receivers:
+        otlp:
+          protocols:
+            grpc:
+              endpoint: 0.0.0.0:4317
+            http:
+              endpoint: 0.0.0.0:4318
+    ingester:
+      max_block_duration: 5m
+    query_frontend:
+      search:
+        duration_slo: 5s
+        throughput_bytes_slo: 1.073741824e+09
+      trace_by_id:
+        duration_slo: 5s
+    server:
+      http_listen_port: 3100
+      grpc_listen_port: 9095
+      log_level: debug
+    storage:
+      trace:
+        backend: s3
+        wal:
+          path: /tmp/tempo/wal
+        s3:
+          bucket: tempo-data
+          endpoint: ${STORAGE_TRACE_S3_ENDPOINT:minio:9000}
+          access_key: ${STORAGE_TRACE_S3_ACCESS_KEY:admin}
+          secret_key: ${STORAGE_TRACE_S3_SECRET_KEY:admin_password}
+          insecure: ${STORAGE_TRACE_S3_INSECURE:false}
+          tls_insecure_skip_verify: true
+    overrides:
+      per_tenant_override_config: /conf/overrides.yaml
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: tempo
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: tempo
+    app.kubernetes.io/version: 2.3.0
+    helm.sh/chart: tempo-1.7.1
+  name: tempo
+  namespace: tracing-system
+---
+apiVersion: v1
+data:
+  CLUSTER: azNkLWszcy1jb2RlbGFi
+  TRACES_ENDPOINT: dGVtcG8udHJhY2luZy1zeXN0ZW0uc3ZjLmNsdXN0ZXIubG9jYWw6NDMxNw==
+kind: Secret
+metadata:
+  name: agent-env
+  namespace: monitoring-system
+type: Opaque
+---
+apiVersion: v1
+data:
+  STORAGE_TRACE_S3_ACCESS_KEY: bGd0bXA=
+  STORAGE_TRACE_S3_ENDPOINT: bWluaW8ubWluaW8tc3lzdGVtLnN2Yy5jbHVzdGVyLmxvY2FsOjQ0Mw==
+  STORAGE_TRACE_S3_SECRET_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
+kind: Secret
+metadata:
+  name: tempo-env-k2tftm876d
+  namespace: tracing-system
+type: Opaque
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: tempo
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: tempo
+    app.kubernetes.io/version: 2.3.0
+    helm.sh/chart: tempo-1.7.1
+  name: tempo
+  namespace: tracing-system
+spec:
+  ports:
+  - name: tempo-prom-metrics
+    port: 3100
+    targetPort: 3100
+  - name: tempo-jaeger-thrift-compact
+    port: 6831
+    protocol: UDP
+    targetPort: 6831
+  - name: tempo-jaeger-thrift-binary
+    port: 6832
+    protocol: UDP
+    targetPort: 6832
+  - name: tempo-jaeger-thrift-http
+    port: 14268
+    protocol: TCP
+    targetPort: 14268
+  - name: grpc-tempo-jaeger
+    port: 14250
+    protocol: TCP
+    targetPort: 14250
+  - name: tempo-zipkin
+    port: 9411
+    protocol: TCP
+    targetPort: 9411
+  - name: tempo-otlp-legacy
+    port: 55680
+    protocol: TCP
+    targetPort: 55680
+  - name: tempo-otlp-http-legacy
+    port: 55681
+    protocol: TCP
+    targetPort: 4318
+  - name: grpc-tempo-otlp
+    port: 4317
+    protocol: TCP
+    targetPort: 4317
+  - name: tempo-otlp-http
+    port: 4318
+    protocol: TCP
+    targetPort: 4318
+  - name: tempo-opencensus
+    port: 55678
+    protocol: TCP
+    targetPort: 55678
+  selector:
+    app.kubernetes.io/instance: tempo
+    app.kubernetes.io/name: tempo
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app.kubernetes.io/instance: tempo
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: tempo
+    app.kubernetes.io/version: 2.3.0
+    helm.sh/chart: tempo-1.7.1
+  name: tempo
+  namespace: tracing-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: tempo
+      app.kubernetes.io/name: tempo
+  serviceName: tempo-headless
+  template:
+    metadata:
+      annotations:
+        checksum/config: 23ab72f796ab49fb9da008a20e208caac7b37af419dfb94543cc09219ab61429
+      labels:
+        app.kubernetes.io/instance: tempo
+        app.kubernetes.io/name: tempo
+    spec:
+      automountServiceAccountToken: true
+      containers:
+      - args:
+        - -config.file=/conf/tempo.yaml
+        - -mem-ballast-size-mbs=1024
+        - -config.expand-env=true
+        env: null
+        envFrom:
+        - secretRef:
+            name: tempo-env-k2tftm876d
+        image: grafana/tempo:2.3.0
+        imagePullPolicy: IfNotPresent
+        name: tempo
+        ports:
+        - containerPort: 3100
+          name: prom-metrics
+        - containerPort: 6831
+          name: jaeger-thrift-c
+          protocol: UDP
+        - containerPort: 6832
+          name: jaeger-thrift-b
+          protocol: UDP
+        - containerPort: 14268
+          name: jaeger-thrift-h
+        - containerPort: 14250
+          name: jaeger-grpc
+        - containerPort: 9411
+          name: zipkin
+        - containerPort: 55680
+          name: otlp-legacy
+        - containerPort: 4317
+          name: otlp-grpc
+        - containerPort: 55681
+          name: otlp-httplegacy
+        - containerPort: 4318
+          name: otlp-http
+        - containerPort: 55678
+          name: opencensus
+        resources: {}
+        volumeMounts:
+        - mountPath: /conf
+          name: tempo-conf
+      serviceAccountName: tempo
+      volumes:
+      - configMap:
+          name: tempo
+        name: tempo-conf
+  updateStrategy:
+    type: RollingUpdate
