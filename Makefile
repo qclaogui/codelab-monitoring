@@ -192,13 +192,15 @@ manifests: $(KUSTOMIZE) manifests-common manifests-monolithic-mode manifests-rea
 
 manifests-common: $(KUSTOMIZE)
 	$(info ******************** generates manifests-common manifests ********************)
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana-agent > kubernetes/common/grafana-agent/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/gateway > kubernetes/common/gateway/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana > kubernetes/common/grafana/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana-agent > kubernetes/common/grafana-agent/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/kube-prometheus-stack > kubernetes/common/kube-prometheus-stack/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/minio-operator > kubernetes/common/minio-operator/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/minio-tenant > kubernetes/common/minio-tenant/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/prometheus-blackbox-exporter > kubernetes/common/prometheus-blackbox-exporter/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/prometheus-operator-crds > kubernetes/common/prometheus-operator-crds/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/rancher-pushprox > kubernetes/common/rancher-pushprox/k8s-all-in-one.yaml
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/minio-operator > kubernetes/common/minio-operator/k8s-all-in-one.yaml
 
 
 .PHONY: manifests-monolithic-mode
@@ -249,12 +251,18 @@ deploy-minio: ## Deploy minio manifests
 	@kubectl wait --for condition="Ready" pod --selector=app.kubernetes.io/instance=operator -n minio-system --timeout=300s
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/minio-tenant | kubectl apply -f -
 
+# gateway
+.PHONY: deploy-gateway
+deploy-gateway: ## Deploy gateway manifests
+	$(info ******************** deploy gateway manifests ********************)
+	@$(KUSTOMIZE) build kubernetes/common/gateway | kubectl apply -f -
+
 # minio-operator console jwt token 
 minio-token:
 	@kubectl get secret/console-sa-secret -n minio-system -o json | jq -r ".data.token" | base64 -d
 
 .PHONY: deploy-grafana
-deploy-grafana: deploy-prometheus-operator-crds deploy-minio ## Deploy grafana manifests
+deploy-grafana: deploy-prometheus-operator-crds deploy-minio deploy-gateway ## Deploy grafana manifests
 	$(info ******************** deploy grafana manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana | kubectl apply -f -
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana-agent | kubectl apply -f -

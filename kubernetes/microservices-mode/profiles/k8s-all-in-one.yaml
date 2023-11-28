@@ -63,30 +63,24 @@ subjects:
 ---
 apiVersion: v1
 data:
-  datasources.yaml: |
-    apiVersion: 1
-
-    deleteDatasources:
-    - name: Profiles
-      uid: profiles
-
-    datasources:
-    # Pyroscope for profiles
-    - name: Profiles
-      type: grafana-pyroscope-datasource
-      uid: profiles
-      access: proxy
-      url: http://pyroscope-query-frontend.profiles-system.svc.cluster.local:4040
-      basicAuth: false
-      isDefault: true
-      version: 1
-      editable: true
+  LOKI_COMPACTOR_HOST: loki.logging-system.svc.cluster.local
+  LOKI_DISTRIBUTOR_HOST: loki.logging-system.svc.cluster.local
+  LOKI_INGESTER_HOST: loki.logging-system.svc.cluster.local
+  LOKI_QUERIER_HOST: loki.logging-system.svc.cluster.local
+  LOKI_QUERY_FRONTEND_HOST: loki.logging-system.svc.cluster.local
+  LOKI_QUERY_SCHEDULER_HOST: loki.logging-system.svc.cluster.local
+  LOKI_RULER_HOST: loki.logging-system.svc.cluster.local
+  MIMIR_ALERT_MANAGER_HOST: mimir.monitoring-system.svc.cluster.local
+  MIMIR_COMPACTOR_HOST: mimir.monitoring-system.svc.cluster.local
+  MIMIR_DISTRIBUTOR_HOST: mimir.monitoring-system.svc.cluster.local
+  MIMIR_QUERY_FRONTEND_HOST: mimir.monitoring-system.svc.cluster.local
+  MIMIR_RULER_HOST: mimir.monitoring-system.svc.cluster.local
+  PYROSCOPE_DISTRIBUTOR_HOST: pyroscope-distributor.profiles-system.svc.cluster.local
+  PYROSCOPE_QUERY_FRONTEND_HOST: pyroscope-query-frontend.profiles-system.svc.cluster.local
 kind: ConfigMap
 metadata:
-  labels:
-    grafana_datasource: "1"
-  name: grafana-datasources-pyroscope
-  namespace: monitoring-system
+  name: nginx-env
+  namespace: gateway
 ---
 apiVersion: v1
 data:
@@ -98,9 +92,9 @@ data:
       backend: s3
       s3:
         bucket_name: pyroscope-data
-        endpoint: ${PYROSCOPE_STORAGE_S3_ENDPOINT:minio:9000}
-        access_key_id: ${PYROSCOPE_STORAGE_S3_ACCESS_KEY_ID:admin}
-        secret_access_key: ${PYROSCOPE_STORAGE_S3_SECRET_ACCESS_KEY:admin_password}
+        endpoint: ${PYROSCOPE_STORAGE_S3_ENDPOINT:minio.minio-system.svc.cluster.local:443}
+        access_key_id: ${PYROSCOPE_STORAGE_S3_ACCESS_KEY_ID:lgtmp}
+        secret_access_key: ${PYROSCOPE_STORAGE_S3_SECRET_ACCESS_KEY:supersecret}
         insecure: false
         http:
           insecure_skip_verify: true
@@ -136,9 +130,7 @@ metadata:
 apiVersion: v1
 data:
   CLUSTER: azNkLWszcy1jb2RlbGFi
-  PROFILES_ENDPOINT: |
-    aHR0cDovL3B5cm9zY29wZS1kaXN0cmlidXRvci5wcm9maWxlcy1zeXN0ZW0uc3ZjLmNsdX
-    N0ZXIubG9jYWw6NDA0MA==
+  PROFILES_ENDPOINT: aHR0cDovL25naW54LmdhdGV3YXkuc3ZjLmNsdXN0ZXIubG9jYWw6NDA0MA==
 kind: Secret
 metadata:
   name: agent-env
@@ -567,6 +559,7 @@ spec:
         - -memberlist.join=dns+pyroscope-memberlist.profiles-system.svc.cluster.local.:7946
         - -config.file=/etc/pyroscope/config.yaml
         - -runtime-config.file=/etc/pyroscope/overrides/overrides.yaml
+        - -config.expand-env=true
         - -log.level=warn
         - -store-gateway.sharding-ring.replication-factor=3
         envFrom:
@@ -657,6 +650,7 @@ spec:
         - -memberlist.join=dns+pyroscope-memberlist.profiles-system.svc.cluster.local.:7946
         - -config.file=/etc/pyroscope/config.yaml
         - -runtime-config.file=/etc/pyroscope/overrides/overrides.yaml
+        - -config.expand-env=true
         - -log.level=warn
         - -store-gateway.sharding-ring.replication-factor=3
         envFrom:
@@ -747,6 +741,7 @@ spec:
         - -memberlist.join=dns+pyroscope-memberlist.profiles-system.svc.cluster.local.:7946
         - -config.file=/etc/pyroscope/config.yaml
         - -runtime-config.file=/etc/pyroscope/overrides/overrides.yaml
+        - -config.expand-env=true
         - -log.level=warn
         - -store-gateway.sharding-ring.replication-factor=3
         envFrom:
@@ -837,6 +832,7 @@ spec:
         - -memberlist.join=dns+pyroscope-memberlist.profiles-system.svc.cluster.local.:7946
         - -config.file=/etc/pyroscope/config.yaml
         - -runtime-config.file=/etc/pyroscope/overrides/overrides.yaml
+        - -config.expand-env=true
         - -log.level=warn
         - -store-gateway.sharding-ring.replication-factor=3
         envFrom:
@@ -929,6 +925,7 @@ spec:
         - -memberlist.join=dns+pyroscope-memberlist.profiles-system.svc.cluster.local.:7946
         - -config.file=/etc/pyroscope/config.yaml
         - -runtime-config.file=/etc/pyroscope/overrides/overrides.yaml
+        - -config.expand-env=true
         - -log.level=warn
         - -store-gateway.sharding-ring.replication-factor=3
         envFrom:
@@ -1025,6 +1022,7 @@ spec:
         - -memberlist.join=dns+pyroscope-memberlist.profiles-system.svc.cluster.local.:7946
         - -config.file=/etc/pyroscope/config.yaml
         - -runtime-config.file=/etc/pyroscope/overrides/overrides.yaml
+        - -config.expand-env=true
         - -log.level=warn
         - -store-gateway.sharding-ring.replication-factor=3
         envFrom:
@@ -1118,6 +1116,7 @@ spec:
         - -memberlist.join=dns+pyroscope-memberlist.profiles-system.svc.cluster.local.:7946
         - -config.file=/etc/pyroscope/config.yaml
         - -runtime-config.file=/etc/pyroscope/overrides/overrides.yaml
+        - -config.expand-env=true
         - -log.level=warn
         - -store-gateway.sharding-ring.replication-factor=3
         envFrom:

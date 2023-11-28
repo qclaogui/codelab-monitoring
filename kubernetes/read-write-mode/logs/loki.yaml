@@ -12,7 +12,7 @@ server:
 
 # https://grafana.com/docs/loki/latest/configure/#use-environment-variables-in-the-configuration
 common:
-  compactor_address: 'loki'
+  compactor_address: 'loki-backend'
   path_prefix: /var/loki
   replication_factor: 1
   storage:
@@ -25,6 +25,14 @@ common:
       s3forcepathstyle: true
       http_config:
         insecure_skip_verify: true
+
+frontend:
+  scheduler_address: query-scheduler-discovery.logging-system.svc.cluster.local.:9095
+frontend_worker:
+  scheduler_address: query-scheduler-discovery.logging-system.svc.cluster.local.:9095
+index_gateway:
+  mode: ring
+
 
 compactor:
   working_directory: /tmp/compactor
@@ -43,6 +51,7 @@ query_range:
         enabled: true
 
 limits_config:
+  enforce_metric_name: false
   max_cache_freshness_per_query: 10m
   reject_old_samples: true
   reject_old_samples_max_age: 168h

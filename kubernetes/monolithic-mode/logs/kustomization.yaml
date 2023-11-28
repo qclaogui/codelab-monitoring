@@ -5,9 +5,13 @@ kind: Kustomization
 
 resources:
 - namespace.yaml
-- grafana-datasources-loki.yaml
 - loki/k8s-all-in-one.yaml
 
+# Horizontally scale up support(Monolithic mode)
+# https://grafana.com/docs/loki/latest/get-started/deployment-modes/#monolithic-mode
+replicas:
+- count: 1
+  name: loki
 
 secretGenerator:
 - name: agent-env
@@ -16,16 +20,16 @@ secretGenerator:
     disableNameSuffixHash: true
   literals:
   - CLUSTER=k3d-k3s-codelab
-  - LOGS_ENDPOINT=http://loki-gateway.logging-system.svc.cluster.local:80
+  - LOGS_ENDPOINT=http://nginx.gateway.svc.cluster.local:3100
 
 - name: loki-env
   namespace: logging-system
   literals:
-  - COMMON_STORAGE_S3_ENDPOINT=minio.minio-system.svc.cluster.local:443
-  - COMMON_STORAGE_S3_ACCESS_KEY_ID=lgtmp
-  - COMMON_STORAGE_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
+  - LOKI_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
 
+configMapGenerator:
 - name: loki-config
   namespace: logging-system
+  behavior: replace
   files:
   - config.yaml=loki.yaml

@@ -78,7 +78,7 @@ make down-monolithic-mode-metrics
 
 - [Logs [Loki (Read + Write + Backend)]](./kubernetes/read-write-mode/logs)
 - Traces
-- Metrics
+- [Metrics [Mimir (Read + Write + Backend)]](./kubernetes/read-write-mode/metrics)
 - Profiles
 
 ### [Microservices mode (微服务模式)](./kubernetes/microservices-mode)

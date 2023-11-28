@@ -6,11 +6,23 @@ kind: Kustomization
 resources:
 - namespace.yaml
 - pyroscope/k8s-all-in-one.yaml
-- grafana-datasources-pyroscope.yaml
 
-images:
-- name: grafana/pyroscope
-  newTag: 1.2.0
+secretGenerator:
+- name: agent-env
+  namespace: monitoring-system
+  options:
+    disableNameSuffixHash: true
+  literals:
+  - CLUSTER=k3d-k3s-codelab
+  - PROFILES_ENDPOINT=http://nginx.gateway.svc.cluster.local:4040
+
+# https://grafana.com/docs/pyroscope/latest/configure-server/reference-configuration-parameters/#s3_storage_backend
+- name: pyroscope-env
+  namespace: profiles-system
+  literals:
+  - PYROSCOPE_STORAGE_S3_ENDPOINT=minio.minio-system.svc.cluster.local:443
+  - PYROSCOPE_STORAGE_S3_ACCESS_KEY_ID=lgtmp
+  - PYROSCOPE_STORAGE_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
 
 configMapGenerator:
 - name: pyroscope-config
@@ -21,19 +33,14 @@ configMapGenerator:
   files:
   - config.yaml=pyroscope.yaml
 
-secretGenerator:
-- name: agent-env
-  namespace: monitoring-system
+- name: nginx-env
+  namespace: gateway
   options:
     disableNameSuffixHash: true
+  # We need to fully set all variables because nginx envsubst does not support default values.
+  # https://github.com/nginxinc/docker-nginx/issues/592
+  envs:
+  - default.env
   literals:
-  - CLUSTER=k3d-k3s-codelab
-  - PROFILES_ENDPOINT=http://pyroscope-distributor.profiles-system.svc.cluster.local:4040
-
-# https://grafana.com/docs/pyroscope/latest/configure-server/reference-configuration-parameters/#s3_storage_backend
-- name: pyroscope-env
-  namespace: profiles-system
-  literals:
-  - PYROSCOPE_STORAGE_S3_ENDPOINT=minio.minio-system.svc.cluster.local:443
-  - PYROSCOPE_STORAGE_S3_ACCESS_KEY_ID=lgtmp
-  - PYROSCOPE_STORAGE_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
+  - PYROSCOPE_DISTRIBUTOR_HOST=pyroscope-distributor.profiles-system.svc.cluster.local
+  - PYROSCOPE_QUERY_FRONTEND_HOST=pyroscope-query-frontend.profiles-system.svc.cluster.local

@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: nginx
-  namespace: monitoring-system
+  namespace: gateway
   labels:
     app: nginx
 spec:
@@ -27,18 +27,21 @@ spec:
             cpu: 999m
             memory: 1Gi
         imagePullPolicy: IfNotPresent
+        env:
+        - name: NGINX_ENVSUBST_OUTPUT_DIR
+          value: /etc/nginx
         envFrom:
         - configMapRef:
             name: nginx-env
         ports:
-        - name: http-service
+        - name: http-mimir
           containerPort: 8080
-        readinessProbe:
-          httpGet:
-            path: /
-            port: http-service
-          initialDelaySeconds: 15
-          timeoutSeconds: 1
+        - name: http-loki
+          containerPort: 3100
+        - name: http-tempo
+          containerPort: 3200
+        - name: http-pyroscope
+          containerPort: 4040
         volumeMounts:
         - name: templates
           mountPath: /etc/nginx/templates

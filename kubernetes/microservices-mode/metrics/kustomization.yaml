@@ -3,8 +3,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: monitoring-system
-
 resources:
 # This can improve cloning a large repository, or over a slow network.
 # https://github.com/kubernetes-sigs/kustomize/commit/24a64bdee32602b6756608d4c24da28486461199
@@ -20,20 +18,6 @@ resources:
 - configs/add-sm-query-scheduler.yaml
 - configs/add-sm-ruler.yaml
 - configs/add-sm-store-gateway.yaml
-# - grafana-datasources-mimir.yaml
-
-
-images:
-- name: grafana/mimir
-  newTag: 2.10.4
-
-replicas:
-- count: 2
-  name: ingester
-
-# # https://kubernetes.io/docs/concepts/configuration/configmap/#configmap-immutable
-# generatorOptions:
-#   immutable: true
 
 secretGenerator:
 - name: agent-env
@@ -42,24 +26,39 @@ secretGenerator:
     disableNameSuffixHash: true
   literals:
   - CLUSTER=k3d-k3s-codelab
-  - METRICS_ENDPOINT=http://nginx.monitoring-system:8080
-# # just use mimir.yaml in base
-# - name: mimir-config
-#   behavior: replace
-#   files:
-#   - configs/mimir.yaml
+  - METRICS_ENDPOINT=http://nginx.gateway.svc.cluster.local:8080
+
+- name: mimir-env
+  namespace: monitoring-system
+  behavior: replace
+  literals:
+  - MIMIR_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
+
 
 configMapGenerator:
 - name: runtime-config
+  namespace: monitoring-system
   behavior: merge
   files:
   - configs/runtime.yaml
+- name: mimir-config
+  namespace: monitoring-system
+  behavior: replace
+  files:
+  - configs/mimir.yaml
+  - configs/alertmanager-fallback-config.yaml
 
 - name: nginx-env
-  behavior: merge
+  namespace: gateway
+  options:
+    disableNameSuffixHash: true
+  # We need to fully set all variables because nginx envsubst does not support default values.
+  # https://github.com/nginxinc/docker-nginx/issues/592
+  envs:
+  - default.env
   literals:
-  - DISTRIBUTOR_HOST=distributor.monitoring-system.svc.cluster.local
-  - ALERT_MANAGER_HOST=alertmanager-headless.monitoring-system.svc.cluster.local
-  - RULER_HOST=ruler.monitoring-system.svc.cluster.local
-  - QUERY_FRONTEND_HOST=query-frontend.monitoring-system.svc.cluster.local
-  - COMPACTOR_HOST=compactor.monitoring-system.svc.cluster.local
+  - MIMIR_DISTRIBUTOR_HOST=distributor.monitoring-system.svc.cluster.local
+  - MIMIR_QUERY_FRONTEND_HOST=query-frontend.monitoring-system.svc.cluster.local
+  - MIMIR_ALERT_MANAGER_HOST=alertmanager-headless.monitoring-system.svc.cluster.local
+  - MIMIR_RULER_HOST=ruler.monitoring-system.svc.cluster.local
+  - MIMIR_COMPACTOR_HOST=compactor.monitoring-system.svc.cluster.local

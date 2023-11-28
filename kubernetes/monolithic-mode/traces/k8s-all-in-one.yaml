@@ -18,30 +18,88 @@ metadata:
 ---
 apiVersion: v1
 data:
-  datasources.yaml: |
-    apiVersion: 1
-
-    deleteDatasources:
-    - name: Traces
-      uid: traces
-
-    datasources:
-    # Traces for traces
-    - name: Traces
-      type: tempo
-      uid: traces
-      access: proxy
-      url: http://tempo.tracing-system.svc.cluster.local:3100
-      basicAuth: false
-      isDefault: true
-      version: 1
-      editable: true
+  TEMPO_COMPACTOR_HOST: tempo.tracing-system.svc.cluster.local
+  TEMPO_DISTRIBUTOR_HOST: tempo.tracing-system.svc.cluster.local
+  TEMPO_INGESTER_HOST: tempo.tracing-system.svc.cluster.local
+  TEMPO_QUERY_FRONTEND_HOST: tempo.tracing-system.svc.cluster.local
 kind: ConfigMap
 metadata:
-  labels:
-    grafana_datasource: "1"
-  name: grafana-datasources-tempo
-  namespace: monitoring-system
+  name: nginx-env
+  namespace: gateway
+---
+apiVersion: v1
+data:
+  gateway_tempo.conf.template: "upstream otlp {\n    server ${TEMPO_DISTRIBUTOR_HOST}:4317;\n}\nserver
+    {\n    listen 4317;\n    http2 on;\n\n    location / {\n      grpc_set_header
+    X-Scope-OrgID $ensured_x_scope_orgid;\n      grpc_pass grpc://otlp;\n    }\n}\n\nserver
+    {\n    listen 3200;\n    listen [::]:3200;\n\n    location = / {\n      return
+    200 'OK';\n      auth_basic off;\n      access_log off;\n    }\n\n    proxy_set_header
+    X-Scope-OrgID $ensured_x_scope_orgid;\n\n    # Distributor endpoints\n    location
+    = /jaeger/api/traces {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:14268/api/traces;\n
+    \   }\n    location = /zipkin/spans {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:9411/spans;\n
+    \   }\n    location = /otlp/v1/traces {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:4318/v1/traces;\n
+    \   }\n\n    location = /distributor/ring {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:3100$request_uri;\n
+    \   }\n    location = /ingester/ring {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:3100$request_uri;\n
+    \   }\n    \n    # Ingester endpoints\n    location = /flush {\n      proxy_pass
+    \     http://${TEMPO_INGESTER_HOST}:3100$request_uri;\n    }\n    location = /shutdown
+    {\n      proxy_pass      http://${TEMPO_INGESTER_HOST}:3100$request_uri;\n    }\n\n
+    \   # Query endpoints\n    location ^~ /api {\n      proxy_pass      http://${TEMPO_QUERY_FRONTEND_HOST}:3100$request_uri;\n
+    \   }\n\n    # Compactor endpoint\n    location = /compactor/ring {\n      proxy_pass
+    \     http://${TEMPO_COMPACTOR_HOST}:3100$request_uri;\n    }\n}"
+  nginx.conf.template: |-
+    worker_processes  auto;
+    error_log  /dev/stderr error;
+    pid        /tmp/nginx.pid;
+    worker_rlimit_nofile 8192;
+
+    events {
+      worker_connections  4096;  ## Default: 1024
+    }
+
+    http {
+      client_body_temp_path /tmp/client_temp;
+      proxy_temp_path       /tmp/proxy_temp_path;
+      fastcgi_temp_path     /tmp/fastcgi_temp;
+      uwsgi_temp_path       /tmp/uwsgi_temp;
+      scgi_temp_path        /tmp/scgi_temp;
+
+      client_max_body_size  4M;
+
+      proxy_read_timeout    600; ## 10 minutes
+      proxy_send_timeout    600;
+      proxy_connect_timeout 600;
+
+      proxy_http_version    1.1;
+
+      default_type application/octet-stream;
+      log_format   main '$remote_addr - $remote_user [$time_local]  $status '
+            '"$request" $body_bytes_sent "$http_referer" '
+            '"$http_user_agent" "$http_x_forwarded_for"';
+
+      map $status $loggable {
+        ~^[23]  0;
+        default 1;
+      }
+
+      access_log   /dev/stderr  main if=$loggable;
+
+      sendfile     on;
+      tcp_nopush   on;
+
+      resolver kube-dns.kube-system.svc.cluster.local;
+
+      # Ensure that X-Scope-OrgID is always present, default to the no_auth_tenant for backwards compatibility when multi-tenancy was turned off.
+      map $http_x_scope_orgid $ensured_x_scope_orgid {
+        default $http_x_scope_orgid;
+        "" "anonymous";
+      }
+
+      include /etc/nginx/gateway_*.conf;
+    }
+kind: ConfigMap
+metadata:
+  name: nginx-templates
+  namespace: gateway
 ---
 apiVersion: v1
 data:
@@ -82,10 +140,10 @@ data:
           path: /tmp/tempo/wal
         s3:
           bucket: tempo-data
-          endpoint: ${STORAGE_TRACE_S3_ENDPOINT:minio:9000}
-          access_key: ${STORAGE_TRACE_S3_ACCESS_KEY:admin}
-          secret_key: ${STORAGE_TRACE_S3_SECRET_KEY:admin_password}
-          insecure: ${STORAGE_TRACE_S3_INSECURE:false}
+          endpoint: ${TEMPO_S3_ENDPOINT:minio.minio-system.svc:443}
+          access_key: ${TEMPO_S3_ACCESS_KEY:lgtmp}
+          secret_key: ${TEMPO_S3_SECRET_KEY:supersecret}
+          insecure: ${TEMPO_S3_INSECURE:false}
           tls_insecure_skip_verify: true
     overrides:
       per_tenant_override_config: /conf/overrides.yaml
@@ -112,12 +170,12 @@ type: Opaque
 ---
 apiVersion: v1
 data:
-  STORAGE_TRACE_S3_ACCESS_KEY: bGd0bXA=
-  STORAGE_TRACE_S3_ENDPOINT: bWluaW8ubWluaW8tc3lzdGVtLnN2Yy5jbHVzdGVyLmxvY2FsOjQ0Mw==
-  STORAGE_TRACE_S3_SECRET_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
+  TEMPO_S3_ACCESS_KEY: bGd0bXA=
+  TEMPO_S3_ENDPOINT: bWluaW8ubWluaW8tc3lzdGVtLnN2Yzo0NDM=
+  TEMPO_S3_SECRET_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:
-  name: tempo-env-k2tftm876d
+  name: tempo-env-44c28k2cmb
   namespace: tracing-system
 type: Opaque
 ---
@@ -217,7 +275,7 @@ spec:
         env: null
         envFrom:
         - secretRef:
-            name: tempo-env-k2tftm876d
+            name: tempo-env-44c28k2cmb
         image: grafana/tempo:2.3.0
         imagePullPolicy: IfNotPresent
         name: tempo

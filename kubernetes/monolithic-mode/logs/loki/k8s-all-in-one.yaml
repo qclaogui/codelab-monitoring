@@ -53,62 +53,71 @@ subjects:
 ---
 apiVersion: v1
 data:
-  nginx.conf: "worker_processes  5;  ## Default: 1\nerror_log  /dev/stderr;\npid        /tmp/nginx.pid;\nworker_rlimit_nofile
-    8192;\n\nevents {\n  worker_connections  4096;  ## Default: 1024\n}\n\nhttp {\n
-    \ client_body_temp_path /tmp/client_temp;\n  proxy_temp_path       /tmp/proxy_temp_path;\n
-    \ fastcgi_temp_path     /tmp/fastcgi_temp;\n  uwsgi_temp_path       /tmp/uwsgi_temp;\n
-    \ scgi_temp_path        /tmp/scgi_temp;\n\n  client_max_body_size  4M;\n\n  proxy_read_timeout
-    \   600; ## 10 minutes\n  proxy_send_timeout    600;\n  proxy_connect_timeout
-    600;\n\n  proxy_http_version    1.1;\n\n  default_type application/octet-stream;\n
-    \ log_format   main '$remote_addr - $remote_user [$time_local]  $status '\n        '\"$request\"
-    $body_bytes_sent \"$http_referer\" '\n        '\"$http_user_agent\" \"$http_x_forwarded_for\"';\n\n
-    \ map $status $loggable {\n    ~^[23]  0;\n    default 1;\n  }\n  access_log   /dev/stderr
-    \ main  if=$loggable;\n\n  sendfile     on;\n  tcp_nopush   on;\n  resolver kube-dns.kube-system.svc.cluster.local.;\n
-    \ \n\n  server {\n    listen             8080;\n    listen             [::]:8080;\n\n
-    \   location = / {\n      return 200 'OK';\n      auth_basic off;\n    }\n\n\n
-    \   # Distributor\n    location = /api/prom/push {\n      proxy_pass       http://loki.logging-system.svc.cluster.local:3100$request_uri;\n
-    \   }\n    location = /loki/api/v1/push {\n      proxy_pass       http://loki.logging-system.svc.cluster.local:3100$request_uri;\n
-    \   }\n    location = /distributor/ring {\n      proxy_pass       http://loki.logging-system.svc.cluster.local:3100$request_uri;\n
-    \   }\n\n    # Ingester\n    location = /flush {\n      proxy_pass       http://loki.logging-system.svc.cluster.local:3100$request_uri;\n
-    \   }\n    location ^~ /ingester/ {\n      proxy_pass       http://loki.logging-system.svc.cluster.local:3100$request_uri;\n
-    \   }\n    location = /ingester {\n      internal;        # to suppress 301\n
-    \   }\n\n    # Ring\n    location = /ring {\n      proxy_pass       http://loki.logging-system.svc.cluster.local:3100$request_uri;\n
-    \   }\n\n    # MemberListKV\n    location = /memberlist {\n      proxy_pass       http://loki.logging-system.svc.cluster.local:3100$request_uri;\n
-    \   }\n\n\n    # Ruler\n    location = /ruler/ring {\n      proxy_pass       http://loki.logging-system.svc.cluster.local:3100$request_uri;\n
-    \   }\n    location = /api/prom/rules {\n      proxy_pass       http://loki.logging-system.svc.cluster.local:3100$request_uri;\n
-    \   }\n    location ^~ /api/prom/rules/ {\n      proxy_pass       http://loki.logging-system.svc.cluster.local:3100$request_uri;\n
-    \   }\n    location = /loki/api/v1/rules {\n      proxy_pass       http://loki.logging-system.svc.cluster.local:3100$request_uri;\n
-    \   }\n    location ^~ /loki/api/v1/rules/ {\n      proxy_pass       http://loki.logging-system.svc.cluster.local:3100$request_uri;\n
-    \   }\n    location = /prometheus/api/v1/alerts {\n      proxy_pass       http://loki.logging-system.svc.cluster.local:3100$request_uri;\n
-    \   }\n    location = /prometheus/api/v1/rules {\n      proxy_pass       http://loki.logging-system.svc.cluster.local:3100$request_uri;\n
-    \   }\n\n    # Compactor\n    location = /compactor/ring {\n      proxy_pass       http://loki.logging-system.svc.cluster.local:3100$request_uri;\n
-    \   }\n    location = /loki/api/v1/delete {\n      proxy_pass       http://loki.logging-system.svc.cluster.local:3100$request_uri;\n
-    \   }\n    location = /loki/api/v1/cache/generation_numbers {\n      proxy_pass
-    \      http://loki.logging-system.svc.cluster.local:3100$request_uri;\n    }\n\n
-    \   # IndexGateway\n    location = /indexgateway/ring {\n      proxy_pass       http://loki.logging-system.svc.cluster.local:3100$request_uri;\n
-    \   }\n\n    # QueryScheduler\n    location = /scheduler/ring {\n      proxy_pass
-    \      http://loki.logging-system.svc.cluster.local:3100$request_uri;\n    }\n\n
-    \   # Config\n    location = /config {\n      proxy_pass       http://loki.logging-system.svc.cluster.local:3100$request_uri;\n
-    \   }\n\n\n    # QueryFrontend, Querier\n    location = /api/prom/tail {\n      proxy_pass
-    \      http://loki.logging-system.svc.cluster.local:3100$request_uri;\n      proxy_set_header
-    Upgrade $http_upgrade;\n      proxy_set_header Connection \"upgrade\";\n    }\n
-    \   location = /loki/api/v1/tail {\n      proxy_pass       http://loki.logging-system.svc.cluster.local:3100$request_uri;\n
-    \     proxy_set_header Upgrade $http_upgrade;\n      proxy_set_header Connection
-    \"upgrade\";\n    }\n    location ^~ /api/prom/ {\n      proxy_pass       http://loki.logging-system.svc.cluster.local:3100$request_uri;\n
-    \   }\n    location = /api/prom {\n      internal;        # to suppress 301\n
-    \   }\n    location ^~ /loki/api/v1/ {\n      proxy_pass       http://loki.logging-system.svc.cluster.local:3100$request_uri;\n
-    \   }\n    location = /loki/api/v1 {\n      internal;        # to suppress 301\n
-    \   }\n  }\n}\n"
+  config.yaml: |2
+
+    auth_enabled: true
+    common:
+      compactor_address: 'loki'
+      path_prefix: /var/loki
+      replication_factor: 3
+      storage:
+        s3:
+          bucketnames: chunks
+          insecure: false
+          s3forcepathstyle: false
+    frontend:
+      scheduler_address: ""
+    frontend_worker:
+      scheduler_address: ""
+    index_gateway:
+      mode: ring
+    limits_config:
+      max_cache_freshness_per_query: 10m
+      reject_old_samples: true
+      reject_old_samples_max_age: 168h
+      split_queries_by_interval: 15m
+    memberlist:
+      join_members:
+      - loki-memberlist
+    query_range:
+      align_queries_with_step: true
+    ruler:
+      storage:
+        s3:
+          bucketnames: ruler
+          insecure: false
+          s3forcepathstyle: false
+        type: s3
+    runtime_config:
+      file: /etc/loki/runtime-config/runtime-config.yaml
+    schema_config:
+      configs:
+      - from: "2022-01-11"
+        index:
+          period: 24h
+          prefix: loki_index_
+        object_store: s3
+        schema: v12
+        store: boltdb-shipper
+    server:
+      grpc_listen_port: 9095
+      http_listen_port: 3100
+    storage_config:
+      hedging:
+        at: 250ms
+        max_per_second: 20
+        up_to: 3
+    tracing:
+      enabled: false
 kind: ConfigMap
 metadata:
   labels:
-    app.kubernetes.io/component: gateway
     app.kubernetes.io/instance: loki
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
     helm.sh/chart: loki-5.38.0
-  name: loki-gateway
+  name: loki-config
   namespace: logging-system
 ---
 apiVersion: v1
@@ -149,30 +158,6 @@ spec:
     targetPort: grpc
   selector:
     app.kubernetes.io/component: single-binary
-    app.kubernetes.io/instance: loki
-    app.kubernetes.io/name: loki
-  type: ClusterIP
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    app.kubernetes.io/component: gateway
-    app.kubernetes.io/instance: loki
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 2.9.2
-    helm.sh/chart: loki-5.38.0
-  name: loki-gateway
-  namespace: logging-system
-spec:
-  ports:
-  - name: http
-    port: 80
-    protocol: TCP
-    targetPort: http
-  selector:
-    app.kubernetes.io/component: gateway
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
   type: ClusterIP
@@ -226,91 +211,6 @@ spec:
   type: ClusterIP
 ---
 apiVersion: apps/v1
-kind: Deployment
-metadata:
-  labels:
-    app.kubernetes.io/component: gateway
-    app.kubernetes.io/instance: loki
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 2.9.2
-    helm.sh/chart: loki-5.38.0
-  name: loki-gateway
-  namespace: logging-system
-spec:
-  replicas: 1
-  revisionHistoryLimit: 10
-  selector:
-    matchLabels:
-      app.kubernetes.io/component: gateway
-      app.kubernetes.io/instance: loki
-      app.kubernetes.io/name: loki
-  strategy:
-    type: RollingUpdate
-  template:
-    metadata:
-      annotations:
-        checksum/config: 058070fe2baddab2f17b91e07e67063042a9b9c8ed5debf695034497aac0f3c6
-      labels:
-        app.kubernetes.io/component: gateway
-        app.kubernetes.io/instance: loki
-        app.kubernetes.io/name: loki
-    spec:
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchLabels:
-                app.kubernetes.io/component: gateway
-                app.kubernetes.io/instance: loki
-                app.kubernetes.io/name: loki
-            topologyKey: kubernetes.io/hostname
-      containers:
-      - image: docker.io/nginxinc/nginx-unprivileged:1.24-alpine
-        imagePullPolicy: IfNotPresent
-        name: nginx
-        ports:
-        - containerPort: 8080
-          name: http
-          protocol: TCP
-        readinessProbe:
-          httpGet:
-            path: /
-            port: http
-          initialDelaySeconds: 15
-          timeoutSeconds: 1
-        resources: {}
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          readOnlyRootFilesystem: true
-        volumeMounts:
-        - mountPath: /etc/nginx
-          name: config
-        - mountPath: /tmp
-          name: tmp
-        - mountPath: /docker-entrypoint.d
-          name: docker-entrypoint-d-override
-      enableServiceLinks: true
-      securityContext:
-        fsGroup: 101
-        runAsGroup: 101
-        runAsNonRoot: true
-        runAsUser: 101
-      serviceAccountName: loki
-      terminationGracePeriodSeconds: 30
-      volumes:
-      - configMap:
-          name: loki-gateway
-        name: config
-      - emptyDir: {}
-        name: tmp
-      - emptyDir: {}
-        name: docker-entrypoint-d-override
----
-apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   labels:
@@ -339,7 +239,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/config: d4cbc31a015fccc9e91c75c1aae08a4415d9c41161880cd5c0782fe283c42ae3
       labels:
         app.kubernetes.io/component: single-binary
         app.kubernetes.io/instance: loki
@@ -410,9 +310,12 @@ spec:
       volumes:
       - emptyDir: {}
         name: tmp
-      - name: config
-        secret:
-          secretName: loki-config
+      - configMap:
+          items:
+          - key: config.yaml
+            path: config.yaml
+          name: loki-config
+        name: config
       - configMap:
           name: loki-runtime
         name: runtime-config

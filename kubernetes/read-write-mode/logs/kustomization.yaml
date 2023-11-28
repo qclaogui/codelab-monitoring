@@ -3,14 +3,9 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-labels:
-- includeSelectors: true
-  pairs:
-    team: team-infra
-
 resources:
 - namespace.yaml
-- grafana-datasources-loki.yaml
+# - grafana-datasources-loki.yaml
 - loki/k8s-all-in-one.yaml
 
 
@@ -21,4 +16,33 @@ secretGenerator:
     disableNameSuffixHash: true
   literals:
   - CLUSTER=k3d-k3s-codelab
-  - LOGS_ENDPOINT=http://loki-gateway.logging-system.svc.cluster.local:80
+  - LOGS_ENDPOINT=http://nginx.gateway.svc.cluster.local:3100
+
+- name: loki-env
+  namespace: logging-system
+  literals:
+  - LOKI_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
+
+configMapGenerator:
+- name: loki-config
+  namespace: logging-system
+  behavior: replace
+  files:
+  - config.yaml=loki.yaml
+
+- name: nginx-env
+  namespace: gateway
+  options:
+    disableNameSuffixHash: true
+  # We need to fully set all variables because nginx envsubst does not support default values.
+  # https://github.com/nginxinc/docker-nginx/issues/592
+  envs:
+    - default.env
+  literals:
+  - LOKI_DISTRIBUTOR_HOST=loki-write.logging-system.svc.cluster.local
+  - LOKI_INGESTER_HOST=loki-write.logging-system.svc.cluster.local
+  - LOKI_RULER_HOST=loki-backend.logging-system.svc.cluster.local
+  - LOKI_COMPACTOR_HOST=loki-backend.logging-system.svc.cluster.local
+  - LOKI_QUERY_SCHEDULER_HOST=loki-read.logging-system.svc.cluster.local
+  - LOKI_QUERIER_HOST=loki-read.logging-system.svc.cluster.local
+  - LOKI_QUERY_FRONTEND_HOST=loki-read.logging-system.svc.cluster.local

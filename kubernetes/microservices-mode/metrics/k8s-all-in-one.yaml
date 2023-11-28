@@ -1,14 +1,117 @@
 apiVersion: v1
 data:
-  ALERT_MANAGER_HOST: alertmanager-headless.monitoring-system.svc.cluster.local
-  COMPACTOR_HOST: compactor.monitoring-system.svc.cluster.local
-  DISTRIBUTOR_HOST: distributor.monitoring-system.svc.cluster.local
-  NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx
-  QUERY_FRONTEND_HOST: query-frontend.monitoring-system.svc.cluster.local
-  RULER_HOST: ruler.monitoring-system.svc.cluster.local
+  LOKI_COMPACTOR_HOST: loki.logging-system.svc.cluster.local
+  LOKI_DISTRIBUTOR_HOST: loki.logging-system.svc.cluster.local
+  LOKI_INGESTER_HOST: loki.logging-system.svc.cluster.local
+  LOKI_QUERIER_HOST: loki.logging-system.svc.cluster.local
+  LOKI_QUERY_FRONTEND_HOST: loki.logging-system.svc.cluster.local
+  LOKI_QUERY_SCHEDULER_HOST: loki.logging-system.svc.cluster.local
+  LOKI_RULER_HOST: loki.logging-system.svc.cluster.local
+  MIMIR_ALERT_MANAGER_HOST: alertmanager-headless.monitoring-system.svc.cluster.local
+  MIMIR_COMPACTOR_HOST: compactor.monitoring-system.svc.cluster.local
+  MIMIR_DISTRIBUTOR_HOST: distributor.monitoring-system.svc.cluster.local
+  MIMIR_QUERY_FRONTEND_HOST: query-frontend.monitoring-system.svc.cluster.local
+  MIMIR_RULER_HOST: ruler.monitoring-system.svc.cluster.local
+  PYROSCOPE_DISTRIBUTOR_HOST: pyroscope.profiles-system.svc.cluster.local
+  PYROSCOPE_QUERY_FRONTEND_HOST: pyroscope.profiles-system.svc.cluster.local
 kind: ConfigMap
 metadata:
-  name: nginx-env-d58ddffg6h
+  name: nginx-env
+  namespace: gateway
+---
+apiVersion: v1
+data:
+  alertmanager-fallback-config.yaml: |
+    route:
+      group_wait: 0s
+      receiver: empty-receiver
+
+    receivers:
+      # In this example we're not going to send any notification out of Alertmanager.
+      - name: 'empty-receiver'
+  mimir.yaml: |
+    # Do not use this configuration in production.
+    # It is for demonstration purposes only.
+    multitenancy_enabled: false
+
+    # -usage-stats.enabled=false
+    usage_stats:
+      enabled: false
+
+    server:
+      http_listen_port: 8080
+      grpc_listen_port: 9095
+      log_level: warn
+
+    common:
+      storage:
+        backend: s3
+        s3:
+          endpoint:          ${MIMIR_S3_ENDPOINT:minio.minio-system.svc:443}
+          access_key_id:     ${MIMIR_S3_ACCESS_KEY_ID:lgtmp}
+          secret_access_key: ${MIMIR_S3_SECRET_ACCESS_KEY:supersecret}
+          insecure:          ${MIMIR_S3_INSECURE:false}
+          http:
+            insecure_skip_verify: true
+
+    alertmanager:
+      data_dir: /data/alertmanager
+      enable_api: true
+      external_url: /alertmanager
+      fallback_config_file: /etc/mimir/alertmanager-fallback-config.yaml
+    alertmanager_storage:
+      s3:
+        bucket_name: mimir-alertmanager
+
+    blocks_storage:
+      s3:
+        bucket_name: mimir-blocks
+      tsdb:
+        dir: /data/ingester
+
+    frontend:
+      parallelize_shardable_queries: true
+      scheduler_address: query-scheduler-headless:9095
+    frontend_worker:
+      grpc_client_config:
+        max_send_msg_size: 419430400
+      scheduler_address: query-scheduler-headless:9095
+
+    memberlist:
+      join_members: [ gossip-ring-headless:7946 ]
+
+    ruler:
+      rule_path: /data/rules
+      enable_api: true
+      alertmanager_url: http://alertmanager-headless:8080/alertmanager
+    ruler_storage:
+      s3:
+        bucket_name: mimir-ruler
+
+    runtime_config:
+      file: /var/mimir/runtime.yaml
+
+    query_scheduler:
+      max_outstanding_requests_per_tenant: 800
+
+    limits:
+      native_histograms_ingestion_enabled: true
+kind: ConfigMap
+metadata:
+  name: mimir-config-f7dm4gk45h
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  ALERT_MANAGER_HOST: alertmanager-headless.default.svc.cluster.local
+  COMPACTOR_HOST: compactor.default.svc.cluster.local
+  DISTRIBUTOR_HOST: distributor.default.svc.cluster.local
+  NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx
+  QUERY_FRONTEND_HOST: query-frontend.default.svc.cluster.local
+  RULER_HOST: ruler.default.svc.cluster.local
+kind: ConfigMap
+metadata:
+  name: nginx-env-72mfd2c4h8
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -120,7 +223,7 @@ metadata:
 apiVersion: v1
 data:
   CLUSTER: azNkLWszcy1jb2RlbGFi
-  METRICS_ENDPOINT: aHR0cDovL25naW54Lm1vbml0b3Jpbmctc3lzdGVtOjgwODA=
+  METRICS_ENDPOINT: aHR0cDovL25naW54LmdhdGV3YXkuc3ZjLmNsdXN0ZXIubG9jYWw6ODA4MA==
 kind: Secret
 metadata:
   name: agent-env
@@ -129,41 +232,10 @@ type: Opaque
 ---
 apiVersion: v1
 data:
-  alertmanager-fallback-config.yaml: |
-    cm91dGU6CiAgZ3JvdXBfd2FpdDogMHMKICByZWNlaXZlcjogZW1wdHktcmVjZWl2ZXIKCn
-    JlY2VpdmVyczoKICAjIEluIHRoaXMgZXhhbXBsZSB3ZSdyZSBub3QgZ29pbmcgdG8gc2Vu
-    ZCBhbnkgbm90aWZpY2F0aW9uIG91dCBvZiBBbGVydG1hbmFnZXIuCiAgLSBuYW1lOiAnZW
-    1wdHktcmVjZWl2ZXInCg==
-  mimir.yaml: |
-    IyBEbyBub3QgdXNlIHRoaXMgY29uZmlndXJhdGlvbiBpbiBwcm9kdWN0aW9uLgojIEl0IG
-    lzIGZvciBkZW1vbnN0cmF0aW9uIHB1cnBvc2VzIG9ubHkuCm11bHRpdGVuYW5jeV9lbmFi
-    bGVkOiBmYWxzZQoKIyAtdXNhZ2Utc3RhdHMuZW5hYmxlZD1mYWxzZQp1c2FnZV9zdGF0cz
-    oKICBlbmFibGVkOiBmYWxzZQoKc2VydmVyOgogIGh0dHBfbGlzdGVuX3BvcnQ6IDgwODAK
-    ICBncnBjX2xpc3Rlbl9wb3J0OiA5MDk1CiAgbG9nX2xldmVsOiB3YXJuCgpjb21tb246Ci
-    Agc3RvcmFnZToKICAgIGJhY2tlbmQ6IHMzCiAgICBzMzoKICAgICAgZW5kcG9pbnQ6ICAg
-    ICAgICAgIG1pbmlvOjkwMDAKICAgICAgYWNjZXNzX2tleV9pZDogICAgIGFkbWluCiAgIC
-    AgIHNlY3JldF9hY2Nlc3Nfa2V5OiBhZG1pbl9wYXNzd29yZAogICAgICBpbnNlY3VyZTog
-    ICAgICAgICAgdHJ1ZQoKYWxlcnRtYW5hZ2VyOgogIGRhdGFfZGlyOiAvZGF0YS9hbGVydG
-    1hbmFnZXIKICBlbmFibGVfYXBpOiB0cnVlCiAgZXh0ZXJuYWxfdXJsOiAvYWxlcnRtYW5h
-    Z2VyCiAgZmFsbGJhY2tfY29uZmlnX2ZpbGU6IC9ldGMvbWltaXIvYWxlcnRtYW5hZ2VyLW
-    ZhbGxiYWNrLWNvbmZpZy55YW1sCmFsZXJ0bWFuYWdlcl9zdG9yYWdlOgogIHMzOgogICAg
-    YnVja2V0X25hbWU6IG1pbWlyLWFsZXJ0bWFuYWdlcgoKYmxvY2tzX3N0b3JhZ2U6CiAgcz
-    M6CiAgICBidWNrZXRfbmFtZTogbWltaXItZGF0YQogIHRzZGI6CiAgICBkaXI6IC9kYXRh
-    L2luZ2VzdGVyCgpmcm9udGVuZDoKICBwYXJhbGxlbGl6ZV9zaGFyZGFibGVfcXVlcmllcz
-    ogdHJ1ZQogIHNjaGVkdWxlcl9hZGRyZXNzOiBxdWVyeS1zY2hlZHVsZXItaGVhZGxlc3M6
-    OTA5NQpmcm9udGVuZF93b3JrZXI6CiAgZ3JwY19jbGllbnRfY29uZmlnOgogICAgbWF4X3
-    NlbmRfbXNnX3NpemU6IDQxOTQzMDQwMAogIHNjaGVkdWxlcl9hZGRyZXNzOiBxdWVyeS1z
-    Y2hlZHVsZXItaGVhZGxlc3M6OTA5NQoKbWVtYmVybGlzdDoKICBqb2luX21lbWJlcnM6IF
-    sgZ29zc2lwLXJpbmctaGVhZGxlc3M6Nzk0NiBdCgpydWxlcjoKICBydWxlX3BhdGg6IC9k
-    YXRhL3J1bGVzCiAgZW5hYmxlX2FwaTogdHJ1ZQogIGFsZXJ0bWFuYWdlcl91cmw6IGh0dH
-    A6Ly9hbGVydG1hbmFnZXItaGVhZGxlc3M6ODA4MC9hbGVydG1hbmFnZXIKcnVsZXJfc3Rv
-    cmFnZToKICBzMzoKICAgIGJ1Y2tldF9uYW1lOiBtaW1pci1ydWxlcwoKcnVudGltZV9jb2
-    5maWc6CiAgZmlsZTogL3Zhci9taW1pci9ydW50aW1lLnlhbWwKCnF1ZXJ5X3NjaGVkdWxl
-    cjoKICBtYXhfb3V0c3RhbmRpbmdfcmVxdWVzdHNfcGVyX3RlbmFudDogODAwCgpsaW1pdH
-    M6CiAgbmF0aXZlX2hpc3RvZ3JhbXNfaW5nZXN0aW9uX2VuYWJsZWQ6IHRydWUK
+  MIMIR_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:
-  name: mimir-config-6f5cgttm66
+  name: mimir-env-92ddctt858
   namespace: monitoring-system
 type: Opaque
 ---
@@ -482,6 +554,9 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        envFrom:
+        - secretRef:
+            name: mimir-env-92ddctt858
         image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         name: distributor
@@ -504,9 +579,9 @@ spec:
           name: runtime-config
       terminationGracePeriodSeconds: 60
       volumes:
-      - name: mimir-config
-        secret:
-          secretName: mimir-config-6f5cgttm66
+      - configMap:
+          name: mimir-config-f7dm4gk45h
+        name: mimir-config
       - configMap:
           name: runtime-config-88gg5gk88d
         name: runtime-config
@@ -537,8 +612,8 @@ spec:
         - sh
         - -c
         - |
-          mkdir -p /data/mimir-data /data/mimir-rules /data/mimir-alertmanager && \
-          mkdir -p /data/loki-data /data/loki-rules && \
+          mkdir -p /data/mimir-blocks /data/mimir-ruler /data/mimir-alertmanager && \
+          mkdir -p /data/loki-data /data/loki-ruler && \
           mkdir -p /data/tempo-data  && \
           mkdir -p /data/pyroscope-data && \
           minio server /data --console-address ':9001'
@@ -580,7 +655,7 @@ spec:
       containers:
       - envFrom:
         - configMapRef:
-            name: nginx-env-d58ddffg6h
+            name: nginx-env-72mfd2c4h8
         image: nginxinc/nginx-unprivileged:1.25-alpine
         imagePullPolicy: IfNotPresent
         name: nginx
@@ -624,6 +699,9 @@ spec:
         - -target=overrides-exporter
         - -config.file=/etc/mimir/mimir.yaml
         - -config.expand-env=true
+        envFrom:
+        - secretRef:
+            name: mimir-env-92ddctt858
         image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         name: overrides-exporter
@@ -644,9 +722,9 @@ spec:
           name: runtime-config
       terminationGracePeriodSeconds: 60
       volumes:
-      - name: mimir-config
-        secret:
-          secretName: mimir-config-6f5cgttm66
+      - configMap:
+          name: mimir-config-f7dm4gk45h
+        name: mimir-config
       - configMap:
           name: runtime-config-88gg5gk88d
         name: runtime-config
@@ -680,6 +758,9 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        envFrom:
+        - secretRef:
+            name: mimir-env-92ddctt858
         image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         name: querier
@@ -702,9 +783,9 @@ spec:
           name: runtime-config
       terminationGracePeriodSeconds: 180
       volumes:
-      - name: mimir-config
-        secret:
-          secretName: mimir-config-6f5cgttm66
+      - configMap:
+          name: mimir-config-f7dm4gk45h
+        name: mimir-config
       - configMap:
           name: runtime-config-88gg5gk88d
         name: runtime-config
@@ -731,6 +812,9 @@ spec:
         - -target=query-frontend
         - -config.file=/etc/mimir/mimir.yaml
         - -config.expand-env=true
+        envFrom:
+        - secretRef:
+            name: mimir-env-92ddctt858
         image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         name: query-frontend
@@ -751,9 +835,9 @@ spec:
           name: runtime-config
       terminationGracePeriodSeconds: 180
       volumes:
-      - name: mimir-config
-        secret:
-          secretName: mimir-config-6f5cgttm66
+      - configMap:
+          name: mimir-config-f7dm4gk45h
+        name: mimir-config
       - configMap:
           name: runtime-config-88gg5gk88d
         name: runtime-config
@@ -782,6 +866,9 @@ spec:
         - -config.expand-env=true
         - -server.grpc.keepalive.max-connection-age=2562047h
         - -server.grpc.keepalive.max-connection-age-grace=2562047h
+        envFrom:
+        - secretRef:
+            name: mimir-env-92ddctt858
         image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         name: query-scheduler
@@ -802,9 +889,9 @@ spec:
           name: runtime-config
       terminationGracePeriodSeconds: 180
       volumes:
-      - name: mimir-config
-        secret:
-          secretName: mimir-config-6f5cgttm66
+      - configMap:
+          name: mimir-config-f7dm4gk45h
+        name: mimir-config
       - configMap:
           name: runtime-config-88gg5gk88d
         name: runtime-config
@@ -838,6 +925,9 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        envFrom:
+        - secretRef:
+            name: mimir-env-92ddctt858
         image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         name: ruler
@@ -862,9 +952,9 @@ spec:
           name: rule-path
       terminationGracePeriodSeconds: 180
       volumes:
-      - name: mimir-config
-        secret:
-          secretName: mimir-config-6f5cgttm66
+      - configMap:
+          name: mimir-config-f7dm4gk45h
+        name: mimir-config
       - configMap:
           name: runtime-config-88gg5gk88d
         name: runtime-config
@@ -901,6 +991,9 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        envFrom:
+        - secretRef:
+            name: mimir-env-92ddctt858
         image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         name: alertmanager
@@ -930,9 +1023,9 @@ spec:
           name: runtime-config
       terminationGracePeriodSeconds: 60
       volumes:
-      - name: mimir-config
-        secret:
-          secretName: mimir-config-6f5cgttm66
+      - configMap:
+          name: mimir-config-f7dm4gk45h
+        name: mimir-config
       - configMap:
           name: runtime-config-88gg5gk88d
         name: runtime-config
@@ -968,6 +1061,9 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        envFrom:
+        - secretRef:
+            name: mimir-env-92ddctt858
         image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         name: compactor
@@ -990,9 +1086,9 @@ spec:
           name: runtime-config
       terminationGracePeriodSeconds: 240
       volumes:
-      - name: mimir-config
-        secret:
-          secretName: mimir-config-6f5cgttm66
+      - configMap:
+          name: mimir-config-f7dm4gk45h
+        name: mimir-config
       - configMap:
           name: runtime-config-88gg5gk88d
         name: runtime-config
@@ -1006,7 +1102,7 @@ metadata:
   namespace: monitoring-system
 spec:
   podManagementPolicy: Parallel
-  replicas: 2
+  replicas: 3
   selector:
     matchLabels:
       app: ingester
@@ -1029,6 +1125,9 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        envFrom:
+        - secretRef:
+            name: mimir-env-92ddctt858
         image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         name: ingester
@@ -1051,9 +1150,9 @@ spec:
           name: runtime-config
       terminationGracePeriodSeconds: 240
       volumes:
-      - name: mimir-config
-        secret:
-          secretName: mimir-config-6f5cgttm66
+      - configMap:
+          name: mimir-config-f7dm4gk45h
+        name: mimir-config
       - configMap:
           name: runtime-config-88gg5gk88d
         name: runtime-config
@@ -1089,6 +1188,9 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        envFrom:
+        - secretRef:
+            name: mimir-env-92ddctt858
         image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         name: store-gateway
@@ -1114,9 +1216,9 @@ spec:
           name: runtime-config
       terminationGracePeriodSeconds: 240
       volumes:
-      - name: mimir-config
-        secret:
-          secretName: mimir-config-6f5cgttm66
+      - configMap:
+          name: mimir-config-f7dm4gk45h
+        name: mimir-config
       - configMap:
           name: runtime-config-88gg5gk88d
         name: runtime-config

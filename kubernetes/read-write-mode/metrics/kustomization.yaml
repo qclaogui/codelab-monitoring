@@ -17,15 +17,6 @@ resources:
 - mimir/mimir-write-dep.yaml
 - mimir/mimir-write-svc.yaml
 - mimir/mimir-write-servicemonitor.yaml
-- nginx/nginx-dep.yaml
-- nginx/nginx-svc.yaml
-
-images:
-- name: grafana/mimir
-  newTag: 2.10.4
-- name: nginx
-  newName: nginxinc/nginx-unprivileged
-  newTag: 1.25-alpine
 
 secretGenerator:
 - name: agent-env
@@ -34,37 +25,34 @@ secretGenerator:
     disableNameSuffixHash: true
   literals:
   - CLUSTER=k3d-k3s-codelab
-  - METRICS_ENDPOINT=http://nginx.monitoring-system:8080
+  - METRICS_ENDPOINT=http://nginx.gateway.svc.cluster.local:8080
 
 - name: mimir-env
   namespace: monitoring-system
   literals:
-  - COMMON_STORAGE_S3_ENDPOINT=minio.minio-system.svc.cluster.local:443
-  - COMMON_STORAGE_S3_ACCESS_KEY_ID=lgtmp
-  - COMMON_STORAGE_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
+  - MIMIR_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
 
+configMapGenerator:
 - name: mimir-config
   namespace: monitoring-system
   files:
   - mimir.yaml
-
-configMapGenerator:
 - name: runtime-config
   namespace: monitoring-system
   files:
   - runtime.yaml
 
-- name: nginx-templates
-  namespace: monitoring-system
-  files:
-  - nginx/nginx.conf.template
-  - nginx/gateway_mimir.conf.template
 - name: nginx-env
-  namespace: monitoring-system
+  namespace: gateway
+  options:
+    disableNameSuffixHash: true
+  # We need to fully set all variables because nginx envsubst does not support default values.
+  # https://github.com/nginxinc/docker-nginx/issues/592
+  envs:
+  - default.env
   literals:
-  - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
-  - DISTRIBUTOR_HOST=mimir-write.monitoring-system.svc.cluster.local
-  - QUERY_FRONTEND_HOST=mimir-read.monitoring-system.svc.cluster.local
-  - ALERT_MANAGER_HOST=mimir-backend.monitoring-system.svc.cluster.local
-  - RULER_HOST=mimir-backend.monitoring-system.svc.cluster.local
-  - COMPACTOR_HOST=mimir-backend.monitoring-system.svc.cluster.local
+  - MIMIR_DISTRIBUTOR_HOST=mimir-write.monitoring-system.svc.cluster.local
+  - MIMIR_QUERY_FRONTEND_HOST=mimir-read.monitoring-system.svc.cluster.local
+  - MIMIR_ALERT_MANAGER_HOST=mimir-backend.monitoring-system.svc.cluster.local
+  - MIMIR_RULER_HOST=mimir-backend.monitoring-system.svc.cluster.local
+  - MIMIR_COMPACTOR_HOST=mimir-backend.monitoring-system.svc.cluster.local

@@ -1,0 +1,33 @@
+# ----------------------------------------------------
+# apiVersion and kind of Kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- namespace.yaml
+- nginx/nginx-dep.yaml
+- nginx/nginx-svc.yaml
+
+images:
+- name: nginx
+  newName: nginxinc/nginx-unprivileged
+  newTag: 1.25-alpine
+
+configMapGenerator:
+- name: nginx-templates
+  namespace: gateway
+  options:
+    disableNameSuffixHash: true
+  files:
+  - nginx/nginx.conf.template
+  - nginx/gateway_loki.conf.template
+  - nginx/gateway_mimir.conf.template
+  - nginx/gateway_pyroscope.conf.template
+- name: nginx-env
+  namespace: gateway
+  options:
+    disableNameSuffixHash: true
+  # We need to fully set all variables because nginx envsubst does not support default values.
+  # https://github.com/nginxinc/docker-nginx/issues/592
+  envs:
+  - default.env

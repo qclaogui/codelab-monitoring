@@ -5,8 +5,7 @@ data:
     0iMUtGR0cxWlZCQlEwM0NLTEdaVTNLU1M0RFdNV0pJNFQiCmV4cG9ydCBNSU5JT19ST09U
     X1VTRVI9IjBHTVFQMkRHQTQxSUJMVjAiCmV4cG9ydCBNSU5JT19TVE9SQUdFX0NMQVNTX1
     NUQU5EQVJEPSJFQzoyIgpleHBvcnQgTUlOSU9fUFJPTUVUSEVVU19BVVRIX1RZUEU9InB1
-    YmxpYyIKZXhwb3J0IE1JTklPX1BST01FVEhFVVNfSk9CX0lEPSJtaW5pby1zeXN0ZW0vbW
-    luaW8iCg==
+    YmxpYyIKZXhwb3J0IE1JTklPX1BST01FVEhFVVNfSk9CX0lEPSJtaW5pby1qb2IiCg==
 kind: Secret
 metadata:
   labels:
@@ -36,11 +35,11 @@ metadata:
   namespace: minio-system
 spec:
   buckets:
-  - name: mimir-data
-  - name: mimir-rules
+  - name: mimir-blocks
+  - name: mimir-ruler
   - name: mimir-alertmanager
   - name: loki-data
-  - name: loki-rules
+  - name: loki-ruler
   - name: tempo-data
   - name: pyroscope-data
   configuration:
@@ -74,3 +73,56 @@ spec:
   subPath: /data
   users:
   - name: user-lgtmp
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: minio
+  namespace: minio-system
+spec:
+  endpoints:
+  - path: /minio/v2/metrics/cluster
+    port: https-minio
+    relabelings:
+    - replacement: minio-job
+      sourceLabels:
+      - job
+      targetLabel: job
+    - action: keep
+      regex: .*-0$
+      sourceLabels:
+      - pod
+    scheme: https
+    tlsConfig:
+      insecureSkipVerify: true
+  - path: /minio/v2/metrics/bucket
+    port: https-minio
+    relabelings:
+    - replacement: minio-job-bucket
+      sourceLabels:
+      - job
+      targetLabel: job
+    scheme: https
+    tlsConfig:
+      insecureSkipVerify: true
+  - path: /minio/v2/metrics/resource
+    port: https-minio
+    relabelings:
+    - replacement: minio-job-resource
+      sourceLabels:
+      - job
+      targetLabel: job
+    scheme: https
+    tlsConfig:
+      insecureSkipVerify: true
+  namespaceSelector:
+    matchNames:
+    - minio-system
+  selector:
+    matchExpressions:
+    - key: prometheus.io/service-monitor
+      operator: NotIn
+      values:
+      - "false"
+    - key: v1.min.io/tenant
+      operator: Exists
