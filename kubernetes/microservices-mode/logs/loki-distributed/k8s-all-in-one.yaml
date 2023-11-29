@@ -357,6 +357,31 @@ spec:
     app.kubernetes.io/name: loki-distributed
   type: ClusterIP
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: ruler
+    app.kubernetes.io/instance: loki-distributed
+    app.kubernetes.io/name: loki-distributed
+  name: loki-distributed-ruler
+spec:
+  clusterIP: None
+  ports:
+  - name: http
+    port: 3100
+    protocol: TCP
+    targetPort: http
+  - name: grpc
+    port: 9095
+    protocol: TCP
+    targetPort: grpc
+  selector:
+    app.kubernetes.io/component: ruler
+    app.kubernetes.io/instance: loki-distributed
+    app.kubernetes.io/name: loki-distributed
+  type: ClusterIP
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -414,6 +439,10 @@ spec:
       - args:
         - -config.file=/etc/loki/config/config.yaml
         - -target=distributor
+        - -config.expand-env=true
+        envFrom:
+        - secretRef:
+            name: loki-distributed-env
         image: docker.io/grafana/loki:2.9.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -520,6 +549,10 @@ spec:
       - args:
         - -config.file=/etc/loki/config/config.yaml
         - -target=query-frontend
+        - -config.expand-env=true
+        envFrom:
+        - secretRef:
+            name: loki-distributed-env
         image: docker.io/grafana/loki:2.9.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -567,6 +600,125 @@ spec:
       - configMap:
           name: loki-distributed-runtime
         name: runtime-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: ruler
+    app.kubernetes.io/instance: loki-distributed
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: loki-distributed
+    app.kubernetes.io/part-of: memberlist
+    app.kubernetes.io/version: 2.9.2
+    helm.sh/chart: loki-distributed-0.76.1
+  name: loki-distributed-ruler
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: ruler
+      app.kubernetes.io/instance: loki-distributed
+      app.kubernetes.io/name: loki-distributed
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  template:
+    metadata:
+      annotations:
+        checksum/config: 92bd7333c8d0f49d87ff27a2d6430cd84385f02a9c16c316a955c8bc69115c2e
+      labels:
+        app.kubernetes.io/component: ruler
+        app.kubernetes.io/instance: loki-distributed
+        app.kubernetes.io/name: loki-distributed
+        app.kubernetes.io/part-of: memberlist
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/component: ruler
+                  app.kubernetes.io/instance: loki-distributed
+                  app.kubernetes.io/name: loki-distributed
+              topologyKey: failure-domain.beta.kubernetes.io/zone
+            weight: 100
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/component: ruler
+                app.kubernetes.io/instance: loki-distributed
+                app.kubernetes.io/name: loki-distributed
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - args:
+        - -config.file=/etc/loki/config/config.yaml
+        - -target=ruler
+        - -config.expand-env=true
+        envFrom:
+        - secretRef:
+            name: loki-distributed-env
+        image: docker.io/grafana/loki:2.9.2
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          httpGet:
+            path: /ready
+            port: http
+          initialDelaySeconds: 300
+        name: ruler
+        ports:
+        - containerPort: 3100
+          name: http
+          protocol: TCP
+        - containerPort: 9095
+          name: grpc
+          protocol: TCP
+        - containerPort: 7946
+          name: http-memberlist
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http
+          initialDelaySeconds: 30
+          timeoutSeconds: 1
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /etc/loki/config
+          name: config
+        - mountPath: /var/loki-distributed-runtime
+          name: runtime-config
+        - mountPath: /var/loki
+          name: data
+        - mountPath: /tmp/loki
+          name: tmp
+      securityContext:
+        fsGroup: 10001
+        runAsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+      serviceAccountName: loki-distributed
+      terminationGracePeriodSeconds: 300
+      volumes:
+      - configMap:
+          name: loki-distributed
+        name: config
+      - configMap:
+          name: loki-distributed-runtime
+        name: runtime-config
+      - emptyDir: {}
+        name: tmp
+      - emptyDir: {}
+        name: data
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -623,6 +775,10 @@ spec:
       - args:
         - -config.file=/etc/loki/config/config.yaml
         - -target=ingester
+        - -config.expand-env=true
+        envFrom:
+        - secretRef:
+            name: loki-distributed-env
         image: docker.io/grafana/loki:2.9.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -744,6 +900,10 @@ spec:
       - args:
         - -config.file=/etc/loki/config/config.yaml
         - -target=querier
+        - -config.expand-env=true
+        envFrom:
+        - secretRef:
+            name: loki-distributed-env
         image: docker.io/grafana/loki:2.9.2
         imagePullPolicy: IfNotPresent
         livenessProbe:

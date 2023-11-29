@@ -1,0 +1,113 @@
+
+auth_enabled: false
+
+# -reporting.enabled=false
+analytics:
+ reporting_enabled: false
+
+chunk_store_config:
+  max_look_back_period: 0s
+
+# https://grafana.com/docs/loki/latest/configure/#use-environment-variables-in-the-configuration
+common:
+  compactor_address: http://loki-distributed-compactor:3100
+  replication_factor: 1
+  storage:
+    s3:
+      bucketnames: loki-data
+      endpoint: ${LOKI_S3_ENDPOINT:-minio.minio-system.svc:443}
+      access_key_id: ${LOKI_S3_ACCESS_KEY_ID:-lgtmp}
+      secret_access_key: ${LOKI_S3_SECRET_ACCESS_KEY:-supersecret}
+      insecure: ${LOKI_S3_INSECURE:-false}
+      s3forcepathstyle: true
+      http_config:
+        insecure_skip_verify: true
+
+compactor:
+  working_directory: /tmp/compactor
+  shared_store: s3
+
+distributor:
+  ring:
+    kvstore:
+      store: memberlist
+
+frontend:
+  log_queries_longer_than: 5s
+  tail_proxy_url: http://loki-distributed-querier:3100
+  # only if queryScheduler.enabled: true
+  # scheduler_address: loki-distributed-query-scheduler:9095
+frontend_worker:
+  # only if queryScheduler.enabled: true 
+  # scheduler_address: loki-distributed-query-scheduler:9095
+  frontend_address: loki-distributed-query-frontend-headless:9095
+
+ingester:
+  lifecycler:
+    ring:
+      kvstore:
+        store: memberlist
+
+limits_config:
+  enforce_metric_name: false
+  max_cache_freshness_per_query: 10m
+  reject_old_samples: true
+  reject_old_samples_max_age: 168h
+  split_queries_by_interval: 15m
+
+memberlist:
+  join_members:
+  - loki-distributed-memberlist
+
+query_range:
+  align_queries_with_step: true
+  cache_results: true
+  max_retries: 5
+  results_cache:
+    cache:
+      embedded_cache:
+        enabled: true
+        ttl: 1h
+
+ruler:
+  ring:
+    kvstore:
+      store: memberlist
+  storage:
+    s3:
+      bucketnames: loki-ruler
+    type: s3
+
+runtime_config:
+  file: /var/loki-distributed-runtime/runtime.yaml
+
+schema_config:
+  configs:
+  - from: "2023-08-01"
+    index:
+      period: 24h
+      prefix: loki_index_
+    object_store: s3
+    schema: v12
+    store: boltdb-shipper
+
+server:
+  grpc_listen_port: 9095
+  http_listen_port: 3100
+  log_level: warn
+
+storage_config:
+  boltdb_shipper:
+    active_index_directory: /var/loki/index
+    cache_location: /var/loki/cache
+    # # only if indexGateway.enabled: true
+    # index_gateway_client:
+    #   server_address: dns:///loki-distributed-index-gateway:9095
+    shared_store: s3
+
+table_manager:
+  retention_deletes_enabled: false
+  retention_period: 0s
+
+tracing:
+  enabled: false
