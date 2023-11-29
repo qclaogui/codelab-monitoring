@@ -12,54 +12,11 @@ metadata:
 ---
 apiVersion: v1
 data:
-  MIMIR_ALERT_MANAGER_HOST: mimir-distributed-alertmanager-headless.monitoring-system.svc.cluster.local
-  MIMIR_COMPACTOR_HOST: mimir-distributed-compactor.monitoring-system.svc.cluster.local
-  MIMIR_DISTRIBUTOR_HOST: mimir-distributed-distributor-headless.monitoring-system.svc.cluster.local
-  MIMIR_QUERY_FRONTEND_HOST: mimir-distributed-query-frontend.monitoring-system.svc.cluster.local
-  MIMIR_RULER_HOST: mimir-distributed-ruler.monitoring-system.svc.cluster.local
-kind: ConfigMap
-metadata:
-  name: nginx-env
-  namespace: gateway
----
-apiVersion: v1
-data:
-  gateway_mimir.conf.template: "server {\n    listen 8080;\n    listen [::]:8080;\n\n
-    \   location = / {\n      return 200 'OK';\n      auth_basic off;\n      access_log
-    off;\n    }\n\n    proxy_set_header X-Scope-OrgID $ensured_x_scope_orgid;\n\n
-    \   # Distributor endpoints\n    location /distributor {\n      proxy_pass      http://${MIMIR_DISTRIBUTOR_HOST}:8080$request_uri;\n
-    \   }\n    location = /api/v1/push {\n      proxy_pass      http://${MIMIR_DISTRIBUTOR_HOST}:8080$request_uri;\n
-    \   }\n    location /otlp/v1/metrics {\n      proxy_pass      http://${MIMIR_DISTRIBUTOR_HOST}:8080$request_uri;\n
-    \   }\n\n    # Alertmanager endpoints\n    location /alertmanager {\n      proxy_pass
-    \     http://${MIMIR_ALERT_MANAGER_HOST}:8080$request_uri;\n    }\n    location
-    = /multitenant_alertmanager/status {\n      proxy_pass      http://${MIMIR_ALERT_MANAGER_HOST}:8080$request_uri;\n
-    \   }\n    location = /api/v1/alerts {\n      proxy_pass      http://${MIMIR_ALERT_MANAGER_HOST}:8080$request_uri;\n
-    \   }\n\n    # Ruler endpoints\n    location /prometheus/config/v1/rules {\n      proxy_pass
-    \     http://${MIMIR_RULER_HOST}:8080$request_uri;\n    }\n    location /prometheus/api/v1/rules
-    {\n      proxy_pass      http://${MIMIR_RULER_HOST}:8080$request_uri;\n    }\n
-    \   \n    location /prometheus/api/v1/alerts {\n      proxy_pass      http://${MIMIR_RULER_HOST}:8080$request_uri;\n
-    \   }\n    location = /ruler/ring {\n      proxy_pass      http://${MIMIR_RULER_HOST}:8080$request_uri;\n
-    \   }\n\n    # Rest of /prometheus goes to the query frontend\n    location /prometheus
-    {\n      proxy_pass      http://${MIMIR_QUERY_FRONTEND_HOST}:8080$request_uri;\n
-    \   }\n\n    # Buildinfo endpoint can go to any component\n    location = /api/v1/status/buildinfo
-    {\n      proxy_pass      http://${MIMIR_QUERY_FRONTEND_HOST}:8080$request_uri;\n
-    \   }\n\n    # Compactor endpoint for uploading blocks\n    location /api/v1/upload/block/
-    {\n      proxy_pass      http://${MIMIR_COMPACTOR_HOST}:8080$request_uri;\n    }\n}"
-kind: ConfigMap
-metadata:
-  name: nginx-templates
-  namespace: gateway
----
-apiVersion: v1
-data:
   alertmanager_fallback_config.yaml: |
-    route:
-      group_wait: 0s
-      receiver: empty-receiver
-
     receivers:
-      # In this example we're not going to send any notification out of Alertmanager.
-      - name: 'empty-receiver'
+        - name: default-receiver
+    route:
+        receiver: default-receiver
 kind: ConfigMap
 metadata:
   labels:
@@ -75,45 +32,23 @@ metadata:
 ---
 apiVersion: v1
 data:
-  mimir.yaml: |
-    # Do not use this configuration in production.
-    # It is for demonstration purposes only.
+  mimir.yaml: |2
 
     activity_tracker:
       filepath: /active-query-tracker/activity.log
-
     alertmanager:
       data_dir: /data
       enable_api: true
       external_url: /alertmanager
       fallback_config_file: /configs/alertmanager_fallback_config.yaml
-    alertmanager_storage:
-      backend: s3
-      s3:
-        bucket_name: mimir-alertmanager
-
     blocks_storage:
       backend: s3
       bucket_store:
         sync_dir: /data/tsdb-sync
-      s3:
-        bucket_name: mimir-blocks
       tsdb:
         dir: /data/tsdb
         head_compaction_interval: 15m
         wal_replay_concurrency: 3
-
-    common:
-      storage:
-        backend: s3
-        s3:
-          endpoint:          ${MIMIR_S3_ENDPOINT:minio.minio-system.svc:443}
-          access_key_id:     ${MIMIR_S3_ACCESS_KEY_ID:lgtmp}
-          secret_access_key: ${MIMIR_S3_SECRET_ACCESS_KEY:supersecret}
-          insecure:          ${MIMIR_S3_INSECURE:false}
-          http:
-            insecure_skip_verify: true
-
     compactor:
       compaction_interval: 30m
       data_dir: /data
@@ -124,7 +59,6 @@ data:
       sharding_ring:
         wait_stability_min_duration: 1m
       symbols_flushers_concurrency: 4
-
     frontend:
       parallelize_shardable_queries: true
       scheduler_address: mimir-distributed-query-scheduler-headless.monitoring-system.svc:9095
@@ -132,7 +66,6 @@ data:
       grpc_client_config:
         max_send_msg_size: 419430400
       scheduler_address: mimir-distributed-query-scheduler-headless.monitoring-system.svc:9095
-
     ingester:
       ring:
         final_sleep: 0s
@@ -143,52 +76,36 @@ data:
       grpc_client_config:
         max_recv_msg_size: 104857600
         max_send_msg_size: 104857600
-
     limits:
       max_cache_freshness: 10m
       max_query_parallelism: 240
       max_total_query_length: 12000h
-      native_histograms_ingestion_enabled: true
-
     memberlist:
+      abort_if_cluster_join_fails: false
+      compression_enabled: false
       join_members:
       - dns+mimir-distributed-gossip-ring.monitoring-system.svc.cluster.local:7946
-
     multitenancy_enabled: false
-
     querier:
       max_concurrent: 16
-
     query_scheduler:
       max_outstanding_requests_per_tenant: 800
-
     ruler:
       alertmanager_url: dnssrvnoa+http://_http-metrics._tcp.mimir-distributed-alertmanager-headless.monitoring-system.svc.cluster.local/alertmanager
       enable_api: true
       rule_path: /data
-    ruler_storage:
-      backend: s3
-      s3:
-        bucket_name: mimir-ruler
-
     runtime_config:
       file: /var/mimir/runtime.yaml
-
     server:
       grpc_server_max_concurrent_streams: 1000
       grpc_server_max_connection_age: 2m
       grpc_server_max_connection_age_grace: 5m
       grpc_server_max_connection_idle: 1m
-      http_listen_port: 8080
-      grpc_listen_port: 9095
-      log_level: warn
-
     store_gateway:
       sharding_ring:
         tokens_file_path: /data/tokens
         unregister_on_shutdown: false
         wait_stability_min_duration: 1m
-
     usage_stats:
       enabled: false
       installation_mode: helm
@@ -205,27 +122,9 @@ metadata:
 ---
 apiVersion: v1
 data:
-  runtime.yaml: |-
-    # https://grafana.com/docs/mimir/latest/configure/about-runtime-configuration/
-    ingester_limits: # limits that each ingester replica enforces
-      max_ingestion_rate: 20000
-      max_series: 1500000
-      max_tenants: 1000
-      max_inflight_push_requests: 30000
+  runtime.yaml: |2
 
-    distributor_limits: # limits that each distributor replica enforces
-      max_ingestion_rate: 20000
-      max_inflight_push_requests: 30000
-      max_inflight_push_requests_bytes: 50000000
-
-    overrides:
-      anonymous: # limits for anonymous that the whole cluster enforces
-        # ingestion_tenant_shard_size: 9
-        max_global_series_per_user: 1500000
-        max_global_series_per_metric: 50000
-        max_fetched_series_per_query: 100000
-        ruler_max_rules_per_rule_group: 100
-        ruler_max_rule_groups_per_tenant: 100
+    {}
 kind: ConfigMap
 metadata:
   labels:
@@ -236,25 +135,6 @@ metadata:
     helm.sh/chart: mimir-distributed-5.1.3
   name: mimir-distributed-runtime
   namespace: monitoring-system
----
-apiVersion: v1
-data:
-  CLUSTER: azNkLWszcy1jb2RlbGFi
-  METRICS_ENDPOINT: aHR0cDovL25naW54LmdhdGV3YXkuc3ZjLmNsdXN0ZXIubG9jYWw6ODA4MA==
-kind: Secret
-metadata:
-  name: agent-env
-  namespace: monitoring-system
-type: Opaque
----
-apiVersion: v1
-data:
-  MIMIR_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
-kind: Secret
-metadata:
-  name: mimir-distributed-env-92ddctt858
-  namespace: monitoring-system
-type: Opaque
 ---
 apiVersion: v1
 kind: Service
@@ -775,7 +655,7 @@ spec:
           value: "8"
         envFrom:
         - secretRef:
-            name: mimir-distributed-env-92ddctt858
+            name: mimir-distributed-env
         image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         livenessProbe: null
@@ -897,7 +777,7 @@ spec:
         env: null
         envFrom:
         - secretRef:
-            name: mimir-distributed-env-92ddctt858
+            name: mimir-distributed-env
         image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -1014,7 +894,7 @@ spec:
           value: "5"
         envFrom:
         - secretRef:
-            name: mimir-distributed-env-92ddctt858
+            name: mimir-distributed-env
         image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         livenessProbe: null
@@ -1136,7 +1016,7 @@ spec:
         env: null
         envFrom:
         - secretRef:
-            name: mimir-distributed-env-92ddctt858
+            name: mimir-distributed-env
         image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         livenessProbe: null
@@ -1255,7 +1135,7 @@ spec:
         env: null
         envFrom:
         - secretRef:
-            name: mimir-distributed-env-92ddctt858
+            name: mimir-distributed-env
         image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         livenessProbe: null
@@ -1375,7 +1255,7 @@ spec:
         env: null
         envFrom:
         - secretRef:
-            name: mimir-distributed-env-92ddctt858
+            name: mimir-distributed-env
         image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         livenessProbe: null
@@ -1496,7 +1376,7 @@ spec:
         env: null
         envFrom:
         - secretRef:
-            name: mimir-distributed-env-92ddctt858
+            name: mimir-distributed-env
         image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         livenessProbe: null
@@ -1634,7 +1514,7 @@ spec:
         env: null
         envFrom:
         - secretRef:
-            name: mimir-distributed-env-92ddctt858
+            name: mimir-distributed-env
         image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         livenessProbe: null
@@ -1764,7 +1644,7 @@ spec:
         env: null
         envFrom:
         - secretRef:
-            name: mimir-distributed-env-92ddctt858
+            name: mimir-distributed-env
         image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         livenessProbe: null
@@ -1897,7 +1777,7 @@ spec:
           value: "134217728"
         envFrom:
         - secretRef:
-            name: mimir-distributed-env-92ddctt858
+            name: mimir-distributed-env
         image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         livenessProbe: null
