@@ -4,20 +4,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-# This can improve cloning a large repository, or over a slow network.
-# https://github.com/kubernetes-sigs/kustomize/commit/24a64bdee32602b6756608d4c24da28486461199
-- github.com/qclaogui/cortex-kustomize/deploy/base/mimir?ref=main&submodules=false&timeout=2m30s
-- configs/add-sm-alertmanager.yaml
-- configs/add-sm-compactor.yaml
-- configs/add-sm-distributor.yaml
-- configs/add-sm-ingester.yaml
-- configs/add-sm-minio.yaml
-- configs/add-sm-overrides-exporter.yaml
-- configs/add-sm-querier.yaml
-- configs/add-sm-query-frontend.yaml
-- configs/add-sm-query-scheduler.yaml
-- configs/add-sm-ruler.yaml
-- configs/add-sm-store-gateway.yaml
+- mimir-distributed/k8s-all-in-one.yaml
 
 secretGenerator:
 - name: agent-env
@@ -28,25 +15,28 @@ secretGenerator:
   - CLUSTER=k3d-k3s-codelab
   - METRICS_ENDPOINT=http://nginx.gateway.svc.cluster.local:8080
 
-- name: mimir-env
+- name: mimir-distributed-env
   namespace: monitoring-system
-  behavior: replace
   literals:
   - MIMIR_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
 
 
 configMapGenerator:
-- name: runtime-config
-  namespace: monitoring-system
-  behavior: merge
-  files:
-  - configs/runtime.yaml
-- name: mimir-config
+- name: mimir-distributed-runtime
   namespace: monitoring-system
   behavior: replace
   files:
-  - configs/mimir.yaml
-  - configs/alertmanager-fallback-config.yaml
+  - runtime.yaml
+- name: mimir-distributed-config
+  namespace: monitoring-system
+  behavior: replace
+  files:
+  - mimir.yaml=mimir-distributed.yaml
+- name: mimir-distributed-alertmanager-fallback-config
+  namespace: monitoring-system
+  behavior: replace
+  files:
+  - alertmanager_fallback_config.yaml=alertmanager-fallback-config.yaml
 
 # replace nginx-templates and nginx-env configMap
 - name: nginx-templates
@@ -62,8 +52,8 @@ configMapGenerator:
   # We need to fully set all variables because nginx envsubst does not support default values.
   # https://github.com/nginxinc/docker-nginx/issues/592
   literals:
-  - MIMIR_DISTRIBUTOR_HOST=distributor.monitoring-system.svc.cluster.local
-  - MIMIR_QUERY_FRONTEND_HOST=query-frontend.monitoring-system.svc.cluster.local
-  - MIMIR_ALERT_MANAGER_HOST=alertmanager-headless.monitoring-system.svc.cluster.local
-  - MIMIR_RULER_HOST=ruler.monitoring-system.svc.cluster.local
-  - MIMIR_COMPACTOR_HOST=compactor.monitoring-system.svc.cluster.local
+  - MIMIR_DISTRIBUTOR_HOST=mimir-distributed-distributor-headless.monitoring-system.svc.cluster.local
+  - MIMIR_QUERY_FRONTEND_HOST=mimir-distributed-query-frontend.monitoring-system.svc.cluster.local
+  - MIMIR_ALERT_MANAGER_HOST=mimir-distributed-alertmanager-headless.monitoring-system.svc.cluster.local
+  - MIMIR_RULER_HOST=mimir-distributed-ruler.monitoring-system.svc.cluster.local
+  - MIMIR_COMPACTOR_HOST=mimir-distributed-compactor.monitoring-system.svc.cluster.local
