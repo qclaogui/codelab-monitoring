@@ -5,7 +5,7 @@ kind: Kustomization
 
 resources:
 - namespace.yaml
-# - grafana-datasources-loki.yaml
+- grafana-datasources-loki.yaml
 - loki/k8s-all-in-one.yaml
 
 
@@ -30,14 +30,19 @@ configMapGenerator:
   files:
   - config.yaml=loki.yaml
 
+# replace nginx-templates and nginx-env configMap
+- name: nginx-templates
+  namespace: gateway
+  options:
+    disableNameSuffixHash: true
+  files:
+  - gateway_loki.conf.template
 - name: nginx-env
   namespace: gateway
   options:
     disableNameSuffixHash: true
   # We need to fully set all variables because nginx envsubst does not support default values.
   # https://github.com/nginxinc/docker-nginx/issues/592
-  envs:
-    - default.env
   literals:
   - LOKI_DISTRIBUTOR_HOST=loki-write.logging-system.svc.cluster.local
   - LOKI_INGESTER_HOST=loki-write.logging-system.svc.cluster.local

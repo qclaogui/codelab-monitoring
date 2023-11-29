@@ -123,10 +123,10 @@ data:
     \"info\")\n\tformat = \"logfmt\"\n}\n\nmodule.file \"lgtmp\" {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"),
     \"/etc/agent-modules\") + \"/lgtmp.river\"\n\n\targuments {\n\t\tcluster           =
     coalesce(env(\"CLUSTER\"), \"k3d-k3s\")\n\t\tlogs_endpoint     = coalesce(env(\"LOGS_ENDPOINT\"),
-    \"http://nginx.logging-system:3100\")\n\t\tmetrics_endpoint  = coalesce(env(\"METRICS_ENDPOINT\"),
-    \"http://nginx.monitoring-system:8080\")\n\t\tprofiles_endpoint = coalesce(env(\"PROFILES_ENDPOINT\"),
-    \"http://pyroscope.profiles-system:4040\")\n\t\ttraces_endpoint   = coalesce(env(\"TRACES_ENDPOINT\"),
-    \"tempo.tracing-system.svc.cluster.local:4317\")\n\t}\n}\n\n/********************************************\n
+    \"http://nginx.gateway.svc:3100\")\n\t\tmetrics_endpoint  = coalesce(env(\"METRICS_ENDPOINT\"),
+    \"http://nginx.gateway.svc:8080\")\n\t\tprofiles_endpoint = coalesce(env(\"PROFILES_ENDPOINT\"),
+    \"http://nginx.gateway.svc:4040\")\n\t\ttraces_endpoint   = coalesce(env(\"TRACES_ENDPOINT\"),
+    \"nginx.gateway.svc:4317\")\n\t}\n}\n\n/********************************************\n
     * Metrics\n ********************************************/\nmodule.file \"metrics_primary\"
     {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent-modules\")
     + \"/metrics.river\"\n\n\targuments {\n\t\tforward_to = [module.file.lgtmp.exports.metrics_receiver]\n\t\tclustering
@@ -145,7 +145,7 @@ data:
     = true\n\t}\n}\n"
 kind: ConfigMap
 metadata:
-  name: agent-config-cfd2ct2dfd
+  name: agent-config-457gt4gggf
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -649,7 +649,7 @@ spec:
       serviceAccountName: grafana-agent
       volumes:
       - configMap:
-          name: agent-config-cfd2ct2dfd
+          name: agent-config-457gt4gggf
         name: config
       - hostPath:
           path: /var/log

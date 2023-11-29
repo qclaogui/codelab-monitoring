@@ -5,6 +5,7 @@ kind: Kustomization
 
 resources:
 - namespace.yaml
+- grafana-datasources-pyroscope.yaml # change pyroscope profiles as default datasources
 - pyroscope/k8s-all-in-one.yaml
 
 secretGenerator:
@@ -24,6 +25,7 @@ secretGenerator:
   - PYROSCOPE_STORAGE_S3_ACCESS_KEY_ID=lgtmp
   - PYROSCOPE_STORAGE_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
 
+
 configMapGenerator:
 - name: pyroscope-config
   namespace: profiles-system
@@ -33,14 +35,19 @@ configMapGenerator:
   files:
   - config.yaml=pyroscope.yaml
 
+# replace nginx-templates and nginx-env configMap
+- name: nginx-templates
+  namespace: gateway
+  options:
+    disableNameSuffixHash: true
+  files:
+  - gateway_pyroscope.conf.template
 - name: nginx-env
   namespace: gateway
   options:
     disableNameSuffixHash: true
   # We need to fully set all variables because nginx envsubst does not support default values.
   # https://github.com/nginxinc/docker-nginx/issues/592
-  envs:
-  - default.env
   literals:
   - PYROSCOPE_DISTRIBUTOR_HOST=pyroscope-distributor.profiles-system.svc.cluster.local
   - PYROSCOPE_QUERY_FRONTEND_HOST=pyroscope-query-frontend.profiles-system.svc.cluster.local

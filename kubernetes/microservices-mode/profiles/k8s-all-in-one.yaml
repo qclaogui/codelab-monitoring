@@ -63,24 +63,68 @@ subjects:
 ---
 apiVersion: v1
 data:
-  LOKI_COMPACTOR_HOST: loki.logging-system.svc.cluster.local
-  LOKI_DISTRIBUTOR_HOST: loki.logging-system.svc.cluster.local
-  LOKI_INGESTER_HOST: loki.logging-system.svc.cluster.local
-  LOKI_QUERIER_HOST: loki.logging-system.svc.cluster.local
-  LOKI_QUERY_FRONTEND_HOST: loki.logging-system.svc.cluster.local
-  LOKI_QUERY_SCHEDULER_HOST: loki.logging-system.svc.cluster.local
-  LOKI_RULER_HOST: loki.logging-system.svc.cluster.local
-  MIMIR_ALERT_MANAGER_HOST: mimir.monitoring-system.svc.cluster.local
-  MIMIR_COMPACTOR_HOST: mimir.monitoring-system.svc.cluster.local
-  MIMIR_DISTRIBUTOR_HOST: mimir.monitoring-system.svc.cluster.local
-  MIMIR_QUERY_FRONTEND_HOST: mimir.monitoring-system.svc.cluster.local
-  MIMIR_RULER_HOST: mimir.monitoring-system.svc.cluster.local
   PYROSCOPE_DISTRIBUTOR_HOST: pyroscope-distributor.profiles-system.svc.cluster.local
   PYROSCOPE_QUERY_FRONTEND_HOST: pyroscope-query-frontend.profiles-system.svc.cluster.local
 kind: ConfigMap
 metadata:
   name: nginx-env
   namespace: gateway
+---
+apiVersion: v1
+data:
+  gateway_pyroscope.conf.template: |-
+    server {
+        listen 4040;
+        listen [::]:4040;
+
+        location = / {
+          return 200 'OK';
+          auth_basic off;
+          access_log off;
+        }
+
+        proxy_set_header X-Scope-OrgID $ensured_x_scope_orgid;
+
+        # Distributor endpoints
+        location /push.v1.PusherService {
+          proxy_pass      http://${PYROSCOPE_DISTRIBUTOR_HOST}:4040$request_uri;
+        }
+
+        location /querier.v1.QuerierService {
+          proxy_pass      http://${PYROSCOPE_QUERY_FRONTEND_HOST}:4040$request_uri;
+        }
+    }
+kind: ConfigMap
+metadata:
+  name: nginx-templates
+  namespace: gateway
+---
+apiVersion: v1
+data:
+  datasources.yaml: |
+    apiVersion: 1
+
+    deleteDatasources:
+    - name: Profiles
+      uid: profiles
+
+    datasources:
+    # Pyroscope for profiles
+    - name: Profiles
+      type: grafana-pyroscope-datasource
+      uid: profiles
+      access: proxy
+      url: http://nginx.gateway.svc.cluster.local:4040
+      basicAuth: false
+      isDefault: true
+      version: 1
+      editable: true
+kind: ConfigMap
+metadata:
+  labels:
+    grafana_datasource: "1"
+  name: grafana-datasources-pyroscope
+  namespace: monitoring-system
 ---
 apiVersion: v1
 data:

@@ -42,14 +42,19 @@ configMapGenerator:
   files:
   - runtime.yaml
 
+# replace nginx-templates and nginx-env configMap
+- name: nginx-templates
+  namespace: gateway
+  options:
+    disableNameSuffixHash: true
+  files:
+  - gateway_mimir.conf.template
 - name: nginx-env
   namespace: gateway
   options:
     disableNameSuffixHash: true
   # We need to fully set all variables because nginx envsubst does not support default values.
   # https://github.com/nginxinc/docker-nginx/issues/592
-  envs:
-  - default.env
   literals:
   - MIMIR_DISTRIBUTOR_HOST=mimir-write.monitoring-system.svc.cluster.local
   - MIMIR_QUERY_FRONTEND_HOST=mimir-read.monitoring-system.svc.cluster.local

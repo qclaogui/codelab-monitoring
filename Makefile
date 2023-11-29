@@ -206,8 +206,8 @@ manifests-common: $(KUSTOMIZE)
 .PHONY: manifests-monolithic-mode
 manifests-monolithic-mode: $(KUSTOMIZE)  ## Generates monolithic-mode manifests
 	$(info ******************** generates monolithic-mode manifests ********************)
-	@$(KUSTOMIZE) build kubernetes/monolithic-mode/metrics > kubernetes/monolithic-mode/metrics/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/logs > kubernetes/monolithic-mode/logs/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build kubernetes/monolithic-mode/metrics > kubernetes/monolithic-mode/metrics/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/profiles > kubernetes/monolithic-mode/profiles/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/traces > kubernetes/monolithic-mode/traces/k8s-all-in-one.yaml
 
@@ -220,8 +220,8 @@ manifests-read-write-mode: $(KUSTOMIZE)  ## Generates read-write-mode manifests
 .PHONY: manifests-microservices-mode
 manifests-microservices-mode: $(KUSTOMIZE)  ## Generates microservices-mode manifests
 	$(info ******************** generates microservices-mode manifests ********************)
-	@$(KUSTOMIZE) build kubernetes/microservices-mode/metrics > kubernetes/microservices-mode/metrics/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build kubernetes/microservices-mode/logs > kubernetes/microservices-mode/logs/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build kubernetes/microservices-mode/metrics > kubernetes/microservices-mode/metrics/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build kubernetes/microservices-mode/profiles > kubernetes/microservices-mode/profiles/k8s-all-in-one.yaml
 
 
@@ -324,6 +324,7 @@ deploy-monolithic-mode-traces: deploy-grafana ## Deploy monolithic-mode traces
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/traces | kubectl apply -f -
 	kubectl wait --for condition="Ready" pod --selector=app.kubernetes.io/name=tempo -n tracing-system --timeout=300s
 	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
+	@kubectl rollout restart deployment -n gateway nginx
 	@echo ""
 	@echo "Demo is running."
 	@echo "Go to http://localhost:8080/explore for the traces."
@@ -340,6 +341,7 @@ deploy-read-write-mode-metrics: deploy-grafana ## Deploy read-write-mode metrics
 	@$(KUSTOMIZE) build monitoring-mixins | kubectl apply -f -
 	kubectl wait --for condition="Ready" pod --selector=app=mimir-write -n monitoring-system --timeout=300s
 	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
+	@kubectl rollout restart deployment -n gateway nginx
 	@echo ""
 	@echo "Demo is running."
 	@echo "Go to http://localhost:8080/explore for the metrics."
@@ -352,6 +354,7 @@ deploy-read-write-mode-logs: deploy-grafana ## Deploy read-write-mode logs
 	$(info ******************** deploy read-write-mode logs manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/read-write-mode/logs | kubectl apply -f -
 	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
+	@kubectl rollout restart deployment -n gateway nginx
 	@echo ""
 	@echo "Demo is running."
 	@echo "Go to http://localhost:8080/explore for the logs."
@@ -362,12 +365,26 @@ delete-read-write-mode-logs:
 
 
 # Kubernetes microservices-mode
+.PHONY: deploy-microservices-mode-logs
+deploy-microservices-mode-logs: deploy-grafana ## Deploy microservices-mode logs
+	$(info ******************** deploy microservices-mode logs manifests ********************)
+	@$(KUSTOMIZE) build kubernetes/microservices-mode/logs | kubectl apply -f -
+	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
+	@kubectl rollout restart deployment -n gateway nginx
+	@echo ""
+	@echo "Demo is running."
+	@echo "Go to http://localhost:8080/explore for the logs."
+delete-microservices-mode-logs:
+	@$(KUSTOMIZE) build kubernetes/microservices-mode/logs | kubectl delete -f -
+
+
 .PHONY: deploy-microservices-mode-metrics
 deploy-microservices-mode-metrics: deploy-grafana ## Deploy microservices-mode metrics
 	$(info ******************** deploy microservices-mode metrics manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/microservices-mode/metrics | kubectl apply -f -
 	@$(KUSTOMIZE) build monitoring-mixins | kubectl apply -f -
 	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
+	@kubectl rollout restart deployment -n gateway nginx
 	@echo ""
 	@echo "Demo is running."
 	@echo "Go to http://localhost:8080/explore for the metrics."
@@ -381,6 +398,7 @@ deploy-microservices-mode-profiles: deploy-grafana ## Deploy microservices-mode 
 	$(info ******************** deploy microservices-mode profiles manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/microservices-mode/profiles | kubectl apply -f -
 	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
+	@kubectl rollout restart deployment -n gateway nginx
 	@echo ""
 	@echo "Demo is running."
 	@echo "Go to http://localhost:8080/explore for the profiles."

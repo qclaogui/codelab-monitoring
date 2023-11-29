@@ -65,16 +65,125 @@ data:
   LOKI_QUERY_FRONTEND_HOST: loki-read.logging-system.svc.cluster.local
   LOKI_QUERY_SCHEDULER_HOST: loki-read.logging-system.svc.cluster.local
   LOKI_RULER_HOST: loki-backend.logging-system.svc.cluster.local
-  MIMIR_ALERT_MANAGER_HOST: mimir.monitoring-system.svc.cluster.local
-  MIMIR_COMPACTOR_HOST: mimir.monitoring-system.svc.cluster.local
-  MIMIR_DISTRIBUTOR_HOST: mimir.monitoring-system.svc.cluster.local
-  MIMIR_QUERY_FRONTEND_HOST: mimir.monitoring-system.svc.cluster.local
-  MIMIR_RULER_HOST: mimir.monitoring-system.svc.cluster.local
-  PYROSCOPE_DISTRIBUTOR_HOST: pyroscope.profiles-system.svc.cluster.local
-  PYROSCOPE_QUERY_FRONTEND_HOST: pyroscope.profiles-system.svc.cluster.local
 kind: ConfigMap
 metadata:
   name: nginx-env
+  namespace: gateway
+---
+apiVersion: v1
+data:
+  gateway_loki.conf.template: |-
+    server {
+        listen 3100;
+        listen [::]:3100;
+
+        location = / {
+          return 200 'OK';
+          auth_basic off;
+          access_log off;
+        }
+
+        proxy_set_header X-Scope-OrgID $ensured_x_scope_orgid;
+
+        # Distributor endpoints
+        location = /api/prom/push {
+          proxy_pass      http://${LOKI_DISTRIBUTOR_HOST}:3100$request_uri;
+        }
+        location = /loki/api/v1/push {
+          proxy_pass      http://${LOKI_DISTRIBUTOR_HOST}:3100$request_uri;
+        }
+        location = /distributor/ring {
+          proxy_pass      http://${LOKI_DISTRIBUTOR_HOST}:3100$request_uri;
+        }
+
+        # Ingester endpoints
+        location /flush {
+          proxy_pass      http://${LOKI_INGESTER_HOST}:3100$request_uri;
+        }
+        location ^~ /ingester/ {
+          proxy_pass      http://${LOKI_INGESTER_HOST}:3100$request_uri;
+        }
+        location = /ingester {
+          internal;        # to suppress 301
+        }
+
+        # Ring
+        location = /ring {
+          proxy_pass http://${LOKI_INGESTER_HOST}:3100$request_uri;
+        }
+
+        # MemberListKV
+        location = /memberlist {
+          proxy_pass http://${LOKI_INGESTER_HOST}:3100$request_uri;
+        }
+
+
+        # Ruler endpoints
+        location = /ruler/ring {
+          proxy_pass      http://${LOKI_RULER_HOST}:3100$request_uri;
+        }
+        location ~ /api/prom/rules.* {
+          proxy_pass      http://${LOKI_RULER_HOST}:3100$request_uri;
+        }
+        location ~ /api/prom/alerts.* {
+          proxy_pass      http://${LOKI_RULER_HOST}:3100$request_uri;
+        }
+        location ~ /loki/api/v1/rules.* {
+          proxy_pass      http://${LOKI_RULER_HOST}:3100$request_uri;
+        }
+        location ~ /loki/api/v1/alerts.* {
+          proxy_pass      http://${LOKI_RULER_HOST}:3100$request_uri;
+        }
+        location ~ /prometheus/api/v1/alerts.* {
+          proxy_pass      http://${LOKI_RULER_HOST}:3100$request_uri;
+        }
+        location ~ /prometheus/api/v1/rules.* {
+          proxy_pass      http://${LOKI_RULER_HOST}:3100$request_uri;
+        }
+
+
+        # Compactor endpoints
+        location = /compactor/ring {
+          proxy_pass      http://${LOKI_COMPACTOR_HOST}:3100$request_uri;
+        }
+        location = /loki/api/v1/delete {
+          proxy_pass      http://${LOKI_COMPACTOR_HOST}:3100$request_uri;
+        }
+        location = /loki/api/v1/cache/generation_numbers {
+          proxy_pass      http://${LOKI_COMPACTOR_HOST}:3100$request_uri;
+        }
+
+        # IndexGateway endpoints
+        location = /indexgateway/ring {
+          proxy_pass      http://${LOKI_COMPACTOR_HOST}:3100$request_uri;
+        }
+
+        # Config endpoints
+        location = /config {
+          proxy_pass      http://${LOKI_COMPACTOR_HOST}:3100$request_uri;
+        }
+
+        # QueryFrontend, Querier endpoints
+        location = /api/prom/tail {
+          proxy_pass      http://${LOKI_QUERY_FRONTEND_HOST}:3100$request_uri;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection "upgrade";
+        }
+        location = /loki/api/v1/tail {
+          proxy_pass      http://${LOKI_QUERIER_HOST}:3100$request_uri;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection "upgrade";
+        }
+        location ~ /api/prom/.* {
+          proxy_pass      http://${LOKI_QUERY_FRONTEND_HOST}:3100$request_uri;
+        }
+        location ~ /loki/api/v1.* {
+          proxy_pass      http://${LOKI_QUERY_FRONTEND_HOST}:3100$request_uri;
+        }
+      }
+kind: ConfigMap
+metadata:
+  name: nginx-templates
   namespace: gateway
 ---
 apiVersion: v1
@@ -191,6 +300,33 @@ metadata:
     helm.sh/chart: loki-5.36.3
   name: loki-runtime
   namespace: logging-system
+---
+apiVersion: v1
+data:
+  datasources.yaml: |
+    apiVersion: 1
+
+    deleteDatasources:
+    - name: Logs
+      uid: logs
+
+    datasources:
+    # Loki for logs
+    - name: Logs
+      type: loki
+      uid: logs
+      access: proxy
+      url: http://nginx.gateway.svc.cluster.local:3100
+      basicAuth: false
+      isDefault: true
+      version: 1
+      editable: true
+kind: ConfigMap
+metadata:
+  labels:
+    grafana_datasource: "1"
+  name: grafana-datasources-loki
+  namespace: monitoring-system
 ---
 apiVersion: v1
 data:
