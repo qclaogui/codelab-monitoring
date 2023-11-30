@@ -9,10 +9,6 @@ resources:
 - mimir/mimir-svc.yaml
 - mimir/mimir-servicemonitor.yaml
 
-images:
-- name: grafana/mimir
-  newTag: 2.10.4
-
 # Horizontally scale up support(Monolithic mode)
 # https://grafana.com/docs/mimir/latest/references/architecture/deployment-modes/#monolithic-mode
 replicas:
@@ -20,14 +16,6 @@ replicas:
   name: mimir
 
 secretGenerator:
-- name: agent-env
-  namespace: monitoring-system
-  options:
-    disableNameSuffixHash: true
-  literals:
-  - CLUSTER=k3d-k3s-codelab
-  - METRICS_ENDPOINT=http://nginx.gateway.svc.cluster.local:8080
-
 - name: mimir-env
   namespace: monitoring-system
   literals:
