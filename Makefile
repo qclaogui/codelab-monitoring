@@ -223,6 +223,7 @@ manifests-microservices-mode: $(KUSTOMIZE)  ## Generates microservices-mode mani
 	@$(KUSTOMIZE) build kubernetes/microservices-mode/logs > kubernetes/microservices-mode/logs/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build kubernetes/microservices-mode/metrics > kubernetes/microservices-mode/metrics/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build kubernetes/microservices-mode/profiles > kubernetes/microservices-mode/profiles/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build kubernetes/microservices-mode/traces > kubernetes/microservices-mode/traces/k8s-all-in-one.yaml
 
 
 # prometheus-operator-crds
@@ -404,6 +405,21 @@ deploy-microservices-mode-profiles: deploy-grafana ## Deploy microservices-mode 
 	@echo "Go to http://localhost:8080/explore for the profiles."
 delete-microservices-mode-profiles:
 	@$(KUSTOMIZE) build kubernetes/microservices-mode/profiles | kubectl delete -f -
+
+
+.PHONY: deploy-microservices-mode-traces
+deploy-microservices-mode-traces: deploy-grafana ## Deploy microservices-mode traces
+	$(info ******************** deploy microservices-mode traces manifests ********************)
+	@$(KUSTOMIZE) build kubernetes/microservices-mode/traces | kubectl apply -f -
+	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
+	@kubectl rollout restart deployment -n gateway nginx
+	@kubectl rollout restart deployment -n monitoring-system grafana
+	@echo ""
+	@echo "Demo is running."
+	@echo "Go to http://localhost:8080/explore for the traces."
+delete-microservices-mode-traces:
+	@$(KUSTOMIZE) build kubernetes/microservices-mode/traces | kubectl delete -f -
+
 
 ##@ General
 

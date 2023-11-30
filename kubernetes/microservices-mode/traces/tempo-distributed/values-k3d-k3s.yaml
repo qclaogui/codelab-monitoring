@@ -1,0 +1,93 @@
+useExternalConfig: false
+externalConfigSecretName: tempo-distributed-config
+externalRuntimeConfigName: tempo-distributed-runtime
+externalConfigVersion: '0'
+
+reportingEnabled: false
+multitenancyEnabled: false
+
+ingester:
+  extraArgs:
+  - -config.expand-env=true
+  extraEnvFrom:
+  - secretRef:
+      name: tempo-distributed-env
+
+metricsGenerator:
+  enabled: false
+  extraArgs: []
+  extraEnvFrom: []
+  config:
+    registry:
+      collection_interval: 15s
+      external_labels: {}
+    storage:
+      remote_write: []
+
+distributor:
+  extraArgs:
+  - -config.expand-env=true
+  extraEnvFrom:
+  - secretRef:
+      name: tempo-distributed-env
+
+compactor:
+  extraArgs:
+  - -config.expand-env=true
+  extraEnvFrom:
+  - secretRef:
+      name: tempo-distributed-env
+
+querier:
+  extraArgs:
+  - -config.expand-env=true
+  extraEnvFrom:
+  - secretRef:
+      name: tempo-distributed-env
+
+queryFrontend:
+  extraArgs:
+  - -config.expand-env=true
+  extraEnvFrom:
+  - secretRef:
+      name: tempo-distributed-env
+
+traces:
+  otlp:
+    http:
+      enabled: true
+    grpc:
+      enabled: true
+
+server:
+  httpListenPort: 3100
+  logLevel: info
+  logFormat: logfmt
+  grpc_server_max_recv_msg_size: 4194304
+  grpc_server_max_send_msg_size: 4194304
+
+storage:
+  trace:
+    backend: s3
+
+# Global overrides
+global_overrides:
+  per_tenant_override_config: /runtime-config/overrides.yaml
+
+# Per tenants overrides
+overrides: |
+  overrides: {}
+
+memcached:
+  enabled: false
+
+metaMonitoring:
+  serviceMonitor:
+    enabled: false
+    namespace: null
+
+minio:
+  enabled: false
+
+gateway:
+  enabled: false
