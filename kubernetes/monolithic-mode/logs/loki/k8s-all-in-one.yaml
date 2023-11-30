@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
-    helm.sh/chart: loki-5.38.0
+    helm.sh/chart: loki-5.39.0
   name: loki
   namespace: logging-system
 ---
@@ -19,7 +19,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
-    helm.sh/chart: loki-5.38.0
+    helm.sh/chart: loki-5.39.0
   name: loki-clusterrole
 rules:
 - apiGroups:
@@ -40,7 +40,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
-    helm.sh/chart: loki-5.38.0
+    helm.sh/chart: loki-5.39.0
   name: loki-clusterrolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -116,7 +116,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
-    helm.sh/chart: loki-5.38.0
+    helm.sh/chart: loki-5.39.0
   name: loki-config
   namespace: logging-system
 ---
@@ -131,7 +131,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
-    helm.sh/chart: loki-5.38.0
+    helm.sh/chart: loki-5.39.0
   name: loki-runtime
   namespace: logging-system
 ---
@@ -143,7 +143,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
-    helm.sh/chart: loki-5.38.0
+    helm.sh/chart: loki-5.39.0
   name: loki
   namespace: logging-system
 spec:
@@ -170,7 +170,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
-    helm.sh/chart: loki-5.38.0
+    helm.sh/chart: loki-5.39.0
     prometheus.io/service-monitor: "false"
     variant: headless
   name: loki-headless
@@ -194,7 +194,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.2
-    helm.sh/chart: loki-5.38.0
+    helm.sh/chart: loki-5.39.0
   name: loki-memberlist
   namespace: logging-system
 spec:
@@ -220,7 +220,7 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 2.9.2
-    helm.sh/chart: loki-5.38.0
+    helm.sh/chart: loki-5.39.0
   name: loki
   namespace: logging-system
 spec:
@@ -239,7 +239,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: d4cbc31a015fccc9e91c75c1aae08a4415d9c41161880cd5c0782fe283c42ae3
+        checksum/config: c4d96138a16c74d0d1ec00aee15bf7b18159a4d27afb01348fadf24c75a1138c
       labels:
         app.kubernetes.io/component: single-binary
         app.kubernetes.io/instance: loki
@@ -333,3 +333,36 @@ spec:
       resources:
         requests:
           storage: 5Gi
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 2.9.2
+    helm.sh/chart: loki-5.39.0
+  name: loki
+  namespace: logging-system
+spec:
+  endpoints:
+  - interval: 15s
+    path: /metrics
+    port: http-metrics
+    relabelings:
+    - action: replace
+      replacement: logging-system/loki
+      sourceLabels:
+      - job
+      targetLabel: job
+    scheme: http
+  selector:
+    matchExpressions:
+    - key: prometheus.io/service-monitor
+      operator: NotIn
+      values:
+      - "false"
+    matchLabels:
+      app.kubernetes.io/instance: loki
+      app.kubernetes.io/name: loki

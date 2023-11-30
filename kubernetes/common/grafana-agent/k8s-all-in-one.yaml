@@ -122,7 +122,7 @@ data:
     environment\nvariables.\n*/\nlogging {\n\tlevel  = coalesce(env(\"AGENT_LOG_LEVEL\"),
     \"info\")\n\tformat = \"logfmt\"\n}\n\nmodule.file \"lgtmp\" {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"),
     \"/etc/agent-modules\") + \"/lgtmp.river\"\n\n\targuments {\n\t\tcluster           =
-    coalesce(env(\"CLUSTER\"), \"k3d-k3s\")\n\t\tlogs_endpoint     = coalesce(env(\"LOGS_ENDPOINT\"),
+    coalesce(env(\"CLUSTER\"), \"k3d-k3s-codelab\")\n\t\tlogs_endpoint     = coalesce(env(\"LOGS_ENDPOINT\"),
     \"http://nginx.gateway.svc:3100\")\n\t\tmetrics_endpoint  = coalesce(env(\"METRICS_ENDPOINT\"),
     \"http://nginx.gateway.svc:8080\")\n\t\tprofiles_endpoint = coalesce(env(\"PROFILES_ENDPOINT\"),
     \"http://nginx.gateway.svc:4040\")\n\t\ttraces_endpoint   = coalesce(env(\"TRACES_ENDPOINT\"),
@@ -138,20 +138,20 @@ data:
     ********************************************/\nmodule.file \"traces_primary\"
     {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent-modules\")
     + \"/traces.river\"\n\n\targuments {\n\t\tforward_to = [module.file.lgtmp.exports.traces_receiver]\n\t\tcluster
-    \   = coalesce(env(\"CLUSTER\"), \"k3d-k3s\")\n\t}\n}\n\n/********************************************\n
+    \   = coalesce(env(\"CLUSTER\"), \"k3d-k3s-codelab\")\n\t}\n}\n\n/********************************************\n
     * Profiles\n ********************************************/\nmodule.file \"profiles_primary\"
     {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent-modules\")
     + \"/profiles.river\"\n\n\targuments {\n\t\tforward_to = [module.file.lgtmp.exports.profiles_receiver]\n\t\tclustering
     = true\n\t}\n}\n"
 kind: ConfigMap
 metadata:
-  name: agent-config-457gt4gggf
+  name: agent-config-8tmh7mhd42
   namespace: monitoring-system
 ---
 apiVersion: v1
 data:
   lgtmp.river: "/********************************************\n * ARGUMENTS\n ********************************************/\nargument
-    \"cluster\" {\n\toptional = true\n\tdefault  = \"monitoring-system\"\n}\n\nargument
+    \"cluster\" {\n\toptional = true\n\tdefault  = \"k3d-k3s-codelab\"\n}\n\nargument
     \"metrics_endpoint\" {\n\toptional = true\n\tdefault  = \"http://mimir:8080\"\n\t//comment
     = \"Where to send collected metrics.\"\n}\n\nargument \"logs_endpoint\" {\n\toptional
     = true\n\tdefault  = \"http://loki:3100\"\n\t//comment = \"Where to send collected
@@ -460,7 +460,7 @@ data:
     {\n\t\t\tenabled = false\n\t\t}\n\n\t\tprofile.block {\n\t\t\tenabled = false\n\t\t}\n\n\t\tprofile.mutex
     {\n\t\t\tenabled = false\n\t\t}\n\n\t\tprofile.fgprof {\n\t\t\tenabled = true\n\t\t}\n\t}\n}\n"
   traces.river: "/*\nModule: traces\n*/\nargument \"forward_to\" {\n\toptional = false\n}\n\nargument
-    \"cluster\" {\n\toptional = true\n\tdefault  = \"monitoring-system\"\n}\n\nargument
+    \"cluster\" {\n\toptional = true\n\tdefault  = \"k3d-k3s-codelab\"\n}\n\nargument
     \"otlp_http_endpoint\" {\n\toptional = true\n\tdefault  = \"0.0.0.0:4318\"\n}\n\nargument
     \"otlp_grpc_endpoint\" {\n\toptional = true\n\tdefault  = \"0.0.0.0:4317\"\n}\n\n//
     https://grafana.com/docs/agent/latest/flow/reference/components/otelcol.receiver.otlp/\notelcol.receiver.otlp
@@ -476,7 +476,7 @@ data:
     = \"insert\"\n\t}\n\n\toutput {\n\t\ttraces = argument.forward_to.value\n\t}\n}\n"
 kind: ConfigMap
 metadata:
-  name: agent-modules-h5d582t426
+  name: agent-modules-f99d927bgc
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -649,13 +649,13 @@ spec:
       serviceAccountName: grafana-agent
       volumes:
       - configMap:
-          name: agent-config-457gt4gggf
+          name: agent-config-8tmh7mhd42
         name: config
       - hostPath:
           path: /var/log
         name: varlog
       - configMap:
-          name: agent-modules-h5d582t426
+          name: agent-modules-f99d927bgc
         name: agent-modules
 ---
 apiVersion: monitoring.coreos.com/v1

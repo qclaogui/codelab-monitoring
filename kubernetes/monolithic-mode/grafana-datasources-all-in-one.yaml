@@ -1,0 +1,67 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    grafana_datasource: "1"
+  name: grafana-datasources-all-in-one
+  namespace: monitoring-system
+data:
+  datasources.yaml: |
+    apiVersion: 1
+
+    deleteDatasources:
+    - name: Metrics
+      uid: metrics
+    - name: Logs
+      uid: logs
+    - name: Traces
+      uid: traces
+    - name: Profiles
+      uid: profiles
+
+    datasources:
+    # Mimir for metrics
+    - name: Metrics
+      type: prometheus
+      uid: metrics
+      access: proxy
+      url: http://nginx.gateway.svc.cluster.local:8080/prometheus
+      basicAuth: false
+      isDefault: true
+      version: 1
+      editable: true
+
+    # Loki for logs
+    - name: Logs
+      type: loki
+      uid: logs
+      access: proxy
+      url: http://nginx.gateway.svc.cluster.local:3100
+      basicAuth: false
+      isDefault: false
+      version: 1
+      editable: true
+
+    # Tempo for traces
+    - name: Traces
+      type: tempo
+      access: proxy
+      uid: traces
+      url: http://nginx.gateway.svc.cluster.local:3200
+      basicAuth: false
+      isDefault: false
+      version: 1
+      editable: true
+      apiVersion: 1
+
+    # Pyroscope for profiles
+    - name: Profiles
+      type: grafana-pyroscope-datasource
+      uid: profiles
+      access: proxy
+      url: http://nginx.gateway.svc.cluster.local:4040
+      basicAuth: false
+      isDefault: false
+      version: 1
+      editable: true

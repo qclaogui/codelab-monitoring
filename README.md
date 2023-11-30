@@ -73,6 +73,7 @@ make down-monolithic-mode-metrics
 - [Traces [Tempo]](./kubernetes/monolithic-mode/traces)
 - [Metrics [Mimir]](./kubernetes/monolithic-mode/metrics)
 - [Profiles [Pyroscope]](./kubernetes/monolithic-mode/profiles)
+- [All In One [Loki + Tempo + Mimir + Pyroscope]](./kubernetes/monolithic-mode)
 
 ### [Read-Write mode (读写模式)](./kubernetes/read-write-mode)
 
@@ -83,8 +84,8 @@ make down-monolithic-mode-metrics
 
 ### [Microservices mode (微服务模式)](./kubernetes/microservices-mode)
 
-- Logs
-- Traces
+- [Logs [Loki (Query-Frontend + Querier + Ruler + Distributor + Ingester)]](./kubernetes/microservices-mode/logs)
+- [Traces [Tempo (Query-Frontend + Querier + Distributor + Ingester + Compactor)]](./kubernetes/microservices-mode/traces)
 - [Metrics [Mimir (Query-Frontend + Querier + Store-Gateway + Distributor + Ingester + Compactor)]](./kubernetes/microservices-mode/metrics)
 - [Profiles [Pyroscope (Query-Frontend + Query-Scheduler + Querier + Store-Gateway + Distributor + Ingester + Compactor)]](./kubernetes/microservices-mode/profiles)
 

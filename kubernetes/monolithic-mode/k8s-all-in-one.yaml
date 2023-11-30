@@ -1,0 +1,1479 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: logging-system
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: profiles-system
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tracing-system
+---
+apiVersion: v1
+automountServiceAccountToken: true
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 2.9.2
+    helm.sh/chart: loki-5.39.0
+  name: loki
+  namespace: logging-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.2.0
+    helm.sh/chart: pyroscope-1.3.0
+  name: pyroscope
+  namespace: profiles-system
+---
+apiVersion: v1
+automountServiceAccountToken: true
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/instance: tempo
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: tempo
+    app.kubernetes.io/version: 2.3.0
+    helm.sh/chart: tempo-1.7.1
+  name: tempo
+  namespace: tracing-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.2.0
+    helm.sh/chart: pyroscope-1.3.0
+  name: profiles-system-pyroscope
+  namespace: profiles-system
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 2.9.2
+    helm.sh/chart: loki-5.39.0
+  name: loki-clusterrole
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  verbs:
+  - get
+  - watch
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.2.0
+    helm.sh/chart: pyroscope-1.3.0
+  name: profiles-system-pyroscope
+  namespace: profiles-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: profiles-system-pyroscope
+subjects:
+- kind: ServiceAccount
+  name: pyroscope
+  namespace: profiles-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 2.9.2
+    helm.sh/chart: loki-5.39.0
+  name: loki-clusterrolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: loki-clusterrole
+subjects:
+- kind: ServiceAccount
+  name: loki
+  namespace: logging-system
+---
+apiVersion: v1
+data:
+  LOKI_COMPACTOR_HOST: loki.logging-system.svc.cluster.local
+  LOKI_DISTRIBUTOR_HOST: loki.logging-system.svc.cluster.local
+  LOKI_INGESTER_HOST: loki.logging-system.svc.cluster.local
+  LOKI_QUERIER_HOST: loki.logging-system.svc.cluster.local
+  LOKI_QUERY_FRONTEND_HOST: loki.logging-system.svc.cluster.local
+  LOKI_RULER_HOST: loki.logging-system.svc.cluster.local
+  MIMIR_ALERT_MANAGER_HOST: mimir.monitoring-system.svc.cluster.local
+  MIMIR_COMPACTOR_HOST: mimir.monitoring-system.svc.cluster.local
+  MIMIR_DISTRIBUTOR_HOST: mimir.monitoring-system.svc.cluster.local
+  MIMIR_QUERY_FRONTEND_HOST: mimir.monitoring-system.svc.cluster.local
+  MIMIR_RULER_HOST: mimir.monitoring-system.svc.cluster.local
+  PYROSCOPE_DISTRIBUTOR_HOST: pyroscope.profiles-system.svc.cluster.local
+  PYROSCOPE_QUERY_FRONTEND_HOST: pyroscope.profiles-system.svc.cluster.local
+  TEMPO_COMPACTOR_HOST: tempo.tracing-system.svc.cluster.local
+  TEMPO_DISTRIBUTOR_HOST: tempo.tracing-system.svc.cluster.local
+  TEMPO_INGESTER_HOST: tempo.tracing-system.svc.cluster.local
+  TEMPO_QUERY_FRONTEND_HOST: tempo.tracing-system.svc.cluster.local
+kind: ConfigMap
+metadata:
+  name: nginx-env
+  namespace: gateway
+---
+apiVersion: v1
+data:
+  gateway_loki.conf.template: |-
+    server {
+        listen 3100;
+        listen [::]:3100;
+
+        location = / {
+          return 200 'OK';
+          auth_basic off;
+          access_log off;
+        }
+
+        proxy_set_header X-Scope-OrgID $ensured_x_scope_orgid;
+
+        # Distributor endpoints
+        location = /api/prom/push {
+          proxy_pass      http://${LOKI_DISTRIBUTOR_HOST}:3100$request_uri;
+        }
+        location = /loki/api/v1/push {
+          proxy_pass      http://${LOKI_DISTRIBUTOR_HOST}:3100$request_uri;
+        }
+        location = /distributor/ring {
+          proxy_pass      http://${LOKI_DISTRIBUTOR_HOST}:3100$request_uri;
+        }
+
+        # Ingester endpoints
+        location /flush {
+          proxy_pass      http://${LOKI_INGESTER_HOST}:3100$request_uri;
+        }
+        location ^~ /ingester/ {
+          proxy_pass      http://${LOKI_INGESTER_HOST}:3100$request_uri;
+        }
+        location = /ingester {
+          internal;        # to suppress 301
+        }
+
+        # Ring
+        location = /ring {
+          proxy_pass http://${LOKI_INGESTER_HOST}:3100$request_uri;
+        }
+
+        # MemberListKV
+        location = /memberlist {
+          proxy_pass http://${LOKI_INGESTER_HOST}:3100$request_uri;
+        }
+
+
+        # Ruler endpoints
+        location = /ruler/ring {
+          proxy_pass      http://${LOKI_RULER_HOST}:3100$request_uri;
+        }
+        location ~ /api/prom/rules.* {
+          proxy_pass      http://${LOKI_RULER_HOST}:3100$request_uri;
+        }
+        location ~ /api/prom/alerts.* {
+          proxy_pass      http://${LOKI_RULER_HOST}:3100$request_uri;
+        }
+        location ~ /loki/api/v1/rules.* {
+          proxy_pass      http://${LOKI_RULER_HOST}:3100$request_uri;
+        }
+        location ~ /loki/api/v1/alerts.* {
+          proxy_pass      http://${LOKI_RULER_HOST}:3100$request_uri;
+        }
+        location ~ /prometheus/api/v1/alerts.* {
+          proxy_pass      http://${LOKI_RULER_HOST}:3100$request_uri;
+        }
+        location ~ /prometheus/api/v1/rules.* {
+          proxy_pass      http://${LOKI_RULER_HOST}:3100$request_uri;
+        }
+
+
+        # Compactor endpoints
+        location = /compactor/ring {
+          proxy_pass      http://${LOKI_COMPACTOR_HOST}:3100$request_uri;
+        }
+        location = /loki/api/v1/delete {
+          proxy_pass      http://${LOKI_COMPACTOR_HOST}:3100$request_uri;
+        }
+        location = /loki/api/v1/cache/generation_numbers {
+          proxy_pass      http://${LOKI_COMPACTOR_HOST}:3100$request_uri;
+        }
+
+        # IndexGateway endpoints
+        location = /indexgateway/ring {
+          proxy_pass      http://${LOKI_COMPACTOR_HOST}:3100$request_uri;
+        }
+
+        # Config endpoints
+        location = /config {
+          proxy_pass      http://${LOKI_COMPACTOR_HOST}:3100$request_uri;
+        }
+
+        # QueryFrontend, Querier endpoints
+        location = /api/prom/tail {
+          proxy_pass      http://${LOKI_QUERY_FRONTEND_HOST}:3100$request_uri;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection "upgrade";
+        }
+        location = /loki/api/v1/tail {
+          proxy_pass      http://${LOKI_QUERIER_HOST}:3100$request_uri;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection "upgrade";
+        }
+        location ~ /api/prom/.* {
+          proxy_pass      http://${LOKI_QUERY_FRONTEND_HOST}:3100$request_uri;
+        }
+        location ~ /loki/api/v1.* {
+          proxy_pass      http://${LOKI_QUERY_FRONTEND_HOST}:3100$request_uri;
+        }
+      }
+  gateway_mimir.conf.template: "server {\n    listen 8080;\n    listen [::]:8080;\n\n
+    \   location = / {\n      return 200 'OK';\n      auth_basic off;\n      access_log
+    off;\n    }\n\n    proxy_set_header X-Scope-OrgID $ensured_x_scope_orgid;\n\n
+    \   # Distributor endpoints\n    location /distributor {\n      proxy_pass      http://${MIMIR_DISTRIBUTOR_HOST}:8080$request_uri;\n
+    \   }\n    location = /api/v1/push {\n      proxy_pass      http://${MIMIR_DISTRIBUTOR_HOST}:8080$request_uri;\n
+    \   }\n    location /otlp/v1/metrics {\n      proxy_pass      http://${MIMIR_DISTRIBUTOR_HOST}:8080$request_uri;\n
+    \   }\n\n    # Alertmanager endpoints\n    location /alertmanager {\n      proxy_pass
+    \     http://${MIMIR_ALERT_MANAGER_HOST}:8080$request_uri;\n    }\n    location
+    = /multitenant_alertmanager/status {\n      proxy_pass      http://${MIMIR_ALERT_MANAGER_HOST}:8080$request_uri;\n
+    \   }\n    location = /api/v1/alerts {\n      proxy_pass      http://${MIMIR_ALERT_MANAGER_HOST}:8080$request_uri;\n
+    \   }\n\n    # Ruler endpoints\n    location /prometheus/config/v1/rules {\n      proxy_pass
+    \     http://${MIMIR_RULER_HOST}:8080$request_uri;\n    }\n    location /prometheus/api/v1/rules
+    {\n      proxy_pass      http://${MIMIR_RULER_HOST}:8080$request_uri;\n    }\n
+    \   \n    location /prometheus/api/v1/alerts {\n      proxy_pass      http://${MIMIR_RULER_HOST}:8080$request_uri;\n
+    \   }\n    location = /ruler/ring {\n      proxy_pass      http://${MIMIR_RULER_HOST}:8080$request_uri;\n
+    \   }\n\n    # Rest of /prometheus goes to the query frontend\n    location /prometheus
+    {\n      proxy_pass      http://${MIMIR_QUERY_FRONTEND_HOST}:8080$request_uri;\n
+    \   }\n\n    # Buildinfo endpoint can go to any component\n    location = /api/v1/status/buildinfo
+    {\n      proxy_pass      http://${MIMIR_QUERY_FRONTEND_HOST}:8080$request_uri;\n
+    \   }\n\n    # Compactor endpoint for uploading blocks\n    location /api/v1/upload/block/
+    {\n      proxy_pass      http://${MIMIR_COMPACTOR_HOST}:8080$request_uri;\n    }\n}"
+  gateway_pyroscope.conf.template: |-
+    server {
+        listen 4040;
+        listen [::]:4040;
+
+        location = / {
+          return 200 'OK';
+          auth_basic off;
+          access_log off;
+        }
+
+        proxy_set_header X-Scope-OrgID $ensured_x_scope_orgid;
+
+        # Distributor endpoints
+        location /push.v1.PusherService {
+          proxy_pass      http://${PYROSCOPE_DISTRIBUTOR_HOST}:4040$request_uri;
+        }
+
+        location /querier.v1.QuerierService {
+          proxy_pass      http://${PYROSCOPE_QUERY_FRONTEND_HOST}:4040$request_uri;
+        }
+    }
+  gateway_tempo.conf.template: "upstream otlp {\n    server ${TEMPO_DISTRIBUTOR_HOST}:4317;\n}\nserver
+    {\n    listen 4317;\n    http2 on;\n\n    location / {\n      grpc_set_header
+    X-Scope-OrgID $ensured_x_scope_orgid;\n      grpc_pass grpc://otlp;\n    }\n}\n\nserver
+    {\n    listen 3200;\n    listen [::]:3200;\n\n    location = / {\n      return
+    200 'OK';\n      auth_basic off;\n      access_log off;\n    }\n\n    proxy_set_header
+    X-Scope-OrgID $ensured_x_scope_orgid;\n\n    # Distributor endpoints\n    location
+    = /jaeger/api/traces {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:14268/api/traces;\n
+    \   }\n    location = /zipkin/spans {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:9411/spans;\n
+    \   }\n    location = /otlp/v1/traces {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:4318/v1/traces;\n
+    \   }\n\n    location = /distributor/ring {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:3100$request_uri;\n
+    \   }\n    location = /ingester/ring {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:3100$request_uri;\n
+    \   }\n    \n    # Ingester endpoints\n    location = /flush {\n      proxy_pass
+    \     http://${TEMPO_INGESTER_HOST}:3100$request_uri;\n    }\n    location = /shutdown
+    {\n      proxy_pass      http://${TEMPO_INGESTER_HOST}:3100$request_uri;\n    }\n\n
+    \   # Query endpoints\n    location ^~ /api {\n      proxy_pass      http://${TEMPO_QUERY_FRONTEND_HOST}:3100$request_uri;\n
+    \   }\n\n    # Compactor endpoint\n    location = /compactor/ring {\n      proxy_pass
+    \     http://${TEMPO_COMPACTOR_HOST}:3100$request_uri;\n    }\n}"
+kind: ConfigMap
+metadata:
+  name: nginx-templates
+  namespace: gateway
+---
+apiVersion: v1
+data:
+  config.yaml: |2
+
+    auth_enabled: false
+
+    # -reporting.enabled=false
+    analytics:
+     reporting_enabled: false
+
+    server:
+      grpc_listen_port: 9095
+      http_listen_port: 3100
+      log_level: warn
+
+    # https://grafana.com/docs/loki/latest/configure/#use-environment-variables-in-the-configuration
+    common:
+      compactor_address: 'loki'
+      path_prefix: /var/loki
+      replication_factor: 1
+      storage:
+        s3:
+          bucketnames: loki-data
+          endpoint: ${LOKI_S3_ENDPOINT:-minio.minio-system.svc:443}
+          access_key_id: ${LOKI_S3_ACCESS_KEY_ID:-lgtmp}
+          secret_access_key: ${LOKI_S3_SECRET_ACCESS_KEY:-supersecret}
+          insecure: ${LOKI_S3_INSECURE:-false}
+          s3forcepathstyle: true
+          http_config:
+            insecure_skip_verify: true
+
+    compactor:
+      working_directory: /tmp/compactor
+      shared_store: s3
+
+    memberlist:
+      join_members:
+      - loki-memberlist:7946
+
+    query_range:
+      align_queries_with_step: true
+      cache_results: true
+      results_cache:
+        cache:
+          embedded_cache:
+            enabled: true
+
+    limits_config:
+      max_cache_freshness_per_query: 10m
+      reject_old_samples: true
+      reject_old_samples_max_age: 168h
+      split_queries_by_interval: 15m
+
+    ruler:
+      storage:
+        s3:
+          bucketnames: loki-ruler
+        type: s3
+
+    runtime_config:
+      file: /etc/loki/runtime-config/runtime-config.yaml
+
+    schema_config:
+      configs:
+      - from: "2023-08-01"
+        index:
+          period: 24h
+          prefix: loki_index_
+        object_store: s3
+        schema: v12
+        store: boltdb-shipper
+
+    storage_config:
+      hedging:
+        at: 250ms
+        max_per_second: 20
+        up_to: 3
+
+    tracing:
+      enabled: false
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 2.9.2
+    helm.sh/chart: loki-5.39.0
+  name: loki-config
+  namespace: logging-system
+---
+apiVersion: v1
+data:
+  runtime-config.yaml: |
+    {}
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 2.9.2
+    helm.sh/chart: loki-5.39.0
+  name: loki-runtime
+  namespace: logging-system
+---
+apiVersion: v1
+data:
+  datasources.yaml: |
+    apiVersion: 1
+
+    deleteDatasources:
+    - name: Metrics
+      uid: metrics
+    - name: Logs
+      uid: logs
+    - name: Traces
+      uid: traces
+    - name: Profiles
+      uid: profiles
+
+    datasources:
+    # Mimir for metrics
+    - name: Metrics
+      type: prometheus
+      uid: metrics
+      access: proxy
+      url: http://nginx.gateway.svc.cluster.local:8080/prometheus
+      basicAuth: false
+      isDefault: true
+      version: 1
+      editable: true
+
+    # Loki for logs
+    - name: Logs
+      type: loki
+      uid: logs
+      access: proxy
+      url: http://nginx.gateway.svc.cluster.local:3100
+      basicAuth: false
+      isDefault: false
+      version: 1
+      editable: true
+
+    # Tempo for traces
+    - name: Traces
+      type: tempo
+      access: proxy
+      uid: traces
+      url: http://nginx.gateway.svc.cluster.local:3200
+      basicAuth: false
+      isDefault: false
+      version: 1
+      editable: true
+      apiVersion: 1
+
+    # Pyroscope for profiles
+    - name: Profiles
+      type: grafana-pyroscope-datasource
+      uid: profiles
+      access: proxy
+      url: http://nginx.gateway.svc.cluster.local:4040
+      basicAuth: false
+      isDefault: false
+      version: 1
+      editable: true
+kind: ConfigMap
+metadata:
+  labels:
+    grafana_datasource: "1"
+  name: grafana-datasources-all-in-one
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  mimir.yaml: |
+    # Do not use this configuration in production.
+    # It is for demonstration purposes only.
+    multitenancy_enabled: false
+
+    # -usage-stats.enabled=false
+    usage_stats:
+      enabled: false
+
+    server:
+      http_listen_port: 8080
+      grpc_listen_port: 9095
+      log_level: warn
+
+    # https://grafana.com/docs/mimir/latest/references/configuration-parameters/#use-environment-variables-in-the-configuration
+    common:
+      storage:
+        backend: s3
+        s3:
+          endpoint:          ${MIMIR_S3_ENDPOINT:minio.minio-system.svc:443}
+          access_key_id:     ${MIMIR_S3_ACCESS_KEY_ID:lgtmp}
+          secret_access_key: ${MIMIR_S3_SECRET_ACCESS_KEY:supersecret}
+          insecure:          ${MIMIR_S3_INSECURE:false}
+          http:
+            insecure_skip_verify: true
+
+    compactor:
+      compaction_interval: 30s
+      data_dir: /tmp/mimir-compactor
+      cleanup_interval:    1m
+      tenant_cleanup_delay: 1m
+
+    memberlist:
+      join_members: [ gossip-ring-headless:7946 ]
+
+    ingester:
+      ring:
+        replication_factor: 1
+
+    store_gateway:
+      sharding_ring:
+        replication_factor: 1
+
+    alertmanager_storage:
+      s3:
+        bucket_name: mimir-alertmanager
+
+    blocks_storage:
+      s3:
+        bucket_name: mimir-blocks
+      tsdb:
+        dir: /data/ingester
+
+    ruler_storage:
+      s3:
+        bucket_name: mimir-ruler
+
+    runtime_config:
+      file: /var/mimir/runtime.yaml
+
+    limits:
+      native_histograms_ingestion_enabled: true
+kind: ConfigMap
+metadata:
+  name: mimir-config-k2d48ck5kh
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  runtime.yaml: |-
+    # https://grafana.com/docs/mimir/latest/configure/about-runtime-configuration/
+    ingester_limits: # limits that each ingester replica enforces
+      max_ingestion_rate: 20000
+      max_series: 1500000
+      max_tenants: 1000
+      max_inflight_push_requests: 30000
+
+    distributor_limits: # limits that each distributor replica enforces
+      max_ingestion_rate: 20000
+      max_inflight_push_requests: 30000
+      max_inflight_push_requests_bytes: 50000000
+
+    overrides:
+      anonymous: # limits for anonymous that the whole cluster enforces
+        # ingestion_tenant_shard_size: 9
+        max_global_series_per_user: 1500000
+        max_global_series_per_metric: 50000
+        max_fetched_series_per_query: 100000
+        ruler_max_rules_per_rule_group: 100
+        ruler_max_rule_groups_per_tenant: 100
+kind: ConfigMap
+metadata:
+  name: runtime-config-88gg5gk88d
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  config.yaml: |
+    analytics:
+      reporting_enabled: false
+
+    # https://grafana.com/docs/pyroscope/latest/configure-server/reference-configuration-parameters/#use-environment-variables-in-the-configuration
+    storage:
+      backend: s3
+      s3:
+        bucket_name: pyroscope-data
+        endpoint: ${PYROSCOPE_STORAGE_S3_ENDPOINT:minio.minio-system.svc:443}
+        access_key_id: ${PYROSCOPE_STORAGE_S3_ACCESS_KEY_ID:lgtmp}
+        secret_access_key: ${PYROSCOPE_STORAGE_S3_SECRET_ACCESS_KEY:supersecret}
+        insecure: ${PYROSCOPE_STORAGE_S3_INSECURE:false}
+        http:
+          insecure_skip_verify: true
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.2.0
+    helm.sh/chart: pyroscope-1.3.0
+  name: pyroscope-config
+  namespace: profiles-system
+---
+apiVersion: v1
+data:
+  overrides.yaml: |
+    overrides:
+      {}
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.2.0
+    helm.sh/chart: pyroscope-1.3.0
+  name: pyroscope-overrides-config
+  namespace: profiles-system
+---
+apiVersion: v1
+data:
+  overrides.yaml: |-
+    overrides:
+      {}
+  tempo.yaml: |
+    multitenancy_enabled: false
+    usage_report:
+      reporting_enabled: false
+    compactor:
+      compaction:
+        block_retention: 1h
+    distributor:
+      receivers:
+        otlp:
+          protocols:
+            grpc:
+              endpoint: 0.0.0.0:4317
+            http:
+              endpoint: 0.0.0.0:4318
+    ingester:
+      max_block_duration: 5m
+    query_frontend:
+      search:
+        duration_slo: 5s
+        throughput_bytes_slo: 1.073741824e+09
+      trace_by_id:
+        duration_slo: 5s
+    server:
+      http_listen_port: 3100
+      grpc_listen_port: 9095
+      log_level: debug
+    storage:
+      trace:
+        backend: s3
+        wal:
+          path: /tmp/tempo/wal
+        s3:
+          bucket: tempo-data
+          endpoint: ${TEMPO_S3_ENDPOINT:minio.minio-system.svc:443}
+          access_key: ${TEMPO_S3_ACCESS_KEY:lgtmp}
+          secret_key: ${TEMPO_S3_SECRET_KEY:supersecret}
+          insecure: ${TEMPO_S3_INSECURE:false}
+          tls_insecure_skip_verify: true
+    overrides:
+      per_tenant_override_config: /conf/overrides.yaml
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: tempo
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: tempo
+    app.kubernetes.io/version: 2.3.0
+    helm.sh/chart: tempo-1.7.1
+  name: tempo
+  namespace: tracing-system
+---
+apiVersion: v1
+data:
+  LOKI_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
+kind: Secret
+metadata:
+  name: loki-env-58m52b99kc
+  namespace: logging-system
+type: Opaque
+---
+apiVersion: v1
+data:
+  TRACES_ENDPOINT: dGVtcG8udHJhY2luZy1zeXN0ZW0uc3ZjLmNsdXN0ZXIubG9jYWw6NDMxNw==
+kind: Secret
+metadata:
+  name: agent-env
+  namespace: monitoring-system
+type: Opaque
+---
+apiVersion: v1
+data:
+  GF_LOG_LEVEL: d2Fybg==
+  GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES: Y2x1c3RlcjprM2QtazNzLWNvZGVsYWIsbmFtZXNwYWNlOm1vbml0b3Jpbmctc3lzdGVt
+  GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS: Z3JhZmFuYS1hZ2VudC5tb25pdG9yaW5nLXN5c3RlbTo0MzE3
+  NAMESPACE: bW9uaXRvcmluZy1zeXN0ZW0=
+kind: Secret
+metadata:
+  name: grafana-env
+  namespace: monitoring-system
+type: Opaque
+---
+apiVersion: v1
+data:
+  MIMIR_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
+kind: Secret
+metadata:
+  name: mimir-env-92ddctt858
+  namespace: monitoring-system
+type: Opaque
+---
+apiVersion: v1
+data:
+  PYROSCOPE_STORAGE_S3_ACCESS_KEY_ID: bGd0bXA=
+  PYROSCOPE_STORAGE_S3_ENDPOINT: bWluaW8ubWluaW8tc3lzdGVtLnN2Yy5jbHVzdGVyLmxvY2FsOjQ0Mw==
+  PYROSCOPE_STORAGE_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
+kind: Secret
+metadata:
+  name: pyroscope-env-tgk2kdt8mh
+  namespace: profiles-system
+type: Opaque
+---
+apiVersion: v1
+data:
+  TEMPO_S3_ACCESS_KEY: bGd0bXA=
+  TEMPO_S3_ENDPOINT: bWluaW8ubWluaW8tc3lzdGVtLnN2Yzo0NDM=
+  TEMPO_S3_SECRET_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
+kind: Secret
+metadata:
+  name: tempo-env-44c28k2cmb
+  namespace: tracing-system
+type: Opaque
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 2.9.2
+    helm.sh/chart: loki-5.39.0
+  name: loki
+  namespace: logging-system
+spec:
+  ports:
+  - name: http-metrics
+    port: 3100
+    protocol: TCP
+    targetPort: http-metrics
+  - name: grpc
+    port: 9095
+    protocol: TCP
+    targetPort: grpc
+  selector:
+    app.kubernetes.io/component: single-binary
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/name: loki
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 2.9.2
+    helm.sh/chart: loki-5.39.0
+    prometheus.io/service-monitor: "false"
+    variant: headless
+  name: loki-headless
+  namespace: logging-system
+spec:
+  clusterIP: None
+  ports:
+  - name: http-metrics
+    port: 3100
+    protocol: TCP
+    targetPort: http-metrics
+  selector:
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/name: loki
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 2.9.2
+    helm.sh/chart: loki-5.39.0
+  name: loki-memberlist
+  namespace: logging-system
+spec:
+  clusterIP: None
+  ports:
+  - name: tcp
+    port: 7946
+    protocol: TCP
+    targetPort: http-memberlist
+  selector:
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/part-of: memberlist
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: gossip-ring
+    prometheus.io/service-monitor: "false"
+  name: gossip-ring-headless
+  namespace: monitoring-system
+spec:
+  clusterIP: None
+  ports:
+  - name: tcp-gossip-ring
+    port: 7946
+    protocol: TCP
+    targetPort: 7946
+  publishNotReadyAddresses: true
+  selector:
+    gossip_ring_member: "true"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: mimir
+  name: mimir
+  namespace: monitoring-system
+spec:
+  ports:
+  - name: http-metrics
+    port: 8080
+  - name: grpc-distribut
+    port: 9095
+  selector:
+    app: mimir
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: all
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.2.0
+    helm.sh/chart: pyroscope-1.3.0
+  name: pyroscope
+  namespace: profiles-system
+spec:
+  ports:
+  - name: http2
+    port: 4040
+    protocol: TCP
+    targetPort: http2
+  selector:
+    app.kubernetes.io/component: all
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/name: pyroscope
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: all
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.2.0
+    helm.sh/chart: pyroscope-1.3.0
+  name: pyroscope-headless
+  namespace: profiles-system
+spec:
+  clusterIP: None
+  ports:
+  - name: http2
+    port: 4040
+    protocol: TCP
+    targetPort: http2
+  selector:
+    app.kubernetes.io/component: all
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/name: pyroscope
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.2.0
+    helm.sh/chart: pyroscope-1.3.0
+  name: pyroscope-memberlist
+  namespace: profiles-system
+spec:
+  clusterIP: None
+  ports:
+  - name: memberlist
+    port: 7946
+    protocol: TCP
+    targetPort: 7946
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/name: pyroscope
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: tempo
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: tempo
+    app.kubernetes.io/version: 2.3.0
+    helm.sh/chart: tempo-1.7.1
+  name: tempo
+  namespace: tracing-system
+spec:
+  ports:
+  - name: tempo-prom-metrics
+    port: 3100
+    targetPort: 3100
+  - name: tempo-jaeger-thrift-compact
+    port: 6831
+    protocol: UDP
+    targetPort: 6831
+  - name: tempo-jaeger-thrift-binary
+    port: 6832
+    protocol: UDP
+    targetPort: 6832
+  - name: tempo-jaeger-thrift-http
+    port: 14268
+    protocol: TCP
+    targetPort: 14268
+  - name: grpc-tempo-jaeger
+    port: 14250
+    protocol: TCP
+    targetPort: 14250
+  - name: tempo-zipkin
+    port: 9411
+    protocol: TCP
+    targetPort: 9411
+  - name: tempo-otlp-legacy
+    port: 55680
+    protocol: TCP
+    targetPort: 55680
+  - name: tempo-otlp-http-legacy
+    port: 55681
+    protocol: TCP
+    targetPort: 4318
+  - name: grpc-tempo-otlp
+    port: 4317
+    protocol: TCP
+    targetPort: 4317
+  - name: tempo-otlp-http
+    port: 4318
+    protocol: TCP
+    targetPort: 4318
+  - name: tempo-opencensus
+    port: 55678
+    protocol: TCP
+    targetPort: 55678
+  selector:
+    app.kubernetes.io/instance: tempo
+    app.kubernetes.io/name: tempo
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: mimir
+  name: mimir
+  namespace: monitoring-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mimir
+  template:
+    metadata:
+      labels:
+        app: mimir
+        gossip_ring_member: "true"
+    spec:
+      containers:
+      - args:
+        - -target=all
+        - -config.expand-env=true
+        - -config.file=/etc/mimir/mimir.yaml
+        - -memberlist.bind-addr=$(POD_IP)
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        envFrom:
+        - secretRef:
+            name: mimir-env-92ddctt858
+        image: grafana/mimir:2.10.4
+        imagePullPolicy: IfNotPresent
+        name: mimir
+        ports:
+        - containerPort: 8080
+          name: http-metrics
+        - containerPort: 9095
+          name: grpc-distribut
+        - containerPort: 7946
+          name: http-memberlist
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http-metrics
+        resources:
+          limits:
+            cpu: 999m
+            memory: 1Gi
+          requests:
+            cpu: 10m
+            memory: 55Mi
+        volumeMounts:
+        - mountPath: /etc/mimir
+          name: mimir-config
+        - mountPath: /var/mimir
+          name: runtime-config
+      terminationGracePeriodSeconds: 60
+      volumes:
+      - configMap:
+          name: mimir-config-k2d48ck5kh
+        name: mimir-config
+      - configMap:
+          name: runtime-config-88gg5gk88d
+        name: runtime-config
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app.kubernetes.io/component: single-binary
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/part-of: memberlist
+    app.kubernetes.io/version: 2.9.2
+    helm.sh/chart: loki-5.39.0
+  name: loki
+  namespace: logging-system
+spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Delete
+    whenScaled: Delete
+  podManagementPolicy: Parallel
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: single-binary
+      app.kubernetes.io/instance: loki
+      app.kubernetes.io/name: loki
+  serviceName: loki-headless
+  template:
+    metadata:
+      annotations:
+        checksum/config: c4d96138a16c74d0d1ec00aee15bf7b18159a4d27afb01348fadf24c75a1138c
+      labels:
+        app.kubernetes.io/component: single-binary
+        app.kubernetes.io/instance: loki
+        app.kubernetes.io/name: loki
+        app.kubernetes.io/part-of: memberlist
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/component: single-binary
+                app.kubernetes.io/instance: loki
+                app.kubernetes.io/name: loki
+            topologyKey: kubernetes.io/hostname
+      automountServiceAccountToken: true
+      containers:
+      - args:
+        - -config.file=/etc/loki/config/config.yaml
+        - -target=all
+        - -config.expand-env=true
+        envFrom:
+        - secretRef:
+            name: loki-env-58m52b99kc
+        image: docker.io/grafana/loki:2.9.2
+        imagePullPolicy: IfNotPresent
+        name: loki
+        ports:
+        - containerPort: 3100
+          name: http-metrics
+          protocol: TCP
+        - containerPort: 9095
+          name: grpc
+          protocol: TCP
+        - containerPort: 7946
+          name: http-memberlist
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http-metrics
+          initialDelaySeconds: 30
+          timeoutSeconds: 1
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp
+        - mountPath: /etc/loki/config
+          name: config
+        - mountPath: /etc/loki/runtime-config
+          name: runtime-config
+        - mountPath: /var/loki
+          name: storage
+      enableServiceLinks: true
+      securityContext:
+        fsGroup: 10001
+        runAsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+      serviceAccountName: loki
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir: {}
+        name: tmp
+      - configMap:
+          items:
+          - key: config.yaml
+            path: config.yaml
+          name: loki-config
+        name: config
+      - configMap:
+          name: loki-runtime
+        name: runtime-config
+  updateStrategy:
+    rollingUpdate:
+      partition: 0
+  volumeClaimTemplates:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: storage
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 5Gi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app.kubernetes.io/component: all
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.2.0
+    helm.sh/chart: pyroscope-1.3.0
+  name: pyroscope
+  namespace: profiles-system
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: all
+      app.kubernetes.io/instance: pyroscope
+      app.kubernetes.io/name: pyroscope
+  serviceName: pyroscope-headless
+  template:
+    metadata:
+      annotations:
+        checksum/config: 68c6ce3c9a35e6c868a433958484ad83775ec7a78e278f7875d0322dadbfbfb2
+        profiles.grafana.com/cpu.port_name: http2
+        profiles.grafana.com/cpu.scrape: "true"
+        profiles.grafana.com/goroutine.port_name: http2
+        profiles.grafana.com/goroutine.scrape: "true"
+        profiles.grafana.com/memory.port_name: http2
+        profiles.grafana.com/memory.scrape: "true"
+      labels:
+        app.kubernetes.io/component: all
+        app.kubernetes.io/instance: pyroscope
+        app.kubernetes.io/name: pyroscope
+        name: pyroscope
+    spec:
+      containers:
+      - args:
+        - -target=all
+        - -self-profiling.disable-push=true
+        - -server.http-listen-port=4040
+        - -memberlist.cluster-label=profiles-system-pyroscope
+        - -memberlist.join=dns+pyroscope-memberlist.profiles-system.svc.cluster.local.:7946
+        - -config.file=/etc/pyroscope/config.yaml
+        - -runtime-config.file=/etc/pyroscope/overrides/overrides.yaml
+        - -config.expand-env=true
+        - -log.level=debug
+        envFrom:
+        - secretRef:
+            name: pyroscope-env-tgk2kdt8mh
+        image: grafana/pyroscope:1.2.0
+        imagePullPolicy: IfNotPresent
+        name: pyroscope
+        ports:
+        - containerPort: 4040
+          name: http2
+          protocol: TCP
+        - containerPort: 7946
+          name: memberlist
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http2
+            scheme: HTTP
+        resources: {}
+        securityContext: {}
+        volumeMounts:
+        - mountPath: /etc/pyroscope/config.yaml
+          name: config
+          subPath: config.yaml
+        - mountPath: /etc/pyroscope/overrides/
+          name: overrides-config
+        - mountPath: /data
+          name: data
+      dnsPolicy: ClusterFirst
+      securityContext:
+        fsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+      serviceAccountName: pyroscope
+      volumes:
+      - configMap:
+          name: pyroscope-config
+        name: config
+      - configMap:
+          name: pyroscope-overrides-config
+        name: overrides-config
+      - emptyDir: {}
+        name: data
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app.kubernetes.io/instance: tempo
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: tempo
+    app.kubernetes.io/version: 2.3.0
+    helm.sh/chart: tempo-1.7.1
+  name: tempo
+  namespace: tracing-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: tempo
+      app.kubernetes.io/name: tempo
+  serviceName: tempo-headless
+  template:
+    metadata:
+      annotations:
+        checksum/config: 23ab72f796ab49fb9da008a20e208caac7b37af419dfb94543cc09219ab61429
+      labels:
+        app.kubernetes.io/instance: tempo
+        app.kubernetes.io/name: tempo
+    spec:
+      automountServiceAccountToken: true
+      containers:
+      - args:
+        - -config.file=/conf/tempo.yaml
+        - -mem-ballast-size-mbs=1024
+        - -config.expand-env=true
+        env: null
+        envFrom:
+        - secretRef:
+            name: tempo-env-44c28k2cmb
+        image: grafana/tempo:2.3.0
+        imagePullPolicy: IfNotPresent
+        name: tempo
+        ports:
+        - containerPort: 3100
+          name: prom-metrics
+        - containerPort: 6831
+          name: jaeger-thrift-c
+          protocol: UDP
+        - containerPort: 6832
+          name: jaeger-thrift-b
+          protocol: UDP
+        - containerPort: 14268
+          name: jaeger-thrift-h
+        - containerPort: 14250
+          name: jaeger-grpc
+        - containerPort: 9411
+          name: zipkin
+        - containerPort: 55680
+          name: otlp-legacy
+        - containerPort: 4317
+          name: otlp-grpc
+        - containerPort: 55681
+          name: otlp-httplegacy
+        - containerPort: 4318
+          name: otlp-http
+        - containerPort: 55678
+          name: opencensus
+        resources: {}
+        volumeMounts:
+        - mountPath: /conf
+          name: tempo-conf
+      serviceAccountName: tempo
+      volumes:
+      - configMap:
+          name: tempo
+        name: tempo-conf
+  updateStrategy:
+    type: RollingUpdate
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app.kubernetes.io/component: all
+    app.kubernetes.io/instance: pyroscope
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/version: 1.2.0
+    helm.sh/chart: pyroscope-1.3.0
+  name: pyroscope
+  namespace: profiles-system
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: all
+      app.kubernetes.io/instance: pyroscope
+      app.kubernetes.io/name: pyroscope
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 2.9.2
+    helm.sh/chart: loki-5.39.0
+  name: loki
+  namespace: logging-system
+spec:
+  endpoints:
+  - interval: 15s
+    path: /metrics
+    port: http-metrics
+    relabelings:
+    - action: replace
+      replacement: logging-system/loki
+      sourceLabels:
+      - job
+      targetLabel: job
+    scheme: http
+  selector:
+    matchExpressions:
+    - key: prometheus.io/service-monitor
+      operator: NotIn
+      values:
+      - "false"
+    matchLabels:
+      app.kubernetes.io/instance: loki
+      app.kubernetes.io/name: loki
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: mimir
+  namespace: monitoring-system
+spec:
+  endpoints:
+  - port: http-metrics
+    relabelings:
+    - replacement: monitoring-system/mimir
+      sourceLabels:
+      - job
+      targetLabel: job
+    scheme: http
+  namespaceSelector:
+    matchNames:
+    - monitoring-system
+  selector:
+    matchExpressions:
+    - key: prometheus.io/service-monitor
+      operator: NotIn
+      values:
+      - "false"
+    matchLabels:
+      app: mimir
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app: tempo
+    chart: tempo-1.7.1
+    heritage: Helm
+    release: tempo
+  name: tempo
+  namespace: tracing-system
+spec:
+  endpoints:
+  - interval: 15s
+    port: tempo-prom-metrics
+  - interval: 15s
+    port: jaeger-metrics
+  namespaceSelector:
+    matchNames:
+    - tracing-system
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: tempo
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: tempo
+      app.kubernetes.io/version: 2.3.0
+      helm.sh/chart: tempo-1.7.1

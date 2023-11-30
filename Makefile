@@ -210,6 +210,7 @@ manifests-monolithic-mode: $(KUSTOMIZE)  ## Generates monolithic-mode manifests
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/metrics > kubernetes/monolithic-mode/metrics/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/profiles > kubernetes/monolithic-mode/profiles/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/traces > kubernetes/monolithic-mode/traces/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build kubernetes/monolithic-mode > kubernetes/monolithic-mode/k8s-all-in-one.yaml
 
 .PHONY: manifests-read-write-mode
 manifests-read-write-mode: $(KUSTOMIZE)  ## Generates read-write-mode manifests
@@ -332,6 +333,22 @@ deploy-monolithic-mode-traces: deploy-grafana ## Deploy monolithic-mode traces
 	@echo "Go to http://localhost:8080/explore for the traces."
 delete-monolithic-mode-traces:
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/traces | kubectl delete -f -
+
+
+.PHONY: deploy-monolithic-mode-all-in-one
+deploy-monolithic-mode-all-in-one: deploy-grafana ## Deploy monolithic-mode all-in-one
+	$(info ******************** deploy monolithic-mode all-in-one manifests ********************)
+	@$(KUSTOMIZE) build kubernetes/monolithic-mode | kubectl apply -f -
+	kubectl wait --for condition="Available=True" deployment --selector=app=mimir -n monitoring-system --timeout=300s
+	@$(KUSTOMIZE) build monitoring-mixins | kubectl apply -f -
+	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
+	@kubectl rollout restart deployment -n gateway nginx
+	@kubectl rollout restart deployment -n monitoring-system grafana
+	@echo ""
+	@echo "Demo is running."
+	@echo "Go to http://localhost:8080/explore for the all-in-one."
+delete-monolithic-mode-all-in-one:
+	@$(KUSTOMIZE) build kubernetes/monolithic-mode | kubectl delete -f -
 
 
 

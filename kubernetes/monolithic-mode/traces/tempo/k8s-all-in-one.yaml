@@ -206,3 +206,30 @@ spec:
         name: tempo-conf
   updateStrategy:
     type: RollingUpdate
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app: tempo
+    chart: tempo-1.7.1
+    heritage: Helm
+    release: tempo
+  name: tempo
+  namespace: tracing-system
+spec:
+  endpoints:
+  - interval: 15s
+    port: tempo-prom-metrics
+  - interval: 15s
+    port: jaeger-metrics
+  namespaceSelector:
+    matchNames:
+    - tracing-system
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: tempo
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: tempo
+      app.kubernetes.io/version: 2.3.0
+      helm.sh/chart: tempo-1.7.1
