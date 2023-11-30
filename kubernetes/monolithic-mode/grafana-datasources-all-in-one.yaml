@@ -31,6 +31,11 @@ data:
       isDefault: true
       version: 1
       editable: true
+      jsonData:
+        prometheusType: Mimir
+        exemplarTraceIdDestinations:
+        - name: traceID
+          datasourceUid: traces
 
     # Loki for logs
     - name: Logs
@@ -42,6 +47,12 @@ data:
       isDefault: false
       version: 1
       editable: true
+      jsonData:
+        derivedFields:
+        - datasourceUid: traces
+          matcherRegex: "[tT]race_?[iI][dD]\"?[:=]\"?(\\w+)"
+          name: traceID
+          url: $${__value.raw}
 
     # Tempo for traces
     - name: Traces
@@ -54,6 +65,18 @@ data:
       version: 1
       editable: true
       apiVersion: 1
+      jsonData:
+        lokiSearch:
+          datasourceUid: logs
+        nodeGraph:
+          enabled: true
+        serviceMap:
+          datasourceUid: metrics
+        tracesToMetrics:
+          datasourceUid: metrics
+        tracesToLogsV2:
+          customQuery: false
+          datasourceUid: logs
 
     # Pyroscope for profiles
     - name: Profiles

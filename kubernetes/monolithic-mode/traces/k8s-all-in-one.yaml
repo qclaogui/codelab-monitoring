@@ -55,7 +55,10 @@ apiVersion: v1
 data:
   overrides.yaml: |-
     overrides:
-      {}
+      "*":
+        block_retention: 7d
+        ingestion_burst_size_bytes: 20000000
+        ingestion_rate_limit_bytes: 15000000
   tempo.yaml: |
     multitenancy_enabled: false
     usage_report:
@@ -223,7 +226,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 23ab72f796ab49fb9da008a20e208caac7b37af419dfb94543cc09219ab61429
+        checksum/config: f0a721920f50f9d7c07b4e5fbc8e26159a952fbcf9b28fb26f116ece97bfd91c
       labels:
         app.kubernetes.io/instance: tempo
         app.kubernetes.io/name: tempo
@@ -270,37 +273,43 @@ spec:
         volumeMounts:
         - mountPath: /conf
           name: tempo-conf
+        - mountPath: /tmp
+          name: tmp
       serviceAccountName: tempo
       volumes:
       - configMap:
           name: tempo
         name: tempo-conf
+      - emptyDir: {}
+        name: tmp
   updateStrategy:
     type: RollingUpdate
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  labels:
-    app: tempo
-    chart: tempo-1.7.1
-    heritage: Helm
-    release: tempo
   name: tempo
   namespace: tracing-system
 spec:
   endpoints:
   - interval: 15s
     port: tempo-prom-metrics
-  - interval: 15s
-    port: jaeger-metrics
+    relabelings:
+    - action: replace
+      replacement: tracing-system/tempo
+      sourceLabels:
+      - job
+      targetLabel: job
+    scheme: http
   namespaceSelector:
     matchNames:
     - tracing-system
   selector:
+    matchExpressions:
+    - key: prometheus.io/service-monitor
+      operator: NotIn
+      values:
+      - "false"
     matchLabels:
       app.kubernetes.io/instance: tempo
-      app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: tempo
-      app.kubernetes.io/version: 2.3.0
-      helm.sh/chart: tempo-1.7.1

@@ -383,18 +383,11 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  labels:
-    app.kubernetes.io/instance: loki
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 2.9.2
-    helm.sh/chart: loki-5.39.0
   name: loki
   namespace: logging-system
 spec:
   endpoints:
   - interval: 15s
-    path: /metrics
     port: http-metrics
     relabelings:
     - action: replace
@@ -403,6 +396,9 @@ spec:
       - job
       targetLabel: job
     scheme: http
+  namespaceSelector:
+    matchNames:
+    - logging-system
   selector:
     matchExpressions:
     - key: prometheus.io/service-monitor

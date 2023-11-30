@@ -2,22 +2,22 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: loki
-  namespace: logging-system
+  name: tempo
+  namespace: tracing-system
 spec:
   endpoints:
   - interval: 15s
-    port: http-metrics
+    port: tempo-prom-metrics
     relabelings:
     - action: replace
-      replacement: logging-system/loki
+      replacement: tracing-system/tempo
       sourceLabels:
       - job
       targetLabel: job
     scheme: http
   namespaceSelector:
     matchNames:
-    - logging-system
+    - tracing-system
   selector:
     matchExpressions:
     - key: prometheus.io/service-monitor
@@ -25,5 +25,5 @@ spec:
       values:
       - "false"
     matchLabels:
-      app.kubernetes.io/instance: loki
-      app.kubernetes.io/name: loki
+      app.kubernetes.io/instance: tempo
+      app.kubernetes.io/name: tempo
