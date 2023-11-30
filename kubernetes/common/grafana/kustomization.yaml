@@ -25,6 +25,14 @@ configMapGenerator:
   files:
   - configs/grafana.ini
 
+- name: grafana-datasources
+  options:
+    immutable: true
+    labels:
+      grafana_datasource: "1"
+  files:
+  - configs/datasources.yaml
+
 - name: minio-dashboard.json
   options:
     labels:
@@ -34,22 +42,14 @@ configMapGenerator:
   files:
   - configs/minio-dashboard.json
 
-- name: grafana-datasources
-  options:
-    labels:
-      grafana_datasource: "1"
-  files:
-  - configs/datasources.yaml
-
-- name: grafana-env
-  options:
-    disableNameSuffixHash: true
-  literals:
-  - NAMESPACE=monitoring-system
-  - GF_LOG_LEVEL=error
-
 secretGenerator:
 - name: grafana-secret
   literals:
   - admin-user=admin
   - admin-password=admin_password
+- name: grafana-env
+  options:
+    disableNameSuffixHash: true
+  literals:
+  - NAMESPACE=monitoring-system
+  - GF_LOG_LEVEL=info

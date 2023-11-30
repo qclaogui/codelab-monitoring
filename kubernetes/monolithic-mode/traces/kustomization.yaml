@@ -17,6 +17,17 @@ secretGenerator:
   - TRACES_ENDPOINT=tempo.tracing-system.svc.cluster.local:4317
   # - TRACES_ENDPOINT=nginx.gateway.svc.cluster.local:4317
 
+# replace grafana-env
+- name: grafana-env
+  namespace: monitoring-system
+  options:
+    disableNameSuffixHash: true
+  literals:
+  - NAMESPACE=monitoring-system
+  - GF_LOG_LEVEL=warn
+  - GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS=grafana-agent.monitoring-system:4317
+  - GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES=cluster:k3d-k3s-codelab,namespace:monitoring-system
+
 - name: tempo-env
   namespace: tracing-system
   literals:
@@ -29,8 +40,8 @@ configMapGenerator:
   namespace: tracing-system
   behavior: replace
   files:
-  - tempo.yaml
-  - overrides.yaml
+  - configs/tempo.yaml
+  - configs/overrides.yaml
 
 # replace nginx-templates and nginx-env configMap
 - name: nginx-templates
@@ -38,7 +49,7 @@ configMapGenerator:
   options:
     disableNameSuffixHash: true
   files:
-  - gateway_tempo.conf.template
+  - configs/gateway_tempo.conf.template
 - name: nginx-env
   namespace: gateway
   options:

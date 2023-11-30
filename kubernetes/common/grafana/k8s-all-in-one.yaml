@@ -210,20 +210,12 @@ data:
       isDefault: false
       version: 1
       editable: true
+immutable: true
 kind: ConfigMap
 metadata:
   labels:
     grafana_datasource: "1"
   name: grafana-datasources-6chtc6cfg8
-  namespace: monitoring-system
----
-apiVersion: v1
-data:
-  GF_LOG_LEVEL: error
-  NAMESPACE: monitoring-system
-kind: ConfigMap
-metadata:
-  name: grafana-env
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -3447,6 +3439,16 @@ metadata:
 ---
 apiVersion: v1
 data:
+  GF_LOG_LEVEL: aW5mbw==
+  NAMESPACE: bW9uaXRvcmluZy1zeXN0ZW0=
+kind: Secret
+metadata:
+  name: grafana-env
+  namespace: monitoring-system
+type: Opaque
+---
+apiVersion: v1
+data:
   admin-password: YWRtaW5fcGFzc3dvcmQ=
   admin-user: YWRtaW4=
 kind: Secret
@@ -3618,7 +3620,7 @@ spec:
         - name: GF_PATHS_PROVISIONING
           value: /etc/grafana/provisioning
         envFrom:
-        - configMapRef:
+        - secretRef:
             name: grafana-env
             optional: true
         image: docker.io/grafana/grafana:10.2.2

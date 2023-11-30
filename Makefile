@@ -326,6 +326,7 @@ deploy-monolithic-mode-traces: deploy-grafana ## Deploy monolithic-mode traces
 	kubectl wait --for condition="Ready" pod --selector=app.kubernetes.io/name=tempo -n tracing-system --timeout=300s
 	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
 	@kubectl rollout restart deployment -n gateway nginx
+	@kubectl rollout restart deployment -n monitoring-system grafana
 	@echo ""
 	@echo "Demo is running."
 	@echo "Go to http://localhost:8080/explore for the traces."

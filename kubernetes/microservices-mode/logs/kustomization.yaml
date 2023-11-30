@@ -5,7 +5,7 @@ kind: Kustomization
 
 resources:
 - namespace.yaml
-- grafana-datasources-loki.yaml # change loki logs as default datasources
+- configs/grafana-datasources-loki.yaml # change loki logs as default datasources
 - loki-distributed/k8s-all-in-one.yaml
 
 secretGenerator:
@@ -28,7 +28,7 @@ configMapGenerator:
   namespace: logging-system
   behavior: replace
   files:
-  - config.yaml=loki-distributed.yaml
+  - config.yaml=configs/loki-distributed.yaml
 
 # replace nginx-templates and nginx-env configMap
 - name: nginx-templates
@@ -36,7 +36,7 @@ configMapGenerator:
   options:
     disableNameSuffixHash: true
   files:
-  - gateway_loki.conf.template
+  - configs/gateway_loki.conf.template
 - name: nginx-env
   namespace: gateway
   options:
