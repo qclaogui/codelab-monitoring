@@ -243,7 +243,7 @@ data:
     {\n\t\t\tkey      = \"team\"\n\t\t\toperator = \"In\"\n\t\t\tvalues   = [\"team-infra\"]\n\t\t}\n\t}\n}\n\n/********************************************\n
     * Kubernetes Prometheus Rules To Mimir\n ********************************************/\nmimir.rules.kubernetes
     \"prometheus_rules_to_mimir\" {\n\taddress   = coalesce(env(\"METRICS_ENDPOINT\"),
-    \"http://nginx.monitoring-system:8080\")\n\ttenant_id = \"anonymous\"\n}\n"
+    \"http://nginx.gateway.svc:8080\")\n\ttenant_id = \"anonymous\"\n}\n"
   profiles.river: "/*\nModule: profiles\nDescription: Wrapper module to include all
     kubernetes profile modules and use cri parsing\n*/\nargument \"forward_to\" {\n\t//
     comment = \"Must be a list(ProfilessReceiver) where collected logs should be forwarded
@@ -476,7 +476,7 @@ data:
     = \"insert\"\n\t}\n\n\toutput {\n\t\ttraces = argument.forward_to.value\n\t}\n}\n"
 kind: ConfigMap
 metadata:
-  name: agent-modules-f99d927bgc
+  name: agent-modules-2kkc8g862c
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -656,7 +656,7 @@ spec:
           path: /var/log
         name: varlog
       - configMap:
-          name: agent-modules-f99d927bgc
+          name: agent-modules-2kkc8g862c
         name: agent-modules
 ---
 apiVersion: monitoring.coreos.com/v1
