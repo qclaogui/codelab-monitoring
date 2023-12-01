@@ -13,25 +13,15 @@ resources:
 - traces/tempo/k8s-all-in-one.yaml
 - grafana-datasources-all-in-one.yaml
 
-
 secretGenerator:
-- name: agent-env
-  namespace: monitoring-system
-  options:
-    disableNameSuffixHash: true
-  literals:
-  - TRACES_ENDPOINT=tempo.tracing-system.svc.cluster.local:4317
-
-# replace grafana-env
 - name: grafana-env
   namespace: monitoring-system
   options:
     disableNameSuffixHash: true
   literals:
-  - NAMESPACE=monitoring-system
   - GF_LOG_LEVEL=warn
   - GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS=grafana-agent.monitoring-system:4317
-  - GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES=cluster:k3d-k3s-codelab,namespace:monitoring-system
+  - GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES=namespace:monitoring-system
   - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor,dashgpt
 
 - name: loki-env
