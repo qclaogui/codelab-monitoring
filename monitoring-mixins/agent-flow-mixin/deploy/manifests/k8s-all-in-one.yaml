@@ -1196,12 +1196,38 @@ data:
              },
              {
                 "datasource": "${datasource}",
-                "description": "Detailed histogram view of how long component evaluations take.\n\nThe goal is to design your config so that evaluations take as little\ntime as possible; under 100ms is a good goal.\n",
+                "description": "The percentage of time spent evaluating 'slow' components - components that took longer than 1 minute to evaluate.\n\nIdeally, no component should take more than 1 minute to evaluate. The components displayed in this chart\nmay be a sign of a problem with the pipeline.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "percentunit"
+                   }
+                },
                 "gridPos": {
                    "h": 10,
                    "w": 8,
                    "x": 16,
                    "y": 12
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum by (component_id) (rate(agent_component_evaluation_slow_seconds{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]))\n/ scalar(sum(rate(agent_component_evaluation_seconds_sum{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval])))\n",
+                      "instant": false,
+                      "legendFormat": "{{component_id}}",
+                      "range": true
+                   }
+                ],
+                "title": "Slow components evaluation times",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Detailed histogram view of how long component evaluations take.\n\nThe goal is to design your config so that evaluations take as little\ntime as possible; under 100ms is a good goal.\n",
+                "gridPos": {
+                   "h": 10,
+                   "w": 8,
+                   "x": 0,
+                   "y": 22
                 },
                 "maxDataPoints": 30,
                 "options": {
@@ -1248,7 +1274,7 @@ data:
                 "gridPos": {
                    "h": 10,
                    "w": 8,
-                   "x": 0,
+                   "x": 8,
                    "y": 22
                 },
                 "maxDataPoints": 30,

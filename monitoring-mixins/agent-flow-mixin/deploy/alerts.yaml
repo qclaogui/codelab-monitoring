@@ -50,3 +50,15 @@ groups:
                 max by (cluster, namespace, sha256) (agent_config_hash and on(cluster, namespace) cluster_node_info)
             ) > 1
           for: 5m
+    - name: agent_controller
+      rules:
+        - alert: SlowComponentEvaluations
+          annotations:
+            message: Flow component evaluations are taking too long.
+          expr: sum by (cluster, namespace, component_id) (rate(agent_component_evaluation_slow_seconds[10m])) > 0
+          for: 15m
+        - alert: UnhealthyComponents
+          annotations:
+            message: Unhealthy Flow components detected.
+          expr: sum(agent_component_controller_running_components{health_type!="healthy"}) > 0
+          for: 15m
