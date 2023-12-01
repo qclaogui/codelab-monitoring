@@ -328,7 +328,6 @@ deploy-monolithic-mode-traces: deploy-grafana ## Deploy monolithic-mode traces
 	kubectl rollout status -n tracing-system statefulset/tempo --watch --timeout=600s
 	@kubectl rollout restart deployment -n gateway nginx
 	kubectl rollout status -n gateway deployment/nginx --watch --timeout=600s
-	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
 	@kubectl rollout restart deployment -n monitoring-system grafana
 	kubectl rollout status -n monitoring-system deployment/grafana --watch --timeout=600s
 	@echo ""
@@ -442,7 +441,6 @@ deploy-microservices-mode-traces: deploy-grafana ## Deploy microservices-mode tr
 	kubectl rollout status -n tracing-system statefulset/tempo-distributed-ingester --watch --timeout=600s
 	@kubectl rollout restart deployment -n gateway nginx
 	kubectl rollout status -n gateway deployment/nginx --watch --timeout=600s
-	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
 	@kubectl rollout restart deployment -n monitoring-system grafana
 	kubectl rollout status -n monitoring-system deployment/grafana --watch --timeout=600s
 	@echo ""

@@ -6,18 +6,9 @@ kind: Kustomization
 resources:
 - namespace.yaml
 - tempo-distributed/k8s-all-in-one.yaml
+- configs/grafana-datasources-tempo.yaml # change default datasources
 
 secretGenerator:
-- name: agent-env
-  namespace: monitoring-system
-  options:
-    disableNameSuffixHash: true
-  literals:
-  - CLUSTER=k3d-k3s-codelab
-  - TRACES_ENDPOINT=tempo-distributed-distributor.tracing-system.svc.cluster.local:4317
-  # - TRACES_ENDPOINT=nginx.gateway.svc.cluster.local:4317
-
-# replace grafana-env
 - name: grafana-env
   namespace: monitoring-system
   options:

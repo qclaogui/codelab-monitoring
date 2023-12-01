@@ -1,0 +1,27 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    grafana_datasource: "1"
+  name: grafana-datasources-tempo
+  namespace: monitoring-system
+data:
+  datasources.yaml: |
+    apiVersion: 1
+
+    deleteDatasources:
+    - name: Traces
+      uid: traces
+
+    datasources:
+    # Tempo for traces
+    - name: Traces
+      type: tempo
+      access: proxy
+      uid: traces
+      url: http://nginx.gateway.svc.cluster.local:3200
+      basicAuth: false
+      isDefault: true
+      version: 1
+      editable: true

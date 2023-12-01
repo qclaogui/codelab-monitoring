@@ -29,9 +29,12 @@ metadata:
 ---
 apiVersion: v1
 data:
-  gateway_tempo.conf.template: "upstream otlp {\n    server ${TEMPO_DISTRIBUTOR_HOST}:4317;\n}\nserver
+  gateway_tempo.conf.template: "upstream grpc_otlp_tempo {\n    server ${TEMPO_DISTRIBUTOR_HOST}:4317;\n}\nserver
     {\n    listen 4317;\n    http2 on;\n\n    location / {\n      grpc_set_header
-    X-Scope-OrgID $ensured_x_scope_orgid;\n      grpc_pass grpc://otlp;\n    }\n}\n\nserver
+    X-Scope-OrgID $ensured_x_scope_orgid;\n      grpc_pass grpc://grpc_otlp_tempo;\n
+    \   }\n}\n\nupstream http_otlp_tempo {\n    server ${TEMPO_DISTRIBUTOR_HOST}:4318;\n}\nserver
+    {\n    listen 4318;\n\n    location / {\n      proxy_set_header X-Scope-OrgID
+    $ensured_x_scope_orgid;\n      proxy_pass http://http_otlp_tempo;\n    }\n}\n\nserver
     {\n    listen 3200;\n    listen [::]:3200;\n\n    location = / {\n      return
     200 'OK';\n      auth_basic off;\n      access_log off;\n    }\n\n    proxy_set_header
     X-Scope-OrgID $ensured_x_scope_orgid;\n\n    # Distributor endpoints\n    location
@@ -50,6 +53,33 @@ kind: ConfigMap
 metadata:
   name: nginx-templates
   namespace: gateway
+---
+apiVersion: v1
+data:
+  datasources.yaml: |-
+    apiVersion: 1
+
+    deleteDatasources:
+    - name: Traces
+      uid: traces
+
+    datasources:
+    # Tempo for traces
+    - name: Traces
+      type: tempo
+      access: proxy
+      uid: traces
+      url: http://nginx.gateway.svc.cluster.local:3200
+      basicAuth: false
+      isDefault: true
+      version: 1
+      editable: true
+kind: ConfigMap
+metadata:
+  labels:
+    grafana_datasource: "1"
+  name: grafana-datasources-tempo
+  namespace: monitoring-system
 ---
 apiVersion: v1
 data:
@@ -148,18 +178,6 @@ metadata:
     helm.sh/chart: tempo-distributed-1.7.1
   name: tempo-distributed-runtime
   namespace: tracing-system
----
-apiVersion: v1
-data:
-  CLUSTER: azNkLWszcy1jb2RlbGFi
-  TRACES_ENDPOINT: |
-    dGVtcG8tZGlzdHJpYnV0ZWQtZGlzdHJpYnV0b3IudHJhY2luZy1zeXN0ZW0uc3ZjLmNsdX
-    N0ZXIubG9jYWw6NDMxNw==
-kind: Secret
-metadata:
-  name: agent-env
-  namespace: monitoring-system
-type: Opaque
 ---
 apiVersion: v1
 data:

@@ -315,9 +315,12 @@ data:
           proxy_pass      http://${PYROSCOPE_QUERY_FRONTEND_HOST}:4040$request_uri;
         }
     }
-  gateway_tempo.conf.template: "upstream otlp {\n    server ${TEMPO_DISTRIBUTOR_HOST}:4317;\n}\nserver
+  gateway_tempo.conf.template: "upstream grpc_otlp_tempo {\n    server ${TEMPO_DISTRIBUTOR_HOST}:4317;\n}\nserver
     {\n    listen 4317;\n    http2 on;\n\n    location / {\n      grpc_set_header
-    X-Scope-OrgID $ensured_x_scope_orgid;\n      grpc_pass grpc://otlp;\n    }\n}\n\nserver
+    X-Scope-OrgID $ensured_x_scope_orgid;\n      grpc_pass grpc://grpc_otlp_tempo;\n
+    \   }\n}\n\nupstream http_otlp_tempo {\n    server ${TEMPO_DISTRIBUTOR_HOST}:4318;\n}\nserver
+    {\n    listen 4318;\n\n    location / {\n      proxy_set_header X-Scope-OrgID
+    $ensured_x_scope_orgid;\n      proxy_pass http://http_otlp_tempo;\n    }\n}\n\nserver
     {\n    listen 3200;\n    listen [::]:3200;\n\n    location = / {\n      return
     200 'OK';\n      auth_basic off;\n      access_log off;\n    }\n\n    proxy_set_header
     X-Scope-OrgID $ensured_x_scope_orgid;\n\n    # Distributor endpoints\n    location

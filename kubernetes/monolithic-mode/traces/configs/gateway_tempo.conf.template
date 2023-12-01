@@ -1,4 +1,4 @@
-upstream otlp {
+upstream grpc_otlp_tempo {
     server ${TEMPO_DISTRIBUTOR_HOST}:4317;
 }
 server {
@@ -7,7 +7,19 @@ server {
 
     location / {
       grpc_set_header X-Scope-OrgID $ensured_x_scope_orgid;
-      grpc_pass grpc://otlp;
+      grpc_pass grpc://grpc_otlp_tempo;
+    }
+}
+
+upstream http_otlp_tempo {
+    server ${TEMPO_DISTRIBUTOR_HOST}:4318;
+}
+server {
+    listen 4318;
+
+    location / {
+      proxy_set_header X-Scope-OrgID $ensured_x_scope_orgid;
+      proxy_pass http://http_otlp_tempo;
     }
 }
 
