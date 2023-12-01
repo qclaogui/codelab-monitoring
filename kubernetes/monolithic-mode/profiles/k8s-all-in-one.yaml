@@ -63,6 +63,33 @@ subjects:
 ---
 apiVersion: v1
 data:
+  datasources.yaml: |
+    apiVersion: 1
+
+    deleteDatasources:
+    - name: Profiles
+      uid: profiles
+
+    datasources:
+    # Pyroscope for profiles
+    - name: Profiles
+      type: grafana-pyroscope-datasource
+      uid: profiles
+      access: proxy
+      url: http://nginx.gateway.svc.cluster.local:4040
+      basicAuth: false
+      isDefault: true
+      version: 1
+      editable: true
+kind: ConfigMap
+metadata:
+  labels:
+    grafana_datasource: "1"
+  name: grafana-datasources-pyroscope
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
   config.yaml: |
     analytics:
       reporting_enabled: false

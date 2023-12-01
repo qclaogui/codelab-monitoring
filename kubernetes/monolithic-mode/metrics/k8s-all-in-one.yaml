@@ -1,5 +1,32 @@
 apiVersion: v1
 data:
+  datasources.yaml: |-
+    apiVersion: 1
+
+    deleteDatasources:
+    - name: Metrics
+      uid: metrics
+
+    datasources:
+    # Mimir for metrics
+    - name: Metrics
+      type: prometheus
+      uid: metrics
+      access: proxy
+      url: http://nginx.gateway.svc.cluster.local:8080/prometheus
+      basicAuth: false
+      isDefault: true
+      version: 1
+      editable: true
+kind: ConfigMap
+metadata:
+  labels:
+    grafana_datasource: "1"
+  name: grafana-datasources-mimir
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
   mimir.yaml: |
     # Do not use this configuration in production.
     # It is for demonstration purposes only.

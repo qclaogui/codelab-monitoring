@@ -1,0 +1,27 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    grafana_datasource: "1"
+  name: grafana-datasources-loki
+  namespace: monitoring-system
+data:
+  datasources.yaml: |
+    apiVersion: 1
+
+    deleteDatasources:
+    - name: Logs
+      uid: logs
+
+    datasources:
+    # Loki for logs
+    - name: Logs
+      type: loki
+      uid: logs
+      access: proxy
+      url: http://nginx.gateway.svc.cluster.local:3100
+      basicAuth: false
+      isDefault: true
+      version: 1
+      editable: true
