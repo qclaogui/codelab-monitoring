@@ -6,6 +6,11 @@ argument "cluster" {
 	default  = "k3d-k3s-codelab"
 }
 
+argument "tenant" {
+	optional = true
+	default  = "anonymous"
+}
+
 argument "metrics_endpoint" {
 	optional = true
 	default  = "http://mimir:8080"
@@ -57,7 +62,8 @@ export "profiles_receiver" {
 // Metrics
 prometheus.remote_write "mimir" {
 	endpoint {
-		url = argument.metrics_endpoint.value + "/api/v1/push"
+		url                    = argument.metrics_endpoint.value + "/api/v1/push"
+		send_native_histograms = true
 	}
 
 	external_labels = {
@@ -69,7 +75,8 @@ prometheus.remote_write "mimir" {
 // Logs
 loki.write "loki" {
 	endpoint {
-		url = argument.logs_endpoint.value + "/loki/api/v1/push"
+		url       = argument.logs_endpoint.value + "/loki/api/v1/push"
+		tenant_id = argument.tenant.value
 	}
 
 	external_labels = {

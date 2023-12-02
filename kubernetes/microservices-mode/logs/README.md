@@ -2,18 +2,19 @@
 
 The microservices deployment mode instantiates components of Loki as distinct processes. Each process is invoked specifying its target:
 
-- ingester
+- compactor
 - distributor
+- index-gateway
+- ingester
+- overrides-exporter
+- querier
 - query-frontend
 - query-scheduler
-- querier
-- index-gateway
 - ruler
-- compactor
 
 Running components as individual microservices allows scaling up by increasing the quantity of microservices.
 
-![Loki microservices mode](https://grafana.com/docs/loki/latest/fundamentals/architecture/components/loki_architecture_components.svg)
+![Loki microservices mode](https://grafana.com/docs/loki/latest/get-started/microservices-mode.png)
 
 ## Diagram
 

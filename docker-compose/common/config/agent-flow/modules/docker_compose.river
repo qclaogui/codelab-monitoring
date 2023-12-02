@@ -11,6 +11,11 @@ argument "namespace" {
 	default  = "monitoring-system"
 }
 
+argument "tenant" {
+	optional = true
+	default  = "anonymous"
+}
+
 argument "metrics_endpoint" {
 	optional = true
 	default  = "http://mimir:8080"
@@ -62,7 +67,8 @@ export "profiles_receiver" {
 // Metrics
 prometheus.remote_write "docker_compose" {
 	endpoint {
-		url = argument.metrics_endpoint.value + "/api/v1/push"
+		url                    = argument.metrics_endpoint.value + "/api/v1/push"
+		send_native_histograms = true
 	}
 
 	external_labels = {
@@ -75,7 +81,8 @@ prometheus.remote_write "docker_compose" {
 // Logs
 loki.write "docker_compose" {
 	endpoint {
-		url = argument.logs_endpoint.value + "/loki/api/v1/push"
+		url       = argument.logs_endpoint.value + "/loki/api/v1/push"
+		tenant_id = argument.tenant.value
 	}
 
 	external_labels = {
