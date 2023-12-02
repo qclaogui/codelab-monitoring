@@ -19,10 +19,10 @@ services:
       - ../../common/config/tempo/gateway_tempo.conf.template:/etc/nginx/templates/gateway_tempo.conf.template
     environment:
       - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
-      - DISTRIBUTOR_HOST=tempo
-      - INGESTER_HOST=tempo
-      - QUERY_FRONTEND_HOST=tempo
-      - COMPACTOR_HOST=tempo
+      - TEMPO_DISTRIBUTOR_HOST=tempo
+      - TEMPO_INGESTER_HOST=tempo
+      - TEMPO_QUERY_FRONTEND_HOST=tempo
+      - TEMPO_COMPACTOR_HOST=tempo
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ || exit 1" ]
       interval: 10s
@@ -31,6 +31,7 @@ services:
     ports:
       - "3200"
       - "4317"
+      - "4318"
 
   tempo:
     depends_on:
@@ -40,21 +41,28 @@ services:
     restart: always
     volumes:
       - ./config/tempo/scalable-single-binary.yaml:/etc/tempo.yaml # Note: Tempo use scalable-single-binary.yaml
+    environment:
+      - TEMPO_S3_ENDPOINT=minio:9000
+      - TEMPO_S3_ACCESS_KEY=lgtmp
+      - TEMPO_S3_SECRET_KEY=supersecret
+      - TEMPO_S3_INSECURE=true
     command:
       - -config.file=/etc/tempo.yaml
       - -target=scalable-single-binary
       - -log.level=error
+      - -config.expand-env=true
     healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ready || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1" ]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     ports:
-      - "3200"
+      - "3100"
     # Horizontally scale up support(Monolithic mode)
     # https://grafana.com/docs/tempo/latest/setup/deployment/#scaling-monolithic-mode
     deploy:
-      replicas: 2
+      replicas: 1
     networks:
       default:
         aliases:

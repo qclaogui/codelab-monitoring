@@ -1,5 +1,5 @@
-upstream otlp {
-    server ${DISTRIBUTOR_HOST}:4317;
+upstream grpc_otlp_tempo {
+    server ${TEMPO_DISTRIBUTOR_HOST}:4317;
 }
 server {
     listen 4317;
@@ -7,7 +7,19 @@ server {
 
     location / {
       grpc_set_header X-Scope-OrgID $ensured_x_scope_orgid;
-      grpc_pass grpc://otlp;
+      grpc_pass grpc://grpc_otlp_tempo;
+    }
+}
+
+upstream http_otlp_tempo {
+    server ${TEMPO_DISTRIBUTOR_HOST}:4318;
+}
+server {
+    listen 4318;
+
+    location / {
+      proxy_set_header X-Scope-OrgID $ensured_x_scope_orgid;
+      proxy_pass http://http_otlp_tempo;
     }
 }
 
@@ -25,37 +37,37 @@ server {
 
     # Distributor endpoints
     location = /jaeger/api/traces {
-      proxy_pass      http://${DISTRIBUTOR_HOST}:14268/api/traces;
+      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:14268/api/traces;
     }
     location = /zipkin/spans {
-      proxy_pass      http://${DISTRIBUTOR_HOST}:9411/spans;
+      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:9411/spans;
     }
     location = /otlp/v1/traces {
-      proxy_pass      http://${DISTRIBUTOR_HOST}:4318/v1/traces;
+      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:4318/v1/traces;
     }
 
     location = /distributor/ring {
-      proxy_pass      http://${DISTRIBUTOR_HOST}:3200$request_uri;
+      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:3100$request_uri;
     }
     location = /ingester/ring {
-      proxy_pass      http://${DISTRIBUTOR_HOST}:3200$request_uri;
+      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:3100$request_uri;
     }
     
     # Ingester endpoints
     location = /flush {
-      proxy_pass      http://${INGESTER_HOST}:3200$request_uri;
+      proxy_pass      http://${TEMPO_INGESTER_HOST}:3100$request_uri;
     }
     location = /shutdown {
-      proxy_pass      http://${INGESTER_HOST}:3200$request_uri;
+      proxy_pass      http://${TEMPO_INGESTER_HOST}:3100$request_uri;
     }
 
     # Query endpoints
     location ^~ /api {
-      proxy_pass      http://${QUERY_FRONTEND_HOST}:3200$request_uri;
+      proxy_pass      http://${TEMPO_QUERY_FRONTEND_HOST}:3100$request_uri;
     }
 
     # Compactor endpoint
     location = /compactor/ring {
-      proxy_pass      http://${COMPACTOR_HOST}:3200$request_uri;
+      proxy_pass      http://${TEMPO_COMPACTOR_HOST}:3100$request_uri;
     }
 }

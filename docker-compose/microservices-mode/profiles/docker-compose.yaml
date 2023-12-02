@@ -19,8 +19,8 @@ services:
       - ../../common/config/pyroscope/gateway_pyroscope.conf.template:/etc/nginx/templates/gateway_pyroscope.conf.template
     environment:
       - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
-      - DISTRIBUTOR_HOST=distributor
-      - QUERY_FRONTEND_HOST=query-frontend
+      - PYROSCOPE_DISTRIBUTOR_HOST=distributor
+      - PYROSCOPE_QUERY_FRONTEND_HOST=query-frontend
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:4040/ || exit 1" ]
       interval: 10s
@@ -41,14 +41,15 @@ services:
     command:
       - -config.file=/etc/config.yaml
       - -target=distributor
+      - -config.expand-env=true
       - -memberlist.cluster-label=profiles-system
       - -memberlist.join=pyroscope-memberlist:7946
       # - -runtime-config.file=/etc/overrides/overrides.yaml
       # - -log.level=warn
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:4040/ready || exit 1" ]
-      interval: 10s
-      timeout: 5s
+      interval: 15s
+      timeout: 10s
       retries: 5
     networks:
       default:
@@ -65,6 +66,7 @@ services:
     command:
       - -config.file=/etc/config.yaml
       - -target=ingester
+      - -config.expand-env=true
       - -memberlist.cluster-label=profiles-system
       - -memberlist.join=pyroscope-memberlist:7946
       - -log.level=warn
@@ -85,6 +87,7 @@ services:
     command:
       - -config.file=/etc/config.yaml
       - -target=compactor
+      - -config.expand-env=true
       - -memberlist.cluster-label=profiles-system
       - -memberlist.join=pyroscope-memberlist:7946
       - -log.level=warn
@@ -107,6 +110,7 @@ services:
     command:
       - -config.file=/etc/config.yaml
       - -target=query-frontend
+      - -config.expand-env=true
       - -memberlist.cluster-label=profiles-system
       - -memberlist.join=pyroscope-memberlist:7946
       - -log.level=warn
@@ -127,6 +131,7 @@ services:
     command:
       - -config.file=/etc/config.yaml
       - -target=querier
+      - -config.expand-env=true
       - -memberlist.cluster-label=profiles-system
       - -memberlist.join=pyroscope-memberlist:7946
       - -log.level=warn
@@ -146,6 +151,7 @@ services:
     command:
       - -config.file=/etc/config.yaml
       - -target=query-scheduler
+      - -config.expand-env=true
       - -memberlist.cluster-label=profiles-system
       - -memberlist.join=pyroscope-memberlist:7946
       - -log.level=error
@@ -164,6 +170,7 @@ services:
     command:
       - -config.file=/etc/config.yaml
       - -target=store-gateway
+      - -config.expand-env=true
       - -memberlist.cluster-label=profiles-system
       - -memberlist.join=pyroscope-memberlist:7946
       - -log.level=error

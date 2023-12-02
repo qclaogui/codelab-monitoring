@@ -19,10 +19,10 @@ services:
       - ../../common/config/tempo/gateway_tempo.conf.template:/etc/nginx/templates/gateway_tempo.conf.template
     environment:
       - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
-      - DISTRIBUTOR_HOST=distributor
-      - INGESTER_HOST=ingester
-      - QUERY_FRONTEND_HOST=query-frontend
-      - COMPACTOR_HOST=compactor
+      - TEMPO_DISTRIBUTOR_HOST=distributor
+      - TEMPO_INGESTER_HOST=ingester
+      - TEMPO_QUERY_FRONTEND_HOST=query-frontend
+      - TEMPO_COMPACTOR_HOST=compactor
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ || exit 1" ]
       interval: 10s
@@ -31,6 +31,7 @@ services:
     ports:
       - "3200"
       - "4317"
+      - "4318"
 
   distributor:
     depends_on:
@@ -42,12 +43,14 @@ services:
     command:
       - -config.file=/etc/tempo.yaml
       - -target=distributor
+      - -config.expand-env=true
       # - -log.level=warn
     healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ready || exit 1" ]
-      interval: 10s
-      timeout: 5s
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1" ]
+      interval: 15s
+      timeout: 10s
       retries: 5
+      start_period: 30s
 
   ingester:
     depends_on:
@@ -57,10 +60,11 @@ services:
     volumes:
       - ../../common/config/tempo/microservices-mode-traces.yaml:/etc/tempo.yaml # Note: Tempo use microservices-mode-traces.yaml
     ports:
-      - "3200"
+      - "3100"
     command:
       - -config.file=/etc/tempo.yaml
       - -target=ingester
+      - -config.expand-env=true
       - -log.level=warn
     deploy:
       replicas: 3
@@ -79,6 +83,7 @@ services:
     command:
       - -config.file=/etc/tempo.yaml
       - -target=query-frontend
+      - -config.expand-env=true
       - -log.level=warn
 
   querier:
@@ -93,6 +98,7 @@ services:
     command:
       - -config.file=/etc/tempo.yaml
       - -target=querier
+      - -config.expand-env=true
       - -log.level=warn
 
   compactor:

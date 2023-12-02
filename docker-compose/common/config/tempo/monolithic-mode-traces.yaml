@@ -31,10 +31,10 @@ metrics_generator:
   storage:
     path: /tmp/tempo/generator/wal
     remote_write:
-      - url: http://mimir:8080/api/v1/push
-        send_exemplars: true
-        headers:
-          X-Scope-OrgID: "anonymous"
+    - url: http://mimir:8080/api/v1/push
+      send_exemplars: true
+      headers:
+        X-Scope-OrgID: "anonymous"
 
 storage:
   trace:
@@ -43,12 +43,8 @@ storage:
       path: /tmp/tempo/wal             # where to store the the wal locally
     s3:
       bucket: tempo-data
-      endpoint: minio:9000
-      access_key: admin
-      secret_key: admin_password
-      insecure: true
-
-overrides:
-  defaults:
-    metrics_generator:
-      processors: [service-graphs, span-metrics]
+      endpoint: ${TEMPO_S3_ENDPOINT:minio:9000}
+      access_key: ${TEMPO_S3_ACCESS_KEY:lgtmp}
+      secret_key: ${TEMPO_S3_SECRET_KEY:supersecret}
+      insecure: ${TEMPO_S3_INSECURE:true}
+      tls_insecure_skip_verify: true

@@ -23,11 +23,11 @@ services:
       # so need a full setup of all variables.
       # https://github.com/nginxinc/docker-nginx/issues/592
       # https://stackoverflow.com/a/65529290
-      - DISTRIBUTOR_HOST=mimir
-      - ALERT_MANAGER_HOST=mimir
-      - RULER_HOST=mimir
-      - QUERY_FRONTEND_HOST=mimir
-      - COMPACTOR_HOST=mimir
+      - MIMIR_DISTRIBUTOR_HOST=mimir
+      - MIMIR_ALERT_MANAGER_HOST=mimir
+      - MIMIR_RULER_HOST=mimir
+      - MIMIR_QUERY_FRONTEND_HOST=mimir
+      - MIMIR_COMPACTOR_HOST=mimir
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ || exit 1" ]
       interval: 10s
@@ -45,6 +45,7 @@ services:
       - -config.file=/etc/mimir.yaml
       - -target=all
       - -log.level=error
+      - -config.expand-env=true
     volumes:
       - ../../common/config/mimir/monolithic-mode-metrics.yaml:/etc/mimir.yaml # Note: Mimir use monolithic-mode.yaml
     ports:
@@ -57,7 +58,7 @@ services:
     # Horizontally scale up support(Monolithic mode)
     # https://grafana.com/docs/mimir/latest/references/architecture/deployment-modes/#monolithic-mode
     deploy:
-      replicas: 2
+      replicas: 1
     networks:
       default:
         aliases:

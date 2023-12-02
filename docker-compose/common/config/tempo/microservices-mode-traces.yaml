@@ -4,7 +4,7 @@ usage_report:
 multitenancy_enabled: false
 
 server:
-  http_listen_port: 3200
+  http_listen_port: 3100
   grpc_listen_port: 9095
   log_level: warn
 
@@ -19,7 +19,8 @@ ingester:
   max_block_duration: 5m               # cut the headblock when this much time passes. this is being set for demo purposes and should probably be left alone normally
 
 memberlist:
-  join_members: [ tempo-memberlist:7946 ]
+  join_members:
+  - tempo-memberlist:7946
 
 compactor:
   ring:
@@ -39,7 +40,12 @@ storage:
       path: /tmp/tempo/wal
     s3:
       bucket: tempo-data
+      # endpoint: ${TEMPO_S3_ENDPOINT:minio:9000}
+      # access_key: ${TEMPO_S3_ACCESS_KEY:lgtmp}
+      # secret_key: ${TEMPO_S3_SECRET_KEY:supersecret}
+      # insecure: ${TEMPO_S3_INSECURE:true}
       endpoint: minio:9000
-      access_key: admin
-      secret_key: admin_password
+      access_key: lgtmp
+      secret_key: supersecret
       insecure: true
+      tls_insecure_skip_verify: true

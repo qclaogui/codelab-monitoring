@@ -18,13 +18,12 @@ services:
       - ../../common/config/loki/gateway_loki.conf.template:/etc/nginx/templates/gateway_loki.conf.template
     environment:
       - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
-      - DISTRIBUTOR_HOST=distributor
-      - INGESTER_HOST=ingester
-      - RULER_HOST=ruler
-      - QUERY_FRONTEND_HOST=query-frontend
-      - QUERY_SCHEDULER_HOST=query-scheduler
-      - QUERIER_HOST=querier
-      - COMPACTOR_HOST=compactor
+      - LOKI_DISTRIBUTOR_HOST=distributor
+      - LOKI_INGESTER_HOST=ingester
+      - LOKI_RULER_HOST=ruler
+      - LOKI_QUERY_FRONTEND_HOST=query-frontend
+      - LOKI_QUERIER_HOST=querier
+      - LOKI_COMPACTOR_HOST=compactor
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ || exit 1" ]
       interval: 10s
@@ -43,6 +42,7 @@ services:
     command:
       - -config.file=/etc/loki.yaml
       - -target=distributor
+      - -config.expand-env=true
 #      - -log.level=warn
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1" ]
@@ -66,6 +66,7 @@ services:
     command:
       - -config.file=/etc/loki.yaml
       - -target=ingester
+      - -config.expand-env=true
     ports:
       - "3100"
     deploy:
@@ -85,6 +86,7 @@ services:
     command:
       - -config.file=/etc/loki.yaml
       - -target=query-frontend
+      - -config.expand-env=true
 
   query-scheduler:
     image: *lokiImage
@@ -93,6 +95,7 @@ services:
     command:
       - -config.file=/etc/loki.yaml
       - -target=query-scheduler
+      - -config.expand-env=true
     deploy:
       replicas: 2
     networks:
@@ -110,6 +113,7 @@ services:
     command:
       - -config.file=/etc/loki.yaml
       - -target=querier
+      - -config.expand-env=true
 
   ruler:
     depends_on:
@@ -121,6 +125,7 @@ services:
     command:
     - -config.file=/etc/loki.yaml
     - -target=ruler
+    - -config.expand-env=true
     networks:
       default:
         aliases:
@@ -133,6 +138,7 @@ services:
     command:
       - -config.file=/etc/loki.yaml
       - -target=compactor
+      - -config.expand-env=true
     networks:
       default:
         aliases:

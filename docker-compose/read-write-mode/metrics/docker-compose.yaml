@@ -21,11 +21,11 @@ services:
       - ../../common/config/mimir/gateway_mimir.conf.template:/etc/nginx/templates/gateway_mimir.conf.template
     environment:
       - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
-      - DISTRIBUTOR_HOST=mimir-write
-      - QUERY_FRONTEND_HOST=mimir-read
-      - ALERT_MANAGER_HOST=mimir-backend
-      - RULER_HOST=mimir-backend
-      - COMPACTOR_HOST=mimir-backend
+      - MIMIR_DISTRIBUTOR_HOST=mimir-write
+      - MIMIR_QUERY_FRONTEND_HOST=mimir-read
+      - MIMIR_ALERT_MANAGER_HOST=mimir-backend
+      - MIMIR_RULER_HOST=mimir-backend
+      - MIMIR_COMPACTOR_HOST=mimir-backend
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ || exit 1" ]
       interval: 10s
@@ -42,6 +42,7 @@ services:
     command:
       - -config.file=/etc/mimir.yaml
       - -target=backend
+      - -config.expand-env=true
     volumes:
       - ../../common/config/mimir/read-write-mode-metrics.yaml:/etc/mimir.yaml # Note: Mimir use read-write-mode-metrics.yaml
       - ./config/mimir:/etc/mimir
@@ -61,6 +62,7 @@ services:
     command:
       - -config.file=/etc/mimir.yaml
       - -target=read
+      - -config.expand-env=true
     volumes:
       - ../../common/config/mimir/read-write-mode-metrics.yaml:/etc/mimir.yaml # Note: Mimir use read-write-mode-metrics.yaml
       - ./config/mimir:/etc/mimir
@@ -76,6 +78,7 @@ services:
     command:
       - -config.file=/etc/mimir.yaml
       - -target=write
+      - -config.expand-env=true
     volumes:
       - ../../common/config/mimir/read-write-mode-metrics.yaml:/etc/mimir.yaml # Note: Mimir use read-write-mode-metrics.yaml
       - ./config/mimir:/etc/mimir

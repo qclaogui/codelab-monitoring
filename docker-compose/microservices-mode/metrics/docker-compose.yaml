@@ -21,11 +21,11 @@ services:
       - ../../common/config/mimir/gateway_mimir.conf.template:/etc/nginx/templates/gateway_mimir.conf.template
     environment:
       - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
-      - DISTRIBUTOR_HOST=distributor
-      - ALERT_MANAGER_HOST=alertmanager
-      - RULER_HOST=ruler
-      - QUERY_FRONTEND_HOST=query-frontend
-      - COMPACTOR_HOST=compactor
+      - MIMIR_DISTRIBUTOR_HOST=distributor
+      - MIMIR_ALERT_MANAGER_HOST=alertmanager
+      - MIMIR_RULER_HOST=ruler
+      - MIMIR_QUERY_FRONTEND_HOST=query-frontend
+      - MIMIR_COMPACTOR_HOST=compactor
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ || exit 1" ]
       interval: 10s
@@ -45,7 +45,7 @@ services:
     command:
       - -config.file=/etc/mimir.yaml
       - -target=distributor
-#      - -log.level=warn
+      - -config.expand-env=true
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
       interval: 10s
@@ -66,6 +66,7 @@ services:
     command:
       - -config.file=/etc/mimir.yaml
       - -target=overrides-exporter
+      - -config.expand-env=true
 
   querier:
     depends_on:
@@ -78,7 +79,7 @@ services:
     command:
       - -config.file=/etc/mimir.yaml
       - -target=querier
-      - -log.level=error
+      - -config.expand-env=true
     deploy:
       replicas: 2
     networks:
@@ -97,7 +98,7 @@ services:
     command:
       - -config.file=/etc/mimir.yaml
       - -target=query-frontend
-      - -log.level=error
+      - -config.expand-env=true
 
   query-scheduler:
     image: *mimirImage
@@ -106,6 +107,7 @@ services:
       - ./config/mimir:/etc/mimir
     command:
       - -config.file=/etc/mimir.yaml
+      - -config.expand-env=true
       - -target=query-scheduler
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
@@ -125,6 +127,7 @@ services:
       - ./config/mimir:/etc/mimir
     command:
       - -config.file=/etc/mimir.yaml
+      - -config.expand-env=true
       - -target=ruler
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
@@ -146,6 +149,7 @@ services:
       - ./config/mimir:/etc/mimir
     command:
       - -config.file=/etc/mimir.yaml
+      - -config.expand-env=true
       - -target=alertmanager
     networks:
       default:
@@ -162,6 +166,7 @@ services:
       - ./config/mimir:/etc/mimir
     command:
       - -config.file=/etc/mimir.yaml
+      - -config.expand-env=true
       - -target=compactor
     networks:
       default:
@@ -178,6 +183,7 @@ services:
       - ./config/mimir:/etc/mimir
     command:
       - -config.file=/etc/mimir.yaml
+      - -config.expand-env=true
       - -target=ingester
     ports:
       - "8080"
@@ -198,6 +204,7 @@ services:
       - ./config/mimir:/etc/mimir
     command:
       - -config.file=/etc/mimir.yaml
+      - -config.expand-env=true
       - -target=store-gateway
     networks:
       default:

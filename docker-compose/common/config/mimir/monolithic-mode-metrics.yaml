@@ -15,10 +15,16 @@ common:
   storage:
     backend: s3
     s3:
-      endpoint:          minio:9000
-      access_key_id:     admin
-      secret_access_key: admin_password
-      insecure:          true
+      endpoint:          ${MIMIR_S3_ENDPOINT:minio:9000}
+      access_key_id:     ${MIMIR_S3_ACCESS_KEY_ID:lgtmp}
+      secret_access_key: ${MIMIR_S3_SECRET_ACCESS_KEY:supersecret}
+      insecure:          ${MIMIR_S3_INSECURE:true}
+      http:
+        insecure_skip_verify: true
+
+alertmanager_storage:
+  s3:
+    bucket_name: mimir-alertmanager
 
 memberlist:
   join_members: [ mimir-memberlist:7946 ]
@@ -33,7 +39,7 @@ store_gateway:
 
 blocks_storage:
   s3:
-    bucket_name: mimir-data
+    bucket_name: mimir-blocks
   tsdb:
     dir: /data/ingester
     ship_interval: 1m
@@ -42,7 +48,7 @@ blocks_storage:
 
 ruler_storage:
   s3:
-    bucket_name: mimir-rules
+    bucket_name: mimir-ruler
 
 compactor:
   compaction_interval: 30s

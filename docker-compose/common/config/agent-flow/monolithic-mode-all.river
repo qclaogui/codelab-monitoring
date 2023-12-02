@@ -87,7 +87,11 @@ prometheus.scrape "containers" {
 }
 
 prometheus.scrape "minio" {
-	targets = [{"__address__" = "minio:9000", "job" = "monitoring-system/minio"}]
+	targets = [{"__address__" = "minio:9000", "job" = "minio-job"}]
+
+	clustering {
+		enabled = true
+	}
 
 	scrape_interval = "15s"
 	metrics_path    = "/minio/v2/metrics/cluster"
@@ -193,8 +197,28 @@ pyroscope.scrape "containers" {
 		{"__address__" = "grafana:6060", "service_name" = "grafana"},
 	]
 
+	clustering {
+		enabled = true
+	}
+
 	profiling_config {
-		profile.fgprof {
+		profile.block {
+			enabled = true
+		}
+
+		profile.mutex {
+			enabled = true
+		}
+
+		profile.memory {
+			enabled = true
+		}
+
+		profile.goroutine {
+			enabled = true
+		}
+
+		profile.process_cpu {
 			enabled = true
 		}
 	}

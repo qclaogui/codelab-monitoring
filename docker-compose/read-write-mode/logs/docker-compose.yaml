@@ -18,13 +18,12 @@ services:
       - ../../common/config/loki/gateway_loki.conf.template:/etc/nginx/templates/gateway_loki.conf.template
     environment:
       - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
-      - DISTRIBUTOR_HOST=loki-write
-      - INGESTER_HOST=loki-write
-      - RULER_HOST=loki-backend
-      - QUERY_FRONTEND_HOST=loki-read
-      - QUERY_SCHEDULER_HOST=loki-read
-      - QUERIER_HOST=loki-read
-      - COMPACTOR_HOST=loki-backend
+      - LOKI_DISTRIBUTOR_HOST=loki-write
+      - LOKI_INGESTER_HOST=loki-write
+      - LOKI_RULER_HOST=loki-backend
+      - LOKI_QUERY_FRONTEND_HOST=loki-read
+      - LOKI_QUERIER_HOST=loki-read
+      - LOKI_COMPACTOR_HOST=loki-backend
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ || exit 1" ]
       interval: 10s
@@ -43,6 +42,7 @@ services:
       - -target=read
       - -legacy-read-mode=false
       - -log.level=warn
+      - -config.expand-env=true
     volumes:
       - ../../common/config/loki/read-write-mode-logs.yaml:/etc/loki.yaml
     healthcheck:
@@ -65,6 +65,7 @@ services:
     command:
       - -config.file=/etc/loki.yaml
       - -target=write
+      - -config.expand-env=true
     volumes:
       - ../../common/config/loki/read-write-mode-logs.yaml:/etc/loki.yaml
     ports:
@@ -92,6 +93,7 @@ services:
       - -config.file=/etc/loki.yaml
       - -target=backend
       - -legacy-read-mode=false
+      - -config.expand-env=true
     volumes:
       - ../../common/config/loki/read-write-mode-logs.yaml:/etc/loki.yaml
     healthcheck:
