@@ -1,0 +1,48 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: grafana-agent-integrations
+
+# integrations mysql config
+configMapGenerator:
+- name: integrations-mysql-config
+  files:
+  - logs.river
+  - metrics.river
+
+# integrations mysql credentials
+secretGenerator:
+- name: integrations-mysql-secret
+  literals:
+  - "host=mysql.mysql-system.svc.cluster.local"
+  - "username=root"
+  - "password=mysqlpassword"
+
+  # remote.kubernetes.configmap "integrations_mysql" {
+  #   name      = "integrations-mysql-config"
+  #   namespace = "grafana-agent-integrations"
+  # }
+  # remote.kubernetes.secret "mysql" {
+  #   name      = "integrations-mysql-secret"
+  #   namespace = "grafana-agent-integrations"
+  # }
+
+  # module.string "mysql_metrics" {
+  #   content = remote.kubernetes.configmap.integrations_mysql.data["metrics.river"]
+  #   arguments {
+  #     host         = nonsensitive(remote.kubernetes.secret.mysql.data["host"])
+  #     username     = nonsensitive(remote.kubernetes.secret.mysql.data["username"])
+  #     password     = nonsensitive(remote.kubernetes.secret.mysql.data["password"])
+  #     instance     = "primary"
+  #     forward_to   = [module.file.lgtmp.exports.metrics_receiver]
+  #   }
+  # }
+
+  # module.string "mysql_logs" {
+  #   content = remote.kubernetes.configmap.integrations_mysql.data["logs.river"]
+  #   arguments {
+  #     instance = "primary"
+  #     all_pods = discovery.relabel.pod_logs.output
+  #     forward_to = [module.file.lgtmp.exports.logs_receiver]
+  #   }
+  # }

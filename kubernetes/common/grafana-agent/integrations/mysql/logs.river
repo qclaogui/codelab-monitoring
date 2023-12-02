@@ -1,0 +1,67 @@
+argument "instance" {
+	// comment  = "Instance of the Database"
+	default  = "primary"
+	optional = true
+}
+
+argument "all_pods" { }
+
+argument "forward_to" {
+	// comment = "Must be a list(LogsReceiver) where collected logs should be forwarded to"
+	optional = false
+}
+
+// Logs
+discovery.relabel "mysql_pods" {
+	targets = argument.all_pods.value
+
+	rule {
+		source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_instance"]
+		regex         = "mysql"
+		action        = "keep"
+	}
+}
+
+local.file_match "mysql_logs" {
+	path_targets = discovery.relabel.mysql_pods.output
+}
+
+loki.source.file "mysql_logs" {
+	targets    = local.file_match.mysql_logs.targets
+	forward_to = [loki.process.mysql_logs.receiver]
+}
+
+loki.process "mysql_logs" {
+	stage.docker { }
+
+	stage.labels {
+		values = {
+			instance = "pod",
+		}
+	}
+
+	stage.regex {
+		expression = "(?P<timestamp>.+) (?P<thread>[\\d]+) \\[(?P<label>.+?)\\]( \\[(?P<err_code>.+?)\\] \\[(?P<subsystem>.+?)\\])? (?P<msg>.+)"
+	}
+
+	stage.labels {
+		values = {
+			level     = "label",
+			err_code  = "err_code",
+			subsystem = "subsystem",
+		}
+	}
+
+	stage.drop {
+		expression          = "^ *$"
+		drop_counter_reason = "drop empty lines"
+	}
+
+	stage.static_labels {
+		values = {
+			job      = "integrations/mysql",
+			instance = argument.instance.value,
+		}
+	}
+	forward_to = argument.forward_to.value
+}

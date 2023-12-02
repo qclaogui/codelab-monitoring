@@ -1,0 +1,48 @@
+argument "host" {
+	default  = "mysql"
+	optional = true
+	// comment  = "Host of the of the Database"
+}
+
+argument "username" {
+	optional = false
+	// comment  = "Username for connecting to the database"
+}
+
+argument "password" {
+	optional = false
+	// comment  = "Password for connecting to the database"
+}
+
+argument "instance" {
+	default  = "primary"
+	optional = true
+	// comment  = "Instance of the Database"
+}
+
+argument "forward_to" { }
+
+// Metrics
+prometheus.exporter.mysql "mysql" {
+	data_source_name = argument.username.value + ":" + argument.password.value + "@(" + argument.host.value + ")/"
+}
+
+prometheus.scrape "mysql" {
+	clustering {
+		enabled = true
+	}
+
+	targets = concat(
+		prometheus.exporter.mysql.mysql.targets,
+	)
+	job_name   = "integrations/mysql"
+	forward_to = [prometheus.relabel.mysql.receiver]
+}
+
+prometheus.relabel "mysql" {
+	rule {
+		replacement  = argument.instance.value
+		target_label = "instance"
+	}
+	forward_to = argument.forward_to.value
+}
