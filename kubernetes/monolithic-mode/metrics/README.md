@@ -98,7 +98,7 @@ Deploy manifests
 make deploy-monolithic-mode-metrics
 ```
 
-Once all containers are up and running you can search for traces in Grafana.
+Once all containers are up and running you can search for metrics in Grafana.
 
 Navigate to [http://localhost:8080/explore](http://localhost:8080/explore) and select the search tab.
 

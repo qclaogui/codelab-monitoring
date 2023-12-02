@@ -36,7 +36,7 @@ make up-monolithic-mode-profiles
 
 That's it.
 
-Once all containers are up and running you can search for traces in Grafana.
+Once all containers are up and running you can search for profiles in Grafana.
 
 Navigate to [http://localhost:3000/explore](http://localhost:3000/explore) and select the search tab.
 

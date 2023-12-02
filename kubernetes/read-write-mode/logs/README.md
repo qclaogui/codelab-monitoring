@@ -69,7 +69,7 @@ Deploy manifests
 make deploy-read-write-mode-logs
 ```
 
-Once all containers are up and running you can search for traces in Grafana.
+Once all containers are up and running you can search for logs in Grafana.
 
 Navigate to [http://localhost:8080/explore](http://localhost:8080/explore) and select the search tab.
 
