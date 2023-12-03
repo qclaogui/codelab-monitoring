@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# https://github.com/bitnami/charts/tree/main/bitnami/memcached
+helmCharts:
+- name: memcached
+  version: 6.7.1
+  repo: oci://registry-1.docker.io/bitnamicharts
+  releaseName: memcached
+  namespace: memcached-system
+  includeCRDs: false
+  skipTests: true
+  valuesFile: values-k3d-k3s.yaml
+
+resources:
+- namespace.yaml
+
+# integrations memcached credentials
+secretGenerator:
+- name: integrations-memcached-secret
+  namespace: memcached-system
+  options:
+    disableNameSuffixHash: true
+  literals:
+  - "memcached-address=memcached.memcached-system.svc.cluster.local:11211"
+  # - "memcached-username=lgtmp"
+  # - "memcached-password=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm"
