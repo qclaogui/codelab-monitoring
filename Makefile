@@ -198,7 +198,6 @@ manifests-common: $(KUSTOMIZE)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/kube-prometheus-stack > kubernetes/common/kube-prometheus-stack/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/minio-operator > kubernetes/common/minio-operator/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/minio-tenant > kubernetes/common/minio-tenant/k8s-all-in-one.yaml
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/prometheus-blackbox-exporter > kubernetes/common/prometheus-blackbox-exporter/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/prometheus-operator-crds > kubernetes/common/prometheus-operator-crds/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/rancher-pushprox > kubernetes/common/rancher-pushprox/k8s-all-in-one.yaml
 
@@ -274,11 +273,6 @@ deploy-grafana: deploy-prometheus-operator-crds deploy-minio deploy-gateway ## D
 delete-grafana:
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana-agent | kubectl delete --ignore-not-found -f -
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana | kubectl delete --ignore-not-found -f -
-
-# .PHONY: deploy-blackbox-exporter
-# deploy-blackbox-exporter: ## Deploy blackbox-exporter manifests
-# 	$(info ******************** deploy blackbox-exporter manifests ********************)
-# 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/prometheus-blackbox-exporter | kubectl apply -f -
 
 
 
