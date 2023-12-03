@@ -35,14 +35,13 @@ module.file "metrics_primary" {
 /********************************************
  * Logs
  ********************************************/
-module.git "event_logs" {
+module.git "logs_primary" {
 	repository = "https://github.com/grafana/agent-modules.git"
 	revision   = "main"
-	path       = "modules/kubernetes/logs/events.river"
+	path       = "modules/kubernetes/logs/all.river"
 
 	arguments {
-		forward_to    = [module.file.lgtmp.exports.logs_receiver]
-		git_pull_freq = "0s"
+		forward_to = [module.file.lgtmp.exports.logs_receiver]
 	}
 }
 
@@ -74,11 +73,10 @@ module.file "profiles_primary" {
  * Agent Integrations
  ********************************************/
 module.file "agent_integrations" {
-	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-modules") + "/agent-integrations.river"
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-modules") + "/integrations.river"
 
 	arguments {
-		namespace          = "monitoring-system"
-		logs_forward_to    = [module.file.lgtmp.exports.logs_receiver]
-		metrics_forward_to = [module.file.lgtmp.exports.metrics_receiver]
+		namespace  = "monitoring-system"
+		forward_to = [module.file.lgtmp.exports.metrics_receiver]
 	}
 }

@@ -8,18 +8,17 @@ argument "namespace" {
 	default  = "default"
 }
 
-argument "metrics_forward_to" { }
-
-argument "logs_forward_to" { }
+argument "forward_to" { }
 
 /********************************************
- * Mysql Auto Integrations
+ * Mysql Integrations
  ********************************************/
 remote.kubernetes.configmap "integrations_mysql" {
 	name      = "integrations-mysql-config"
 	namespace = argument.namespace.value
 }
 
+/*
 module.string "mysql_metrics" {
 	content = remote.kubernetes.configmap.integrations_mysql.data["metrics.river"]
 
@@ -27,22 +26,28 @@ module.string "mysql_metrics" {
 		namespace   = "mysql-system"
 		secret_name = "integrations-mysql-secret"
 		instance    = "primary"
-		forward_to  = argument.metrics_forward_to.value
-	}
-}
-
-/*
-module.string "mysql_logs" {
-	content = remote.kubernetes.configmap.integrations_mysql.data["logs.river"]
-
-	arguments {
-		instance   = "primary"
-		all_pods   = discovery.relabel.pod_logs.output
-		forward_to = argument.logs_forward_to.value
+		forward_to  = argument.forward_to.value
 	}
 }
 */
 
 /********************************************
- * Memcached Auto Integrations
+ * Memcached Integrations
  ********************************************/
+remote.kubernetes.configmap "integrations_memcached" {
+	name      = "integrations-memcached-config"
+	namespace = argument.namespace.value
+}
+
+/*
+module.string "memcached_metrics" {
+	content = remote.kubernetes.configmap.integrations_memcached.data["metrics.river"]
+
+	arguments {
+		namespace   = "memcached-system"
+		secret_name = "integrations-memcached-secret"
+		instance    = "primary"
+		forward_to  = argument.forward_to.value
+	}
+}
+*/

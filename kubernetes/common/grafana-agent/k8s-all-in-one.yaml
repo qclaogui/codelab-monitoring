@@ -131,11 +131,10 @@ data:
     {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent-modules\")
     + \"/metrics.river\"\n\n\targuments {\n\t\tforward_to = [module.file.lgtmp.exports.metrics_receiver]\n\t\tclustering
     = true\n\t}\n}\n\n/********************************************\n * Logs\n ********************************************/\nmodule.git
-    \"event_logs\" {\n\trepository = \"https://github.com/grafana/agent-modules.git\"\n\trevision
-    \  = \"main\"\n\tpath       = \"modules/kubernetes/logs/events.river\"\n\n\targuments
-    {\n\t\tforward_to    = [module.file.lgtmp.exports.logs_receiver]\n\t\tgit_pull_freq
-    = \"0s\"\n\t}\n}\n\n/********************************************\n * Traces\n
-    ********************************************/\nmodule.file \"traces_primary\"
+    \"logs_primary\" {\n\trepository = \"https://github.com/grafana/agent-modules.git\"\n\trevision
+    \  = \"main\"\n\tpath       = \"modules/kubernetes/logs/all.river\"\n\n\targuments
+    {\n\t\tforward_to = [module.file.lgtmp.exports.logs_receiver]\n\t}\n}\n\n/********************************************\n
+    * Traces\n ********************************************/\nmodule.file \"traces_primary\"
     {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent-modules\")
     + \"/traces.river\"\n\n\targuments {\n\t\tforward_to = [module.file.lgtmp.exports.traces_receiver]\n\t\tcluster
     \   = coalesce(env(\"CLUSTER\"), \"k3d-k3s-codelab\")\n\t}\n}\n\n/********************************************\n
@@ -145,29 +144,31 @@ data:
     = true\n\t}\n}\n\n/********************************************\n * Agent Integrations\n
     ********************************************/\nmodule.file \"agent_integrations\"
     {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent-modules\")
-    + \"/agent-integrations.river\"\n\n\targuments {\n\t\tnamespace          = \"monitoring-system\"\n\t\tlogs_forward_to
-    \   = [module.file.lgtmp.exports.logs_receiver]\n\t\tmetrics_forward_to = [module.file.lgtmp.exports.metrics_receiver]\n\t}\n}\n"
+    + \"/integrations.river\"\n\n\targuments {\n\t\tnamespace  = \"monitoring-system\"\n\t\tforward_to
+    = [module.file.lgtmp.exports.metrics_receiver]\n\t}\n}\n"
 kind: ConfigMap
 metadata:
-  name: agent-config-h9m5fb4k7b
+  name: agent-config-hbc7tb8c52
   namespace: monitoring-system
 ---
 apiVersion: v1
 data:
-  agent-integrations.river: "/*\nModule: Agent integrations\nDescription: Wrapper
-    module to include auto loading integrations\n*/\nargument \"namespace\" {\n\t//
-    comment = \"Namespace of the integrations config\"\n\toptional = true\n\tdefault
-    \ = \"default\"\n}\n\nargument \"metrics_forward_to\" { }\n\nargument \"logs_forward_to\"
-    { }\n\n/********************************************\n * Mysql Auto Integrations\n
-    ********************************************/\nremote.kubernetes.configmap \"integrations_mysql\"
-    {\n\tname      = \"integrations-mysql-config\"\n\tnamespace = argument.namespace.value\n}\n\nmodule.string
-    \"mysql_metrics\" {\n\tcontent = remote.kubernetes.configmap.integrations_mysql.data[\"metrics.river\"]\n\n\targuments
+  integrations.river: "/*\nModule: Agent integrations\nDescription: Wrapper module
+    to include auto loading integrations\n*/\nargument \"namespace\" {\n\t// comment
+    = \"Namespace of the integrations config\"\n\toptional = true\n\tdefault  = \"default\"\n}\n\nargument
+    \"forward_to\" { }\n\n/********************************************\n * Mysql
+    Integrations\n ********************************************/\nremote.kubernetes.configmap
+    \"integrations_mysql\" {\n\tname      = \"integrations-mysql-config\"\n\tnamespace
+    = argument.namespace.value\n}\n\n/*\nmodule.string \"mysql_metrics\" {\n\tcontent
+    = remote.kubernetes.configmap.integrations_mysql.data[\"metrics.river\"]\n\n\targuments
     {\n\t\tnamespace   = \"mysql-system\"\n\t\tsecret_name = \"integrations-mysql-secret\"\n\t\tinstance
-    \   = \"primary\"\n\t\tforward_to  = argument.metrics_forward_to.value\n\t}\n}\n\n/*\nmodule.string
-    \"mysql_logs\" {\n\tcontent = remote.kubernetes.configmap.integrations_mysql.data[\"logs.river\"]\n\n\targuments
-    {\n\t\tinstance   = \"primary\"\n\t\tall_pods   = discovery.relabel.pod_logs.output\n\t\tforward_to
-    = argument.logs_forward_to.value\n\t}\n}\n*/\n\n/********************************************\n
-    * Memcached Auto Integrations\n ********************************************/\n"
+    \   = \"primary\"\n\t\tforward_to  = argument.forward_to.value\n\t}\n}\n*/\n\n/********************************************\n
+    * Memcached Integrations\n ********************************************/\nremote.kubernetes.configmap
+    \"integrations_memcached\" {\n\tname      = \"integrations-memcached-config\"\n\tnamespace
+    = argument.namespace.value\n}\n\n/*\nmodule.string \"memcached_metrics\" {\n\tcontent
+    = remote.kubernetes.configmap.integrations_memcached.data[\"metrics.river\"]\n\n\targuments
+    {\n\t\tnamespace   = \"memcached-system\"\n\t\tsecret_name = \"integrations-memcached-secret\"\n\t\tinstance
+    \   = \"primary\"\n\t\tforward_to  = argument.forward_to.value\n\t}\n}\n*/\n"
   lgtmp.river: "/********************************************\n * ARGUMENTS\n ********************************************/\nargument
     \"cluster\" {\n\toptional = true\n\tdefault  = \"k3d-k3s-codelab\"\n}\n\nargument
     \"tenant\" {\n\toptional = true\n\tdefault  = \"anonymous\"\n}\n\nargument \"metrics_endpoint\"
@@ -496,51 +497,40 @@ data:
     = \"insert\"\n\t}\n\n\toutput {\n\t\ttraces = argument.forward_to.value\n\t}\n}\n"
 kind: ConfigMap
 metadata:
-  name: agent-modules-f6dmcgb6hd
+  name: agent-modules-4kh4cdf2ct
   namespace: monitoring-system
 ---
 apiVersion: v1
 data:
-  logs.river: "argument \"instance\" {\n\t// comment  = \"Instance of the Database\"\n\tdefault
-    \ = \"primary\"\n\toptional = true\n}\n\nargument \"all_pods\" { }\n\nargument
-    \"forward_to\" {\n\t// comment = \"Must be a list(LogsReceiver) where collected
-    logs should be forwarded to\"\n\toptional = false\n}\n\n// Pod Logs\ndiscovery.kubernetes
-    \"pods\" {\n\trole = \"pod\"\n\n\tselectors {\n\t\trole  = \"pod\"\n\t\tfield
-    = \"spec.nodeName=\" + env(\"HOSTNAME\")\n\t}\n}\n\ndiscovery.relabel \"pod_logs\"
-    {\n\ttargets = discovery.kubernetes.pods.targets\n\n\trule {\n\t\tsource_labels
-    = [\"__meta_kubernetes_namespace\"]\n\t\taction        = \"replace\"\n\t\ttarget_label
-    \ = \"namespace\"\n\t}\n\n\trule {\n\t\tsource_labels = [\"__meta_kubernetes_pod_name\"]\n\t\taction
-    \       = \"replace\"\n\t\ttarget_label  = \"pod\"\n\t}\n\n\trule {\n\t\tsource_labels
-    = [\"__meta_kubernetes_pod_container_name\"]\n\t\taction        = \"replace\"\n\t\ttarget_label
-    \ = \"container\"\n\t}\n\n\trule {\n\t\tsource_labels = [\"__meta_kubernetes_namespace\",
-    \"__meta_kubernetes_pod_name\"]\n\t\tseparator     = \"/\"\n\t\taction        =
-    \"replace\"\n\t\treplacement   = \"$1\"\n\t\ttarget_label  = \"job\"\n\t}\n\n\trule
-    {\n\t\tsource_labels = [\"__meta_kubernetes_pod_uid\", \"__meta_kubernetes_pod_container_name\"]\n\t\tseparator
-    \    = \"/\"\n\t\taction        = \"replace\"\n\t\treplacement   = \"/var/log/pods/*$1/*.log\"\n\t\ttarget_label
-    \ = \"__path__\"\n\t}\n\n\t// set the container runtime as a label\n\trule {\n\t\taction
-    \       = \"replace\"\n\t\tsource_labels = [\"__meta_kubernetes_pod_container_id\"]\n\t\tregex
-    \        = \"^(\\\\w+):\\\\/\\\\/.+$\"\n\t\treplacement   = \"$1\"\n\t\ttarget_label
-    \ = \"tmp_container_runtime\"\n\t}\n}\n\n// Logs\ndiscovery.relabel \"mysql_pods\"
-    {\n\t// targets = argument.all_pods.value\n\ttargets = discovery.relabel.pod_logs.output\n\n\trule
-    {\n\t\tsource_labels = [\"__meta_kubernetes_pod_label_app_kubernetes_io_instance\"]\n\t\tregex
-    \        = \"mysql\"\n\t\taction        = \"keep\"\n\t}\n}\n\nlocal.file_match
-    \"mysql_logs\" {\n\tpath_targets = discovery.relabel.mysql_pods.output\n}\n\nloki.source.file
-    \"mysql_logs\" {\n\ttargets    = local.file_match.mysql_logs.targets\n\tforward_to
-    = [loki.process.mysql_logs.receiver]\n}\n\nloki.process \"mysql_logs\" {\n\tstage.docker
-    { }\n\n\tstage.labels {\n\t\tvalues = {\n\t\t\tinstance = \"pod\",\n\t\t}\n\t}\n\n\tstage.regex
-    {\n\t\texpression = \"(?P<timestamp>.+) (?P<thread>[\\\\d]+) \\\\[(?P<label>.+?)\\\\](
-    \\\\[(?P<err_code>.+?)\\\\] \\\\[(?P<subsystem>.+?)\\\\])? (?P<msg>.+)\"\n\t}\n\n\tstage.labels
-    {\n\t\tvalues = {\n\t\t\tlevel     = \"label\",\n\t\t\terr_code  = \"err_code\",\n\t\t\tsubsystem
-    = \"subsystem\",\n\t\t}\n\t}\n\n\tstage.drop {\n\t\texpression          = \"^
-    *$\"\n\t\tdrop_counter_reason = \"drop empty lines\"\n\t}\n\n\tstage.static_labels
-    {\n\t\tvalues = {\n\t\t\tjob      = \"integrations/mysql\",\n\t\t\tinstance =
-    argument.instance.value,\n\t\t}\n\t}\n\tforward_to = argument.forward_to.value\n}\n"
+  metrics.river: "/*\nModule: Memcached integrations\nDescription: Wrapper module
+    to integration Memcached metrics\n*/\nargument \"clustering\" {\n\t// comment
+    = \"Whether or not clustering should be enabled\"\n\toptional = true\n\tdefault
+    \ = true\n}\n\nargument \"namespace\" {\n\t// comment = \"Namespace of the Memcached
+    deployment\"\n\toptional = true\n\tdefault  = \"default\"\n}\n\nargument \"secret_name\"
+    {\n\t// comment = \"Name of the secret for Memcached\"\n\toptional = true\n\tdefault
+    \ = \"integrations-memcached-secret\"\n}\n\nargument \"instance\" {\n\t// comment
+    \ = \"Instance of the Memcached\"\n\toptional = true\n\tdefault  = \"primary\"\n}\n\nargument
+    \"forward_to\" { }\n\nremote.kubernetes.secret \"memcached\" {\n\tname      =
+    argument.secret_name.value\n\tnamespace = argument.namespace.value\n}\n\n// Metrics\nprometheus.exporter.memcached
+    \"memcached\" {\n\taddress = nonsensitive(remote.kubernetes.secret.memcached.data[\"memcached-address\"])\n\ttimeout
+    = \"5s\"\n}\n\nprometheus.scrape \"integrations_memcached\" {\n\tclustering {\n\t\tenabled
+    = argument.clustering.value\n\t}\n\n\ttargets = concat(\n\t\tprometheus.exporter.memcached.memcached.targets,\n\t)\n\tjob_name
+    \  = \"integrations/memcached\"\n\tforward_to = [prometheus.relabel.integrations_memcached.receiver]\n}\n\nprometheus.relabel
+    \"integrations_memcached\" {\n\trule {\n\t\treplacement  = argument.instance.value\n\t\ttarget_label
+    = \"instance\"\n\t}\n\tforward_to = argument.forward_to.value\n}\n"
+kind: ConfigMap
+metadata:
+  name: integrations-memcached-config
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
   metrics.river: "/*\nModule: Mysql integrations\nDescription: Wrapper module to integration
     mysql metrics\n*/\nargument \"clustering\" {\n\t// comment = \"Whether or not
     clustering should be enabled\"\n\toptional = true\n\tdefault  = true\n}\n\nargument
     \"namespace\" {\n\t// comment = \"Namespace of the MySQL deployment\"\n\toptional
     = true\n\tdefault  = \"default\"\n}\n\nargument \"secret_name\" {\n\t// comment
-    = \"Name of the secret for MySQL\"\n\toptional = true\n\tdefault  = \"mysql\"\n}\n\nargument
+    = \"Name of the secret for MySQL\"\n\toptional = true\n\tdefault  = \"integrations-mysql-secret\"\n}\n\nargument
     \"instance\" {\n\t// comment  = \"Instance of the Database\"\n\toptional = true\n\tdefault
     \ = \"primary\"\n}\n\nargument \"forward_to\" { }\n\nremote.kubernetes.secret
     \"mysql\" {\n\tname      = argument.secret_name.value\n\tnamespace = argument.namespace.value\n}\n\n//
@@ -728,13 +718,13 @@ spec:
       serviceAccountName: grafana-agent
       volumes:
       - configMap:
-          name: agent-config-h9m5fb4k7b
+          name: agent-config-hbc7tb8c52
         name: config
       - hostPath:
           path: /var/log
         name: varlog
       - configMap:
-          name: agent-modules-f6dmcgb6hd
+          name: agent-modules-4kh4cdf2ct
         name: agent-modules
 ---
 apiVersion: monitoring.coreos.com/v1

@@ -1,0 +1,60 @@
+/*
+Module: Memcached integrations
+Description: Wrapper module to integration Memcached metrics
+*/
+argument "clustering" {
+	// comment = "Whether or not clustering should be enabled"
+	optional = true
+	default  = true
+}
+
+argument "namespace" {
+	// comment = "Namespace of the Memcached deployment"
+	optional = true
+	default  = "default"
+}
+
+argument "secret_name" {
+	// comment = "Name of the secret for Memcached"
+	optional = true
+	default  = "integrations-memcached-secret"
+}
+
+argument "instance" {
+	// comment  = "Instance of the Memcached"
+	optional = true
+	default  = "primary"
+}
+
+argument "forward_to" { }
+
+remote.kubernetes.secret "memcached" {
+	name      = argument.secret_name.value
+	namespace = argument.namespace.value
+}
+
+// Metrics
+prometheus.exporter.memcached "memcached" {
+	address = nonsensitive(remote.kubernetes.secret.memcached.data["memcached-address"])
+	timeout = "5s"
+}
+
+prometheus.scrape "integrations_memcached" {
+	clustering {
+		enabled = argument.clustering.value
+	}
+
+	targets = concat(
+		prometheus.exporter.memcached.memcached.targets,
+	)
+	job_name   = "integrations/memcached"
+	forward_to = [prometheus.relabel.integrations_memcached.receiver]
+}
+
+prometheus.relabel "integrations_memcached" {
+	rule {
+		replacement  = argument.instance.value
+		target_label = "instance"
+	}
+	forward_to = argument.forward_to.value
+}

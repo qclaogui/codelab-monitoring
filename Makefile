@@ -196,8 +196,10 @@ manifests-common: $(KUSTOMIZE)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana > kubernetes/common/grafana/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana-agent > kubernetes/common/grafana-agent/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/kube-prometheus-stack > kubernetes/common/kube-prometheus-stack/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/memcached > kubernetes/common/memcached/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/minio-operator > kubernetes/common/minio-operator/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/minio-tenant > kubernetes/common/minio-tenant/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/mysql > kubernetes/common/mysql/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/prometheus-operator-crds > kubernetes/common/prometheus-operator-crds/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/rancher-pushprox > kubernetes/common/rancher-pushprox/k8s-all-in-one.yaml
 
@@ -243,6 +245,13 @@ delete-kube-prometheus-stack:
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/kube-prometheus-stack | kubectl delete -f -
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/rancher-pushprox | kubectl delete -f -
 
+# memcached
+.PHONY: deploy-memcached
+deploy-memcached: ## Deploy memcached manifests
+	$(info ******************** deploy memcached manifests ********************)
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/memcached | kubectl apply -f -
+delete-memcached:
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/memcached | kubectl delete --ignore-not-found -f -
 
 # minio
 .PHONY: deploy-minio
@@ -251,6 +260,14 @@ deploy-minio: ## Deploy minio manifests
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/minio-operator | kubectl apply -f -
 	kubectl rollout status -n minio-system deployment/minio-operator --watch --timeout=600s
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/minio-tenant | kubectl apply -f -
+
+# mysql
+.PHONY: deploy-mysql
+deploy-mysql: ## Deploy mysql manifests
+	$(info ******************** deploy mysql manifests ********************)
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/mysql | kubectl apply -f -
+delete-mysql:
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/mysql | kubectl delete --ignore-not-found -f -
 
 # gateway
 .PHONY: deploy-gateway
@@ -269,7 +286,7 @@ deploy-grafana: deploy-prometheus-operator-crds deploy-minio deploy-gateway ## D
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana | kubectl apply -f -
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana-agent | kubectl apply -f -
 	kubectl rollout status -n monitoring-system deployment/grafana --watch --timeout=600s
-	kubectl rollout status -n minio-system statefulset/codelab-pool-2gb --watch --timeout=600s
+	kubectl rollout status -n minio-system statefulset/codelab-pool-10gb --watch --timeout=600s
 delete-grafana:
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana-agent | kubectl delete --ignore-not-found -f -
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana | kubectl delete --ignore-not-found -f -
