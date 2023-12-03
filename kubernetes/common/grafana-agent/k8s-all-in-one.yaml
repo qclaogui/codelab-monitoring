@@ -159,16 +159,16 @@ data:
     \"forward_to\" { }\n\n/********************************************\n * Mysql
     Integrations\n ********************************************/\nremote.kubernetes.configmap
     \"integrations_mysql\" {\n\tname      = \"integrations-mysql-config\"\n\tnamespace
-    = argument.namespace.value\n}\n\n/*\nmodule.string \"mysql_metrics\" {\n\tcontent
+    = argument.namespace.value\n}\n\nmodule.string \"mysql_metrics\" {\n\tcontent
     = remote.kubernetes.configmap.integrations_mysql.data[\"metrics.river\"]\n\n\targuments
-    {\n\t\tnamespace   = \"mysql-system\"\n\t\tsecret_name = \"integrations-mysql-secret\"\n\t\tinstance
-    \   = \"primary\"\n\t\tforward_to  = argument.forward_to.value\n\t}\n}\n*/\n\n/********************************************\n
+    {\n\t\tnamespace   = argument.namespace.value\n\t\tsecret_name = \"integrations-mysql-secret\"\n\t\tinstance
+    \   = \"primary\"\n\t\tforward_to  = argument.forward_to.value\n\t}\n}\n\n/********************************************\n
     * Memcached Integrations\n ********************************************/\nremote.kubernetes.configmap
     \"integrations_memcached\" {\n\tname      = \"integrations-memcached-config\"\n\tnamespace
-    = argument.namespace.value\n}\n\n/*\nmodule.string \"memcached_metrics\" {\n\tcontent
+    = argument.namespace.value\n}\n\nmodule.string \"memcached_metrics\" {\n\tcontent
     = remote.kubernetes.configmap.integrations_memcached.data[\"metrics.river\"]\n\n\targuments
-    {\n\t\tnamespace   = \"memcached-system\"\n\t\tsecret_name = \"integrations-memcached-secret\"\n\t\tinstance
-    \   = \"primary\"\n\t\tforward_to  = argument.forward_to.value\n\t}\n}\n*/\n"
+    {\n\t\tnamespace   = argument.namespace.value\n\t\tsecret_name = \"integrations-memcached-secret\"\n\t\tinstance
+    \   = \"primary\"\n\t\tforward_to  = argument.forward_to.value\n\t}\n}\n"
   lgtmp.river: "/********************************************\n * ARGUMENTS\n ********************************************/\nargument
     \"cluster\" {\n\toptional = true\n\tdefault  = \"k3d-k3s-codelab\"\n}\n\nargument
     \"tenant\" {\n\toptional = true\n\tdefault  = \"anonymous\"\n}\n\nargument \"metrics_endpoint\"
@@ -497,7 +497,7 @@ data:
     = \"insert\"\n\t}\n\n\toutput {\n\t\ttraces = argument.forward_to.value\n\t}\n}\n"
 kind: ConfigMap
 metadata:
-  name: agent-modules-4kh4cdf2ct
+  name: agent-modules-tdkc558226
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -546,6 +546,26 @@ kind: ConfigMap
 metadata:
   name: integrations-mysql-config
   namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  memcached-address: bWVtY2FjaGVkLm1lbWNhY2hlZC1zeXN0ZW0uc3ZjLmNsdXN0ZXIubG9jYWw6MTEyMTE=
+kind: Secret
+metadata:
+  name: integrations-memcached-secret
+  namespace: monitoring-system
+type: Opaque
+---
+apiVersion: v1
+data:
+  mysql-host: bXlzcWwubXlzcWwtc3lzdGVtLnN2Yy5jbHVzdGVyLmxvY2Fs
+  mysql-password: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
+  mysql-username: bGd0bXA=
+kind: Secret
+metadata:
+  name: integrations-mysql-secret
+  namespace: monitoring-system
+type: Opaque
 ---
 apiVersion: v1
 kind: Service
@@ -724,7 +744,7 @@ spec:
           path: /var/log
         name: varlog
       - configMap:
-          name: agent-modules-4kh4cdf2ct
+          name: agent-modules-tdkc558226
         name: agent-modules
 ---
 apiVersion: monitoring.coreos.com/v1
