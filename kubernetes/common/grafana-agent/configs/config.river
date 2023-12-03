@@ -69,3 +69,16 @@ module.file "profiles_primary" {
 		clustering = true
 	}
 }
+
+/********************************************
+ * Agent Integrations
+ ********************************************/
+module.file "agent_integrations" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-modules") + "/agent-integrations.river"
+
+	arguments {
+		namespace          = "monitoring-system"
+		logs_forward_to    = [module.file.lgtmp.exports.logs_receiver]
+		metrics_forward_to = [module.file.lgtmp.exports.metrics_receiver]
+	}
+}

@@ -1,35 +1,46 @@
-argument "host" {
-	default  = "mysql"
+/*
+Module: Mysql integrations
+Description: Wrapper module to integration mysql metrics
+*/
+argument "clustering" {
+	// comment = "Whether or not clustering should be enabled"
 	optional = true
-	// comment  = "Host of the of the Database"
+	default  = true
 }
 
-argument "username" {
-	optional = false
-	// comment  = "Username for connecting to the database"
+argument "namespace" {
+	// comment = "Namespace of the MySQL deployment"
+	optional = true
+	default  = "default"
 }
 
-argument "password" {
-	optional = false
-	// comment  = "Password for connecting to the database"
+argument "secret_name" {
+	// comment = "Name of the secret for MySQL"
+	optional = true
+	default  = "mysql"
 }
 
 argument "instance" {
-	default  = "primary"
-	optional = true
 	// comment  = "Instance of the Database"
+	optional = true
+	default  = "primary"
 }
 
 argument "forward_to" { }
 
+remote.kubernetes.secret "mysql" {
+	name      = argument.secret_name.value
+	namespace = argument.namespace.value
+}
+
 // Metrics
 prometheus.exporter.mysql "mysql" {
-	data_source_name = argument.username.value + ":" + argument.password.value + "@(" + argument.host.value + ")/"
+	data_source_name = nonsensitive(remote.kubernetes.secret.mysql.data["mysql-username"]) + ":" + nonsensitive(remote.kubernetes.secret.mysql.data["mysql-password"]) + "@(" + nonsensitive(remote.kubernetes.secret.mysql.data["mysql-host"]) + ")/"
 }
 
 prometheus.scrape "mysql" {
 	clustering {
-		enabled = true
+		enabled = argument.clustering.value
 	}
 
 	targets = concat(
