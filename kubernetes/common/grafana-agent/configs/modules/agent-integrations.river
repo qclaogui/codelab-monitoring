@@ -1,0 +1,48 @@
+/*
+Module: Agent integrations
+Description: Wrapper module to include auto loading integrations
+*/
+argument "namespace" {
+	// comment = "Namespace of the integrations config"
+	optional = true
+	default  = "default"
+}
+
+argument "metrics_forward_to" { }
+
+argument "logs_forward_to" { }
+
+/********************************************
+ * Mysql Auto Integrations
+ ********************************************/
+remote.kubernetes.configmap "integrations_mysql" {
+	name      = "integrations-mysql-config"
+	namespace = argument.namespace.value
+}
+
+module.string "mysql_metrics" {
+	content = remote.kubernetes.configmap.integrations_mysql.data["metrics.river"]
+
+	arguments {
+		namespace   = "mysql-system"
+		secret_name = "integrations-mysql-secret"
+		instance    = "primary"
+		forward_to  = argument.metrics_forward_to.value
+	}
+}
+
+/*
+module.string "mysql_logs" {
+	content = remote.kubernetes.configmap.integrations_mysql.data["logs.river"]
+
+	arguments {
+		instance   = "primary"
+		all_pods   = discovery.relabel.pod_logs.output
+		forward_to = argument.logs_forward_to.value
+	}
+}
+*/
+
+/********************************************
+ * Memcached Auto Integrations
+ ********************************************/
