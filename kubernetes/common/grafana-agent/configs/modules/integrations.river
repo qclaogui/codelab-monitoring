@@ -47,3 +47,22 @@ module.string "memcached_metrics" {
 		forward_to  = argument.forward_to.value
 	}
 }
+
+/********************************************
+ * Redis Integrations
+ ********************************************/
+remote.kubernetes.configmap "integrations_redis" {
+	name      = "integrations-redis-config"
+	namespace = argument.namespace.value
+}
+
+module.string "redis_metrics" {
+	content = remote.kubernetes.configmap.integrations_redis.data["metrics.river"]
+
+	arguments {
+		namespace   = argument.namespace.value
+		secret_name = "integrations-redis-secret"
+		instance    = "master"
+		forward_to  = argument.forward_to.value
+	}
+}
