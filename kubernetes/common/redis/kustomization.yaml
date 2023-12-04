@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# https://github.com/bitnami/charts/tree/main/bitnami/redis/
+helmCharts:
+- name: redis
+  version: 18.4.0
+  repo: oci://registry-1.docker.io/bitnamicharts
+  releaseName: redis
+  namespace: redis-system
+  includeCRDs: false
+  valuesFile: values-k3d-k3s.yaml
+
+resources:
+- namespace.yaml
+
+# redis credentials
+secretGenerator:
+- name: redis-credentials
+  namespace: redis-system
+  options:
+    disableNameSuffixHash: true
+  literals:
+  - "redis-password=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm"

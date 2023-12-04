@@ -269,6 +269,14 @@ deploy-mysql: ## Deploy mysql manifests
 delete-mysql:
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/mysql | kubectl delete --ignore-not-found -f -
 
+# redis
+.PHONY: deploy-redis
+deploy-redis: ## Deploy redis manifests
+	$(info ******************** deploy redis manifests ********************)
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/redis | kubectl apply -f -
+delete-redis:
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/redis | kubectl delete --ignore-not-found -f -
+
 # gateway
 .PHONY: deploy-gateway
 deploy-gateway: ## Deploy gateway manifests
