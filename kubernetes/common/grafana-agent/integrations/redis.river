@@ -9,15 +9,15 @@ argument "clustering" {
 }
 
 argument "namespace" {
-	// comment = "Namespace of the Redis deployment"
+	// comment = "Namespace of the Redis secret Integrations"
 	optional = true
 	default  = "default"
 }
 
-argument "secret_name" {
+argument "name" {
 	// comment = "Name of the secret for Redis"
 	optional = true
-	default  = "integrations-redis-secret"
+	default  = "integrations-redis"
 }
 
 argument "instance" {
@@ -29,23 +29,26 @@ argument "instance" {
 argument "forward_to" { }
 
 remote.kubernetes.secret "redis" {
-	name      = argument.secret_name.value
+	name      = argument.name.value
 	namespace = argument.namespace.value
 }
 
 // Metrics
-prometheus.exporter.redis "redis" {
+prometheus.exporter.redis "integrations_redis" {
 	redis_addr     = nonsensitive(remote.kubernetes.secret.redis.data["redis-addr"])
 	redis_password = nonsensitive(remote.kubernetes.secret.redis.data["redis-password"])
 }
 
-prometheus.scrape "integrations_redis" {
+prometheus.scrape "redis" {
 	clustering {
 		enabled = argument.clustering.value
 	}
 
+	enable_protobuf_negotiation = true
+	scrape_classic_histograms   = true
+
 	targets = concat(
-		prometheus.exporter.redis.redis.targets,
+		prometheus.exporter.redis.integrations_redis.targets,
 	)
 	job_name   = "integrations/redis"
 	forward_to = [prometheus.relabel.integrations_redis.receiver]

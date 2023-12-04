@@ -8,16 +8,16 @@ argument "clustering" {
 	default  = true
 }
 
-argument "namespace" {
-	// comment = "Namespace of the Memcached deployment"
-	optional = true
-	default  = "default"
-}
-
-argument "secret_name" {
+argument "name" {
 	// comment = "Name of the secret for Memcached"
 	optional = true
-	default  = "integrations-memcached-secret"
+	default  = "integrations-memcached"
+}
+
+argument "namespace" {
+	// comment = "Namespace of the Memcached secret Integrations"
+	optional = true
+	default  = "default"
 }
 
 argument "instance" {
@@ -29,23 +29,26 @@ argument "instance" {
 argument "forward_to" { }
 
 remote.kubernetes.secret "memcached" {
-	name      = argument.secret_name.value
+	name      = argument.name.value
 	namespace = argument.namespace.value
 }
 
 // Metrics
-prometheus.exporter.memcached "memcached" {
+prometheus.exporter.memcached "integrations_memcached" {
 	address = nonsensitive(remote.kubernetes.secret.memcached.data["memcached-address"])
 	timeout = "5s"
 }
 
-prometheus.scrape "integrations_memcached" {
+prometheus.scrape "memcached" {
 	clustering {
 		enabled = argument.clustering.value
 	}
 
+	enable_protobuf_negotiation = true
+	scrape_classic_histograms   = true
+
 	targets = concat(
-		prometheus.exporter.memcached.memcached.targets,
+		prometheus.exporter.memcached.integrations_memcached.targets,
 	)
 	job_name   = "integrations/memcached"
 	forward_to = [prometheus.relabel.integrations_memcached.receiver]

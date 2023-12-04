@@ -26,34 +26,24 @@ configMapGenerator:
   - configs/modules/traces.river
   - configs/modules/integrations.river
 
-# integrations mysql config
-- name: integrations-mysql-config
+# Agent Auto Integrations Configs
+- name: agent-integrations
   namespace: monitoring-system
   options:
     disableNameSuffixHash: true
+  literals:
+  - MYSQL_SECRET_NAME=integrations-mysql
+  - MEMCACHED_SECRET_NAME=integrations-memcached
+  - REDIS_SECRET_NAME=integrations-redis
   files:
-  - integrations/mysql/metrics.river
-
-# integrations memcached config
-- name: integrations-memcached-config
-  namespace: monitoring-system
-  options:
-    disableNameSuffixHash: true
-  files:
-  - integrations/memcached/metrics.river
-
-# integrations redis config
-- name: integrations-redis-config
-  namespace: monitoring-system
-  options:
-    disableNameSuffixHash: true
-  files:
-  - integrations/redis/metrics.river
+  - integrations/mysql.river
+  - integrations/memcached.river
+  - integrations/redis.river
 
 
 secretGenerator:
 # integrations mysql credentials
-- name: integrations-mysql-secret
+- name: integrations-mysql
   namespace: monitoring-system
   options:
     disableNameSuffixHash: true
@@ -63,7 +53,7 @@ secretGenerator:
   - "mysql-password=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm"
 
 # integrations memcached credentials
-- name: integrations-memcached-secret
+- name: integrations-memcached
   namespace: monitoring-system
   options:
     disableNameSuffixHash: true
@@ -71,7 +61,7 @@ secretGenerator:
   - "memcached-address=memcached.memcached-system.svc.cluster.local:11211"
 
 # integrations redis credentials
-- name: integrations-redis-secret
+- name: integrations-redis
   namespace: monitoring-system
   options:
     disableNameSuffixHash: true

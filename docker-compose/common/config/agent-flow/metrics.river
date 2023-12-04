@@ -65,6 +65,10 @@ prometheus.scrape "integrations" {
 	targets = concat(
 		prometheus.exporter.unix.containers.targets,
 	)
+
+	enable_protobuf_negotiation = true
+	scrape_classic_histograms   = true
+
 	scrape_interval = "15s"
 
 	clustering {
@@ -78,6 +82,9 @@ prometheus.scrape "containers" {
 	targets         = discovery.relabel.containers.output
 	scrape_interval = "15s"
 
+	enable_protobuf_negotiation = true
+	scrape_classic_histograms   = true
+
 	clustering {
 		enabled = true
 	}
@@ -89,6 +96,9 @@ prometheus.scrape "minio" {
 	targets = [{"__address__" = "minio:9000", "job" = "minio-job"}]
 
 	scrape_interval = "15s"
+
+	enable_protobuf_negotiation = true
+	scrape_classic_histograms   = true
 
 	clustering {
 		enabled = true

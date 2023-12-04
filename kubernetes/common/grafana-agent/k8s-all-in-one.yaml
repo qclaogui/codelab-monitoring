@@ -144,37 +144,95 @@ data:
     = true\n\t}\n}\n\n/********************************************\n * Agent Integrations\n
     ********************************************/\nmodule.file \"agent_integrations\"
     {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent-modules\")
-    + \"/integrations.river\"\n\n\targuments {\n\t\tnamespace  = \"monitoring-system\"\n\t\tforward_to
-    = [module.file.lgtmp.exports.metrics_receiver]\n\t}\n}\n"
+    + \"/integrations.river\"\n\n\targuments {\n\t\tname       = \"agent-integrations\"\n\t\tnamespace
+    \ = \"monitoring-system\"\n\t\tforward_to = [module.file.lgtmp.exports.metrics_receiver]\n\t}\n}\n"
 kind: ConfigMap
 metadata:
-  name: agent-config-hbc7tb8c52
+  name: agent-config-f8c48dt658
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  MEMCACHED_SECRET_NAME: integrations-memcached
+  MYSQL_SECRET_NAME: integrations-mysql
+  REDIS_SECRET_NAME: integrations-redis
+  memcached.river: "/*\nModule: Memcached integrations\nDescription: Wrapper module
+    to integration Memcached metrics\n*/\nargument \"clustering\" {\n\t// comment
+    = \"Whether or not clustering should be enabled\"\n\toptional = true\n\tdefault
+    \ = true\n}\n\nargument \"name\" {\n\t// comment = \"Name of the secret for Memcached\"\n\toptional
+    = true\n\tdefault  = \"integrations-memcached\"\n}\n\nargument \"namespace\" {\n\t//
+    comment = \"Namespace of the Memcached secret Integrations\"\n\toptional = true\n\tdefault
+    \ = \"default\"\n}\n\nargument \"instance\" {\n\t// comment  = \"Instance of the
+    Memcached\"\n\toptional = true\n\tdefault  = \"primary\"\n}\n\nargument \"forward_to\"
+    { }\n\nremote.kubernetes.secret \"memcached\" {\n\tname      = argument.name.value\n\tnamespace
+    = argument.namespace.value\n}\n\n// Metrics\nprometheus.exporter.memcached \"integrations_memcached\"
+    {\n\taddress = nonsensitive(remote.kubernetes.secret.memcached.data[\"memcached-address\"])\n\ttimeout
+    = \"5s\"\n}\n\nprometheus.scrape \"memcached\" {\n\tclustering {\n\t\tenabled
+    = argument.clustering.value\n\t}\n\n\tenable_protobuf_negotiation = true\n\tscrape_classic_histograms
+    \  = true\n\n\ttargets = concat(\n\t\tprometheus.exporter.memcached.integrations_memcached.targets,\n\t)\n\tjob_name
+    \  = \"integrations/memcached\"\n\tforward_to = [prometheus.relabel.integrations_memcached.receiver]\n}\n\nprometheus.relabel
+    \"integrations_memcached\" {\n\trule {\n\t\treplacement  = argument.instance.value\n\t\ttarget_label
+    = \"instance\"\n\t}\n\tforward_to = argument.forward_to.value\n}\n"
+  mysql.river: "/*\nModule: Mysql integrations\nDescription: Wrapper module to integration
+    mysql metrics\n*/\nargument \"clustering\" {\n\t// comment = \"Whether or not
+    clustering should be enabled\"\n\toptional = true\n\tdefault  = true\n}\n\nargument
+    \"name\" {\n\t// comment = \"Name of the secret for MySQL\"\n\toptional = true\n\tdefault
+    \ = \"integrations-mysql\"\n}\n\nargument \"namespace\" {\n\t// comment = \"Namespace
+    of the MySQL secret Integrations\"\n\toptional = true\n\tdefault  = \"default\"\n}\n\nargument
+    \"instance\" {\n\t// comment  = \"Instance of the Database\"\n\toptional = true\n\tdefault
+    \ = \"primary\"\n}\n\nargument \"forward_to\" { }\n\nremote.kubernetes.secret
+    \"mysql\" {\n\tname      = argument.name.value\n\tnamespace = argument.namespace.value\n}\n\n//
+    Metrics\nprometheus.exporter.mysql \"integrations_mysql\" {\n\tdata_source_name
+    = nonsensitive(remote.kubernetes.secret.mysql.data[\"mysql-username\"]) + \":\"
+    + nonsensitive(remote.kubernetes.secret.mysql.data[\"mysql-password\"]) + \"@(\"
+    + nonsensitive(remote.kubernetes.secret.mysql.data[\"mysql-host\"]) + \")/\"\n}\n\nprometheus.scrape
+    \"mysql\" {\n\tclustering {\n\t\tenabled = argument.clustering.value\n\t}\n\tenable_protobuf_negotiation
+    = true\n\tscrape_classic_histograms   = true\n\n\ttargets = concat(\n\t\tprometheus.exporter.mysql.integrations_mysql.targets,\n\t)\n\tjob_name
+    \  = \"integrations/mysql\"\n\tforward_to = [prometheus.relabel.integrations_mysql.receiver]\n}\n\nprometheus.relabel
+    \"integrations_mysql\" {\n\trule {\n\t\treplacement  = argument.instance.value\n\t\ttarget_label
+    = \"instance\"\n\t}\n\tforward_to = argument.forward_to.value\n}\n"
+  redis.river: "/*\nModule: Redis integrations\nDescription: Wrapper module to integration
+    Redis metrics\n*/\nargument \"clustering\" {\n\t// comment = \"Whether or not
+    clustering should be enabled\"\n\toptional = true\n\tdefault  = true\n}\n\nargument
+    \"namespace\" {\n\t// comment = \"Namespace of the Redis secret Integrations\"\n\toptional
+    = true\n\tdefault  = \"default\"\n}\n\nargument \"name\" {\n\t// comment = \"Name
+    of the secret for Redis\"\n\toptional = true\n\tdefault  = \"integrations-redis\"\n}\n\nargument
+    \"instance\" {\n\t// comment  = \"Instance of the Redis\"\n\toptional = true\n\tdefault
+    \ = \"master\"\n}\n\nargument \"forward_to\" { }\n\nremote.kubernetes.secret \"redis\"
+    {\n\tname      = argument.name.value\n\tnamespace = argument.namespace.value\n}\n\n//
+    Metrics\nprometheus.exporter.redis \"integrations_redis\" {\n\tredis_addr     =
+    nonsensitive(remote.kubernetes.secret.redis.data[\"redis-addr\"])\n\tredis_password
+    = nonsensitive(remote.kubernetes.secret.redis.data[\"redis-password\"])\n}\n\nprometheus.scrape
+    \"redis\" {\n\tclustering {\n\t\tenabled = argument.clustering.value\n\t}\n\n\tenable_protobuf_negotiation
+    = true\n\tscrape_classic_histograms   = true\n\n\ttargets = concat(\n\t\tprometheus.exporter.redis.integrations_redis.targets,\n\t)\n\tjob_name
+    \  = \"integrations/redis\"\n\tforward_to = [prometheus.relabel.integrations_redis.receiver]\n}\n\nprometheus.relabel
+    \"integrations_redis\" {\n\trule {\n\t\treplacement  = argument.instance.value\n\t\ttarget_label
+    = \"instance\"\n\t}\n\tforward_to = argument.forward_to.value\n}\n"
+kind: ConfigMap
+metadata:
+  name: agent-integrations
   namespace: monitoring-system
 ---
 apiVersion: v1
 data:
   integrations.river: "/*\nModule: Agent integrations\nDescription: Wrapper module
-    to include auto loading integrations\n*/\nargument \"namespace\" {\n\t// comment
-    = \"Namespace of the integrations config\"\n\toptional = true\n\tdefault  = \"default\"\n}\n\nargument
-    \"forward_to\" { }\n\n/********************************************\n * Mysql
-    Integrations\n ********************************************/\nremote.kubernetes.configmap
-    \"integrations_mysql\" {\n\tname      = \"integrations-mysql-config\"\n\tnamespace
-    = argument.namespace.value\n}\n\nmodule.string \"mysql_metrics\" {\n\tcontent
-    = remote.kubernetes.configmap.integrations_mysql.data[\"metrics.river\"]\n\n\targuments
-    {\n\t\tnamespace   = argument.namespace.value\n\t\tsecret_name = \"integrations-mysql-secret\"\n\t\tinstance
-    \   = \"primary\"\n\t\tforward_to  = argument.forward_to.value\n\t}\n}\n\n/********************************************\n
-    * Memcached Integrations\n ********************************************/\nremote.kubernetes.configmap
-    \"integrations_memcached\" {\n\tname      = \"integrations-memcached-config\"\n\tnamespace
-    = argument.namespace.value\n}\n\nmodule.string \"memcached_metrics\" {\n\tcontent
-    = remote.kubernetes.configmap.integrations_memcached.data[\"metrics.river\"]\n\n\targuments
-    {\n\t\tnamespace   = argument.namespace.value\n\t\tsecret_name = \"integrations-memcached-secret\"\n\t\tinstance
-    \   = \"primary\"\n\t\tforward_to  = argument.forward_to.value\n\t}\n}\n\n/********************************************\n
-    * Redis Integrations\n ********************************************/\nremote.kubernetes.configmap
-    \"integrations_redis\" {\n\tname      = \"integrations-redis-config\"\n\tnamespace
-    = argument.namespace.value\n}\n\nmodule.string \"redis_metrics\" {\n\tcontent
-    = remote.kubernetes.configmap.integrations_redis.data[\"metrics.river\"]\n\n\targuments
-    {\n\t\tnamespace   = argument.namespace.value\n\t\tsecret_name = \"integrations-redis-secret\"\n\t\tinstance
-    \   = \"master\"\n\t\tforward_to  = argument.forward_to.value\n\t}\n}\n"
+    to include auto loading integrations\n*/\nargument \"name\" {\n\t// comment =
+    \"Name of the integrations config\"\n\toptional = true\n\tdefault  = \"agent-integrations\"\n}\n\nargument
+    \"namespace\" {\n\t// comment = \"Namespace of the integrations config\"\n\toptional
+    = true\n\tdefault  = \"default\"\n}\n\nargument \"forward_to\" { }\n\nremote.kubernetes.configmap
+    \"integrations\" {\n\tname      = argument.name.value\n\tnamespace = argument.namespace.value\n}\n\n/********************************************\n
+    * Integrations Mysql\n ********************************************/\nmodule.string
+    \"mysql\" {\n\tcontent = remote.kubernetes.configmap.integrations.data[\"mysql.river\"]\n\n\targuments
+    {\n\t\tnamespace  = argument.namespace.value\n\t\tname       = remote.kubernetes.configmap.integrations.data[\"MYSQL_SECRET_NAME\"]\n\t\tinstance
+    \  = \"primary\"\n\t\tforward_to = argument.forward_to.value\n\t}\n}\n\n/********************************************\n
+    * Integrations Memcached\n ********************************************/\nmodule.string
+    \"memcached\" {\n\tcontent = remote.kubernetes.configmap.integrations.data[\"memcached.river\"]\n\n\targuments
+    {\n\t\tnamespace  = argument.namespace.value\n\t\tname       = remote.kubernetes.configmap.integrations.data[\"MEMCACHED_SECRET_NAME\"]\n\t\tinstance
+    \  = \"primary\"\n\t\tforward_to = argument.forward_to.value\n\t}\n}\n\n/********************************************\n
+    * Integrations Redis\n ********************************************/\nmodule.string
+    \"redis\" {\n\tcontent = remote.kubernetes.configmap.integrations.data[\"redis.river\"]\n\n\targuments
+    {\n\t\tnamespace  = argument.namespace.value\n\t\tname       = remote.kubernetes.configmap.integrations.data[\"REDIS_SECRET_NAME\"]\n\t\tinstance
+    \  = \"master\"\n\t\tforward_to = argument.forward_to.value\n\t}\n}\n"
   lgtmp.river: "/********************************************\n * ARGUMENTS\n ********************************************/\nargument
     \"cluster\" {\n\toptional = true\n\tdefault  = \"k3d-k3s-codelab\"\n}\n\nargument
     \"tenant\" {\n\toptional = true\n\tdefault  = \"anonymous\"\n}\n\nargument \"metrics_endpoint\"
@@ -503,77 +561,7 @@ data:
     = \"insert\"\n\t}\n\n\toutput {\n\t\ttraces = argument.forward_to.value\n\t}\n}\n"
 kind: ConfigMap
 metadata:
-  name: agent-modules-tb42k2g9c2
-  namespace: monitoring-system
----
-apiVersion: v1
-data:
-  metrics.river: "/*\nModule: Memcached integrations\nDescription: Wrapper module
-    to integration Memcached metrics\n*/\nargument \"clustering\" {\n\t// comment
-    = \"Whether or not clustering should be enabled\"\n\toptional = true\n\tdefault
-    \ = true\n}\n\nargument \"namespace\" {\n\t// comment = \"Namespace of the Memcached
-    deployment\"\n\toptional = true\n\tdefault  = \"default\"\n}\n\nargument \"secret_name\"
-    {\n\t// comment = \"Name of the secret for Memcached\"\n\toptional = true\n\tdefault
-    \ = \"integrations-memcached-secret\"\n}\n\nargument \"instance\" {\n\t// comment
-    \ = \"Instance of the Memcached\"\n\toptional = true\n\tdefault  = \"primary\"\n}\n\nargument
-    \"forward_to\" { }\n\nremote.kubernetes.secret \"memcached\" {\n\tname      =
-    argument.secret_name.value\n\tnamespace = argument.namespace.value\n}\n\n// Metrics\nprometheus.exporter.memcached
-    \"memcached\" {\n\taddress = nonsensitive(remote.kubernetes.secret.memcached.data[\"memcached-address\"])\n\ttimeout
-    = \"5s\"\n}\n\nprometheus.scrape \"integrations_memcached\" {\n\tclustering {\n\t\tenabled
-    = argument.clustering.value\n\t}\n\n\ttargets = concat(\n\t\tprometheus.exporter.memcached.memcached.targets,\n\t)\n\tjob_name
-    \  = \"integrations/memcached\"\n\tforward_to = [prometheus.relabel.integrations_memcached.receiver]\n}\n\nprometheus.relabel
-    \"integrations_memcached\" {\n\trule {\n\t\treplacement  = argument.instance.value\n\t\ttarget_label
-    = \"instance\"\n\t}\n\tforward_to = argument.forward_to.value\n}\n"
-kind: ConfigMap
-metadata:
-  name: integrations-memcached-config
-  namespace: monitoring-system
----
-apiVersion: v1
-data:
-  metrics.river: "/*\nModule: Mysql integrations\nDescription: Wrapper module to integration
-    mysql metrics\n*/\nargument \"clustering\" {\n\t// comment = \"Whether or not
-    clustering should be enabled\"\n\toptional = true\n\tdefault  = true\n}\n\nargument
-    \"namespace\" {\n\t// comment = \"Namespace of the MySQL deployment\"\n\toptional
-    = true\n\tdefault  = \"default\"\n}\n\nargument \"secret_name\" {\n\t// comment
-    = \"Name of the secret for MySQL\"\n\toptional = true\n\tdefault  = \"integrations-mysql-secret\"\n}\n\nargument
-    \"instance\" {\n\t// comment  = \"Instance of the Database\"\n\toptional = true\n\tdefault
-    \ = \"primary\"\n}\n\nargument \"forward_to\" { }\n\nremote.kubernetes.secret
-    \"mysql\" {\n\tname      = argument.secret_name.value\n\tnamespace = argument.namespace.value\n}\n\n//
-    Metrics\nprometheus.exporter.mysql \"mysql\" {\n\tdata_source_name = nonsensitive(remote.kubernetes.secret.mysql.data[\"mysql-username\"])
-    + \":\" + nonsensitive(remote.kubernetes.secret.mysql.data[\"mysql-password\"])
-    + \"@(\" + nonsensitive(remote.kubernetes.secret.mysql.data[\"mysql-host\"]) +
-    \")/\"\n}\n\nprometheus.scrape \"mysql\" {\n\tclustering {\n\t\tenabled = argument.clustering.value\n\t}\n\n\ttargets
-    = concat(\n\t\tprometheus.exporter.mysql.mysql.targets,\n\t)\n\tjob_name   = \"integrations/mysql\"\n\tforward_to
-    = [prometheus.relabel.mysql.receiver]\n}\n\nprometheus.relabel \"mysql\" {\n\trule
-    {\n\t\treplacement  = argument.instance.value\n\t\ttarget_label = \"instance\"\n\t}\n\tforward_to
-    = argument.forward_to.value\n}\n"
-kind: ConfigMap
-metadata:
-  name: integrations-mysql-config
-  namespace: monitoring-system
----
-apiVersion: v1
-data:
-  metrics.river: "/*\nModule: Redis integrations\nDescription: Wrapper module to integration
-    Redis metrics\n*/\nargument \"clustering\" {\n\t// comment = \"Whether or not
-    clustering should be enabled\"\n\toptional = true\n\tdefault  = true\n}\n\nargument
-    \"namespace\" {\n\t// comment = \"Namespace of the Redis deployment\"\n\toptional
-    = true\n\tdefault  = \"default\"\n}\n\nargument \"secret_name\" {\n\t// comment
-    = \"Name of the secret for Redis\"\n\toptional = true\n\tdefault  = \"integrations-redis-secret\"\n}\n\nargument
-    \"instance\" {\n\t// comment  = \"Instance of the Redis\"\n\toptional = true\n\tdefault
-    \ = \"master\"\n}\n\nargument \"forward_to\" { }\n\nremote.kubernetes.secret \"redis\"
-    {\n\tname      = argument.secret_name.value\n\tnamespace = argument.namespace.value\n}\n\n//
-    Metrics\nprometheus.exporter.redis \"redis\" {\n\tredis_addr     = nonsensitive(remote.kubernetes.secret.redis.data[\"redis-addr\"])\n\tredis_password
-    = nonsensitive(remote.kubernetes.secret.redis.data[\"redis-password\"])\n}\n\nprometheus.scrape
-    \"integrations_redis\" {\n\tclustering {\n\t\tenabled = argument.clustering.value\n\t}\n\n\ttargets
-    = concat(\n\t\tprometheus.exporter.redis.redis.targets,\n\t)\n\tjob_name   = \"integrations/redis\"\n\tforward_to
-    = [prometheus.relabel.integrations_redis.receiver]\n}\n\nprometheus.relabel \"integrations_redis\"
-    {\n\trule {\n\t\treplacement  = argument.instance.value\n\t\ttarget_label = \"instance\"\n\t}\n\tforward_to
-    = argument.forward_to.value\n}\n"
-kind: ConfigMap
-metadata:
-  name: integrations-redis-config
+  name: agent-modules-7f25tgm4gg
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -581,7 +569,7 @@ data:
   memcached-address: bWVtY2FjaGVkLm1lbWNhY2hlZC1zeXN0ZW0uc3ZjLmNsdXN0ZXIubG9jYWw6MTEyMTE=
 kind: Secret
 metadata:
-  name: integrations-memcached-secret
+  name: integrations-memcached
   namespace: monitoring-system
 type: Opaque
 ---
@@ -592,7 +580,7 @@ data:
   mysql-username: bGd0bXA=
 kind: Secret
 metadata:
-  name: integrations-mysql-secret
+  name: integrations-mysql
   namespace: monitoring-system
 type: Opaque
 ---
@@ -602,7 +590,7 @@ data:
   redis-password: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:
-  name: integrations-redis-secret
+  name: integrations-redis
   namespace: monitoring-system
 type: Opaque
 ---
@@ -777,13 +765,13 @@ spec:
       serviceAccountName: grafana-agent
       volumes:
       - configMap:
-          name: agent-config-hbc7tb8c52
+          name: agent-config-f8c48dt658
         name: config
       - hostPath:
           path: /var/log
         name: varlog
       - configMap:
-          name: agent-modules-tb42k2g9c2
+          name: agent-modules-7f25tgm4gg
         name: agent-modules
 ---
 apiVersion: monitoring.coreos.com/v1

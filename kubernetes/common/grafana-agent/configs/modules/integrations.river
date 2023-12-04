@@ -2,6 +2,12 @@
 Module: Agent integrations
 Description: Wrapper module to include auto loading integrations
 */
+argument "name" {
+	// comment = "Name of the integrations config"
+	optional = true
+	default  = "agent-integrations"
+}
+
 argument "namespace" {
 	// comment = "Namespace of the integrations config"
 	optional = true
@@ -10,59 +16,49 @@ argument "namespace" {
 
 argument "forward_to" { }
 
-/********************************************
- * Mysql Integrations
- ********************************************/
-remote.kubernetes.configmap "integrations_mysql" {
-	name      = "integrations-mysql-config"
+remote.kubernetes.configmap "integrations" {
+	name      = argument.name.value
 	namespace = argument.namespace.value
 }
 
-module.string "mysql_metrics" {
-	content = remote.kubernetes.configmap.integrations_mysql.data["metrics.river"]
+/********************************************
+ * Integrations Mysql
+ ********************************************/
+module.string "mysql" {
+	content = remote.kubernetes.configmap.integrations.data["mysql.river"]
 
 	arguments {
-		namespace   = argument.namespace.value
-		secret_name = "integrations-mysql-secret"
-		instance    = "primary"
-		forward_to  = argument.forward_to.value
+		namespace  = argument.namespace.value
+		name       = remote.kubernetes.configmap.integrations.data["MYSQL_SECRET_NAME"]
+		instance   = "primary"
+		forward_to = argument.forward_to.value
 	}
 }
 
 /********************************************
- * Memcached Integrations
+ * Integrations Memcached
  ********************************************/
-remote.kubernetes.configmap "integrations_memcached" {
-	name      = "integrations-memcached-config"
-	namespace = argument.namespace.value
-}
-
-module.string "memcached_metrics" {
-	content = remote.kubernetes.configmap.integrations_memcached.data["metrics.river"]
+module.string "memcached" {
+	content = remote.kubernetes.configmap.integrations.data["memcached.river"]
 
 	arguments {
-		namespace   = argument.namespace.value
-		secret_name = "integrations-memcached-secret"
-		instance    = "primary"
-		forward_to  = argument.forward_to.value
+		namespace  = argument.namespace.value
+		name       = remote.kubernetes.configmap.integrations.data["MEMCACHED_SECRET_NAME"]
+		instance   = "primary"
+		forward_to = argument.forward_to.value
 	}
 }
 
 /********************************************
- * Redis Integrations
+ * Integrations Redis
  ********************************************/
-remote.kubernetes.configmap "integrations_redis" {
-	name      = "integrations-redis-config"
-	namespace = argument.namespace.value
-}
-
-module.string "redis_metrics" {
-	content = remote.kubernetes.configmap.integrations_redis.data["metrics.river"]
+module.string "redis" {
+	content = remote.kubernetes.configmap.integrations.data["redis.river"]
 
 	arguments {
-		namespace   = argument.namespace.value
-		secret_name = "integrations-redis-secret"
-		instance    = "master"
-		forward_to  = argument.forward_to.value
+		namespace  = argument.namespace.value
+		name       = remote.kubernetes.configmap.integrations.data["REDIS_SECRET_NAME"]
+		instance   = "master"
+		forward_to = argument.forward_to.value
 	}
 }
