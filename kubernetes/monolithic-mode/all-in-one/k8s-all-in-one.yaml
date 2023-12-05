@@ -448,7 +448,7 @@ metadata:
 ---
 apiVersion: v1
 data:
-  datasources.yaml: |
+  datasources.yaml: |-
     apiVersion: 1
 
     deleteDatasources:
@@ -533,34 +533,7 @@ kind: ConfigMap
 metadata:
   labels:
     grafana_datasource: "1"
-  name: grafana-datasources-all-in-one
-  namespace: monitoring-system
----
-apiVersion: v1
-data:
-  datasources.yaml: |-
-    apiVersion: 1
-
-    deleteDatasources:
-    - name: Metrics
-      uid: metrics
-
-    datasources:
-    # Mimir for metrics
-    - name: Metrics
-      type: prometheus
-      uid: metrics
-      access: proxy
-      url: http://nginx.gateway.svc.cluster.local:8080/prometheus
-      basicAuth: false
-      isDefault: true
-      version: 1
-      editable: true
-kind: ConfigMap
-metadata:
-  labels:
-    grafana_datasource: "1"
-  name: grafana-datasources-mimir
+  name: grafana-datasources
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -629,7 +602,7 @@ data:
       native_histograms_ingestion_enabled: true
 kind: ConfigMap
 metadata:
-  name: mimir-config-k2d48ck5kh
+  name: mimir-config
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -657,7 +630,7 @@ data:
         ruler_max_rule_groups_per_tenant: 100
 kind: ConfigMap
 metadata:
-  name: runtime-config-88gg5gk88d
+  name: runtime-config
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -787,7 +760,7 @@ data:
   LOKI_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:
-  name: loki-env-58m52b99kc
+  name: loki-env
   namespace: logging-system
 type: Opaque
 ---
@@ -808,7 +781,7 @@ data:
   MIMIR_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:
-  name: mimir-env-92ddctt858
+  name: mimir-env
   namespace: monitoring-system
 type: Opaque
 ---
@@ -819,7 +792,7 @@ data:
   PYROSCOPE_STORAGE_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:
-  name: pyroscope-env-tgk2kdt8mh
+  name: pyroscope-env
   namespace: profiles-system
 type: Opaque
 ---
@@ -830,7 +803,7 @@ data:
   TEMPO_S3_SECRET_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:
-  name: tempo-env-44c28k2cmb
+  name: tempo-env
   namespace: tracing-system
 type: Opaque
 ---
@@ -1109,7 +1082,7 @@ spec:
               fieldPath: status.podIP
         envFrom:
         - secretRef:
-            name: mimir-env-92ddctt858
+            name: mimir-env
         image: grafana/mimir:2.10.4
         imagePullPolicy: IfNotPresent
         name: mimir
@@ -1139,10 +1112,10 @@ spec:
       terminationGracePeriodSeconds: 60
       volumes:
       - configMap:
-          name: mimir-config-k2d48ck5kh
+          name: mimir-config
         name: mimir-config
       - configMap:
-          name: runtime-config-88gg5gk88d
+          name: runtime-config
         name: runtime-config
 ---
 apiVersion: apps/v1
@@ -1198,7 +1171,7 @@ spec:
         - -config.expand-env=true
         envFrom:
         - secretRef:
-            name: loki-env-58m52b99kc
+            name: loki-env
         image: docker.io/grafana/loki:2.9.2
         imagePullPolicy: IfNotPresent
         name: loki
@@ -1319,7 +1292,7 @@ spec:
         - -log.level=debug
         envFrom:
         - secretRef:
-            name: pyroscope-env-tgk2kdt8mh
+            name: pyroscope-env
         image: grafana/pyroscope:1.2.0
         imagePullPolicy: IfNotPresent
         name: pyroscope
@@ -1396,7 +1369,7 @@ spec:
         env: null
         envFrom:
         - secretRef:
-            name: tempo-env-44c28k2cmb
+            name: tempo-env
         image: grafana/tempo:2.3.0
         imagePullPolicy: IfNotPresent
         name: tempo

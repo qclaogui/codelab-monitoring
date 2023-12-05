@@ -1,0 +1,105 @@
+# ----------------------------------------------------
+# apiVersion and kind of Kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- ../metrics
+- ../logs
+- ../profiles
+- ../traces
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+secretGenerator:
+- name: grafana-env
+  namespace: monitoring-system
+  behavior: replace
+  literals:
+  - GF_LOG_LEVEL=warn
+  - GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS=grafana-agent.monitoring-system:4317
+  - GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES=namespace:monitoring-system
+  - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor,dashgpt
+
+- name: loki-env
+  namespace: logging-system
+  behavior: replace
+  literals:
+  - LOKI_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
+
+- name: tempo-env
+  namespace: tracing-system
+  behavior: replace
+  literals:
+  - TEMPO_S3_ENDPOINT=minio.minio-system.svc:443
+  - TEMPO_S3_ACCESS_KEY=lgtmp
+  - TEMPO_S3_SECRET_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
+
+- name: mimir-env
+  namespace: monitoring-system
+  behavior: replace
+  literals:
+  - MIMIR_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
+
+- name: pyroscope-env
+  namespace: profiles-system
+  behavior: replace
+  literals:
+  - PYROSCOPE_STORAGE_S3_ENDPOINT=minio.minio-system.svc.cluster.local:443
+  - PYROSCOPE_STORAGE_S3_ACCESS_KEY_ID=lgtmp
+  - PYROSCOPE_STORAGE_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
+
+configMapGenerator:
+- name: grafana-datasources
+  namespace: monitoring-system
+  options:
+    labels:
+      grafana_datasource: "1"
+  files:
+  - datasources.yaml=configs/grafana-datasources-all-in-one.yaml
+
+- name: loki-config
+  namespace: logging-system
+  behavior: replace
+  files:
+  - config.yaml=configs/loki.yaml
+
+- name: mimir-config
+  namespace: monitoring-system
+  behavior: replace
+  files:
+  - configs/mimir.yaml
+- name: runtime-config
+  namespace: monitoring-system
+  behavior: replace
+  files:
+  - runtime.yaml=configs/mimir-runtime.yaml
+
+- name: pyroscope-config
+  namespace: profiles-system
+  behavior: replace
+  files:
+  - config.yaml=configs/pyroscope.yaml
+
+- name: tempo
+  namespace: tracing-system
+  behavior: replace
+  files:
+  - configs/tempo.yaml
+  - overrides.yaml=configs/tempo-overrides.yaml
+
+# replace nginx-templates and nginx-env configMap
+- name: nginx-templates
+  namespace: gateway
+  behavior: replace
+  files:
+  - configs/gateway_loki.conf.template
+  - configs/gateway_mimir.conf.template
+  - configs/gateway_pyroscope.conf.template
+  - configs/gateway_tempo.conf.template
+- name: nginx-env
+  namespace: gateway
+  behavior: replace
+  envs:
+  - configs/nginx.env

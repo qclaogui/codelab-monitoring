@@ -212,7 +212,7 @@ manifests-monolithic-mode: $(KUSTOMIZE)  ## Generates monolithic-mode manifests
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/metrics > kubernetes/monolithic-mode/metrics/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/profiles > kubernetes/monolithic-mode/profiles/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/traces > kubernetes/monolithic-mode/traces/k8s-all-in-one.yaml
-	@$(KUSTOMIZE) build kubernetes/monolithic-mode > kubernetes/monolithic-mode/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build kubernetes/monolithic-mode/all-in-one > kubernetes/monolithic-mode/all-in-one/k8s-all-in-one.yaml
 
 .PHONY: manifests-read-write-mode
 manifests-read-write-mode: $(KUSTOMIZE)  ## Generates read-write-mode manifests
@@ -360,7 +360,7 @@ delete-monolithic-mode-traces:
 .PHONY: deploy-monolithic-mode-all-in-one
 deploy-monolithic-mode-all-in-one: deploy-grafana ## Deploy monolithic-mode all-in-one
 	$(info ******************** deploy monolithic-mode all-in-one manifests ********************)
-	@$(KUSTOMIZE) build kubernetes/monolithic-mode | kubectl apply -f -
+	@$(KUSTOMIZE) build kubernetes/monolithic-mode/all-in-one | kubectl apply -f -
 	@$(KUSTOMIZE) build monitoring-mixins | kubectl apply -f -
 	kubectl rollout status -n monitoring-system deployment/mimir --watch --timeout=600s
 	@kubectl rollout restart deployment -n gateway nginx
@@ -372,7 +372,7 @@ deploy-monolithic-mode-all-in-one: deploy-grafana ## Deploy monolithic-mode all-
 	@echo "Demo is running."
 	@echo "Go to http://localhost:8080/explore for the all-in-one."
 delete-monolithic-mode-all-in-one:
-	@$(KUSTOMIZE) build kubernetes/monolithic-mode | kubectl delete -f -
+	@$(KUSTOMIZE) build kubernetes/monolithic-mode/all-in-one | kubectl delete -f -
 
 
 
