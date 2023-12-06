@@ -4,11 +4,10 @@ all: update build
 
 .PHONY: update
 update: $(KUSTOMIZE)
+	@rm -rf charts/
 	$(KUSTOMIZE) build --enable-helm . > k8s-all-in-one.yaml
 	@cp -rf charts/pyroscope/values.yaml .
-	@rm -rf charts/
 
 .PHONY: build
 build: $(KUSTOMIZE)
 	@$(KUSTOMIZE) build --enable-helm . > k8s-all-in-one.yaml
-	@rm -rf charts/

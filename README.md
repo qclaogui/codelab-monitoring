@@ -65,7 +65,7 @@ make down-monolithic-mode-metrics
 
 ## Kubernetes
 
-[cortex-kustomize](https://github.com/qclaogui/cortex-kustomize) provides a common `base` for Mimir deployment to Kubernetes.
+[k3d](https://github.com/k3d-io/k3d) makes it very easy to create single- and multi-node [k3s](https://github.com/rancher/k3s) clusters in docker, e.g. for local development on Kubernetes.
 
 ### [Monolithic mode (单体模式)](./kubernetes/monolithic-mode)
 
