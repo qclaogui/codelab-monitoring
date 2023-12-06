@@ -73,7 +73,7 @@ make down-monolithic-mode-metrics
 - [Traces [Tempo]](./kubernetes/monolithic-mode/traces)
 - [Metrics [Mimir]](./kubernetes/monolithic-mode/metrics)
 - [Profiles [Pyroscope]](./kubernetes/monolithic-mode/profiles)
-- [All In One [Loki + Tempo + Mimir + Pyroscope]](./kubernetes/monolithic-mode)
+- [All In One [Loki + Tempo + Mimir + Pyroscope]](./kubernetes/monolithic-mode/all-in-one)
 
 ### [Read-Write mode (读写模式)](./kubernetes/read-write-mode)
 

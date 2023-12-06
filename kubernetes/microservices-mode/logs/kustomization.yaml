@@ -1,12 +1,14 @@
+# ============================================================================ #
+#                  Microservices Mode - Logs
+# ============================================================================ #
+
 # ----------------------------------------------------
 # apiVersion and kind of Kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-- namespace.yaml
-- configs/grafana-datasources-loki.yaml # change loki logs as default datasources
-- loki-distributed/k8s-all-in-one.yaml
+- loki-distributed
 
 secretGenerator:
 - name: loki-distributed-env
@@ -16,6 +18,15 @@ secretGenerator:
 
 
 configMapGenerator:
+- name: grafana-datasources
+  namespace: monitoring-system
+  options:
+    disableNameSuffixHash: true
+    labels:
+      grafana_datasource: "1"
+  files:
+  - datasources.yaml=configs/grafana-datasources-loki.yaml
+
 - name: loki-distributed
   namespace: logging-system
   behavior: replace

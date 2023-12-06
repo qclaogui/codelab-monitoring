@@ -56,6 +56,32 @@ metadata:
 ---
 apiVersion: v1
 data:
+  config.river: "/*\nThe following example shows using the default all logs processing
+    module, for\na single tenant and specifying the destination url/credentials via
+    environment\nvariables.\n*/\nlogging {\n\tlevel  = coalesce(env(\"AGENT_LOG_LEVEL\"),
+    \"info\")\n\tformat = \"logfmt\"\n}\n\nmodule.file \"lgtmp\" {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"),
+    \"/etc/agent-modules\") + \"/lgtmp.river\"\n\n\targuments {\n\t\tcluster           =
+    coalesce(env(\"CLUSTER\"), \"k3d-k3s-codelab\")\n\t\tlogs_endpoint     = coalesce(env(\"LOGS_ENDPOINT\"),
+    \"http://nginx.gateway.svc:3100\")\n\t\tmetrics_endpoint  = coalesce(env(\"METRICS_ENDPOINT\"),
+    \"http://nginx.gateway.svc:8080\")\n\t\tprofiles_endpoint = coalesce(env(\"PROFILES_ENDPOINT\"),
+    \"http://nginx.gateway.svc:4040\")\n\t\ttraces_endpoint   = coalesce(env(\"TRACES_ENDPOINT\"),
+    \"nginx.gateway.svc:4317\")\n\t}\n}\n\n/********************************************\n
+    * Traces\n ********************************************/\nmodule.file \"traces_primary\"
+    {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent-modules\")
+    + \"/traces.river\"\n\n\targuments {\n\t\tforward_to = [module.file.lgtmp.exports.traces_receiver]\n\t\tcluster
+    \   = coalesce(env(\"CLUSTER\"), \"k3d-k3s-codelab\")\n\t}\n}\n\n/********************************************\n
+    * Agent Integrations\n ********************************************/\nmodule.file
+    \"agent_integrations\" {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"),
+    \"/etc/agent-modules\") + \"/integrations.river\"\n\n\targuments {\n\t\tname       =
+    \"agent-integrations\"\n\t\tnamespace  = \"monitoring-system\"\n\t\tforward_to
+    = [module.file.lgtmp.exports.metrics_receiver]\n\t}\n}\n"
+kind: ConfigMap
+metadata:
+  name: agent-config
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
   overrides.yaml: |-
     overrides:
       "*":
@@ -219,7 +245,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: f0a721920f50f9d7c07b4e5fbc8e26159a952fbcf9b28fb26f116ece97bfd91c
+        checksum/config: c94f8d736c70b37885f98de9b230742d8d719c7eb1619d4fa10f37d70c35bcb7
       labels:
         app.kubernetes.io/instance: tempo
         app.kubernetes.io/name: tempo

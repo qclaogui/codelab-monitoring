@@ -1,3 +1,7 @@
+# ============================================================================ #
+#                  Monolithic Mode - Metrics
+# ============================================================================ #
+
 # ----------------------------------------------------
 # apiVersion and kind of Kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
@@ -22,6 +26,13 @@ secretGenerator:
   - MIMIR_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
 
 configMapGenerator:
+- name: agent-config
+  namespace: monitoring-system
+  options:
+    disableNameSuffixHash: true
+  files:
+  - configs/config.river
+
 - name: mimir-config
   namespace: monitoring-system
   files:

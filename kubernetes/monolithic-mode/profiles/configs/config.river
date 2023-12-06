@@ -1,0 +1,46 @@
+/*
+The following example shows using the default all logs processing module, for
+a single tenant and specifying the destination url/credentials via environment
+variables.
+*/
+logging {
+	level  = coalesce(env("AGENT_LOG_LEVEL"), "info")
+	format = "logfmt"
+}
+
+module.file "lgtmp" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-modules") + "/lgtmp.river"
+
+	arguments {
+		cluster           = coalesce(env("CLUSTER"), "k3d-k3s-codelab")
+		logs_endpoint     = coalesce(env("LOGS_ENDPOINT"), "http://nginx.gateway.svc:3100")
+		metrics_endpoint  = coalesce(env("METRICS_ENDPOINT"), "http://nginx.gateway.svc:8080")
+		profiles_endpoint = coalesce(env("PROFILES_ENDPOINT"), "http://nginx.gateway.svc:4040")
+		traces_endpoint   = coalesce(env("TRACES_ENDPOINT"), "nginx.gateway.svc:4317")
+	}
+}
+
+/********************************************
+ * Profiles
+ ********************************************/
+module.file "profiles_primary" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-modules") + "/profiles.river"
+
+	arguments {
+		forward_to = [module.file.lgtmp.exports.profiles_receiver]
+		clustering = true
+	}
+}
+
+/********************************************
+ * Agent Integrations
+ ********************************************/
+module.file "agent_integrations" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-modules") + "/integrations.river"
+
+	arguments {
+		name       = "agent-integrations"
+		namespace  = "monitoring-system"
+		forward_to = [module.file.lgtmp.exports.metrics_receiver]
+	}
+}

@@ -1,3 +1,7 @@
+# ============================================================================ #
+#                  Read-Write Mode - Metrics
+# ============================================================================ #
+
 # ----------------------------------------------------
 # apiVersion and kind of Kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
@@ -17,7 +21,6 @@ resources:
 - mimir/mimir-write-dep.yaml
 - mimir/mimir-write-svc.yaml
 - mimir/mimir-write-servicemonitor.yaml
-- configs/grafana-datasources-mimir.yaml # change default datasources
 
 secretGenerator:
 - name: mimir-env
@@ -26,6 +29,15 @@ secretGenerator:
   - MIMIR_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
 
 configMapGenerator:
+- name: grafana-datasources
+  namespace: monitoring-system
+  options:
+    disableNameSuffixHash: true
+    labels:
+      grafana_datasource: "1"
+  files:
+  - datasources.yaml=configs/grafana-datasources-mimir.yaml
+
 - name: mimir-config
   namespace: monitoring-system
   files:

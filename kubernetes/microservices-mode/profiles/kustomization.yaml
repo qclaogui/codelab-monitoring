@@ -1,12 +1,14 @@
+# ============================================================================ #
+#                  Microservices Mode - Profiles
+# ============================================================================ #
+
 # ----------------------------------------------------
 # apiVersion and kind of Kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-- namespace.yaml
-- configs/grafana-datasources-pyroscope.yaml # change pyroscope profiles as default datasources
-- pyroscope/k8s-all-in-one.yaml
+- pyroscope
 
 secretGenerator:
 # https://grafana.com/docs/pyroscope/latest/configure-server/reference-configuration-parameters/#s3_storage_backend
@@ -19,6 +21,15 @@ secretGenerator:
 
 
 configMapGenerator:
+- name: grafana-datasources
+  namespace: monitoring-system
+  options:
+    disableNameSuffixHash: true
+    labels:
+      grafana_datasource: "1"
+  files:
+  - datasources.yaml=configs/grafana-datasources-pyroscope.yaml
+
 - name: pyroscope-config
   namespace: profiles-system
   options:

@@ -164,6 +164,32 @@ metadata:
 ---
 apiVersion: v1
 data:
+  config.river: "/*\nThe following example shows using the default all logs processing
+    module, for\na single tenant and specifying the destination url/credentials via
+    environment\nvariables.\n*/\nlogging {\n\tlevel  = coalesce(env(\"AGENT_LOG_LEVEL\"),
+    \"info\")\n\tformat = \"logfmt\"\n}\n\nmodule.file \"lgtmp\" {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"),
+    \"/etc/agent-modules\") + \"/lgtmp.river\"\n\n\targuments {\n\t\tcluster           =
+    coalesce(env(\"CLUSTER\"), \"k3d-k3s-codelab\")\n\t\tlogs_endpoint     = coalesce(env(\"LOGS_ENDPOINT\"),
+    \"http://nginx.gateway.svc:3100\")\n\t\tmetrics_endpoint  = coalesce(env(\"METRICS_ENDPOINT\"),
+    \"http://nginx.gateway.svc:8080\")\n\t\tprofiles_endpoint = coalesce(env(\"PROFILES_ENDPOINT\"),
+    \"http://nginx.gateway.svc:4040\")\n\t\ttraces_endpoint   = coalesce(env(\"TRACES_ENDPOINT\"),
+    \"nginx.gateway.svc:4317\")\n\t}\n}\n\n/********************************************\n
+    * Logs\n ********************************************/\nmodule.git \"logs_primary\"
+    {\n\trepository = \"https://github.com/grafana/agent-modules.git\"\n\trevision
+    \  = \"main\"\n\tpath       = \"modules/kubernetes/logs/all.river\"\n\n\targuments
+    {\n\t\tforward_to = [module.file.lgtmp.exports.logs_receiver]\n\t}\n}\n\n/********************************************\n
+    * Agent Integrations\n ********************************************/\nmodule.file
+    \"agent_integrations\" {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"),
+    \"/etc/agent-modules\") + \"/integrations.river\"\n\n\targuments {\n\t\tname       =
+    \"agent-integrations\"\n\t\tnamespace  = \"monitoring-system\"\n\t\tforward_to
+    = [module.file.lgtmp.exports.metrics_receiver]\n\t}\n}\n"
+kind: ConfigMap
+metadata:
+  name: agent-config
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
   LOKI_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:

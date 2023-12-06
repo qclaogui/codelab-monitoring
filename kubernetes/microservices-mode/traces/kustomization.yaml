@@ -1,12 +1,14 @@
+# ============================================================================ #
+#                  Microservices Mode - Traces
+# ============================================================================ #
+
 # ----------------------------------------------------
 # apiVersion and kind of Kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-- namespace.yaml
-- tempo-distributed/k8s-all-in-one.yaml
-- configs/grafana-datasources-tempo.yaml # change default datasources
+- tempo-distributed
 
 secretGenerator:
 - name: grafana-env
@@ -27,6 +29,15 @@ secretGenerator:
   - TEMPO_S3_SECRET_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
 
 configMapGenerator:
+- name: grafana-datasources
+  namespace: monitoring-system
+  options:
+    disableNameSuffixHash: true
+    labels:
+      grafana_datasource: "1"
+  files:
+  - datasources.yaml=configs/grafana-datasources-tempo.yaml
+
 - name: tempo-distributed-config
   namespace: tracing-system
   behavior: replace

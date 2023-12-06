@@ -1,10 +1,13 @@
+# ============================================================================ #
+#                  Microservices Mode - Metrics
+# ============================================================================ #
+
 # ----------------------------------------------------
 # apiVersion and kind of Kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-- configs/grafana-datasources-mimir.yaml # change default datasources
 - mimir-distributed/k8s-all-in-one.yaml
 
 secretGenerator:
@@ -15,6 +18,15 @@ secretGenerator:
 
 
 configMapGenerator:
+- name: grafana-datasources
+  namespace: monitoring-system
+  options:
+    disableNameSuffixHash: true
+    labels:
+      grafana_datasource: "1"
+  files:
+  - datasources.yaml=configs/grafana-datasources-mimir.yaml
+
 - name: mimir-distributed-runtime
   namespace: monitoring-system
   behavior: replace

@@ -1,13 +1,18 @@
+# ============================================================================ #
+#                  Monolithic Mode - All in one
+# ============================================================================ #
+
 # ----------------------------------------------------
 # apiVersion and kind of Kustomization
+---
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
 - ../metrics
-- ../logs
-- ../profiles
-- ../traces
+- ../logs/loki
+- ../profiles/pyroscope
+- ../traces/tempo
 
 generatorOptions:
   disableNameSuffixHash: true
@@ -15,7 +20,6 @@ generatorOptions:
 secretGenerator:
 - name: grafana-env
   namespace: monitoring-system
-  behavior: replace
   literals:
   - GF_LOG_LEVEL=warn
   - GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS=grafana-agent.monitoring-system:4317
@@ -24,13 +28,11 @@ secretGenerator:
 
 - name: loki-env
   namespace: logging-system
-  behavior: replace
   literals:
   - LOKI_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
 
 - name: tempo-env
   namespace: tracing-system
-  behavior: replace
   literals:
   - TEMPO_S3_ENDPOINT=minio.minio-system.svc:443
   - TEMPO_S3_ACCESS_KEY=lgtmp
@@ -44,7 +46,6 @@ secretGenerator:
 
 - name: pyroscope-env
   namespace: profiles-system
-  behavior: replace
   literals:
   - PYROSCOPE_STORAGE_S3_ENDPOINT=minio.minio-system.svc.cluster.local:443
   - PYROSCOPE_STORAGE_S3_ACCESS_KEY_ID=lgtmp
@@ -58,6 +59,14 @@ configMapGenerator:
       grafana_datasource: "1"
   files:
   - datasources.yaml=configs/grafana-datasources-all-in-one.yaml
+
+- name: agent-config
+  namespace: monitoring-system
+  behavior: replace
+  options:
+    disableNameSuffixHash: true
+  files:
+  - configs/config.river
 
 - name: loki-config
   namespace: logging-system
@@ -92,7 +101,6 @@ configMapGenerator:
 # replace nginx-templates and nginx-env configMap
 - name: nginx-templates
   namespace: gateway
-  behavior: replace
   files:
   - configs/gateway_loki.conf.template
   - configs/gateway_mimir.conf.template
@@ -100,6 +108,5 @@ configMapGenerator:
   - configs/gateway_tempo.conf.template
 - name: nginx-env
   namespace: gateway
-  behavior: replace
   envs:
   - configs/nginx.env

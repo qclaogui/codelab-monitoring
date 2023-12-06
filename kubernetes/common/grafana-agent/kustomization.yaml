@@ -15,9 +15,15 @@ helmCharts:
 
 configMapGenerator:
 - name: agent-config
+  namespace: monitoring-system
+  options:
+    disableNameSuffixHash: true
   files:
   - configs/config.river
+
+# Agent Modules Config
 - name: agent-modules
+  namespace: monitoring-system
   files:
   - configs/modules/lgtmp.river
   - configs/modules/logs.river
@@ -26,7 +32,7 @@ configMapGenerator:
   - configs/modules/traces.river
   - configs/modules/integrations.river
 
-# Agent Auto Integrations Configs
+# Agent Integrations Config
 - name: agent-integrations
   namespace: monitoring-system
   options:
@@ -48,9 +54,9 @@ secretGenerator:
   options:
     disableNameSuffixHash: true
   literals:
-  - "mysql-host=mysql.mysql-system.svc.cluster.local"
-  - "mysql-username=lgtmp"
-  - "mysql-password=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm"
+  - mysql-host=mysql.mysql-system.svc.cluster.local
+  - mysql-username=lgtmp
+  - mysql-password=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
 
 # integrations memcached credentials
 - name: integrations-memcached
@@ -58,7 +64,7 @@ secretGenerator:
   options:
     disableNameSuffixHash: true
   literals:
-  - "memcached-address=memcached.memcached-system.svc.cluster.local:11211"
+  - memcached-address=memcached.memcached-system.svc.cluster.local:11211
 
 # integrations redis credentials
 - name: integrations-redis
@@ -66,5 +72,5 @@ secretGenerator:
   options:
     disableNameSuffixHash: true
   literals:
-  - "redis-addr=redis-master.redis-system.svc.cluster.local:6379"
-  - "redis-password=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm"
+  - redis-addr=redis-master.redis-system.svc.cluster.local:6379
+  - redis-password=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
