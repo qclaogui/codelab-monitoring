@@ -11,8 +11,7 @@ import (
 	"dagger.io/dagger"
 )
 
-// use golang:1.21.4 container as builder
-const goImage = "golang:1.21.4"
+const goImage = "golang:1.21.5"
 
 func main() {
 	println("Dagger is a programmable CI/CD engine that runs your pipelines in containers.")
@@ -34,8 +33,8 @@ func main() {
 		WithMountedCache("/go/pkg/mod", client.CacheVolume("go-mod")).
 		WithMountedCache("/root/.cache/go-build", client.CacheVolume("go-build")).
 		WithEnvVariable("GOCACHE", "/root/.cache/go-build").
-		WithMountedDirectory("/app", source).
-		WithWorkdir("/app")
+		WithMountedDirectory("/workspace", source).
+		WithWorkdir("/workspace")
 
 	// Install dependencies tools
 	if _, err = goContainer.WithExec([]string{"bash", "-c", "make", "install-build-deps"}).Sync(ctx); err != nil {
