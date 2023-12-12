@@ -1,0 +1,310 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    component: kubelet
+    k8s-app: pushprox-kubelet-client
+    provider: kubernetes
+    release: rancher-pushprox
+  name: pushprox-kubelet-client
+  namespace: monitoring-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    component: kubelet
+    k8s-app: pushprox-kubelet-proxy
+    provider: kubernetes
+    release: rancher-pushprox
+  name: pushprox-kubelet-proxy
+  namespace: monitoring-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    component: kubelet
+    k8s-app: pushprox-kubelet-client
+    provider: kubernetes
+    release: rancher-pushprox
+  name: pushprox-kubelet-client
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+- nonResourceURLs:
+  - /metrics/cadvisor
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - nodes/metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    component: kubelet
+    k8s-app: pushprox-kubelet-proxy
+    provider: kubernetes
+    release: rancher-pushprox
+  name: pushprox-kubelet-proxy
+rules: null
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    component: kubelet
+    k8s-app: pushprox-kubelet-client
+    provider: kubernetes
+    release: rancher-pushprox
+  name: pushprox-kubelet-client
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pushprox-kubelet-client
+subjects:
+- kind: ServiceAccount
+  name: pushprox-kubelet-client
+  namespace: monitoring-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    component: kubelet
+    k8s-app: pushprox-kubelet-proxy
+    provider: kubernetes
+    release: rancher-pushprox
+  name: pushprox-kubelet-proxy
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pushprox-kubelet-proxy
+subjects:
+- kind: ServiceAccount
+  name: pushprox-kubelet-proxy
+  namespace: monitoring-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    component: kubelet
+    k8s-app: pushprox-kubelet-client
+    provider: kubernetes
+    release: rancher-pushprox
+  name: pushprox-kubelet-client
+  namespace: monitoring-system
+spec:
+  ports:
+  - name: metrics
+    port: 10250
+    protocol: TCP
+    targetPort: 10250
+  selector:
+    component: kubelet
+    k8s-app: pushprox-kubelet-client
+    provider: kubernetes
+    release: rancher-pushprox
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    component: kubelet
+    k8s-app: pushprox-kubelet-proxy
+    provider: kubernetes
+    release: rancher-pushprox
+  name: pushprox-kubelet-proxy
+  namespace: monitoring-system
+spec:
+  ports:
+  - name: pp-proxy
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    component: kubelet
+    k8s-app: pushprox-kubelet-proxy
+    provider: kubernetes
+    release: rancher-pushprox
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    component: kubelet
+    k8s-app: pushprox-kubelet-proxy
+    provider: kubernetes
+    pushprox-exporter: proxy
+    release: rancher-pushprox
+  name: pushprox-kubelet-proxy
+  namespace: monitoring-system
+spec:
+  selector:
+    matchLabels:
+      component: kubelet
+      k8s-app: pushprox-kubelet-proxy
+      provider: kubernetes
+      release: rancher-pushprox
+  template:
+    metadata:
+      labels:
+        component: kubelet
+        k8s-app: pushprox-kubelet-proxy
+        provider: kubernetes
+        release: rancher-pushprox
+    spec:
+      containers:
+      - command:
+        - pushprox-proxy
+        image: rancher/pushprox-proxy:v0.1.0-rancher2-proxy
+        name: pushprox-proxy
+      nodeSelector:
+        kubernetes.io/os: linux
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      serviceAccountName: pushprox-kubelet-proxy
+      tolerations:
+      - effect: NoSchedule
+        key: cattle.io/os
+        operator: Equal
+        value: linux
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    component: kubelet
+    k8s-app: pushprox-kubelet-client
+    provider: kubernetes
+    pushprox-exporter: client
+    release: rancher-pushprox
+  name: pushprox-kubelet-client
+  namespace: monitoring-system
+spec:
+  selector:
+    matchLabels:
+      component: kubelet
+      k8s-app: pushprox-kubelet-client
+      provider: kubernetes
+      release: rancher-pushprox
+  template:
+    metadata:
+      labels:
+        component: kubelet
+        k8s-app: pushprox-kubelet-client
+        provider: kubernetes
+        release: rancher-pushprox
+    spec:
+      containers:
+      - args:
+        - --fqdn=$(HOST_IP)
+        - --proxy-url=$(PROXY_URL)
+        - --allow-port=10250
+        - --use-localhost
+        - --insecure-skip-verify
+        - --token-path=/var/run/secrets/kubernetes.io/serviceaccount/token
+        command:
+        - pushprox-client
+        env:
+        - name: HOST_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: PROXY_URL
+          value: http://pushprox-kubelet-proxy.monitoring-system.svc:8080
+        image: rancher/pushprox-client:v0.1.0-rancher2-client
+        name: pushprox-client
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      nodeSelector:
+        kubernetes.io/os: linux
+      serviceAccountName: pushprox-kubelet-client
+      tolerations:
+      - effect: NoSchedule
+        key: cattle.io/os
+        operator: Equal
+        value: linux
+      - effect: NoExecute
+        operator: Exists
+      - effect: NoSchedule
+        operator: Exists
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app: rancher-pushprox-kubelet
+    component: kubelet
+    provider: kubernetes
+    release: rancher-pushprox
+  name: rancher-pushprox-kubelet
+  namespace: monitoring-system
+spec:
+  endpoints:
+  - honorLabels: true
+    metricRelabelings:
+    - {}
+    - {}
+    params:
+      _scheme:
+      - https
+    port: metrics
+    proxyUrl: http://pushprox-kubelet-proxy.monitoring-system.svc:8080
+    relabelings:
+    - sourceLabels:
+      - __metrics_path__
+      targetLabel: metrics_path
+  - honorLabels: true
+    metricRelabelings:
+    - {}
+    - {}
+    params:
+      _scheme:
+      - https
+    path: /metrics/cadvisor
+    port: metrics
+    proxyUrl: http://pushprox-kubelet-proxy.monitoring-system.svc:8080
+    relabelings:
+    - sourceLabels:
+      - __metrics_path__
+      targetLabel: metrics_path
+  - honorLabels: true
+    metricRelabelings:
+    - {}
+    - {}
+    params:
+      _scheme:
+      - https
+    path: /metrics/probes
+    port: metrics
+    proxyUrl: http://pushprox-kubelet-proxy.monitoring-system.svc:8080
+    relabelings:
+    - sourceLabels:
+      - __metrics_path__
+      targetLabel: metrics_path
+  jobLabel: component
+  namespaceSelector:
+    matchNames:
+    - monitoring-system
+  podTargetLabels:
+  - component
+  - pushprox-exporter
+  selector:
+    matchLabels:
+      component: kubelet
+      k8s-app: pushprox-kubelet-client
+      provider: kubernetes
+      release: rancher-pushprox

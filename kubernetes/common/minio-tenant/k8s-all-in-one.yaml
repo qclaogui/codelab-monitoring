@@ -1,0 +1,128 @@
+apiVersion: v1
+data:
+  config.env: |
+    ZXhwb3J0IE1JTklPX0JST1dTRVI9Im9uIgpleHBvcnQgTUlOSU9fUk9PVF9QQVNTV09SRD
+    0iMUtGR0cxWlZCQlEwM0NLTEdaVTNLU1M0RFdNV0pJNFQiCmV4cG9ydCBNSU5JT19ST09U
+    X1VTRVI9IjBHTVFQMkRHQTQxSUJMVjAiCiNleHBvcnQgTUlOSU9fU1RPUkFHRV9DTEFTU1
+    9TVEFOREFSRD0iRUM6MiIKZXhwb3J0IE1JTklPX1BST01FVEhFVVNfQVVUSF9UWVBFPSJw
+    dWJsaWMiCmV4cG9ydCBNSU5JT19QUk9NRVRIRVVTX0pPQl9JRD0ibWluaW8tam9iIgo=
+kind: Secret
+metadata:
+  labels:
+    v1.min.io/tenant: codelab
+  name: codelab-minio-env
+  namespace: minio-system
+type: Opaque
+---
+apiVersion: v1
+data:
+  CONSOLE_ACCESS_KEY: bGd0bXA=
+  CONSOLE_SECRET_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
+kind: Secret
+metadata:
+  labels:
+    v1.min.io/tenant: codelab
+  name: user-lgtmp
+  namespace: minio-system
+type: Opaque
+---
+apiVersion: minio.min.io/v2
+kind: Tenant
+metadata:
+  labels:
+    app: minio
+  name: codelab
+  namespace: minio-system
+spec:
+  buckets:
+  - name: mimir-blocks
+  - name: mimir-ruler
+  - name: mimir-alertmanager
+  - name: loki-data
+  - name: loki-ruler
+  - name: tempo-data
+  - name: pyroscope-data
+  configuration:
+    name: codelab-minio-env
+  exposeServices:
+    console: false
+    minio: false
+  features:
+    bucketDNS: false
+    enableSFTP: false
+  image: quay.io/minio/minio:RELEASE.2023-11-15T20-43-25Z
+  imagePullPolicy: IfNotPresent
+  mountPath: /export
+  podManagementPolicy: Parallel
+  pools:
+  - name: pool-10gb
+    servers: 1
+    volumeClaimTemplate:
+      metadata:
+        name: data
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
+        storageClassName: null
+    volumesPerServer: 1
+  prometheusOperator: false
+  requestAutoCert: true
+  subPath: /data
+  users:
+  - name: user-lgtmp
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: minio
+  namespace: minio-system
+spec:
+  endpoints:
+  - path: /minio/v2/metrics/cluster
+    port: https-minio
+    relabelings:
+    - replacement: minio-job
+      sourceLabels:
+      - job
+      targetLabel: job
+    - action: keep
+      regex: .*-0$
+      sourceLabels:
+      - pod
+    scheme: https
+    tlsConfig:
+      insecureSkipVerify: true
+  - path: /minio/v2/metrics/bucket
+    port: https-minio
+    relabelings:
+    - replacement: minio-job-bucket
+      sourceLabels:
+      - job
+      targetLabel: job
+    scheme: https
+    tlsConfig:
+      insecureSkipVerify: true
+  - path: /minio/v2/metrics/resource
+    port: https-minio
+    relabelings:
+    - replacement: minio-job-resource
+      sourceLabels:
+      - job
+      targetLabel: job
+    scheme: https
+    tlsConfig:
+      insecureSkipVerify: true
+  namespaceSelector:
+    matchNames:
+    - minio-system
+  selector:
+    matchExpressions:
+    - key: prometheus.io/service-monitor
+      operator: NotIn
+      values:
+      - "false"
+    - key: v1.min.io/tenant
+      operator: Exists

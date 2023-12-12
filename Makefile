@@ -192,17 +192,17 @@ manifests: $(KUSTOMIZE) manifests-common manifests-monolithic-mode manifests-rea
 
 manifests-common: $(KUSTOMIZE)
 	$(info ******************** generates manifests-common manifests ********************)
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/gateway > /dev/null
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana > /dev/null
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana-agent > /dev/null
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/kube-prometheus-stack > /dev/null
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/memcached > /dev/null
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/minio-operator > /dev/null
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/minio-tenant > /dev/null
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/mysql > /dev/null
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/prometheus-operator-crds > /dev/null
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/rancher-pushprox > /dev/null
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/redis > /dev/null
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/gateway > kubernetes/common/gateway/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana > kubernetes/common/grafana/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana-agent > kubernetes/common/grafana-agent/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/kube-prometheus-stack > kubernetes/common/kube-prometheus-stack/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/memcached > kubernetes/common/memcached/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/minio-operator > kubernetes/common/minio-operator/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/minio-tenant > kubernetes/common/minio-tenant/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/mysql > kubernetes/common/mysql/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/prometheus-operator-crds > kubernetes/common/prometheus-operator-crds/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/rancher-pushprox > kubernetes/common/rancher-pushprox/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/redis > kubernetes/common/redis/k8s-all-in-one.yaml
 
 
 .PHONY: manifests-monolithic-mode
