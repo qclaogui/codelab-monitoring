@@ -658,8 +658,8 @@ groups:
         - expr: |
             count by (cluster, node) (
               node_cpu_seconds_total{mode="idle",job="integrations/node_exporter"}
-              * on (namespace, pod) group_left(node)
-              topk by(namespace, pod) (1, node_namespace_pod:kube_pod_info:)
+              * on (cluster, namespace, pod) group_left(node)
+              topk by(cluster, namespace, pod) (1, node_namespace_pod:kube_pod_info:)
             )
           record: node:node_num_cpu:sum
         - expr: |

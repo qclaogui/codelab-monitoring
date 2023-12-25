@@ -197,6 +197,15 @@ groups:
           for: 5m
           labels:
             severity: warning
+        - alert: MimirStoreGatewayTooManyFailedOperations
+          annotations:
+            message: Mimir store-gateway {{ $labels.pod }} in {{ $labels.cluster }}/{{ $labels.namespace }} is experiencing {{ $value | humanizePercentage }} errors while doing {{ $labels.operation }} on the object storage.
+            runbook_url: https://grafana.com/docs/mimir/latest/operators-guide/mimir-runbooks/#mimirstoregatewaytoomanyfailedoperations
+          expr: |
+            sum by(cluster, namespace, operation) (rate(thanos_objstore_bucket_operation_failures_total{component="store-gateway"}[1m])) > 0
+          for: 5m
+          labels:
+            severity: warning
         - alert: MimirRingMembersMismatch
           annotations:
             message: |
@@ -476,7 +485,7 @@ groups:
           expr: |
             max by (cluster, namespace) (memberlist_client_cluster_members_count)
             >
-            (sum by (cluster, namespace) (up{job=~".+/(admin-api|alertmanager|compactor.*|distributor|ingester.*|querier.*|ruler|ruler-querier.*|store-gateway.*|cortex|mimir|mimir-write.*|mimir-read.*|mimir-backend.*)"}) + 10)
+            (sum by (cluster, namespace) (up{job=~".+/(admin-api|alertmanager|compactor.*|distributor.*|ingester.*|querier.*|ruler|ruler-querier.*|store-gateway.*|cortex|mimir|mimir-write.*|mimir-read.*|mimir-backend.*)"}) + 10)
           for: 20m
           labels:
             severity: warning
@@ -487,7 +496,7 @@ groups:
           expr: |
             min by (cluster, namespace) (memberlist_client_cluster_members_count)
             <
-            (sum by (cluster, namespace) (up{job=~".+/(admin-api|alertmanager|compactor.*|distributor|ingester.*|querier.*|ruler|ruler-querier.*|store-gateway.*|cortex|mimir|mimir-write.*|mimir-read.*|mimir-backend.*)"}) * 0.5)
+            (sum by (cluster, namespace) (up{job=~".+/(admin-api|alertmanager|compactor.*|distributor.*|ingester.*|querier.*|ruler|ruler-querier.*|store-gateway.*|cortex|mimir|mimir-write.*|mimir-read.*|mimir-backend.*)"}) * 0.5)
           for: 20m
           labels:
             severity: warning

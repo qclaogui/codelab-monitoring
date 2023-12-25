@@ -735,7 +735,7 @@ data:
                    "value": "default"
                 },
                 "hide": 0,
-                "label": "Data Source",
+                "label": "Data source",
                 "name": "datasource",
                 "options": [ ],
                 "query": "prometheus",
@@ -3393,7 +3393,7 @@ data:
                    "value": "default"
                 },
                 "hide": 0,
-                "label": "Data Source",
+                "label": "Data source",
                 "name": "datasource",
                 "options": [ ],
                 "query": "prometheus",
@@ -4330,7 +4330,7 @@ data:
                    "value": "default"
                 },
                 "hide": 0,
-                "label": "Data Source",
+                "label": "Data source",
                 "name": "datasource",
                 "options": [ ],
                 "query": "prometheus",
@@ -6576,7 +6576,7 @@ data:
                    "value": "default"
                 },
                 "hide": 0,
-                "label": "Data Source",
+                "label": "Data source",
                 "name": "datasource",
                 "options": [ ],
                 "query": "prometheus",
@@ -6898,7 +6898,7 @@ data:
                    "value": "default"
                 },
                 "hide": 0,
-                "label": "Data Source",
+                "label": "Data source",
                 "name": "datasource",
                 "options": [ ],
                 "query": "prometheus",
@@ -7826,7 +7826,7 @@ data:
                    "value": "default"
                 },
                 "hide": 0,
-                "label": "Data Source",
+                "label": "Data source",
                 "name": "datasource",
                 "options": [ ],
                 "query": "prometheus",
@@ -8087,7 +8087,7 @@ data:
                    "value": "default"
                 },
                 "hide": 0,
-                "label": "Data Source",
+                "label": "Data source",
                 "name": "datasource",
                 "options": [ ],
                 "query": "prometheus",
@@ -9232,7 +9232,7 @@ data:
                    "value": "default"
                 },
                 "hide": 0,
-                "label": "Data Source",
+                "label": "Data source",
                 "name": "datasource",
                 "options": [ ],
                 "query": "prometheus",
@@ -10544,7 +10544,7 @@ data:
                    "value": "default"
                 },
                 "hide": 0,
-                "label": "Data Source",
+                "label": "Data source",
                 "name": "datasource",
                 "options": [ ],
                 "query": "prometheus",
@@ -10729,7 +10729,7 @@ data:
                             "uid": "$datasource"
                          },
                          "exemplar": false,
-                         "expr": "(\n    # gRPC errors are not tracked as 5xx but \"error\".\n    sum(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", route=~\"/distributor.Distributor/Push|/httpgrpc.*|api_(v1|prom)_push|otlp_v1_metrics\",status_code=~\"5.*|error\"}[$__rate_interval]))\n    or\n    # Handle the case no failure has been tracked yet.\n    vector(0)\n)\n/\nsum(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", route=~\"/distributor.Distributor/Push|/httpgrpc.*|api_(v1|prom)_push|otlp_v1_metrics\"}[$__rate_interval]))\n",
+                         "expr": "(\n    # gRPC errors are not tracked as 5xx but \"error\".\n    sum(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", route=~\"/distributor.Distributor/Push|/httpgrpc.*|api_(v1|prom)_push|otlp_v1_metrics\",status_code=~\"5.*|error\"}[$__rate_interval]))\n    or\n    # Handle the case no failure has been tracked yet.\n    vector(0)\n)\n/\nsum(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", route=~\"/distributor.Distributor/Push|/httpgrpc.*|api_(v1|prom)_push|otlp_v1_metrics\"}[$__rate_interval]))\n",
                          "instant": false,
                          "legendFormat": "Writes",
                          "range": true
@@ -10863,7 +10863,7 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum by (status) (\n  label_replace(label_replace(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", route=~\"/distributor.Distributor/Push|/httpgrpc.*|api_(v1|prom)_push|otlp_v1_metrics\"}[$__rate_interval]),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-zA-Z]+)\"))\n",
+                         "expr": "sum by (status) (\n  label_replace(label_replace(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", route=~\"/distributor.Distributor/Push|/httpgrpc.*|api_(v1|prom)_push|otlp_v1_metrics\"}[$__rate_interval]),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-zA-Z]+)\"))\n",
                          "format": "time_series",
                          "legendFormat": "{{status}}",
                          "refId": "A"
@@ -10937,21 +10937,21 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "histogram_quantile(0.99, sum by (le) (cluster_job_route:cortex_request_duration_seconds_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", route=~\"/distributor.Distributor/Push|/httpgrpc.*|api_(v1|prom)_push|otlp_v1_metrics\"})) * 1e3",
+                         "expr": "histogram_quantile(0.99, sum by (le) (cluster_job_route:cortex_request_duration_seconds_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", route=~\"/distributor.Distributor/Push|/httpgrpc.*|api_(v1|prom)_push|otlp_v1_metrics\"})) * 1e3",
                          "format": "time_series",
                          "legendFormat": "99th percentile",
                          "refId": "A",
                          "step": 10
                       },
                       {
-                         "expr": "histogram_quantile(0.50, sum by (le) (cluster_job_route:cortex_request_duration_seconds_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", route=~\"/distributor.Distributor/Push|/httpgrpc.*|api_(v1|prom)_push|otlp_v1_metrics\"})) * 1e3",
+                         "expr": "histogram_quantile(0.50, sum by (le) (cluster_job_route:cortex_request_duration_seconds_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", route=~\"/distributor.Distributor/Push|/httpgrpc.*|api_(v1|prom)_push|otlp_v1_metrics\"})) * 1e3",
                          "format": "time_series",
                          "legendFormat": "50th percentile",
                          "refId": "B",
                          "step": 10
                       },
                       {
-                         "expr": "1e3 * sum(cluster_job_route:cortex_request_duration_seconds_sum:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", route=~\"/distributor.Distributor/Push|/httpgrpc.*|api_(v1|prom)_push|otlp_v1_metrics\"}) / sum(cluster_job_route:cortex_request_duration_seconds_count:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", route=~\"/distributor.Distributor/Push|/httpgrpc.*|api_(v1|prom)_push|otlp_v1_metrics\"})",
+                         "expr": "1e3 * sum(cluster_job_route:cortex_request_duration_seconds_sum:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", route=~\"/distributor.Distributor/Push|/httpgrpc.*|api_(v1|prom)_push|otlp_v1_metrics\"}) / sum(cluster_job_route:cortex_request_duration_seconds_count:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", route=~\"/distributor.Distributor/Push|/httpgrpc.*|api_(v1|prom)_push|otlp_v1_metrics\"})",
                          "format": "time_series",
                          "legendFormat": "Average",
                          "refId": "C",
@@ -11026,13 +11026,13 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum(cluster_namespace_job:cortex_distributor_received_samples:rate5m{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"})",
+                         "expr": "sum(cluster_namespace_job:cortex_distributor_received_samples:rate5m{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"})",
                          "format": "time_series",
                          "legendFormat": "samples / sec",
                          "legendLink": null
                       },
                       {
-                         "expr": "sum(cluster_namespace_job:cortex_distributor_received_exemplars:rate5m{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"})",
+                         "expr": "sum(cluster_namespace_job:cortex_distributor_received_exemplars:rate5m{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"})",
                          "format": "time_series",
                          "legendFormat": "exemplars / sec",
                          "legendLink": null
@@ -12003,7 +12003,7 @@ data:
                    "value": "default"
                 },
                 "hide": 0,
-                "label": "Data Source",
+                "label": "Data source",
                 "name": "datasource",
                 "options": [ ],
                 "query": "prometheus",
@@ -15152,7 +15152,7 @@ data:
                    "value": "default"
                 },
                 "hide": 0,
-                "label": "Data Source",
+                "label": "Data source",
                 "name": "datasource",
                 "options": [ ],
                 "query": "prometheus",
@@ -17258,7 +17258,7 @@ data:
                    "value": "default"
                 },
                 "hide": 0,
-                "label": "Data Source",
+                "label": "Data source",
                 "name": "datasource",
                 "options": [ ],
                 "query": "prometheus",
@@ -19872,7 +19872,7 @@ data:
                    "value": "default"
                 },
                 "hide": 0,
-                "label": "Data Source",
+                "label": "Data source",
                 "name": "datasource",
                 "options": [ ],
                 "query": "prometheus",
@@ -24227,7 +24227,7 @@ data:
                    "value": "default"
                 },
                 "hide": 0,
-                "label": "Data Source",
+                "label": "Data source",
                 "name": "datasource",
                 "options": [ ],
                 "query": "prometheus",
@@ -25223,7 +25223,7 @@ data:
                    "value": "default"
                 },
                 "hide": 0,
-                "label": "Data Source",
+                "label": "Data source",
                 "name": "datasource",
                 "options": [ ],
                 "query": "prometheus",
@@ -26132,7 +26132,7 @@ data:
                    "value": "default"
                 },
                 "hide": 0,
-                "label": "Data Source",
+                "label": "Data source",
                 "name": "datasource",
                 "options": [ ],
                 "query": "prometheus",
@@ -26480,7 +26480,7 @@ data:
              "steppedLine": false,
              "targets": [
                 {
-                   "expr": "sum(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", route=~\"api_(v1|prom)_push|otlp_v1_metrics\",status_code=~\"2.+\"}[$__rate_interval])) /\nsum(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", route=~\"api_(v1|prom)_push|otlp_v1_metrics\"}[$__rate_interval]))\n",
+                   "expr": "sum(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", route=~\"api_(v1|prom)_push|otlp_v1_metrics\",status_code=~\"2.+\"}[$__rate_interval])) /\nsum(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", route=~\"api_(v1|prom)_push|otlp_v1_metrics\"}[$__rate_interval]))\n",
                    "format": null,
                    "instant": false,
                    "interval": "",
@@ -26592,7 +26592,7 @@ data:
              "steppedLine": false,
              "targets": [
                 {
-                   "expr": "sum(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", route=~\"api_(v1|prom)_push|otlp_v1_metrics\",status_code=~\"4.+\"}[$__rate_interval])) /\nsum(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", route=~\"api_(v1|prom)_push|otlp_v1_metrics\"}[$__rate_interval]))\n",
+                   "expr": "sum(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", route=~\"api_(v1|prom)_push|otlp_v1_metrics\",status_code=~\"4.+\"}[$__rate_interval])) /\nsum(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", route=~\"api_(v1|prom)_push|otlp_v1_metrics\"}[$__rate_interval]))\n",
                    "format": null,
                    "instant": false,
                    "interval": "",
@@ -26700,7 +26700,7 @@ data:
              "steppedLine": false,
              "targets": [
                 {
-                   "expr": "sum(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", route=~\"api_(v1|prom)_push|otlp_v1_metrics\",status_code=~\"5.+\"}[$__rate_interval])) /\nsum(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", route=~\"api_(v1|prom)_push|otlp_v1_metrics\"}[$__rate_interval]))\n",
+                   "expr": "sum(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", route=~\"api_(v1|prom)_push|otlp_v1_metrics\",status_code=~\"5.+\"}[$__rate_interval])) /\nsum(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", route=~\"api_(v1|prom)_push|otlp_v1_metrics\"}[$__rate_interval]))\n",
                    "format": null,
                    "instant": false,
                    "interval": "",
@@ -26812,7 +26812,7 @@ data:
              "steppedLine": false,
              "targets": [
                 {
-                   "expr": "histogram_quantile(0.99, sum by (le) (cluster_job_route:cortex_request_duration_seconds_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", route=~\"api_(v1|prom)_push|otlp_v1_metrics\"}))\n",
+                   "expr": "histogram_quantile(0.99, sum by (le) (cluster_job_route:cortex_request_duration_seconds_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", route=~\"api_(v1|prom)_push|otlp_v1_metrics\"}))\n",
                    "format": null,
                    "instant": false,
                    "interval": "",
@@ -27491,12 +27491,15 @@ data:
              "type": "table"
           },
           {
-             "aliasColors": { },
-             "bars": false,
-             "dashLength": 10,
-             "dashes": false,
              "datasource": "$datasource",
-             "fill": 1,
+             "fieldConfig": {
+                "defaults": {
+                   "custom": {
+                      "fillOpacity": 10
+                   },
+                   "unit": "percentunit"
+                }
+             },
              "gridPos": {
                 "h": 8,
                 "w": 8,
@@ -27504,31 +27507,19 @@ data:
                 "y": 8
              },
              "id": 12,
-             "legend": {
-                "avg": false,
-                "current": false,
-                "max": false,
-                "min": false,
-                "show": true,
-                "total": false,
-                "values": false
-             },
-             "lines": true,
-             "linewidth": 1,
              "links": [ ],
-             "nullPointMode": "null as zero",
-             "percentage": false,
-             "pointradius": 5,
-             "points": false,
-             "renderer": "flot",
-             "seriesOverrides": [ ],
-             "spaceLength": 10,
-             "span": 6,
-             "stack": false,
-             "steppedLine": false,
+             "options": {
+                "legend": {
+                   "showLegend": true
+                },
+                "tooltip": {
+                   "mode": "single",
+                   "sort": "none"
+                }
+             },
              "targets": [
                 {
-                   "expr": "1 - (\n  avg_over_time(histogram_quantile(0.99, sum by (le) (cluster_job_route:cortex_request_duration_seconds_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", route=~\"api_(v1|prom)_push|otlp_v1_metrics\"} offset 24h))[1h:])\n  /\n  avg_over_time(histogram_quantile(0.99, sum by (le) (cluster_job_route:cortex_request_duration_seconds_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", route=~\"api_(v1|prom)_push|otlp_v1_metrics\"}))[1h:])\n)\n",
+                   "expr": "1 - (\n  avg_over_time(histogram_quantile(0.99, sum by (le) (cluster_job_route:cortex_request_duration_seconds_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", route=~\"api_(v1|prom)_push|otlp_v1_metrics\"} offset 24h))[1h:])\n  /\n  avg_over_time(histogram_quantile(0.99, sum by (le) (cluster_job_route:cortex_request_duration_seconds_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", route=~\"api_(v1|prom)_push|otlp_v1_metrics\"}))[1h:])\n)\n",
                    "format": "time_series",
                    "legendFormat": "writes",
                    "legendLink": null
@@ -27540,41 +27531,8 @@ data:
                    "legendLink": null
                 }
              ],
-             "thresholds": [ ],
-             "timeFrom": null,
-             "timeShift": null,
              "title": "Latency vs 24h ago",
-             "tooltip": {
-                "shared": false,
-                "sort": 0,
-                "value_type": "individual"
-             },
-             "type": "graph",
-             "xaxis": {
-                "buckets": null,
-                "mode": "time",
-                "name": null,
-                "show": true,
-                "values": [ ]
-             },
-             "yaxes": [
-                {
-                   "format": "percentunit",
-                   "label": null,
-                   "logBase": 1,
-                   "max": null,
-                   "min": null,
-                   "show": true
-                },
-                {
-                   "format": "short",
-                   "label": null,
-                   "logBase": 1,
-                   "max": null,
-                   "min": null,
-                   "show": false
-                }
-             ]
+             "type": "timeseries"
           }
        ],
        "refresh": "10s",
@@ -27592,7 +27550,7 @@ data:
                    "value": "default"
                 },
                 "hide": 0,
-                "label": "Data Source",
+                "label": "Data source",
                 "name": "datasource",
                 "options": [ ],
                 "query": "prometheus",
@@ -30156,7 +30114,7 @@ data:
                    "value": "default"
                 },
                 "hide": 0,
-                "label": "Data Source",
+                "label": "Data source",
                 "name": "datasource",
                 "options": [ ],
                 "query": "prometheus",
@@ -30529,7 +30487,7 @@ data:
                    "value": "default"
                 },
                 "hide": 0,
-                "label": "Data Source",
+                "label": "Data source",
                 "name": "datasource",
                 "options": [ ],
                 "query": "prometheus",
@@ -30670,6 +30628,1182 @@ data:
              "height": "250px",
              "panels": [
                 {
+                   "aliasColors": { },
+                   "bars": false,
+                   "dashLength": 10,
+                   "dashes": false,
+                   "datasource": "${lokidatasource}",
+                   "fill": 1,
+                   "id": 1,
+                   "legend": {
+                      "avg": false,
+                      "current": false,
+                      "max": false,
+                      "min": false,
+                      "show": true,
+                      "total": false,
+                      "values": false
+                   },
+                   "lines": true,
+                   "linewidth": 1,
+                   "links": [ ],
+                   "nullPointMode": "null as zero",
+                   "percentage": false,
+                   "pointradius": 5,
+                   "points": false,
+                   "renderer": "flot",
+                   "seriesOverrides": [ ],
+                   "spaceLength": 10,
+                   "span": 2,
+                   "stack": false,
+                   "steppedLine": false,
+                   "targets": [
+                      {
+                         "expr": "quantile_over_time(0.99, {cluster=~\"$cluster\",namespace=~\"$namespace\",name=~\"query-frontend.*\"} |= \"query stats\" != \"/api/v1/read\" | logfmt | user=~\"${tenant_id}\" | user_agent=~\"${user_agent}\" | response_time > ${min_duration} | unwrap duration_seconds(response_time) [$__auto]) by ()",
+                         "format": "time_series",
+                         "legendFormat": "p99",
+                         "legendLink": null
+                      },
+                      {
+                         "expr": "quantile_over_time(0.5, {cluster=~\"$cluster\",namespace=~\"$namespace\",name=~\"query-frontend.*\"} |= \"query stats\" != \"/api/v1/read\" | logfmt | user=~\"${tenant_id}\" | user_agent=~\"${user_agent}\" | response_time > ${min_duration} | unwrap duration_seconds(response_time) [$__auto]) by ()",
+                         "format": "time_series",
+                         "legendFormat": "p50",
+                         "legendLink": null
+                      }
+                   ],
+                   "thresholds": [ ],
+                   "timeFrom": null,
+                   "timeShift": null,
+                   "title": "Response time",
+                   "tooltip": {
+                      "shared": false,
+                      "sort": 0,
+                      "value_type": "individual"
+                   },
+                   "type": "graph",
+                   "xaxis": {
+                      "buckets": null,
+                      "mode": "time",
+                      "name": null,
+                      "show": true,
+                      "values": [ ]
+                   },
+                   "yaxes": [
+                      {
+                         "format": "s",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": 0,
+                         "show": true
+                      },
+                      {
+                         "format": "short",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": null,
+                         "show": false
+                      }
+                   ]
+                },
+                {
+                   "aliasColors": { },
+                   "bars": false,
+                   "dashLength": 10,
+                   "dashes": false,
+                   "datasource": "${lokidatasource}",
+                   "fill": 1,
+                   "id": 2,
+                   "legend": {
+                      "avg": false,
+                      "current": false,
+                      "max": false,
+                      "min": false,
+                      "show": true,
+                      "total": false,
+                      "values": false
+                   },
+                   "lines": true,
+                   "linewidth": 1,
+                   "links": [ ],
+                   "nullPointMode": "null as zero",
+                   "percentage": false,
+                   "pointradius": 5,
+                   "points": false,
+                   "renderer": "flot",
+                   "seriesOverrides": [ ],
+                   "spaceLength": 10,
+                   "span": 2,
+                   "stack": false,
+                   "steppedLine": false,
+                   "targets": [
+                      {
+                         "expr": "quantile_over_time(0.99, {cluster=~\"$cluster\",namespace=~\"$namespace\",name=~\"query-frontend.*\"} |= \"query stats\" != \"/api/v1/read\" | logfmt | user=~\"${tenant_id}\" | user_agent=~\"${user_agent}\" | response_time > ${min_duration} | unwrap fetched_series_count[$__auto]) by ()",
+                         "format": "time_series",
+                         "legendFormat": "p99",
+                         "legendLink": null
+                      },
+                      {
+                         "expr": "quantile_over_time(0.5, {cluster=~\"$cluster\",namespace=~\"$namespace\",name=~\"query-frontend.*\"} |= \"query stats\" != \"/api/v1/read\" | logfmt | user=~\"${tenant_id}\" | user_agent=~\"${user_agent}\" | response_time > ${min_duration} | unwrap fetched_series_count[$__auto]) by ()",
+                         "format": "time_series",
+                         "legendFormat": "p50",
+                         "legendLink": null
+                      }
+                   ],
+                   "thresholds": [ ],
+                   "timeFrom": null,
+                   "timeShift": null,
+                   "title": "Fetched series",
+                   "tooltip": {
+                      "shared": false,
+                      "sort": 0,
+                      "value_type": "individual"
+                   },
+                   "type": "graph",
+                   "xaxis": {
+                      "buckets": null,
+                      "mode": "time",
+                      "name": null,
+                      "show": true,
+                      "values": [ ]
+                   },
+                   "yaxes": [
+                      {
+                         "format": "short",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": 0,
+                         "show": true
+                      },
+                      {
+                         "format": "short",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": null,
+                         "show": false
+                      }
+                   ]
+                },
+                {
+                   "aliasColors": { },
+                   "bars": false,
+                   "dashLength": 10,
+                   "dashes": false,
+                   "datasource": "${lokidatasource}",
+                   "fill": 1,
+                   "id": 3,
+                   "legend": {
+                      "avg": false,
+                      "current": false,
+                      "max": false,
+                      "min": false,
+                      "show": true,
+                      "total": false,
+                      "values": false
+                   },
+                   "lines": true,
+                   "linewidth": 1,
+                   "links": [ ],
+                   "nullPointMode": "null as zero",
+                   "percentage": false,
+                   "pointradius": 5,
+                   "points": false,
+                   "renderer": "flot",
+                   "seriesOverrides": [ ],
+                   "spaceLength": 10,
+                   "span": 2,
+                   "stack": false,
+                   "steppedLine": false,
+                   "targets": [
+                      {
+                         "expr": "quantile_over_time(0.99, {cluster=~\"$cluster\",namespace=~\"$namespace\",name=~\"query-frontend.*\"} |= \"query stats\" != \"/api/v1/read\" | logfmt | user=~\"${tenant_id}\" | user_agent=~\"${user_agent}\" | response_time > ${min_duration} | unwrap fetched_chunk_bytes[$__auto]) by ()",
+                         "format": "time_series",
+                         "legendFormat": "p99",
+                         "legendLink": null
+                      },
+                      {
+                         "expr": "quantile_over_time(0.5, {cluster=~\"$cluster\",namespace=~\"$namespace\",name=~\"query-frontend.*\"} |= \"query stats\" != \"/api/v1/read\" | logfmt | user=~\"${tenant_id}\" | user_agent=~\"${user_agent}\" | response_time > ${min_duration} | unwrap fetched_chunk_bytes[$__auto]) by ()",
+                         "format": "time_series",
+                         "legendFormat": "p50",
+                         "legendLink": null
+                      }
+                   ],
+                   "thresholds": [ ],
+                   "timeFrom": null,
+                   "timeShift": null,
+                   "title": "Fetched chunks",
+                   "tooltip": {
+                      "shared": false,
+                      "sort": 0,
+                      "value_type": "individual"
+                   },
+                   "type": "graph",
+                   "xaxis": {
+                      "buckets": null,
+                      "mode": "time",
+                      "name": null,
+                      "show": true,
+                      "values": [ ]
+                   },
+                   "yaxes": [
+                      {
+                         "format": "bytes",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": 0,
+                         "show": true
+                      },
+                      {
+                         "format": "short",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": null,
+                         "show": false
+                      }
+                   ]
+                },
+                {
+                   "aliasColors": { },
+                   "bars": false,
+                   "dashLength": 10,
+                   "dashes": false,
+                   "datasource": "${lokidatasource}",
+                   "fill": 1,
+                   "id": 4,
+                   "legend": {
+                      "avg": false,
+                      "current": false,
+                      "max": false,
+                      "min": false,
+                      "show": true,
+                      "total": false,
+                      "values": false
+                   },
+                   "lines": true,
+                   "linewidth": 1,
+                   "links": [ ],
+                   "nullPointMode": "null as zero",
+                   "percentage": false,
+                   "pointradius": 5,
+                   "points": false,
+                   "renderer": "flot",
+                   "seriesOverrides": [ ],
+                   "spaceLength": 10,
+                   "span": 2,
+                   "stack": false,
+                   "steppedLine": false,
+                   "targets": [
+                      {
+                         "expr": "quantile_over_time(0.99, {cluster=~\"$cluster\",namespace=~\"$namespace\",name=~\"query-frontend.*\"} |= \"query stats\" != \"/api/v1/read\" | logfmt | user=~\"${tenant_id}\" | user_agent=~\"${user_agent}\" | response_time > ${min_duration} | unwrap response_size_bytes[$__auto]) by ()",
+                         "format": "time_series",
+                         "legendFormat": "p99",
+                         "legendLink": null
+                      },
+                      {
+                         "expr": "quantile_over_time(0.5, {cluster=~\"$cluster\",namespace=~\"$namespace\",name=~\"query-frontend.*\"} |= \"query stats\" != \"/api/v1/read\" | logfmt | user=~\"${tenant_id}\" | user_agent=~\"${user_agent}\" | response_time > ${min_duration} | unwrap response_size_bytes[$__auto]) by ()",
+                         "format": "time_series",
+                         "legendFormat": "p50",
+                         "legendLink": null
+                      }
+                   ],
+                   "thresholds": [ ],
+                   "timeFrom": null,
+                   "timeShift": null,
+                   "title": "Response size",
+                   "tooltip": {
+                      "shared": false,
+                      "sort": 0,
+                      "value_type": "individual"
+                   },
+                   "type": "graph",
+                   "xaxis": {
+                      "buckets": null,
+                      "mode": "time",
+                      "name": null,
+                      "show": true,
+                      "values": [ ]
+                   },
+                   "yaxes": [
+                      {
+                         "format": "bytes",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": 0,
+                         "show": true
+                      },
+                      {
+                         "format": "short",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": null,
+                         "show": false
+                      }
+                   ]
+                },
+                {
+                   "aliasColors": { },
+                   "bars": false,
+                   "dashLength": 10,
+                   "dashes": false,
+                   "datasource": "${lokidatasource}",
+                   "fill": 1,
+                   "id": 5,
+                   "legend": {
+                      "avg": false,
+                      "current": false,
+                      "max": false,
+                      "min": false,
+                      "show": true,
+                      "total": false,
+                      "values": false
+                   },
+                   "lines": true,
+                   "linewidth": 1,
+                   "links": [ ],
+                   "nullPointMode": "null as zero",
+                   "percentage": false,
+                   "pointradius": 5,
+                   "points": false,
+                   "renderer": "flot",
+                   "seriesOverrides": [ ],
+                   "spaceLength": 10,
+                   "span": 2,
+                   "stack": false,
+                   "steppedLine": false,
+                   "targets": [
+                      {
+                         "expr": "quantile_over_time(0.99, {cluster=~\"$cluster\",namespace=~\"$namespace\",name=~\"query-frontend.*\"} |= \"query stats\" != \"/api/v1/read\" | logfmt | user=~\"${tenant_id}\" | user_agent=~\"${user_agent}\" | response_time > ${min_duration} | unwrap duration_seconds(length) [$__auto]) by ()",
+                         "format": "time_series",
+                         "legendFormat": "p99",
+                         "legendLink": null
+                      },
+                      {
+                         "expr": "quantile_over_time(0.5, {cluster=~\"$cluster\",namespace=~\"$namespace\",name=~\"query-frontend.*\"} |= \"query stats\" != \"/api/v1/read\" | logfmt | user=~\"${tenant_id}\" | user_agent=~\"${user_agent}\" | response_time > ${min_duration} | unwrap duration_seconds(length) [$__auto]) by ()",
+                         "format": "time_series",
+                         "legendFormat": "p50",
+                         "legendLink": null
+                      }
+                   ],
+                   "thresholds": [ ],
+                   "timeFrom": null,
+                   "timeShift": null,
+                   "title": "Time span",
+                   "tooltip": {
+                      "shared": false,
+                      "sort": 0,
+                      "value_type": "individual"
+                   },
+                   "type": "graph",
+                   "xaxis": {
+                      "buckets": null,
+                      "mode": "time",
+                      "name": null,
+                      "show": true,
+                      "values": [ ]
+                   },
+                   "yaxes": [
+                      {
+                         "format": "s",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": 0,
+                         "show": true
+                      },
+                      {
+                         "format": "short",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": null,
+                         "show": false
+                      }
+                   ]
+                }
+             ],
+             "repeat": null,
+             "repeatIteration": null,
+             "repeatRowId": null,
+             "showTitle": true,
+             "title": "Accross tenants",
+             "titleSize": "h6"
+          },
+          {
+             "collapse": true,
+             "height": "250px",
+             "panels": [
+                {
+                   "aliasColors": { },
+                   "bars": false,
+                   "dashLength": 10,
+                   "dashes": false,
+                   "datasource": "${lokidatasource}",
+                   "fill": 1,
+                   "id": 6,
+                   "legend": {
+                      "avg": false,
+                      "current": false,
+                      "max": false,
+                      "min": false,
+                      "show": true,
+                      "total": false,
+                      "values": false
+                   },
+                   "lines": true,
+                   "linewidth": 1,
+                   "links": [ ],
+                   "nullPointMode": "null as zero",
+                   "percentage": false,
+                   "pointradius": 5,
+                   "points": false,
+                   "renderer": "flot",
+                   "seriesOverrides": [ ],
+                   "spaceLength": 10,
+                   "span": 2,
+                   "stack": false,
+                   "steppedLine": false,
+                   "targets": [
+                      {
+                         "expr": "topk(10, quantile_over_time(0.99, {cluster=~\"$cluster\",namespace=~\"$namespace\",name=~\"query-frontend.*\"} |= \"query stats\" != \"/api/v1/read\" | logfmt | user=~\"${tenant_id}\" | user_agent=~\"${user_agent}\" | response_time > ${min_duration} | unwrap duration_seconds(response_time) [$__auto]) by (user))",
+                         "format": "time_series",
+                         "legendFormat": "{{user}}",
+                         "legendLink": null
+                      }
+                   ],
+                   "thresholds": [ ],
+                   "timeFrom": null,
+                   "timeShift": null,
+                   "title": "P99 response time",
+                   "tooltip": {
+                      "shared": false,
+                      "sort": 0,
+                      "value_type": "individual"
+                   },
+                   "type": "graph",
+                   "xaxis": {
+                      "buckets": null,
+                      "mode": "time",
+                      "name": null,
+                      "show": true,
+                      "values": [ ]
+                   },
+                   "yaxes": [
+                      {
+                         "format": "s",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": 0,
+                         "show": true
+                      },
+                      {
+                         "format": "short",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": null,
+                         "show": false
+                      }
+                   ]
+                },
+                {
+                   "aliasColors": { },
+                   "bars": false,
+                   "dashLength": 10,
+                   "dashes": false,
+                   "datasource": "${lokidatasource}",
+                   "fill": 1,
+                   "id": 7,
+                   "legend": {
+                      "avg": false,
+                      "current": false,
+                      "max": false,
+                      "min": false,
+                      "show": true,
+                      "total": false,
+                      "values": false
+                   },
+                   "lines": true,
+                   "linewidth": 1,
+                   "links": [ ],
+                   "nullPointMode": "null as zero",
+                   "percentage": false,
+                   "pointradius": 5,
+                   "points": false,
+                   "renderer": "flot",
+                   "seriesOverrides": [ ],
+                   "spaceLength": 10,
+                   "span": 2,
+                   "stack": false,
+                   "steppedLine": false,
+                   "targets": [
+                      {
+                         "expr": "topk(10, quantile_over_time(0.99, {cluster=~\"$cluster\",namespace=~\"$namespace\",name=~\"query-frontend.*\"} |= \"query stats\" != \"/api/v1/read\" | logfmt | user=~\"${tenant_id}\" | user_agent=~\"${user_agent}\" | response_time > ${min_duration} | unwrap fetched_series_count[$__auto]) by (user))",
+                         "format": "time_series",
+                         "legendFormat": "{{user}}",
+                         "legendLink": null
+                      }
+                   ],
+                   "thresholds": [ ],
+                   "timeFrom": null,
+                   "timeShift": null,
+                   "title": "P99 fetched series",
+                   "tooltip": {
+                      "shared": false,
+                      "sort": 0,
+                      "value_type": "individual"
+                   },
+                   "type": "graph",
+                   "xaxis": {
+                      "buckets": null,
+                      "mode": "time",
+                      "name": null,
+                      "show": true,
+                      "values": [ ]
+                   },
+                   "yaxes": [
+                      {
+                         "format": "short",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": 0,
+                         "show": true
+                      },
+                      {
+                         "format": "short",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": null,
+                         "show": false
+                      }
+                   ]
+                },
+                {
+                   "aliasColors": { },
+                   "bars": false,
+                   "dashLength": 10,
+                   "dashes": false,
+                   "datasource": "${lokidatasource}",
+                   "fill": 1,
+                   "id": 8,
+                   "legend": {
+                      "avg": false,
+                      "current": false,
+                      "max": false,
+                      "min": false,
+                      "show": true,
+                      "total": false,
+                      "values": false
+                   },
+                   "lines": true,
+                   "linewidth": 1,
+                   "links": [ ],
+                   "nullPointMode": "null as zero",
+                   "percentage": false,
+                   "pointradius": 5,
+                   "points": false,
+                   "renderer": "flot",
+                   "seriesOverrides": [ ],
+                   "spaceLength": 10,
+                   "span": 2,
+                   "stack": false,
+                   "steppedLine": false,
+                   "targets": [
+                      {
+                         "expr": "topk(10, quantile_over_time(0.99, {cluster=~\"$cluster\",namespace=~\"$namespace\",name=~\"query-frontend.*\"} |= \"query stats\" != \"/api/v1/read\" | logfmt | user=~\"${tenant_id}\" | user_agent=~\"${user_agent}\" | response_time > ${min_duration} | unwrap fetched_chunk_bytes[$__auto]) by (user))",
+                         "format": "time_series",
+                         "legendFormat": "{{user}}",
+                         "legendLink": null
+                      }
+                   ],
+                   "thresholds": [ ],
+                   "timeFrom": null,
+                   "timeShift": null,
+                   "title": "P99 fetched chunks",
+                   "tooltip": {
+                      "shared": false,
+                      "sort": 0,
+                      "value_type": "individual"
+                   },
+                   "type": "graph",
+                   "xaxis": {
+                      "buckets": null,
+                      "mode": "time",
+                      "name": null,
+                      "show": true,
+                      "values": [ ]
+                   },
+                   "yaxes": [
+                      {
+                         "format": "bytes",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": 0,
+                         "show": true
+                      },
+                      {
+                         "format": "short",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": null,
+                         "show": false
+                      }
+                   ]
+                },
+                {
+                   "aliasColors": { },
+                   "bars": false,
+                   "dashLength": 10,
+                   "dashes": false,
+                   "datasource": "${lokidatasource}",
+                   "fill": 1,
+                   "id": 9,
+                   "legend": {
+                      "avg": false,
+                      "current": false,
+                      "max": false,
+                      "min": false,
+                      "show": true,
+                      "total": false,
+                      "values": false
+                   },
+                   "lines": true,
+                   "linewidth": 1,
+                   "links": [ ],
+                   "nullPointMode": "null as zero",
+                   "percentage": false,
+                   "pointradius": 5,
+                   "points": false,
+                   "renderer": "flot",
+                   "seriesOverrides": [ ],
+                   "spaceLength": 10,
+                   "span": 2,
+                   "stack": false,
+                   "steppedLine": false,
+                   "targets": [
+                      {
+                         "expr": "topk(10, quantile_over_time(0.99, {cluster=~\"$cluster\",namespace=~\"$namespace\",name=~\"query-frontend.*\"} |= \"query stats\" != \"/api/v1/read\" | logfmt | user=~\"${tenant_id}\" | user_agent=~\"${user_agent}\" | response_time > ${min_duration} | unwrap response_size_bytes[$__auto]) by (user))",
+                         "format": "time_series",
+                         "legendFormat": "{{user}}",
+                         "legendLink": null
+                      }
+                   ],
+                   "thresholds": [ ],
+                   "timeFrom": null,
+                   "timeShift": null,
+                   "title": "P99 response size",
+                   "tooltip": {
+                      "shared": false,
+                      "sort": 0,
+                      "value_type": "individual"
+                   },
+                   "type": "graph",
+                   "xaxis": {
+                      "buckets": null,
+                      "mode": "time",
+                      "name": null,
+                      "show": true,
+                      "values": [ ]
+                   },
+                   "yaxes": [
+                      {
+                         "format": "bytes",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": 0,
+                         "show": true
+                      },
+                      {
+                         "format": "short",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": null,
+                         "show": false
+                      }
+                   ]
+                },
+                {
+                   "aliasColors": { },
+                   "bars": false,
+                   "dashLength": 10,
+                   "dashes": false,
+                   "datasource": "${lokidatasource}",
+                   "fill": 1,
+                   "id": 10,
+                   "legend": {
+                      "avg": false,
+                      "current": false,
+                      "max": false,
+                      "min": false,
+                      "show": true,
+                      "total": false,
+                      "values": false
+                   },
+                   "lines": true,
+                   "linewidth": 1,
+                   "links": [ ],
+                   "nullPointMode": "null as zero",
+                   "percentage": false,
+                   "pointradius": 5,
+                   "points": false,
+                   "renderer": "flot",
+                   "seriesOverrides": [ ],
+                   "spaceLength": 10,
+                   "span": 2,
+                   "stack": false,
+                   "steppedLine": false,
+                   "targets": [
+                      {
+                         "expr": "topk(10, quantile_over_time(0.99, {cluster=~\"$cluster\",namespace=~\"$namespace\",name=~\"query-frontend.*\"} |= \"query stats\" != \"/api/v1/read\" | logfmt | user=~\"${tenant_id}\" | user_agent=~\"${user_agent}\" | response_time > ${min_duration} | unwrap duration_seconds(length) [$__auto]) by (user))",
+                         "format": "time_series",
+                         "legendFormat": "{{user}}",
+                         "legendLink": null
+                      }
+                   ],
+                   "thresholds": [ ],
+                   "timeFrom": null,
+                   "timeShift": null,
+                   "title": "P99 time span",
+                   "tooltip": {
+                      "shared": false,
+                      "sort": 0,
+                      "value_type": "individual"
+                   },
+                   "type": "graph",
+                   "xaxis": {
+                      "buckets": null,
+                      "mode": "time",
+                      "name": null,
+                      "show": true,
+                      "values": [ ]
+                   },
+                   "yaxes": [
+                      {
+                         "format": "s",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": 0,
+                         "show": true
+                      },
+                      {
+                         "format": "short",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": null,
+                         "show": false
+                      }
+                   ]
+                }
+             ],
+             "repeat": null,
+             "repeatIteration": null,
+             "repeatRowId": null,
+             "showTitle": true,
+             "title": "Top 10 tenants",
+             "titleSize": "h6"
+          },
+          {
+             "collapse": true,
+             "height": "250px",
+             "panels": [
+                {
+                   "aliasColors": { },
+                   "bars": false,
+                   "dashLength": 10,
+                   "dashes": false,
+                   "datasource": "${lokidatasource}",
+                   "fill": 1,
+                   "id": 11,
+                   "legend": {
+                      "avg": false,
+                      "current": false,
+                      "max": false,
+                      "min": false,
+                      "show": true,
+                      "total": false,
+                      "values": false
+                   },
+                   "lines": true,
+                   "linewidth": 1,
+                   "links": [ ],
+                   "nullPointMode": "null as zero",
+                   "percentage": false,
+                   "pointradius": 5,
+                   "points": false,
+                   "renderer": "flot",
+                   "seriesOverrides": [ ],
+                   "spaceLength": 10,
+                   "span": 2,
+                   "stack": false,
+                   "steppedLine": false,
+                   "targets": [
+                      {
+                         "expr": "topk(10, quantile_over_time(0.99, {cluster=~\"$cluster\",namespace=~\"$namespace\",name=~\"query-frontend.*\"} |= \"query stats\" != \"/api/v1/read\" | logfmt | user=~\"${tenant_id}\" | user_agent=~\"${user_agent}\" | response_time > ${min_duration} | unwrap duration_seconds(response_time) [$__auto]) by (user_agent))",
+                         "format": "time_series",
+                         "legendFormat": "{{user_agent}}",
+                         "legendLink": null
+                      }
+                   ],
+                   "thresholds": [ ],
+                   "timeFrom": null,
+                   "timeShift": null,
+                   "title": "P99 response time",
+                   "tooltip": {
+                      "shared": false,
+                      "sort": 0,
+                      "value_type": "individual"
+                   },
+                   "type": "graph",
+                   "xaxis": {
+                      "buckets": null,
+                      "mode": "time",
+                      "name": null,
+                      "show": true,
+                      "values": [ ]
+                   },
+                   "yaxes": [
+                      {
+                         "format": "s",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": 0,
+                         "show": true
+                      },
+                      {
+                         "format": "short",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": null,
+                         "show": false
+                      }
+                   ]
+                },
+                {
+                   "aliasColors": { },
+                   "bars": false,
+                   "dashLength": 10,
+                   "dashes": false,
+                   "datasource": "${lokidatasource}",
+                   "fill": 1,
+                   "id": 12,
+                   "legend": {
+                      "avg": false,
+                      "current": false,
+                      "max": false,
+                      "min": false,
+                      "show": true,
+                      "total": false,
+                      "values": false
+                   },
+                   "lines": true,
+                   "linewidth": 1,
+                   "links": [ ],
+                   "nullPointMode": "null as zero",
+                   "percentage": false,
+                   "pointradius": 5,
+                   "points": false,
+                   "renderer": "flot",
+                   "seriesOverrides": [ ],
+                   "spaceLength": 10,
+                   "span": 2,
+                   "stack": false,
+                   "steppedLine": false,
+                   "targets": [
+                      {
+                         "expr": "topk(10, quantile_over_time(0.99, {cluster=~\"$cluster\",namespace=~\"$namespace\",name=~\"query-frontend.*\"} |= \"query stats\" != \"/api/v1/read\" | logfmt | user=~\"${tenant_id}\" | user_agent=~\"${user_agent}\" | response_time > ${min_duration} | unwrap fetched_series_count[$__auto]) by (user_agent))",
+                         "format": "time_series",
+                         "legendFormat": "{{user_agent}}",
+                         "legendLink": null
+                      }
+                   ],
+                   "thresholds": [ ],
+                   "timeFrom": null,
+                   "timeShift": null,
+                   "title": "P99 fetched series",
+                   "tooltip": {
+                      "shared": false,
+                      "sort": 0,
+                      "value_type": "individual"
+                   },
+                   "type": "graph",
+                   "xaxis": {
+                      "buckets": null,
+                      "mode": "time",
+                      "name": null,
+                      "show": true,
+                      "values": [ ]
+                   },
+                   "yaxes": [
+                      {
+                         "format": "short",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": 0,
+                         "show": true
+                      },
+                      {
+                         "format": "short",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": null,
+                         "show": false
+                      }
+                   ]
+                },
+                {
+                   "aliasColors": { },
+                   "bars": false,
+                   "dashLength": 10,
+                   "dashes": false,
+                   "datasource": "${lokidatasource}",
+                   "fill": 1,
+                   "id": 13,
+                   "legend": {
+                      "avg": false,
+                      "current": false,
+                      "max": false,
+                      "min": false,
+                      "show": true,
+                      "total": false,
+                      "values": false
+                   },
+                   "lines": true,
+                   "linewidth": 1,
+                   "links": [ ],
+                   "nullPointMode": "null as zero",
+                   "percentage": false,
+                   "pointradius": 5,
+                   "points": false,
+                   "renderer": "flot",
+                   "seriesOverrides": [ ],
+                   "spaceLength": 10,
+                   "span": 2,
+                   "stack": false,
+                   "steppedLine": false,
+                   "targets": [
+                      {
+                         "expr": "topk(10, quantile_over_time(0.99, {cluster=~\"$cluster\",namespace=~\"$namespace\",name=~\"query-frontend.*\"} |= \"query stats\" != \"/api/v1/read\" | logfmt | user=~\"${tenant_id}\" | user_agent=~\"${user_agent}\" | response_time > ${min_duration} | unwrap fetched_chunk_bytes[$__auto]) by (user_agent))",
+                         "format": "time_series",
+                         "legendFormat": "{{user_agent}}",
+                         "legendLink": null
+                      }
+                   ],
+                   "thresholds": [ ],
+                   "timeFrom": null,
+                   "timeShift": null,
+                   "title": "P99 fetched chunks",
+                   "tooltip": {
+                      "shared": false,
+                      "sort": 0,
+                      "value_type": "individual"
+                   },
+                   "type": "graph",
+                   "xaxis": {
+                      "buckets": null,
+                      "mode": "time",
+                      "name": null,
+                      "show": true,
+                      "values": [ ]
+                   },
+                   "yaxes": [
+                      {
+                         "format": "bytes",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": 0,
+                         "show": true
+                      },
+                      {
+                         "format": "short",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": null,
+                         "show": false
+                      }
+                   ]
+                },
+                {
+                   "aliasColors": { },
+                   "bars": false,
+                   "dashLength": 10,
+                   "dashes": false,
+                   "datasource": "${lokidatasource}",
+                   "fill": 1,
+                   "id": 14,
+                   "legend": {
+                      "avg": false,
+                      "current": false,
+                      "max": false,
+                      "min": false,
+                      "show": true,
+                      "total": false,
+                      "values": false
+                   },
+                   "lines": true,
+                   "linewidth": 1,
+                   "links": [ ],
+                   "nullPointMode": "null as zero",
+                   "percentage": false,
+                   "pointradius": 5,
+                   "points": false,
+                   "renderer": "flot",
+                   "seriesOverrides": [ ],
+                   "spaceLength": 10,
+                   "span": 2,
+                   "stack": false,
+                   "steppedLine": false,
+                   "targets": [
+                      {
+                         "expr": "topk(10, quantile_over_time(0.99, {cluster=~\"$cluster\",namespace=~\"$namespace\",name=~\"query-frontend.*\"} |= \"query stats\" != \"/api/v1/read\" | logfmt | user=~\"${tenant_id}\" | user_agent=~\"${user_agent}\" | response_time > ${min_duration} | unwrap response_size_bytes[$__auto]) by (user_agent))",
+                         "format": "time_series",
+                         "legendFormat": "{{user_agent}}",
+                         "legendLink": null
+                      }
+                   ],
+                   "thresholds": [ ],
+                   "timeFrom": null,
+                   "timeShift": null,
+                   "title": "P99 response size",
+                   "tooltip": {
+                      "shared": false,
+                      "sort": 0,
+                      "value_type": "individual"
+                   },
+                   "type": "graph",
+                   "xaxis": {
+                      "buckets": null,
+                      "mode": "time",
+                      "name": null,
+                      "show": true,
+                      "values": [ ]
+                   },
+                   "yaxes": [
+                      {
+                         "format": "bytes",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": 0,
+                         "show": true
+                      },
+                      {
+                         "format": "short",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": null,
+                         "show": false
+                      }
+                   ]
+                },
+                {
+                   "aliasColors": { },
+                   "bars": false,
+                   "dashLength": 10,
+                   "dashes": false,
+                   "datasource": "${lokidatasource}",
+                   "fill": 1,
+                   "id": 15,
+                   "legend": {
+                      "avg": false,
+                      "current": false,
+                      "max": false,
+                      "min": false,
+                      "show": true,
+                      "total": false,
+                      "values": false
+                   },
+                   "lines": true,
+                   "linewidth": 1,
+                   "links": [ ],
+                   "nullPointMode": "null as zero",
+                   "percentage": false,
+                   "pointradius": 5,
+                   "points": false,
+                   "renderer": "flot",
+                   "seriesOverrides": [ ],
+                   "spaceLength": 10,
+                   "span": 2,
+                   "stack": false,
+                   "steppedLine": false,
+                   "targets": [
+                      {
+                         "expr": "topk(10, quantile_over_time(0.99, {cluster=~\"$cluster\",namespace=~\"$namespace\",name=~\"query-frontend.*\"} |= \"query stats\" != \"/api/v1/read\" | logfmt | user=~\"${tenant_id}\" | user_agent=~\"${user_agent}\" | response_time > ${min_duration} | unwrap duration_seconds(length) [$__auto]) by (user_agent))",
+                         "format": "time_series",
+                         "legendFormat": "{{user_agent}}",
+                         "legendLink": null
+                      }
+                   ],
+                   "thresholds": [ ],
+                   "timeFrom": null,
+                   "timeShift": null,
+                   "title": "P99 time span",
+                   "tooltip": {
+                      "shared": false,
+                      "sort": 0,
+                      "value_type": "individual"
+                   },
+                   "type": "graph",
+                   "xaxis": {
+                      "buckets": null,
+                      "mode": "time",
+                      "name": null,
+                      "show": true,
+                      "values": [ ]
+                   },
+                   "yaxes": [
+                      {
+                         "format": "s",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": 0,
+                         "show": true
+                      },
+                      {
+                         "format": "short",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": null,
+                         "show": false
+                      }
+                   ]
+                }
+             ],
+             "repeat": null,
+             "repeatIteration": null,
+             "repeatRowId": null,
+             "showTitle": true,
+             "title": "Top 10 User-Agents",
+             "titleSize": "h6"
+          },
+          {
+             "collapse": false,
+             "height": "250px",
+             "panels": [
+                {
                    "datasource": "${lokidatasource}",
                    "fieldConfig": {
                       "overrides": [
@@ -30712,11 +31846,12 @@ data:
                          }
                       ]
                    },
-                   "id": 1,
+                   "height": "500px",
+                   "id": 16,
                    "span": 12,
                    "targets": [
                       {
-                         "expr": "{cluster=~\"$cluster\",namespace=~\"$namespace\",name=~\"query-frontend.*\"} |= \"query stats\" != \"/api/v1/read\" | logfmt | user=~\"${tenant_id}\" | response_time > ${min_duration}",
+                         "expr": "{cluster=~\"$cluster\",namespace=~\"$namespace\",name=~\"query-frontend.*\"} |= \"query stats\" != \"/api/v1/read\" | logfmt | user=~\"${tenant_id}\" | user_agent=~\"${user_agent}\" | response_time > ${min_duration}",
                          "instant": false,
                          "legendFormat": "",
                          "range": true,
@@ -30729,23 +31864,6 @@ data:
                          "id": "extractFields",
                          "options": {
                             "source": "labels"
-                         }
-                      },
-                      {
-                         "id": "calculateField",
-                         "options": {
-                            "alias": "Time range",
-                            "binary": {
-                               "left": "param_end",
-                               "operator": "-",
-                               "reducer": "sum",
-                               "right": "param_start"
-                            },
-                            "mode": "binary",
-                            "reduce": {
-                               "reducer": "sum"
-                            },
-                            "replaceFields": false
                          }
                       },
                       {
@@ -30767,9 +31885,6 @@ data:
                                "msg": true,
                                "name": true,
                                "namespace": true,
-                               "param_end": true,
-                               "param_start": true,
-                               "param_time": true,
                                "path": true,
                                "pod": true,
                                "pod_template_hash": true,
@@ -30779,10 +31894,13 @@ data:
                                "tsNs": true
                             },
                             "indexByName": {
-                               "Time range": 3,
-                               "param_query": 2,
-                               "param_step": 4,
-                               "response_time": 5,
+                               "length": 2,
+                               "param_end": 4,
+                               "param_query": 7,
+                               "param_start": 3,
+                               "param_step": 6,
+                               "param_time": 5,
+                               "response_time": 8,
                                "ts": 0,
                                "user": 1
                             },
@@ -30819,7 +31937,7 @@ data:
                    "value": "default"
                 },
                 "hide": 0,
-                "label": "Data Source",
+                "label": "Data source",
                 "name": "datasource",
                 "options": [ ],
                 "query": "prometheus",
@@ -30910,6 +32028,25 @@ data:
                 "hide": 0,
                 "label": "Tenant ID",
                 "name": "tenant_id",
+                "options": [
+                   {
+                      "selected": true,
+                      "text": ".*",
+                      "value": ".*"
+                   }
+                ],
+                "query": ".*",
+                "type": "textbox"
+             },
+             {
+                "current": {
+                   "selected": true,
+                   "text": ".*",
+                   "value": ".*"
+                },
+                "hide": 0,
+                "label": "User-Agent HTTP Header",
+                "name": "user_agent",
                 "options": [
                    {
                       "selected": true,
@@ -31066,7 +32203,7 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum(\n  (\n    cortex_ingester_memory_series_created_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}\n    - cortex_ingester_memory_series_removed_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}\n  )\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"})\n)\n",
+                         "expr": "sum(\n  (\n    cortex_ingester_memory_series_created_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}\n    - cortex_ingester_memory_series_removed_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}\n  )\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"})\n)\n",
                          "format": "time_series",
                          "legendFormat": "in-memory",
                          "legendLink": null
@@ -31078,13 +32215,13 @@ data:
                          "legendLink": null
                       },
                       {
-                         "expr": "sum(\n  cortex_ingester_active_series{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"})\n)\n",
+                         "expr": "sum(\n  cortex_ingester_active_series{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"})\n)\n",
                          "format": "time_series",
                          "legendFormat": "active",
                          "legendLink": null
                       },
                       {
-                         "expr": "sum by (name) (\n  cortex_ingester_active_series_custom_tracker{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"})\n) > 0\n",
+                         "expr": "sum by (name) (\n  cortex_ingester_active_series_custom_tracker{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"})\n) > 0\n",
                          "format": "time_series",
                          "legendFormat": "active ({{ name }})",
                          "legendLink": null
@@ -31165,13 +32302,13 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum(\n  cortex_ingester_active_native_histogram_series{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"})\n)\n",
+                         "expr": "sum(\n  cortex_ingester_active_native_histogram_series{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"})\n)\n",
                          "format": "time_series",
                          "legendFormat": "active",
                          "legendLink": null
                       },
                       {
-                         "expr": "sum by (name) (\n  cortex_ingester_active_native_histogram_series_custom_tracker{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"})\n) > 0\n",
+                         "expr": "sum by (name) (\n  cortex_ingester_active_native_histogram_series_custom_tracker{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"})\n) > 0\n",
                          "format": "time_series",
                          "legendFormat": "active ({{ name }})",
                          "legendLink": null
@@ -31252,13 +32389,13 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum(\n  cortex_ingester_active_native_histogram_buckets{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"})\n)\n",
+                         "expr": "sum(\n  cortex_ingester_active_native_histogram_buckets{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"})\n)\n",
                          "format": "time_series",
                          "legendFormat": "buckets",
                          "legendLink": null
                       },
                       {
-                         "expr": "sum by (name) (\n  cortex_ingester_active_native_histogram_buckets_custom_tracker{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"})\n) > 0\n",
+                         "expr": "sum by (name) (\n  cortex_ingester_active_native_histogram_buckets_custom_tracker{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"})\n) > 0\n",
                          "format": "time_series",
                          "legendFormat": "buckets ({{ name }})",
                          "legendLink": null
@@ -31339,7 +32476,7 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum(\n  cortex_ingester_tsdb_exemplar_series_with_exemplars_in_storage{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"})\n)\n",
+                         "expr": "sum(\n  cortex_ingester_tsdb_exemplar_series_with_exemplars_in_storage{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"})\n)\n",
                          "format": "time_series",
                          "legendFormat": "series",
                          "legendLink": null
@@ -31408,7 +32545,7 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "time() - max(cortex_distributor_latest_seen_sample_timestamp_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", user=\"$user\"} > 0)",
+                         "expr": "time() - max(cortex_distributor_latest_seen_sample_timestamp_seconds{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", user=\"$user\"} > 0)",
                          "format": "time_series",
                          "legendFormat": "age",
                          "legendLink": null
@@ -31558,7 +32695,7 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum(rate(cortex_distributor_requests_in_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", user=\"$user\"}[$__rate_interval]))",
+                         "expr": "sum(rate(cortex_distributor_requests_in_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}[$__rate_interval]))",
                          "format": "time_series",
                          "legendFormat": "rate",
                          "legendLink": null
@@ -31639,7 +32776,7 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum(rate(cortex_distributor_received_requests_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", user=\"$user\"}[$__rate_interval]))",
+                         "expr": "sum(rate(cortex_distributor_received_requests_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}[$__rate_interval]))",
                          "format": "time_series",
                          "legendFormat": "rate",
                          "legendLink": null
@@ -31720,7 +32857,7 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum by (reason) (rate(cortex_discarded_requests_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", user=\"$user\"}[$__rate_interval]))",
+                         "expr": "sum by (reason) (rate(cortex_discarded_requests_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}[$__rate_interval]))",
                          "format": "time_series",
                          "legendFormat": "{{ reason }}",
                          "legendLink": null
@@ -31801,7 +32938,7 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum(rate(cortex_distributor_samples_in_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", user=\"$user\"}[$__rate_interval]))",
+                         "expr": "sum(rate(cortex_distributor_samples_in_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}[$__rate_interval]))",
                          "format": "time_series",
                          "legendFormat": "rate",
                          "legendLink": null
@@ -31882,7 +33019,7 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum(rate(cortex_distributor_received_samples_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", user=\"$user\"}[$__rate_interval]))",
+                         "expr": "sum(rate(cortex_distributor_received_samples_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}[$__rate_interval]))",
                          "format": "time_series",
                          "legendFormat": "rate",
                          "legendLink": null
@@ -31963,13 +33100,13 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum(rate(cortex_distributor_deduped_samples_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", user=\"$user\"}[$__rate_interval]))",
+                         "expr": "sum(rate(cortex_distributor_deduped_samples_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}[$__rate_interval]))",
                          "format": "time_series",
                          "legendFormat": "deduplicated",
                          "legendLink": null
                       },
                       {
-                         "expr": "sum(rate(cortex_distributor_non_ha_samples_received_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", user=\"$user\"}[$__rate_interval]))",
+                         "expr": "sum(rate(cortex_distributor_non_ha_samples_received_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}[$__rate_interval]))",
                          "format": "time_series",
                          "legendFormat": "non-HA",
                          "legendLink": null
@@ -32044,7 +33181,7 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum by (reason) (rate(cortex_discarded_samples_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", user=\"$user\"}[$__rate_interval]))",
+                         "expr": "sum by (reason) (rate(cortex_discarded_samples_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}[$__rate_interval]))",
                          "format": "time_series",
                          "legendFormat": "{{ reason }} (distributor)",
                          "legendLink": null
@@ -32131,7 +33268,7 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum(rate(cortex_distributor_exemplars_in_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", user=\"$user\"}[$__rate_interval]))",
+                         "expr": "sum(rate(cortex_distributor_exemplars_in_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}[$__rate_interval]))",
                          "format": "time_series",
                          "legendFormat": "rate",
                          "legendLink": null
@@ -32200,7 +33337,7 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum(rate(cortex_distributor_received_exemplars_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", user=\"$user\"}[$__rate_interval]))",
+                         "expr": "sum(rate(cortex_distributor_received_exemplars_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}[$__rate_interval]))",
                          "format": "time_series",
                          "legendFormat": "rate",
                          "legendLink": null
@@ -32275,7 +33412,7 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum by (reason) (rate(cortex_discarded_exemplars_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", user=\"$user\"}[$__rate_interval]))",
+                         "expr": "sum by (reason) (rate(cortex_discarded_exemplars_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}[$__rate_interval]))",
                          "format": "time_series",
                          "legendFormat": "{{ reason }}",
                          "legendLink": null
@@ -32344,7 +33481,7 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum(\n  rate(cortex_ingester_tsdb_exemplar_exemplars_appended_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}[$__rate_interval])\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"})\n)\n",
+                         "expr": "sum(\n  rate(cortex_ingester_tsdb_exemplar_exemplars_appended_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\", user=\"$user\"}[$__rate_interval])\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"})\n)\n",
                          "format": "time_series",
                          "legendFormat": "rate",
                          "legendLink": null
@@ -33287,6 +34424,261 @@ data:
                    "renderer": "flot",
                    "seriesOverrides": [ ],
                    "spaceLength": 10,
+                   "span": 4,
+                   "stack": false,
+                   "steppedLine": false,
+                   "targets": [
+                      {
+                         "expr": "sum by (user) (cortex_alertmanager_alerts{cluster=~\"$cluster\", job=~\"($namespace)/((alertmanager|cortex|mimir|mimir-backend.*))\", user=\"$user\"})",
+                         "format": "time_series",
+                         "legendFormat": "alerts",
+                         "legendLink": null
+                      },
+                      {
+                         "expr": "sum by (user) (cortex_alertmanager_silences{cluster=~\"$cluster\", job=~\"($namespace)/((alertmanager|cortex|mimir|mimir-backend.*))\", user=\"$user\"})",
+                         "format": "time_series",
+                         "legendFormat": "silences",
+                         "legendLink": null
+                      }
+                   ],
+                   "thresholds": [ ],
+                   "timeFrom": null,
+                   "timeShift": null,
+                   "title": "Alerts",
+                   "tooltip": {
+                      "shared": false,
+                      "sort": 0,
+                      "value_type": "individual"
+                   },
+                   "type": "graph",
+                   "xaxis": {
+                      "buckets": null,
+                      "mode": "time",
+                      "name": null,
+                      "show": true,
+                      "values": [ ]
+                   },
+                   "yaxes": [
+                      {
+                         "format": "short",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": 0,
+                         "show": true
+                      },
+                      {
+                         "format": "short",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": null,
+                         "show": false
+                      }
+                   ]
+                },
+                {
+                   "aliasColors": {
+                      "failed": "#E24D42",
+                      "successful": "#7EB26D"
+                   },
+                   "bars": false,
+                   "dashLength": 10,
+                   "dashes": false,
+                   "datasource": "$datasource",
+                   "fill": 1,
+                   "id": 30,
+                   "legend": {
+                      "avg": false,
+                      "current": false,
+                      "max": false,
+                      "min": false,
+                      "show": true,
+                      "total": false,
+                      "values": false
+                   },
+                   "lines": true,
+                   "linewidth": 1,
+                   "links": [ ],
+                   "nullPointMode": "null as zero",
+                   "percentage": false,
+                   "pointradius": 5,
+                   "points": false,
+                   "renderer": "flot",
+                   "seriesOverrides": [ ],
+                   "spaceLength": 10,
+                   "span": 4,
+                   "stack": false,
+                   "steppedLine": false,
+                   "targets": [
+                      {
+                         "expr": "(\nsum(rate(cortex_alertmanager_notifications_total{cluster=~\"$cluster\", job=~\"($namespace)/((alertmanager|cortex|mimir|mimir-backend.*))\", user=\"$user\"}[$__rate_interval]))\n-\non() (sum(rate(cortex_alertmanager_notifications_failed_total{cluster=~\"$cluster\", job=~\"($namespace)/((alertmanager|cortex|mimir|mimir-backend.*))\", user=\"$user\"}[$__rate_interval])) or on () vector(0))\n) > 0\n",
+                         "format": "time_series",
+                         "legendFormat": "successful",
+                         "legendLink": null
+                      },
+                      {
+                         "expr": "sum(rate(cortex_alertmanager_notifications_failed_total{cluster=~\"$cluster\", job=~\"($namespace)/((alertmanager|cortex|mimir|mimir-backend.*))\", user=\"$user\"}[$__rate_interval]))",
+                         "format": "time_series",
+                         "legendFormat": "failed",
+                         "legendLink": null
+                      }
+                   ],
+                   "thresholds": [ ],
+                   "timeFrom": null,
+                   "timeShift": null,
+                   "title": "NPS",
+                   "tooltip": {
+                      "shared": false,
+                      "sort": 0,
+                      "value_type": "individual"
+                   },
+                   "type": "graph",
+                   "xaxis": {
+                      "buckets": null,
+                      "mode": "time",
+                      "name": null,
+                      "show": true,
+                      "values": [ ]
+                   },
+                   "yaxes": [
+                      {
+                         "format": "short",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": 0,
+                         "show": true
+                      },
+                      {
+                         "format": "short",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": null,
+                         "show": false
+                      }
+                   ]
+                },
+                {
+                   "aliasColors": { },
+                   "bars": false,
+                   "dashLength": 10,
+                   "dashes": false,
+                   "datasource": "$datasource",
+                   "fill": 1,
+                   "id": 31,
+                   "legend": {
+                      "avg": false,
+                      "current": false,
+                      "max": false,
+                      "min": false,
+                      "show": true,
+                      "total": false,
+                      "values": false
+                   },
+                   "lines": true,
+                   "linewidth": 1,
+                   "links": [ ],
+                   "nullPointMode": "null as zero",
+                   "percentage": false,
+                   "pointradius": 5,
+                   "points": false,
+                   "renderer": "flot",
+                   "seriesOverrides": [ ],
+                   "spaceLength": 10,
+                   "span": 4,
+                   "stack": false,
+                   "steppedLine": false,
+                   "targets": [
+                      {
+                         "expr": "(\nsum(rate(cortex_alertmanager_notifications_total{cluster=~\"$cluster\", job=~\"($namespace)/((alertmanager|cortex|mimir|mimir-backend.*))\", user=\"$user\"}[$__rate_interval])) by(integration)\n-\n(sum(rate(cortex_alertmanager_notifications_failed_total{cluster=~\"$cluster\", job=~\"($namespace)/((alertmanager|cortex|mimir|mimir-backend.*))\", user=\"$user\"}[$__rate_interval])) by(integration) or\n (sum(rate(cortex_alertmanager_notifications_total{cluster=~\"$cluster\", job=~\"($namespace)/((alertmanager|cortex|mimir|mimir-backend.*))\", user=\"$user\"}[$__rate_interval])) by(integration) * 0)\n)) > 0\n",
+                         "format": "time_series",
+                         "legendFormat": "success - {{ integration }}",
+                         "legendLink": null
+                      },
+                      {
+                         "expr": "sum(rate(cortex_alertmanager_notifications_failed_total{cluster=~\"$cluster\", job=~\"($namespace)/((alertmanager|cortex|mimir|mimir-backend.*))\", user=\"$user\"}[$__rate_interval])) by(integration)",
+                         "format": "time_series",
+                         "legendFormat": "failed - {{ integration }}",
+                         "legendLink": null
+                      }
+                   ],
+                   "thresholds": [ ],
+                   "timeFrom": null,
+                   "timeShift": null,
+                   "title": "NPS by integration",
+                   "tooltip": {
+                      "shared": false,
+                      "sort": 0,
+                      "value_type": "individual"
+                   },
+                   "type": "graph",
+                   "xaxis": {
+                      "buckets": null,
+                      "mode": "time",
+                      "name": null,
+                      "show": true,
+                      "values": [ ]
+                   },
+                   "yaxes": [
+                      {
+                         "format": "short",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": 0,
+                         "show": true
+                      },
+                      {
+                         "format": "short",
+                         "label": null,
+                         "logBase": 1,
+                         "max": null,
+                         "min": null,
+                         "show": false
+                      }
+                   ]
+                }
+             ],
+             "repeat": null,
+             "repeatIteration": null,
+             "repeatRowId": null,
+             "showTitle": true,
+             "title": "Alertmanager",
+             "titleSize": "h6"
+          },
+          {
+             "collapse": false,
+             "height": "250px",
+             "panels": [
+                {
+                   "aliasColors": { },
+                   "bars": false,
+                   "dashLength": 10,
+                   "dashes": false,
+                   "datasource": "$datasource",
+                   "fill": 1,
+                   "id": 32,
+                   "legend": {
+                      "avg": false,
+                      "current": false,
+                      "max": false,
+                      "min": false,
+                      "show": true,
+                      "total": false,
+                      "values": false
+                   },
+                   "lines": true,
+                   "linewidth": 1,
+                   "links": [ ],
+                   "nullPointMode": "null as zero",
+                   "percentage": false,
+                   "pointradius": 5,
+                   "points": false,
+                   "renderer": "flot",
+                   "seriesOverrides": [ ],
+                   "spaceLength": 10,
                    "span": 6,
                    "stack": false,
                    "steppedLine": false,
@@ -33341,7 +34733,7 @@ data:
                    "dashes": false,
                    "datasource": "$datasource",
                    "fill": 1,
-                   "id": 30,
+                   "id": 33,
                    "legend": {
                       "avg": false,
                       "current": false,
@@ -33427,7 +34819,7 @@ data:
                    "dashes": false,
                    "datasource": "$datasource",
                    "fill": 1,
-                   "id": 31,
+                   "id": 34,
                    "legend": {
                       "avg": false,
                       "current": false,
@@ -33501,7 +34893,7 @@ data:
                    "dashes": false,
                    "datasource": "$datasource",
                    "fill": 1,
-                   "id": 32,
+                   "id": 35,
                    "legend": {
                       "avg": false,
                       "current": false,
@@ -33590,7 +34982,7 @@ data:
                    "value": "default"
                 },
                 "hide": 0,
-                "label": "Data Source",
+                "label": "Data source",
                 "name": "datasource",
                 "options": [ ],
                 "query": "prometheus",
@@ -33885,7 +35277,7 @@ data:
                    ],
                    "targets": [
                       {
-                         "expr": "topk($limit,\n  sum by (user) (\n    cortex_ingester_active_series{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\"}\n    / on(cluster, namespace) group_left\n    max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"})\n  )\n)\n",
+                         "expr": "topk($limit,\n  sum by (user) (\n    cortex_ingester_active_series{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\"}\n    / on(cluster, namespace) group_left\n    max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"})\n  )\n)\n",
                          "format": "table",
                          "instant": true,
                          "legendFormat": "",
@@ -34011,7 +35403,7 @@ data:
                    ],
                    "targets": [
                       {
-                         "expr": "topk($limit, sum by (user) (\n  (\n      sum by (user, cluster, namespace) (cortex_ingester_memory_series_created_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\"} )\n      -\n      sum by (user, cluster, namespace) (cortex_ingester_memory_series_removed_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\"} )\n  )\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"} )\n)\n)",
+                         "expr": "topk($limit, sum by (user) (\n  (\n      sum by (user, cluster, namespace) (cortex_ingester_memory_series_created_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\"} )\n      -\n      sum by (user, cluster, namespace) (cortex_ingester_memory_series_removed_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\"} )\n  )\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"} )\n)\n)",
                          "format": "table",
                          "instant": true,
                          "legendFormat": "",
@@ -34099,7 +35491,7 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum by (user) (\n  (\n      sum by (user, cluster, namespace) (cortex_ingester_memory_series_created_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\"} )\n      -\n      sum by (user, cluster, namespace) (cortex_ingester_memory_series_removed_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\"} )\n  )\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"} )\n)\n\nand\ntopk($limit, sum by (user) (\n  (\n      sum by (user, cluster, namespace) (cortex_ingester_memory_series_created_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\"} @ end())\n      -\n      sum by (user, cluster, namespace) (cortex_ingester_memory_series_removed_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\"} @ end())\n  )\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"} @ end())\n)\n - sum by (user) (\n  (\n      sum by (user, cluster, namespace) (cortex_ingester_memory_series_created_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\"} @ start())\n      -\n      sum by (user, cluster, namespace) (cortex_ingester_memory_series_removed_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\"} @ start())\n  )\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"} @ start())\n)\n)\n",
+                         "expr": "sum by (user) (\n  (\n      sum by (user, cluster, namespace) (cortex_ingester_memory_series_created_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\"} )\n      -\n      sum by (user, cluster, namespace) (cortex_ingester_memory_series_removed_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\"} )\n  )\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"} )\n)\n\nand\ntopk($limit, sum by (user) (\n  (\n      sum by (user, cluster, namespace) (cortex_ingester_memory_series_created_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\"} @ end())\n      -\n      sum by (user, cluster, namespace) (cortex_ingester_memory_series_removed_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\"} @ end())\n  )\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"} @ end())\n)\n - sum by (user) (\n  (\n      sum by (user, cluster, namespace) (cortex_ingester_memory_series_created_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\"} @ start())\n      -\n      sum by (user, cluster, namespace) (cortex_ingester_memory_series_removed_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\"} @ start())\n  )\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"} @ start())\n)\n)\n",
                          "format": "time_series",
                          "legendFormat": "{{ user }}",
                          "legendLink": null
@@ -34223,7 +35615,7 @@ data:
                    ],
                    "targets": [
                       {
-                         "expr": "topk($limit, sum by (user) (rate(cortex_distributor_received_samples_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"}[5m])))",
+                         "expr": "topk($limit, sum by (user) (rate(cortex_distributor_received_samples_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"}[5m])))",
                          "format": "table",
                          "instant": true,
                          "legendFormat": "",
@@ -34311,7 +35703,7 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum by (user) (rate(cortex_distributor_received_samples_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"}[$__rate_interval]))\nand\ntopk($limit,\n  sum by (user) (rate(cortex_distributor_received_samples_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"}[$__rate_interval] @ end()))\n  -\n  sum by (user) (rate(cortex_distributor_received_samples_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"}[$__rate_interval] @ start()))\n)\n",
+                         "expr": "sum by (user) (rate(cortex_distributor_received_samples_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"}[$__rate_interval]))\nand\ntopk($limit,\n  sum by (user) (rate(cortex_distributor_received_samples_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"}[$__rate_interval] @ end()))\n  -\n  sum by (user) (rate(cortex_distributor_received_samples_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"}[$__rate_interval] @ start()))\n)\n",
                          "format": "time_series",
                          "legendFormat": "{{ user }}",
                          "legendLink": null
@@ -34435,7 +35827,7 @@ data:
                    ],
                    "targets": [
                       {
-                         "expr": "topk($limit, sum by (user) (rate(cortex_discarded_samples_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*|distributor|cortex|mimir|mimir-write.*))\"}[5m])))",
+                         "expr": "topk($limit, sum by (user) (rate(cortex_discarded_samples_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*|distributor.*|cortex|mimir|mimir-write.*))\"}[5m])))",
                          "format": "table",
                          "instant": true,
                          "legendFormat": "",
@@ -34523,7 +35915,7 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum by (user) (rate(cortex_discarded_samples_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*|distributor|cortex|mimir|mimir-write.*))\"}[$__rate_interval]))\nand\ntopk($limit,\n  sum by (user) (rate(cortex_discarded_samples_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*|distributor|cortex|mimir|mimir-write.*))\"}[$__rate_interval] @ end()))\n  -\n  sum by (user) (rate(cortex_discarded_samples_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*|distributor|cortex|mimir|mimir-write.*))\"}[$__rate_interval] @ start()))\n)\n",
+                         "expr": "sum by (user) (rate(cortex_discarded_samples_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*|distributor.*|cortex|mimir|mimir-write.*))\"}[$__rate_interval]))\nand\ntopk($limit,\n  sum by (user) (rate(cortex_discarded_samples_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*|distributor.*|cortex|mimir|mimir-write.*))\"}[$__rate_interval] @ end()))\n  -\n  sum by (user) (rate(cortex_discarded_samples_total{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*|distributor.*|cortex|mimir|mimir-write.*))\"}[$__rate_interval] @ start()))\n)\n",
                          "format": "time_series",
                          "legendFormat": "{{ user }}",
                          "legendLink": null
@@ -34647,7 +36039,7 @@ data:
                    ],
                    "targets": [
                       {
-                         "expr": "topk($limit,\n  sum by (user) (\n    cortex_ingester_tsdb_exemplar_series_with_exemplars_in_storage{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\"}\n    / on(cluster, namespace) group_left\n    max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"})\n  )\n)\n",
+                         "expr": "topk($limit,\n  sum by (user) (\n    cortex_ingester_tsdb_exemplar_series_with_exemplars_in_storage{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\"}\n    / on(cluster, namespace) group_left\n    max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"})\n  )\n)\n",
                          "format": "table",
                          "instant": true,
                          "legendFormat": "",
@@ -34773,7 +36165,7 @@ data:
                    ],
                    "targets": [
                       {
-                         "expr": "topk($limit, sum by (user) (rate(cortex_distributor_received_exemplars_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"}[5m])))",
+                         "expr": "topk($limit, sum by (user) (rate(cortex_distributor_received_exemplars_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"}[5m])))",
                          "format": "table",
                          "instant": true,
                          "legendFormat": "",
@@ -35091,7 +36483,7 @@ data:
                    "value": "default"
                 },
                 "hide": 0,
-                "label": "Data Source",
+                "label": "Data source",
                 "name": "datasource",
                 "options": [ ],
                 "query": "prometheus",
@@ -36248,7 +37640,7 @@ data:
                    "value": "default"
                 },
                 "hide": 0,
-                "label": "Data Source",
+                "label": "Data source",
                 "name": "datasource",
                 "options": [ ],
                 "query": "prometheus",
@@ -37609,7 +39001,7 @@ data:
                    "value": "default"
                 },
                 "hide": 0,
-                "label": "Data Source",
+                "label": "Data source",
                 "name": "datasource",
                 "options": [ ],
                 "query": "prometheus",
@@ -37803,7 +39195,7 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum(cluster_namespace_job:cortex_distributor_received_samples:rate5m{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"})",
+                         "expr": "sum(cluster_namespace_job:cortex_distributor_received_samples:rate5m{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"})",
                          "format": "time_series",
                          "instant": true,
                          "refId": "A"
@@ -37879,7 +39271,7 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum(cluster_namespace_job:cortex_distributor_received_exemplars:rate5m{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"})",
+                         "expr": "sum(cluster_namespace_job:cortex_distributor_received_exemplars:rate5m{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"})",
                          "format": "time_series",
                          "instant": true,
                          "refId": "A"
@@ -37955,7 +39347,7 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum(cortex_ingester_memory_series{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\"}\n/ on(cluster, namespace) group_left\nmax by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"}))\n",
+                         "expr": "sum(cortex_ingester_memory_series{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\"}\n/ on(cluster, namespace) group_left\nmax by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"}))\n",
                          "format": "time_series",
                          "instant": true,
                          "refId": "A"
@@ -38031,7 +39423,7 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum(cortex_ingester_tsdb_exemplar_exemplars_in_storage{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\"}\n/ on(cluster, namespace) group_left\nmax by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"}))\n",
+                         "expr": "sum(cortex_ingester_tsdb_exemplar_exemplars_in_storage{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\"}\n/ on(cluster, namespace) group_left\nmax by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"}))\n",
                          "format": "time_series",
                          "instant": true,
                          "refId": "A"
@@ -38203,7 +39595,7 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum by (status) (\n  label_replace(label_replace(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", route=~\"/distributor.Distributor/Push|/httpgrpc.*|api_(v1|prom)_push|otlp_v1_metrics\"}[$__rate_interval]),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-zA-Z]+)\"))\n",
+                         "expr": "sum by (status) (\n  label_replace(label_replace(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", route=~\"/distributor.Distributor/Push|/httpgrpc.*|api_(v1|prom)_push|otlp_v1_metrics\"}[$__rate_interval]),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-zA-Z]+)\"))\n",
                          "format": "time_series",
                          "legendFormat": "{{status}}",
                          "refId": "A"
@@ -38277,21 +39669,21 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "histogram_quantile(0.99, sum by (le) (cluster_job_route:cortex_request_duration_seconds_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", route=~\"/distributor.Distributor/Push|/httpgrpc.*|api_(v1|prom)_push|otlp_v1_metrics\"})) * 1e3",
+                         "expr": "histogram_quantile(0.99, sum by (le) (cluster_job_route:cortex_request_duration_seconds_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", route=~\"/distributor.Distributor/Push|/httpgrpc.*|api_(v1|prom)_push|otlp_v1_metrics\"})) * 1e3",
                          "format": "time_series",
                          "legendFormat": "99th percentile",
                          "refId": "A",
                          "step": 10
                       },
                       {
-                         "expr": "histogram_quantile(0.50, sum by (le) (cluster_job_route:cortex_request_duration_seconds_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", route=~\"/distributor.Distributor/Push|/httpgrpc.*|api_(v1|prom)_push|otlp_v1_metrics\"})) * 1e3",
+                         "expr": "histogram_quantile(0.50, sum by (le) (cluster_job_route:cortex_request_duration_seconds_bucket:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", route=~\"/distributor.Distributor/Push|/httpgrpc.*|api_(v1|prom)_push|otlp_v1_metrics\"})) * 1e3",
                          "format": "time_series",
                          "legendFormat": "50th percentile",
                          "refId": "B",
                          "step": 10
                       },
                       {
-                         "expr": "1e3 * sum(cluster_job_route:cortex_request_duration_seconds_sum:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", route=~\"/distributor.Distributor/Push|/httpgrpc.*|api_(v1|prom)_push|otlp_v1_metrics\"}) / sum(cluster_job_route:cortex_request_duration_seconds_count:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", route=~\"/distributor.Distributor/Push|/httpgrpc.*|api_(v1|prom)_push|otlp_v1_metrics\"})",
+                         "expr": "1e3 * sum(cluster_job_route:cortex_request_duration_seconds_sum:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", route=~\"/distributor.Distributor/Push|/httpgrpc.*|api_(v1|prom)_push|otlp_v1_metrics\"}) / sum(cluster_job_route:cortex_request_duration_seconds_count:sum_rate{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", route=~\"/distributor.Distributor/Push|/httpgrpc.*|api_(v1|prom)_push|otlp_v1_metrics\"})",
                          "format": "time_series",
                          "legendFormat": "Average",
                          "refId": "C",
@@ -38374,7 +39766,7 @@ data:
                    "targets": [
                       {
                          "exemplar": true,
-                         "expr": "histogram_quantile(0.99, sum by(le, pod) (rate(cortex_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", route=~\"/distributor.Distributor/Push|/httpgrpc.*|api_(v1|prom)_push|otlp_v1_metrics\"}[$__rate_interval])))",
+                         "expr": "histogram_quantile(0.99, sum by(le, pod) (rate(cortex_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", route=~\"/distributor.Distributor/Push|/httpgrpc.*|api_(v1|prom)_push|otlp_v1_metrics\"}[$__rate_interval])))",
                          "format": "time_series",
                          "legendFormat": "",
                          "legendLink": null
@@ -38672,7 +40064,7 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum by (status) (\n  label_replace(label_replace(rate(cortex_kv_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", kv_name=~\"distributor-hatracker\"}[$__rate_interval]),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-zA-Z]+)\"))\n",
+                         "expr": "sum by (status) (\n  label_replace(label_replace(rate(cortex_kv_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", kv_name=~\"distributor-hatracker\"}[$__rate_interval]),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-zA-Z]+)\"))\n",
                          "format": "time_series",
                          "legendFormat": "{{status}}",
                          "refId": "A"
@@ -38746,19 +40138,19 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "histogram_quantile(0.99, sum(rate(cortex_kv_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", kv_name=~\"distributor-hatracker\"}[$__rate_interval])) by (le)) * 1e3",
+                         "expr": "histogram_quantile(0.99, sum(rate(cortex_kv_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", kv_name=~\"distributor-hatracker\"}[$__rate_interval])) by (le)) * 1e3",
                          "format": "time_series",
                          "legendFormat": "99th Percentile",
                          "refId": "A"
                       },
                       {
-                         "expr": "histogram_quantile(0.50, sum(rate(cortex_kv_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", kv_name=~\"distributor-hatracker\"}[$__rate_interval])) by (le)) * 1e3",
+                         "expr": "histogram_quantile(0.50, sum(rate(cortex_kv_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", kv_name=~\"distributor-hatracker\"}[$__rate_interval])) by (le)) * 1e3",
                          "format": "time_series",
                          "legendFormat": "50th Percentile",
                          "refId": "B"
                       },
                       {
-                         "expr": "sum(rate(cortex_kv_request_duration_seconds_sum{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", kv_name=~\"distributor-hatracker\"}[$__rate_interval])) * 1e3 / sum(rate(cortex_kv_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", kv_name=~\"distributor-hatracker\"}[$__rate_interval]))",
+                         "expr": "sum(rate(cortex_kv_request_duration_seconds_sum{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", kv_name=~\"distributor-hatracker\"}[$__rate_interval])) * 1e3 / sum(rate(cortex_kv_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", kv_name=~\"distributor-hatracker\"}[$__rate_interval]))",
                          "format": "time_series",
                          "legendFormat": "Average",
                          "refId": "C"
@@ -38854,7 +40246,7 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum by (status) (\n  label_replace(label_replace(rate(cortex_kv_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", kv_name=~\"distributor-(lifecycler|ring)\"}[$__rate_interval]),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-zA-Z]+)\"))\n",
+                         "expr": "sum by (status) (\n  label_replace(label_replace(rate(cortex_kv_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", kv_name=~\"distributor-(lifecycler|ring)\"}[$__rate_interval]),\n  \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"),\n  \"status\", \"${1}\", \"status_code\", \"([a-zA-Z]+)\"))\n",
                          "format": "time_series",
                          "legendFormat": "{{status}}",
                          "refId": "A"
@@ -38928,19 +40320,19 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "histogram_quantile(0.99, sum(rate(cortex_kv_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", kv_name=~\"distributor-(lifecycler|ring)\"}[$__rate_interval])) by (le)) * 1e3",
+                         "expr": "histogram_quantile(0.99, sum(rate(cortex_kv_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", kv_name=~\"distributor-(lifecycler|ring)\"}[$__rate_interval])) by (le)) * 1e3",
                          "format": "time_series",
                          "legendFormat": "99th Percentile",
                          "refId": "A"
                       },
                       {
-                         "expr": "histogram_quantile(0.50, sum(rate(cortex_kv_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", kv_name=~\"distributor-(lifecycler|ring)\"}[$__rate_interval])) by (le)) * 1e3",
+                         "expr": "histogram_quantile(0.50, sum(rate(cortex_kv_request_duration_seconds_bucket{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", kv_name=~\"distributor-(lifecycler|ring)\"}[$__rate_interval])) by (le)) * 1e3",
                          "format": "time_series",
                          "legendFormat": "50th Percentile",
                          "refId": "B"
                       },
                       {
-                         "expr": "sum(rate(cortex_kv_request_duration_seconds_sum{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", kv_name=~\"distributor-(lifecycler|ring)\"}[$__rate_interval])) * 1e3 / sum(rate(cortex_kv_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\", kv_name=~\"distributor-(lifecycler|ring)\"}[$__rate_interval]))",
+                         "expr": "sum(rate(cortex_kv_request_duration_seconds_sum{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", kv_name=~\"distributor-(lifecycler|ring)\"}[$__rate_interval])) * 1e3 / sum(rate(cortex_kv_request_duration_seconds_count{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\", kv_name=~\"distributor-(lifecycler|ring)\"}[$__rate_interval]))",
                          "format": "time_series",
                          "legendFormat": "Average",
                          "refId": "C"
@@ -39870,7 +41262,7 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum(cluster_namespace_job:cortex_distributor_exemplars_in:rate5m{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"})",
+                         "expr": "sum(cluster_namespace_job:cortex_distributor_exemplars_in:rate5m{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"})",
                          "format": "time_series",
                          "legendFormat": "incoming exemplars",
                          "legendLink": null
@@ -39945,7 +41337,7 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum(cluster_namespace_job:cortex_distributor_received_exemplars:rate5m{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"})",
+                         "expr": "sum(cluster_namespace_job:cortex_distributor_received_exemplars:rate5m{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"})",
                          "format": "time_series",
                          "legendFormat": "received exemplars",
                          "legendLink": null
@@ -40020,7 +41412,7 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum(\n  cluster_namespace_job:cortex_ingester_ingested_exemplars:rate5m{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\"}\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"})\n)\n",
+                         "expr": "sum(\n  cluster_namespace_job:cortex_ingester_ingested_exemplars:rate5m{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\"}\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"})\n)\n",
                          "format": "time_series",
                          "legendFormat": "ingested exemplars",
                          "legendLink": null
@@ -40095,7 +41487,7 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum(\n  cluster_namespace_job:cortex_ingester_tsdb_exemplar_exemplars_appended:rate5m{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\"}\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"})\n)\n",
+                         "expr": "sum(\n  cluster_namespace_job:cortex_ingester_tsdb_exemplar_exemplars_appended:rate5m{cluster=~\"$cluster\", job=~\"($namespace)/((ingester.*|cortex|mimir|mimir-write.*))\"}\n  / on(cluster, namespace) group_left\n  max by (cluster, namespace) (cortex_distributor_replication_factor{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"})\n)\n",
                          "format": "time_series",
                          "legendFormat": "appended exemplars",
                          "legendLink": null
@@ -40181,7 +41573,7 @@ data:
                    "steppedLine": false,
                    "targets": [
                       {
-                         "expr": "sum by (reason) (rate(cortex_distributor_instance_rejected_requests_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor|cortex|mimir|mimir-write.*))\"}[$__rate_interval]))",
+                         "expr": "sum by (reason) (rate(cortex_distributor_instance_rejected_requests_total{cluster=~\"$cluster\", job=~\"($namespace)/((distributor.*|cortex|mimir|mimir-write.*))\"}[$__rate_interval]))",
                          "format": "time_series",
                          "legendFormat": "{{reason}}",
                          "legendLink": null
@@ -40319,7 +41711,7 @@ data:
                    "value": "default"
                 },
                 "hide": 0,
-                "label": "Data Source",
+                "label": "Data source",
                 "name": "datasource",
                 "options": [ ],
                 "query": "prometheus",

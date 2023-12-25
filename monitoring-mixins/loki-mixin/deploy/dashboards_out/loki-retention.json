@@ -71,21 +71,18 @@
                   {
                      "expr": "sum by(pod) (rate(container_cpu_usage_seconds_total{cluster=~\"$cluster\", namespace=~\"$namespace\", container=\"compactor\"}[$__rate_interval]))",
                      "format": "time_series",
-                     "intervalFactor": 2,
                      "legendFormat": "{{pod}}",
                      "legendLink": null
                   },
                   {
                      "expr": "min(kube_pod_container_resource_requests{cluster=~\"$cluster\", namespace=~\"$namespace\", container=\"compactor\", resource=\"cpu\"} > 0)",
                      "format": "time_series",
-                     "intervalFactor": 2,
                      "legendFormat": "request",
                      "legendLink": null
                   },
                   {
                      "expr": "min(container_spec_cpu_quota{cluster=~\"$cluster\", namespace=~\"$namespace\", container=\"compactor\"} / container_spec_cpu_period{cluster=~\"$cluster\", namespace=~\"$namespace\", container=\"compactor\"})",
                      "format": "time_series",
-                     "intervalFactor": 2,
                      "legendFormat": "limit",
                      "legendLink": null
                   }
@@ -169,21 +166,18 @@
                   {
                      "expr": "max by(pod) (container_memory_working_set_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\", container=\"compactor\"})",
                      "format": "time_series",
-                     "intervalFactor": 2,
                      "legendFormat": "{{pod}}",
                      "legendLink": null
                   },
                   {
                      "expr": "min(kube_pod_container_resource_requests{cluster=~\"$cluster\", namespace=~\"$namespace\", container=\"compactor\", resource=\"memory\"} > 0)",
                      "format": "time_series",
-                     "intervalFactor": 2,
                      "legendFormat": "request",
                      "legendLink": null
                   },
                   {
                      "expr": "min(container_spec_memory_limit_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\", container=\"compactor\"} > 0)",
                      "format": "time_series",
-                     "intervalFactor": 2,
                      "legendFormat": "limit",
                      "legendLink": null
                   }
@@ -256,7 +250,6 @@
                   {
                      "expr": "sum by(pod) (go_memstats_heap_inuse_bytes{cluster=~\"$cluster\", job=~\"($namespace)/compactor\"})",
                      "format": "time_series",
-                     "intervalFactor": 2,
                      "legendFormat": "{{pod}}",
                      "legendLink": null
                   }
@@ -368,7 +361,7 @@
                "renderer": "flot",
                "seriesOverrides": [ ],
                "spaceLength": 10,
-               "span": 4,
+               "span": 6,
                "stack": false,
                "steppedLine": false,
                "targets": [
@@ -382,7 +375,7 @@
                "thresholds": [ ],
                "timeFrom": null,
                "timeShift": null,
-               "title": "Last Compact and Mark Operation Success",
+               "title": "Last Compact Tables Operation Success",
                "tooltip": {
                   "shared": true,
                   "sort": 2,
@@ -442,14 +435,13 @@
                "renderer": "flot",
                "seriesOverrides": [ ],
                "spaceLength": 10,
-               "span": 4,
+               "span": 6,
                "stack": false,
                "steppedLine": false,
                "targets": [
                   {
                      "expr": "loki_boltdb_shipper_compact_tables_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\"}",
                      "format": "time_series",
-                     "intervalFactor": 2,
                      "legendFormat": "duration",
                      "legendLink": null
                   }
@@ -457,7 +449,361 @@
                "thresholds": [ ],
                "timeFrom": null,
                "timeShift": null,
-               "title": "Compact and Mark Operations Duration",
+               "title": "Compact Tables Operations Duration",
+               "tooltip": {
+                  "shared": true,
+                  "sort": 2,
+                  "value_type": "individual"
+               },
+               "type": "graph",
+               "xaxis": {
+                  "buckets": null,
+                  "mode": "time",
+                  "name": null,
+                  "show": true,
+                  "values": [ ]
+               },
+               "yaxes": [
+                  {
+                     "format": "s",
+                     "label": null,
+                     "logBase": 1,
+                     "max": null,
+                     "min": 0,
+                     "show": true
+                  },
+                  {
+                     "format": "short",
+                     "label": null,
+                     "logBase": 1,
+                     "max": null,
+                     "min": null,
+                     "show": false
+                  }
+               ]
+            }
+         ],
+         "repeat": null,
+         "repeatIteration": null,
+         "repeatRowId": null,
+         "showTitle": true,
+         "title": "Compaction",
+         "titleSize": "h6"
+      },
+      {
+         "collapse": false,
+         "height": "250px",
+         "panels": [
+            {
+               "aliasColors": { },
+               "bars": false,
+               "dashLength": 10,
+               "dashes": false,
+               "datasource": "$datasource",
+               "fill": 1,
+               "id": 6,
+               "legend": {
+                  "avg": false,
+                  "current": false,
+                  "max": false,
+                  "min": false,
+                  "show": true,
+                  "total": false,
+                  "values": false
+               },
+               "lines": true,
+               "linewidth": 1,
+               "links": [ ],
+               "nullPointMode": "null as zero",
+               "percentage": false,
+               "pointradius": 5,
+               "points": false,
+               "renderer": "flot",
+               "seriesOverrides": [ ],
+               "spaceLength": 10,
+               "span": 6,
+               "stack": false,
+               "steppedLine": false,
+               "targets": [
+                  {
+                     "expr": "sum(increase(loki_compactor_skipped_compacting_locked_table_total{cluster=~\"$cluster\", namespace=~\"$namespace\"}[$__range]))",
+                     "format": "time_series",
+                     "legendFormat": "{{table_name}}",
+                     "legendLink": null
+                  }
+               ],
+               "thresholds": [ ],
+               "timeFrom": null,
+               "timeShift": null,
+               "title": "Number of times Tables were skipped during Compaction",
+               "tooltip": {
+                  "shared": true,
+                  "sort": 2,
+                  "value_type": "individual"
+               },
+               "type": "graph",
+               "xaxis": {
+                  "buckets": null,
+                  "mode": "time",
+                  "name": null,
+                  "show": true,
+                  "values": [ ]
+               },
+               "yaxes": [
+                  {
+                     "format": "short",
+                     "label": null,
+                     "logBase": 1,
+                     "max": null,
+                     "min": 0,
+                     "show": true
+                  },
+                  {
+                     "format": "short",
+                     "label": null,
+                     "logBase": 1,
+                     "max": null,
+                     "min": null,
+                     "show": false
+                  }
+               ]
+            },
+            {
+               "aliasColors": { },
+               "bars": false,
+               "dashLength": 10,
+               "dashes": false,
+               "datasource": "$datasource",
+               "fill": 1,
+               "id": 7,
+               "legend": {
+                  "avg": false,
+                  "current": false,
+                  "max": false,
+                  "min": false,
+                  "show": true,
+                  "total": false,
+                  "values": false
+               },
+               "lines": true,
+               "linewidth": 1,
+               "links": [ ],
+               "nullPointMode": "null as zero",
+               "percentage": false,
+               "pointradius": 5,
+               "points": false,
+               "renderer": "flot",
+               "seriesOverrides": [ ],
+               "spaceLength": 10,
+               "span": 6,
+               "stack": false,
+               "steppedLine": false,
+               "targets": [
+                  {
+                     "expr": "sum by (status)(rate(loki_boltdb_shipper_compact_tables_operation_total{cluster=~\"$cluster\", namespace=~\"$namespace\"}[$__rate_interval]))",
+                     "format": "time_series",
+                     "legendFormat": "{{success}}",
+                     "legendLink": null
+                  }
+               ],
+               "thresholds": [ ],
+               "timeFrom": null,
+               "timeShift": null,
+               "title": "Compact Tables Operations Per Status",
+               "tooltip": {
+                  "shared": true,
+                  "sort": 2,
+                  "value_type": "individual"
+               },
+               "type": "graph",
+               "xaxis": {
+                  "buckets": null,
+                  "mode": "time",
+                  "name": null,
+                  "show": true,
+                  "values": [ ]
+               },
+               "yaxes": [
+                  {
+                     "format": "short",
+                     "label": null,
+                     "logBase": 1,
+                     "max": null,
+                     "min": 0,
+                     "show": true
+                  },
+                  {
+                     "format": "short",
+                     "label": null,
+                     "logBase": 1,
+                     "max": null,
+                     "min": null,
+                     "show": false
+                  }
+               ]
+            }
+         ],
+         "repeat": null,
+         "repeatIteration": null,
+         "repeatRowId": null,
+         "showTitle": true,
+         "title": "",
+         "titleSize": "h6"
+      },
+      {
+         "collapse": false,
+         "height": "250px",
+         "panels": [
+            {
+               "aliasColors": { },
+               "bars": false,
+               "dashLength": 10,
+               "dashes": false,
+               "datasource": "$datasource",
+               "fieldConfig": {
+                  "defaults": {
+                     "color": {
+                        "fixedColor": "blue",
+                        "mode": "fixed"
+                     },
+                     "custom": { },
+                     "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                           {
+                              "color": "green",
+                              "value": null
+                           }
+                        ]
+                     },
+                     "unit": "dateTimeFromNow"
+                  }
+               },
+               "fill": 1,
+               "id": 8,
+               "legend": {
+                  "avg": false,
+                  "current": false,
+                  "max": false,
+                  "min": false,
+                  "show": true,
+                  "total": false,
+                  "values": false
+               },
+               "lines": true,
+               "linewidth": 1,
+               "links": [ ],
+               "nullPointMode": "null as zero",
+               "options": {
+                  "colorMode": "value",
+                  "graphMode": "area",
+                  "justifyMode": "auto",
+                  "orientation": "auto",
+                  "reduceOptions": {
+                     "calcs": [
+                        "lastNotNull"
+                     ],
+                     "fields": "",
+                     "values": false
+                  },
+                  "text": { },
+                  "textMode": "auto"
+               },
+               "percentage": false,
+               "pointradius": 5,
+               "points": false,
+               "renderer": "flot",
+               "seriesOverrides": [ ],
+               "spaceLength": 10,
+               "span": 4,
+               "stack": false,
+               "steppedLine": false,
+               "targets": [
+                  {
+                     "expr": "loki_compactor_apply_retention_last_successful_run_timestamp_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\"} * 1e3",
+                     "format": "time_series",
+                     "instant": true,
+                     "refId": "A"
+                  }
+               ],
+               "thresholds": [ ],
+               "timeFrom": null,
+               "timeShift": null,
+               "title": "Last Mark Operation Success",
+               "tooltip": {
+                  "shared": true,
+                  "sort": 2,
+                  "value_type": "individual"
+               },
+               "type": "stat",
+               "xaxis": {
+                  "buckets": null,
+                  "mode": "time",
+                  "name": null,
+                  "show": true,
+                  "values": [ ]
+               },
+               "yaxes": [
+                  {
+                     "format": "short",
+                     "label": null,
+                     "logBase": 1,
+                     "max": null,
+                     "min": 0,
+                     "show": true
+                  },
+                  {
+                     "format": "short",
+                     "label": null,
+                     "logBase": 1,
+                     "max": null,
+                     "min": null,
+                     "show": false
+                  }
+               ]
+            },
+            {
+               "aliasColors": { },
+               "bars": false,
+               "dashLength": 10,
+               "dashes": false,
+               "datasource": "$datasource",
+               "fill": 1,
+               "id": 9,
+               "legend": {
+                  "avg": false,
+                  "current": false,
+                  "max": false,
+                  "min": false,
+                  "show": true,
+                  "total": false,
+                  "values": false
+               },
+               "lines": true,
+               "linewidth": 1,
+               "links": [ ],
+               "nullPointMode": "null as zero",
+               "percentage": false,
+               "pointradius": 5,
+               "points": false,
+               "renderer": "flot",
+               "seriesOverrides": [ ],
+               "spaceLength": 10,
+               "span": 4,
+               "stack": false,
+               "steppedLine": false,
+               "targets": [
+                  {
+                     "expr": "loki_compactor_apply_retention_operation_duration_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\"}",
+                     "format": "time_series",
+                     "legendFormat": "duration",
+                     "legendLink": null
+                  }
+               ],
+               "thresholds": [ ],
+               "timeFrom": null,
+               "timeShift": null,
+               "title": "Mark Operations Duration",
                "tooltip": {
                   "shared": true,
                   "sort": 2,
@@ -497,7 +843,7 @@
                "dashes": false,
                "datasource": "$datasource",
                "fill": 1,
-               "id": 6,
+               "id": 10,
                "legend": {
                   "avg": false,
                   "current": false,
@@ -522,9 +868,8 @@
                "steppedLine": false,
                "targets": [
                   {
-                     "expr": "sum by (status)(rate(loki_boltdb_shipper_compact_tables_operation_total{cluster=~\"$cluster\", namespace=~\"$namespace\"}[$__rate_interval]))",
+                     "expr": "sum by (status)(rate(loki_compactor_apply_retention_operation_total{cluster=~\"$cluster\", namespace=~\"$namespace\"}[$__rate_interval]))",
                      "format": "time_series",
-                     "intervalFactor": 2,
                      "legendFormat": "{{success}}",
                      "legendLink": null
                   }
@@ -532,7 +877,7 @@
                "thresholds": [ ],
                "timeFrom": null,
                "timeShift": null,
-               "title": "Compact and Mark Operations Per Status",
+               "title": "Mark Operations Per Status",
                "tooltip": {
                   "shared": true,
                   "sort": 2,
@@ -570,7 +915,7 @@
          "repeatIteration": null,
          "repeatRowId": null,
          "showTitle": true,
-         "title": "Compact and Mark",
+         "title": "Retention",
          "titleSize": "h6"
       },
       {
@@ -584,7 +929,7 @@
                "dashes": false,
                "datasource": "$datasource",
                "fill": 10,
-               "id": 7,
+               "id": 11,
                "legend": {
                   "avg": false,
                   "current": false,
@@ -611,7 +956,6 @@
                   {
                      "expr": "count by(action)(loki_boltdb_shipper_retention_marker_table_processed_total{cluster=~\"$cluster\", namespace=~\"$namespace\"})",
                      "format": "time_series",
-                     "intervalFactor": 2,
                      "legendFormat": "{{action}}",
                      "legendLink": null
                   }
@@ -659,7 +1003,7 @@
                "dashes": false,
                "datasource": "$datasource",
                "fill": 10,
-               "id": 8,
+               "id": 12,
                "legend": {
                   "avg": false,
                   "current": false,
@@ -686,7 +1030,6 @@
                   {
                      "expr": "count by(table,action)(loki_boltdb_shipper_retention_marker_table_processed_total{cluster=~\"$cluster\", namespace=~\"$namespace\" , action=~\"modified|deleted\"})",
                      "format": "time_series",
-                     "intervalFactor": 2,
                      "legendFormat": "{{table}}-{{action}}",
                      "legendLink": null
                   }
@@ -734,7 +1077,7 @@
                "dashes": false,
                "datasource": "$datasource",
                "fill": 10,
-               "id": 9,
+               "id": 13,
                "legend": {
                   "avg": false,
                   "current": false,
@@ -761,7 +1104,6 @@
                   {
                      "expr": "sum by (table)(rate(loki_boltdb_shipper_retention_marker_count_total{cluster=~\"$cluster\", namespace=~\"$namespace\"}[$__rate_interval])) >0",
                      "format": "time_series",
-                     "intervalFactor": 2,
                      "legendFormat": "{{table}}",
                      "legendLink": null
                   }
@@ -822,7 +1164,7 @@
                "datasource": "$datasource",
                "fill": 1,
                "format": "short",
-               "id": 10,
+               "id": 14,
                "legend": {
                   "avg": false,
                   "current": false,
@@ -850,7 +1192,6 @@
                      "expr": "sum (increase(loki_boltdb_shipper_retention_marker_count_total{cluster=~\"$cluster\", namespace=~\"$namespace\"}[24h]))",
                      "format": "time_series",
                      "instant": true,
-                     "intervalFactor": 2,
                      "refId": "A"
                   }
                ],
@@ -897,7 +1238,7 @@
                "dashes": false,
                "datasource": "$datasource",
                "fill": 1,
-               "id": 11,
+               "id": 15,
                "legend": {
                   "avg": false,
                   "current": false,
@@ -924,21 +1265,18 @@
                   {
                      "expr": "histogram_quantile(0.99, sum(rate(loki_boltdb_shipper_retention_marker_table_processed_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\"}[$__rate_interval])) by (le)) * 1e3",
                      "format": "time_series",
-                     "intervalFactor": 2,
                      "legendFormat": "99th Percentile",
                      "refId": "A"
                   },
                   {
                      "expr": "histogram_quantile(0.50, sum(rate(loki_boltdb_shipper_retention_marker_table_processed_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\"}[$__rate_interval])) by (le)) * 1e3",
                      "format": "time_series",
-                     "intervalFactor": 2,
                      "legendFormat": "50th Percentile",
                      "refId": "B"
                   },
                   {
                      "expr": "sum(rate(loki_boltdb_shipper_retention_marker_table_processed_duration_seconds_sum{cluster=~\"$cluster\", namespace=~\"$namespace\"}[$__rate_interval])) * 1e3 / sum(rate(loki_boltdb_shipper_retention_marker_table_processed_duration_seconds_count{cluster=~\"$cluster\", namespace=~\"$namespace\"}[$__rate_interval]))",
                      "format": "time_series",
-                     "intervalFactor": 2,
                      "legendFormat": "Average",
                      "refId": "C"
                   }
@@ -999,7 +1337,7 @@
                "datasource": "$datasource",
                "fill": 1,
                "format": "short",
-               "id": 12,
+               "id": 16,
                "legend": {
                   "avg": false,
                   "current": false,
@@ -1027,7 +1365,6 @@
                      "expr": "sum (increase(loki_boltdb_shipper_retention_sweeper_chunk_deleted_duration_seconds_count{cluster=~\"$cluster\", namespace=~\"$namespace\"}[24h]))",
                      "format": "time_series",
                      "instant": true,
-                     "intervalFactor": 2,
                      "refId": "A"
                   }
                ],
@@ -1074,7 +1411,7 @@
                "dashes": false,
                "datasource": "$datasource",
                "fill": 1,
-               "id": 13,
+               "id": 17,
                "legend": {
                   "avg": false,
                   "current": false,
@@ -1101,21 +1438,18 @@
                   {
                      "expr": "histogram_quantile(0.99, sum(rate(loki_boltdb_shipper_retention_sweeper_chunk_deleted_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\"}[$__rate_interval])) by (le)) * 1e3",
                      "format": "time_series",
-                     "intervalFactor": 2,
                      "legendFormat": "99th Percentile",
                      "refId": "A"
                   },
                   {
                      "expr": "histogram_quantile(0.50, sum(rate(loki_boltdb_shipper_retention_sweeper_chunk_deleted_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\"}[$__rate_interval])) by (le)) * 1e3",
                      "format": "time_series",
-                     "intervalFactor": 2,
                      "legendFormat": "50th Percentile",
                      "refId": "B"
                   },
                   {
                      "expr": "sum(rate(loki_boltdb_shipper_retention_sweeper_chunk_deleted_duration_seconds_sum{cluster=~\"$cluster\", namespace=~\"$namespace\"}[$__rate_interval])) * 1e3 / sum(rate(loki_boltdb_shipper_retention_sweeper_chunk_deleted_duration_seconds_count{cluster=~\"$cluster\", namespace=~\"$namespace\"}[$__rate_interval]))",
                      "format": "time_series",
-                     "intervalFactor": 2,
                      "legendFormat": "Average",
                      "refId": "C"
                   }
@@ -1175,7 +1509,7 @@
                "dashes": false,
                "datasource": "$datasource",
                "fill": 1,
-               "id": 14,
+               "id": 18,
                "legend": {
                   "avg": false,
                   "current": false,
@@ -1202,7 +1536,6 @@
                   {
                      "expr": "time() - (loki_boltdb_shipper_retention_sweeper_marker_file_processing_current_time{cluster=~\"$cluster\", namespace=~\"$namespace\"} > 0)",
                      "format": "time_series",
-                     "intervalFactor": 2,
                      "legendFormat": "lag",
                      "legendLink": null
                   }
@@ -1250,7 +1583,7 @@
                "dashes": false,
                "datasource": "$datasource",
                "fill": 1,
-               "id": 15,
+               "id": 19,
                "legend": {
                   "avg": false,
                   "current": false,
@@ -1277,7 +1610,6 @@
                   {
                      "expr": "sum(loki_boltdb_shipper_retention_sweeper_marker_files_current{cluster=~\"$cluster\", namespace=~\"$namespace\"})",
                      "format": "time_series",
-                     "intervalFactor": 2,
                      "legendFormat": "count",
                      "legendLink": null
                   }
@@ -1325,7 +1657,7 @@
                "dashes": false,
                "datasource": "$datasource",
                "fill": 1,
-               "id": 16,
+               "id": 20,
                "legend": {
                   "avg": false,
                   "current": false,
@@ -1352,7 +1684,6 @@
                   {
                      "expr": "sum by (status)(rate(loki_boltdb_shipper_retention_sweeper_chunk_deleted_duration_seconds_count{cluster=~\"$cluster\", namespace=~\"$namespace\"}[$__rate_interval]))",
                      "format": "time_series",
-                     "intervalFactor": 2,
                      "legendFormat": "{{status}}",
                      "legendLink": null
                   }
@@ -1407,7 +1738,7 @@
          "panels": [
             {
                "datasource": "$loki_datasource",
-               "id": 17,
+               "id": 21,
                "span": 12,
                "targets": [
                   {
@@ -1440,7 +1771,7 @@
                "value": "default"
             },
             "hide": 0,
-            "label": "Data Source",
+            "label": "Data source",
             "name": "datasource",
             "options": [ ],
             "query": "prometheus",
