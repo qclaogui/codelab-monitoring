@@ -4,6 +4,12 @@
   <a href="https://github.com/qclaogui/codelab-monitoring/actions/workflows/ci.yml">
     <img src="https://github.com/qclaogui/codelab-monitoring/actions/workflows/ci.yml/badge.svg">
   </a>
+  <a href="https://github.com/qclaogui/codelab-monitoring/blob/master/LICENSE">
+    <img src="https://img.shields.io/github/license/qclaogui/codelab-monitoring.svg" alt="License">
+  </a>
+  <a href="https://github.com/qclaogui/codelab-monitoring/tags">
+    <img src="https://img.shields.io/github/last-commit/qclaogui/codelab-monitoring" alt="GitHub Last Commit">
+  </a>
 </p>
 
 ## Grafana LGTMP Stack (Loki Grafana Tempo Mimir Pyroscope)
