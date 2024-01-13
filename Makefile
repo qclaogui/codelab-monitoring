@@ -305,7 +305,6 @@ deploy-monolithic-mode-metrics: deploy-grafana ## Deploy monolithic-mode metrics
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/metrics | kubectl apply -f -
 	@$(KUSTOMIZE) build monitoring-mixins | kubectl apply -f -
 	kubectl rollout status -n monitoring-system deployment/mimir --watch --timeout=600s
-	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
 	@echo ""
 	@echo "Demo is running."
 	@echo "Go to http://localhost:8080/explore for the metrics."
@@ -361,7 +360,6 @@ deploy-monolithic-mode-all-in-one: deploy-grafana ## Deploy monolithic-mode all-
 	kubectl rollout status -n monitoring-system deployment/mimir --watch --timeout=600s
 	@kubectl rollout restart deployment -n gateway nginx
 	kubectl rollout status -n gateway deployment/nginx --watch --timeout=600s
-	@kubectl rollout restart daemonset -n monitoring-system grafana-agent	
 	@kubectl rollout restart deployment -n monitoring-system grafana
 	kubectl rollout status -n monitoring-system deployment/grafana --watch --timeout=600s
 	@echo ""
@@ -381,7 +379,6 @@ deploy-read-write-mode-metrics: deploy-grafana ## Deploy read-write-mode metrics
 	kubectl rollout status -n monitoring-system deployment/mimir-write --watch --timeout=600s
 	@kubectl rollout restart deployment -n gateway nginx
 	kubectl rollout status -n gateway deployment/nginx --watch --timeout=600s
-	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
 	@echo ""
 	@echo "Demo is running."
 	@echo "Go to http://localhost:8080/explore for the metrics."
@@ -428,7 +425,6 @@ deploy-microservices-mode-metrics: deploy-grafana ## Deploy microservices-mode m
 	kubectl rollout status -n monitoring-system statefulset/mimir-distributed-ingester --watch --timeout=600s
 	@kubectl rollout restart deployment -n gateway nginx
 	kubectl rollout status -n gateway deployment/nginx --watch --timeout=600s
-	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
 	@echo ""
 	@echo "Demo is running."
 	@echo "Go to http://localhost:8080/explore for the metrics."
