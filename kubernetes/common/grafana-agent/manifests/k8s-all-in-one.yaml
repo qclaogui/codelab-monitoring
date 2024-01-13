@@ -570,14 +570,14 @@ data:
     = [otelcol.processor.batch.default.input]\n\t}\n}\n\notelcol.processor.batch \"default\"
     {\n\tsend_batch_size     = 16384\n\tsend_batch_max_size = 0\n\ttimeout             =
     \"2s\"\n\n\toutput {\n\t\ttraces = [otelcol.processor.memory_limiter.default.input]\n\t}\n}\n\notelcol.processor.memory_limiter
-    \"default\" {\n\tcheck_interval = \"1s\"\n\n\tlimit = \"150MiB\" // alternatively,
-    set `limit_percentage` and `spike_limit_percentage`\n\n\toutput {\n\t\ttraces
-    = [otelcol.processor.attributes.default.input]\n\t}\n}\n\notelcol.processor.attributes
+    \"default\" {\n\tcheck_interval = \"1s\"\n\n\t// limit = \"150MiB\" // alternatively,
+    set `limit_percentage` and `spike_limit_percentage`\n\tlimit_percentage       =
+    50\n\tspike_limit_percentage = 30\n\n\toutput {\n\t\ttraces = [otelcol.processor.attributes.default.input]\n\t}\n}\n\notelcol.processor.attributes
     \"default\" {\n\taction {\n\t\tkey    = \"cluster\"\n\t\tvalue  = argument.cluster.value\n\t\taction
     = \"insert\"\n\t}\n\n\toutput {\n\t\ttraces = argument.forward_to.value\n\t}\n}\n"
 kind: ConfigMap
 metadata:
-  name: agent-modules-7f25tgm4gg
+  name: agent-modules-k4dbf9gh6k
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -787,7 +787,7 @@ spec:
           path: /var/log
         name: varlog
       - configMap:
-          name: agent-modules-7f25tgm4gg
+          name: agent-modules-k4dbf9gh6k
         name: agent-modules
 ---
 apiVersion: monitoring.coreos.com/v1
