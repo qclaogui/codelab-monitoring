@@ -202,7 +202,7 @@ manifests-common: $(KUSTOMIZE)
 
 
 .PHONY: manifests-monolithic-mode
-manifests-monolithic-mode: $(KUSTOMIZE)  ## Generates monolithic-mode manifests
+manifests-monolithic-mode: $(KUSTOMIZE)
 	$(info ******************** generates monolithic-mode manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/logs > kubernetes/monolithic-mode/logs/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/metrics > kubernetes/monolithic-mode/metrics/k8s-all-in-one.yaml
@@ -211,13 +211,13 @@ manifests-monolithic-mode: $(KUSTOMIZE)  ## Generates monolithic-mode manifests
 	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/all-in-one > kubernetes/monolithic-mode/all-in-one/k8s-all-in-one.yaml
 
 .PHONY: manifests-read-write-mode
-manifests-read-write-mode: $(KUSTOMIZE)  ## Generates read-write-mode manifests
+manifests-read-write-mode: $(KUSTOMIZE)
 	$(info ******************** generates read-write-mode manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/read-write-mode/logs > kubernetes/read-write-mode/logs/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build kubernetes/read-write-mode/metrics > kubernetes/read-write-mode/metrics/k8s-all-in-one.yaml
 
 .PHONY: manifests-microservices-mode
-manifests-microservices-mode: $(KUSTOMIZE)  ## Generates microservices-mode manifests
+manifests-microservices-mode: $(KUSTOMIZE)
 	$(info ******************** generates microservices-mode manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/logs > kubernetes/microservices-mode/logs/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/metrics > kubernetes/microservices-mode/metrics/k8s-all-in-one.yaml
@@ -227,7 +227,7 @@ manifests-microservices-mode: $(KUSTOMIZE)  ## Generates microservices-mode mani
 
 # prometheus-operator-crds
 .PHONY: deploy-prometheus-operator-crds
-deploy-prometheus-operator-crds: ## Deploy prometheus-operator-crds manifests
+deploy-prometheus-operator-crds:
 	$(info ******************** deploy prometheus-operator-crds manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/prometheus-operator-crds | kubectl replace -f - || $(KUSTOMIZE) build --enable-helm kubernetes/common/prometheus-operator-crds | kubectl create -f -
 
@@ -252,7 +252,7 @@ delete-memcached:
 
 # minio
 .PHONY: deploy-minio
-deploy-minio: ## Deploy minio manifests
+deploy-minio:
 	$(info ******************** deploy minio manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/minio-operator | kubectl apply -f -
 	kubectl rollout status -n minio-system deployment/minio-operator --watch --timeout=600s
@@ -276,7 +276,7 @@ delete-redis:
 
 # gateway
 .PHONY: deploy-gateway
-deploy-gateway: ## Deploy gateway manifests
+deploy-gateway:
 	$(info ******************** deploy gateway manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/common/gateway | kubectl apply -f -
 	kubectl rollout status -n gateway deployment/nginx --watch --timeout=600s
@@ -286,7 +286,7 @@ minio-token:
 	@kubectl get secret/console-sa-secret -n minio-system -o json | jq -r ".data.token" | base64 -d
 
 .PHONY: deploy-grafana
-deploy-grafana: deploy-prometheus-operator-crds deploy-minio deploy-gateway ## Deploy grafana manifests
+deploy-grafana: deploy-prometheus-operator-crds deploy-minio deploy-gateway
 	$(info ******************** deploy grafana manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana | kubectl apply -f -
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana-agent | kubectl apply -f -

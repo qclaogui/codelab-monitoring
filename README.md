@@ -18,6 +18,10 @@ Base on Flow mode of Grafana Agent.
 
 [Grafana Agent Configuration Generator](https://github.com/grafana/agent-configurator) a tool allows for easy configuration of Grafana Agents Flow system
 
+## Dependencies
+
+This project uses [bingo](https://github.com/bwplotka/bingo) (located in [.bingo/](.bingo/)), a tool to automate the versioning of Go packages. Run `make install-build-deps` to install dependencies tools.
+
 ## Docker Compose
 
 These instructions will get you through the deploying samples with Docker Compose.
@@ -130,7 +134,7 @@ make delete-monolithic-mode-logs
 help
 
 ```shell
-make help
+❯ make help
 
 Usage:
   make <target>
@@ -163,17 +167,21 @@ Kubernetes
   cluster                                   Create k3s cluster
   clean                                     Clean cluster
   manifests                                 Generates k8s manifests
-  manifests-monolithic-mode                 Generates monolithic-mode manifests
-  manifests-read-write-mode                 Generates read-write-mode manifests
-  manifests-microservices-mode              Generates microservices-mode manifests
-  deploy-prometheus-operator-crds           Deploy prometheus-operator-crds manifests
   deploy-kube-prometheus-stack              Deploy kube-prometheus-stack manifests
-  deploy-grafana                            Deploy grafana manifests
+  deploy-memcached                          Deploy memcached manifests
+  deploy-mysql                              Deploy mysql manifests
+  deploy-redis                              Deploy redis manifests
+  deploy-monolithic-mode-metrics            Deploy monolithic-mode metrics
   deploy-monolithic-mode-logs               Deploy monolithic-mode logs
   deploy-monolithic-mode-profiles           Deploy monolithic-mode profiles
+  deploy-monolithic-mode-traces             Deploy monolithic-mode traces
+  deploy-monolithic-mode-all-in-one         Deploy monolithic-mode all-in-one
+  deploy-read-write-mode-metrics            Deploy read-write-mode metrics
   deploy-read-write-mode-logs               Deploy read-write-mode logs
+  deploy-microservices-mode-logs            Deploy microservices-mode logs
   deploy-microservices-mode-metrics         Deploy microservices-mode metrics
   deploy-microservices-mode-profiles        Deploy microservices-mode profiles
+  deploy-microservices-mode-traces          Deploy microservices-mode traces
 
 General
   help                                      Display this help. Thanks to https://www.thapaliya.com/en/writings/well-documented-makefiles/
