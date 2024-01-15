@@ -20,7 +20,9 @@ Base on Flow mode of Grafana Agent.
 
 ## Dependencies
 
-This project uses [bingo](https://github.com/bwplotka/bingo) (located in [.bingo/](.bingo/)), a tool to automate the versioning of Go packages. Run `make install-build-deps` to install dependencies tools.
+This project uses [bingo](https://github.com/bwplotka/bingo) (located in [.bingo/](.bingo/)), a tool to automate the versioning of Go packages.
+
+Run `make install-build-deps` to install dependencies tools.
 
 ## Docker Compose
 
