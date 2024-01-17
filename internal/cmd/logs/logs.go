@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/MakeNowJust/heredoc"
+	"github.com/qclaogui/codelab-monitoring/internal"
 
 	"github.com/spf13/cobra"
 )
@@ -29,12 +30,11 @@ func NewCmdLogs() *cobra.Command {
 		`),
 
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			// TODO(qc)
+			// up-monolithic-mode-logs                Run monolithic-mode logs
+			// deploy-monolithic-mode-logs            Deploy monolithic-mode logs
 			action := cmd.Parent().Use
-			fullCmd := fmt.Sprintf("%s-%s-logs", action, mode)
-			fmt.Printf("🔥\x1b[91m make %s \x1b[39m\n", fullCmd)
-
-			if err := cmd.Help(); err != nil {
+			target := fmt.Sprintf("%s-%s-logs", action, mode)
+			if err := internal.ExecuteCommand("make", "-C", ".", target); err != nil {
 				return err
 			}
 			return nil

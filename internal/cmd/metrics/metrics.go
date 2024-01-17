@@ -6,13 +6,10 @@ package metrics
 
 import (
 	"fmt"
-	"os"
-	"os/exec"
-	"os/signal"
 	"strings"
-	"syscall"
 
 	"github.com/MakeNowJust/heredoc"
+	"github.com/qclaogui/codelab-monitoring/internal"
 
 	"github.com/spf13/cobra"
 )
@@ -33,45 +30,12 @@ func NewCmdMetrics() *cobra.Command {
 		`),
 
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			// up-monolithic-mode-metrics                Run monolithic-mode metrics
+			// deploy-monolithic-mode-metrics            Deploy monolithic-mode metrics
 			action := cmd.Parent().Use
 			target := fmt.Sprintf("%s-%s-metrics", action, mode)
-
-			command := exec.Command("make", "-C", ".", target)
-			command.Stderr = os.Stderr
-			command.Stdout = os.Stdout
-			err := command.Start()
-			if err != nil {
+			if err := internal.ExecuteCommand("make", "-C", ".", target); err != nil {
 				return err
-			}
-			if action == "down" || action == "delete" {
-				err := command.Wait()
-				if err != nil {
-					return err
-				}
-			} else {
-				signalChan := make(chan os.Signal, 1)
-				signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
-
-				done := make(chan error, 1)
-				go func() { done <- command.Wait() }()
-
-				select {
-				case <-signalChan:
-					fmt.Printf("Received interrupt signal, stopping %s...\n", target)
-					_ = command.Process.Signal(os.Interrupt)
-					select {
-					case <-signalChan:
-						fmt.Printf("Forcefully stopping %s...\n", target)
-						_ = command.Process.Kill()
-						os.Exit(1) // Exit with a status code of 1
-					case <-done:
-						os.Exit(0) // Exit with a status code of 0
-					}
-				case err := <-done:
-					if err != nil {
-						os.Exit(1) // Exit with a status code of 1 upon failure
-					}
-				}
 			}
 			return nil
 		},

@@ -8,10 +8,6 @@ import (
 	"os"
 
 	"github.com/MakeNowJust/heredoc"
-	deleteCmd "github.com/qclaogui/codelab-monitoring/lgtmp/cmd/delete"
-	deployCmd "github.com/qclaogui/codelab-monitoring/lgtmp/cmd/deploy"
-	downCmd "github.com/qclaogui/codelab-monitoring/lgtmp/cmd/down"
-	upCmd "github.com/qclaogui/codelab-monitoring/lgtmp/cmd/up"
 	"github.com/spf13/cobra"
 )
 
@@ -20,7 +16,6 @@ func NewCmdRoot() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "lgtmp <command> <subcommand> [flags]",
 		Short: "LGTMP CLI",
-		// Long:  `Grafana LGTMP Stack from the command line.`,
 		Long: heredoc.Doc(`
 			Grafana LGTMP Stack from the command line.
 			L -> Loki	Like Prometheus, but for logs.
@@ -38,12 +33,12 @@ func NewCmdRoot() *cobra.Command {
 	cmd.PersistentFlags().Bool("help", false, "Show help for command")
 
 	// Child commands provisioning by Docker Compose
-	cmd.AddCommand(upCmd.NewCmdUp())
-	cmd.AddCommand(downCmd.NewCmdDown())
+	cmd.AddCommand(NewCmdUp())
+	cmd.AddCommand(NewCmdDown())
 
 	// Child commands provisioning by Kubernetes
-	cmd.AddCommand(deployCmd.NewCmdDeploy())
-	cmd.AddCommand(deleteCmd.NewCmdDelete())
+	cmd.AddCommand(NewCmdDeploy())
+	cmd.AddCommand(NewCmdDelete())
 
 	return cmd
 }
