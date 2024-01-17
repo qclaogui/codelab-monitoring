@@ -4,7 +4,7 @@
 
 package main
 
-import "github.com/qclaogui/codelab-monitoring/lgtmp/cmd"
+import "github.com/qclaogui/codelab-monitoring/internal/cmd"
 
 func main() {
 	cmd.Execute()
