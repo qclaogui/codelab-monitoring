@@ -6,6 +6,7 @@ toolchain go1.21.5
 
 require (
 	dagger.io/dagger v0.9.6
+	github.com/MakeNowJust/heredoc v1.0.0
 	github.com/prometheus/client_golang v1.18.0
 	github.com/prometheus/common v0.46.0
 	github.com/spf13/cobra v1.8.0
