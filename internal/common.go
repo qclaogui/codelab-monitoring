@@ -5,9 +5,7 @@
 package internal
 
 import (
-	"bytes"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -17,18 +15,15 @@ import (
 
 func ExecuteCommand(command string, args ...string) error {
 	cmd := exec.Command(command, args...)
-	var stderr bytes.Buffer
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	if err := cmd.Start(); err != nil {
-		log.Fatalf("Error: %s\n", stderr.String())
+		return err
 	}
 
-	// make target is the last argment
 	target := args[len(args)-1]
 	if strings.HasPrefix(target, "down-") || strings.HasPrefix(target, "delete-") {
-		err := cmd.Wait()
-		if err != nil {
+		if err := cmd.Wait(); err != nil {
 			return err
 		}
 	} else {

@@ -6,6 +6,7 @@ package metrics
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/MakeNowJust/heredoc"
@@ -14,7 +15,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var supportedDeploymentModes = []string{"monolithic-mode", "read-write-mode", "microservices-mode"}
+var supportedModes = []string{"monolithic-mode", "read-write-mode", "microservices-mode"}
 var mode string
 
 func NewCmdMetrics() *cobra.Command {
@@ -30,6 +31,10 @@ func NewCmdMetrics() *cobra.Command {
 		`),
 
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			if !slices.Contains(supportedModes, mode) {
+				return fmt.Errorf("unsupported mode: %s", mode)
+			}
+
 			// up-monolithic-mode-metrics                Run monolithic-mode metrics
 			// deploy-monolithic-mode-metrics            Deploy monolithic-mode metrics
 			action := cmd.Parent().Use
@@ -42,7 +47,7 @@ func NewCmdMetrics() *cobra.Command {
 	}
 
 	metricsCmd.Flags().StringVarP(&mode, "mode", "m", "monolithic-mode",
-		fmt.Sprintf("deployment mode for metrics. Supported modes are: %s.", strings.Join(supportedDeploymentModes, ", ")))
+		fmt.Sprintf("deployment mode for metrics. Supported modes are: %s.", strings.Join(supportedModes, ", ")))
 
 	return metricsCmd
 }

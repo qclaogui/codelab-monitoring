@@ -6,6 +6,7 @@ package all
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/MakeNowJust/heredoc"
@@ -14,7 +15,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var supportedDeploymentModes = []string{"monolithic-mode"}
+var supportedModes = []string{"monolithic-mode"}
 var mode string
 
 func NewCmdAll() *cobra.Command {
@@ -30,6 +31,10 @@ func NewCmdAll() *cobra.Command {
 		`),
 
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			if !slices.Contains(supportedModes, mode) {
+				return fmt.Errorf("unsupported mode: %s", mode)
+			}
+
 			// up-monolithic-mode-all-in-one                Run monolithic-mode all-in-one
 			// deploy-monolithic-mode-all-in-one            Deploy monolithic-mode all-in-one
 			action := cmd.Parent().Use
@@ -42,7 +47,7 @@ func NewCmdAll() *cobra.Command {
 	}
 
 	allCmd.Flags().StringVarP(&mode, "mode", "m", "monolithic-mode",
-		fmt.Sprintf("deployment mode for all-in-one. Supported modes are: %s.", strings.Join(supportedDeploymentModes, ", ")))
+		fmt.Sprintf("deployment mode for all-in-one. Supported modes are: %s.", strings.Join(supportedModes, ", ")))
 
 	return allCmd
 }

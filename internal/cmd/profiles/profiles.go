@@ -6,6 +6,7 @@ package profiles
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/MakeNowJust/heredoc"
@@ -14,7 +15,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var supportedDeploymentModes = []string{"monolithic-mode", "microservices-mode"}
+var supportedModes = []string{"monolithic-mode", "microservices-mode"}
 var mode string
 
 func NewCmdProfiles() *cobra.Command {
@@ -30,6 +31,10 @@ func NewCmdProfiles() *cobra.Command {
 		`),
 
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			if !slices.Contains(supportedModes, mode) {
+				return fmt.Errorf("unsupported mode: %s", mode)
+			}
+
 			// up-monolithic-mode-profiles                Run monolithic-mode profiles
 			// deploy-monolithic-mode-profiles            Deploy monolithic-mode profiles
 			action := cmd.Parent().Use
@@ -42,7 +47,7 @@ func NewCmdProfiles() *cobra.Command {
 	}
 
 	profilesCmd.Flags().StringVarP(&mode, "mode", "m", "monolithic-mode",
-		fmt.Sprintf("deployment mode for profiles. Supported modes are: %s.", strings.Join(supportedDeploymentModes, ", ")))
+		fmt.Sprintf("deployment mode for profiles. Supported modes are: %s.", strings.Join(supportedModes, ", ")))
 
 	return profilesCmd
 }

@@ -5,8 +5,6 @@
 package cmd
 
 import (
-	"os"
-
 	"github.com/MakeNowJust/heredoc"
 	"github.com/spf13/cobra"
 )
@@ -41,14 +39,4 @@ func NewCmdRoot() *cobra.Command {
 	cmd.AddCommand(NewCmdDelete())
 
 	return cmd
-}
-
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
-	cmd := NewCmdRoot()
-	err := cmd.Execute()
-	if err != nil {
-		os.Exit(1)
-	}
 }
