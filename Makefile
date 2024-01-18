@@ -105,6 +105,9 @@ down-monolithic-mode-profiles:
 up-monolithic-mode-all-in-one: ## Run monolithic-mode all-in-one
 	$(info ******************** run monolithic-mode all-in-one ********************)
 	docker compose --project-directory docker-compose/monolithic-mode/all-in-one --file docker-compose/monolithic-mode/all-in-one/docker-compose.yaml up -d --remove-orphans
+	@echo ""
+	@echo "Demo is running."
+	@echo "Go to http://localhost:3000/explore for the metrics."
 down-monolithic-mode-all-in-one:
 	docker compose --project-directory docker-compose/monolithic-mode/all-in-one --file docker-compose/monolithic-mode/all-in-one/docker-compose.yaml down
 
