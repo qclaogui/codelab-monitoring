@@ -147,28 +147,108 @@ local filename = 'mimir-reads.json';
       )
     )
     .addRow(
+      local description = |||
+        <p>
+          The query scheduler is an optional service that moves
+          the internal queue from the query-frontend into a
+          separate component.
+          If this service is not deployed,
+          these panels will show "No data."
+        </p>
+      |||;
       $.row('Query-scheduler')
       .addPanel(
-        $.textPanel(
-          '',
-          |||
-            <p>
-              The query scheduler is an optional service that moves
-              the internal queue from the query-frontend into a
-              separate component.
-              If this service is not deployed,
-              these panels will show "No data."
-            </p>
-          |||
-        )
-      )
-      .addPanel(
-        $.panel('Requests / sec') +
+        local title = 'Requests / sec';
+        $.panel(title) +
+        $.panelDescription(title, description) +
         $.qpsPanel('cortex_query_scheduler_queue_duration_seconds_count{%s}' % $.jobMatcher($._config.job_names.query_scheduler))
       )
       .addPanel(
-        $.panel('Latency (Time in Queue)') +
+        local title = 'Latency (Time in Queue)';
+        $.panel(title) +
+        $.panelDescription(title, description) +
         $.latencyPanel('cortex_query_scheduler_queue_duration_seconds', '{%s}' % $.jobMatcher($._config.job_names.query_scheduler))
+      )
+      .addPanel(
+        local title = 'Queue length';
+
+        $.timeseriesPanel(title) +
+        $.panelDescription(title, description) +
+        $.hiddenLegendQueryPanel(
+          'sum(min_over_time(cortex_query_scheduler_queue_length{%s}[$__interval]))' % [$.jobMatcher($._config.job_names.query_scheduler)],
+          'Queue length'
+        ) +
+        {
+          fieldConfig+: {
+            defaults+: {
+              unit: 'queries',
+            },
+          },
+        },
+      )
+    )
+    .addRow(
+      local description = |||
+        <p>
+          The query scheduler can optionally create subqueues
+          in order to enforce round-robin query queuing fairness
+          across additional queue dimensions beyond the default.
+
+          By default, query queuing fairness is only applied by tenant ID.
+          Queries without additional queue dimensions are labeled 'none'.
+        </p>
+      |||;
+      local metricName = 'cortex_query_scheduler_queue_duration_seconds';
+      local selector = '{%s}' % $.jobMatcher($._config.job_names.query_scheduler);
+      local labels = ['additional_queue_dimensions'];
+      local labelReplaceArgSets = [
+        {
+          dstLabel: 'additional_queue_dimensions',
+          replacement: 'none',
+          srcLabel:
+            'additional_queue_dimensions',
+          regex: '^$',
+        },
+      ];
+      $.row('Query-scheduler Latency (Time in Queue) Breakout by Additional Queue Dimensions')
+      .addPanel(
+        local title = '99th Percentile Latency by Queue Dimension';
+        $.panel(title) +
+        $.panelDescription(title, description) +
+        $.latencyPanelLabelBreakout(
+          metricName=metricName,
+          selector=selector,
+          percentiles=['0.99'],
+          includeAverage=false,
+          labels=labels,
+          labelReplaceArgSets=labelReplaceArgSets,
+        )
+      )
+      .addPanel(
+        local title = '50th Percentile Latency by Queue Dimension';
+        $.panel(title) +
+        $.panelDescription(title, description) +
+        $.latencyPanelLabelBreakout(
+          metricName=metricName,
+          selector=selector,
+          percentiles=['0.50'],
+          includeAverage=false,
+          labels=labels,
+          labelReplaceArgSets=labelReplaceArgSets,
+        )
+      )
+      .addPanel(
+        local title = 'Average Latency by Queue Dimension';
+        $.panel(title) +
+        $.panelDescription(title, description) +
+        $.latencyPanelLabelBreakout(
+          metricName=metricName,
+          selector=selector,
+          percentiles=[],
+          includeAverage=true,
+          labels=labels,
+          labelReplaceArgSets=labelReplaceArgSets,
+        )
       )
     )
     .addRow(
@@ -266,33 +346,39 @@ local filename = 'mimir-reads.json';
         $.queryPanel(
           [
             |||
-              kube_horizontalpodautoscaler_spec_max_replicas{%(namespace_matcher)s, horizontalpodautoscaler=~"%(hpa_name)s"}
-              # Add the scaletargetref_name label which is more readable than "kube-hpa-..."
-              + on (%(cluster_labels)s, horizontalpodautoscaler) group_left (scaletargetref_name)
-                0*kube_horizontalpodautoscaler_info{%(namespace_matcher)s, horizontalpodautoscaler=~"%(hpa_name)s"}
+              max by (scaletargetref_name) (
+                kube_horizontalpodautoscaler_spec_max_replicas{%(namespace_matcher)s, horizontalpodautoscaler=~"%(hpa_name)s"}
+                # Add the scaletargetref_name label which is more readable than "kube-hpa-..."
+                + on (%(cluster_labels)s, horizontalpodautoscaler) group_left (scaletargetref_name)
+                  0*kube_horizontalpodautoscaler_info{%(namespace_matcher)s, horizontalpodautoscaler=~"%(hpa_name)s"}
+              )
             ||| % {
               namespace_matcher: $.namespaceMatcher(),
               cluster_labels: std.join(', ', $._config.cluster_labels),
               hpa_name: $._config.autoscaling.querier.hpa_name,
             },
             |||
-              kube_horizontalpodautoscaler_status_current_replicas{%(namespace_matcher)s, horizontalpodautoscaler=~"%(hpa_name)s"}
-              # HPA doesn't go to 0 replicas, so we multiply by 0 if the HPA is not active.
-              * on (%(cluster_labels)s, horizontalpodautoscaler)
-                kube_horizontalpodautoscaler_status_condition{%(namespace_matcher)s, horizontalpodautoscaler=~"%(hpa_name)s", condition="ScalingActive", status="true"}
-              # Add the scaletargetref_name label which is more readable than "kube-hpa-..."
-              + on (%(cluster_labels)s, horizontalpodautoscaler) group_left (scaletargetref_name)
-                0*kube_horizontalpodautoscaler_info{%(namespace_matcher)s, horizontalpodautoscaler=~"%(hpa_name)s"}
+              max by (scaletargetref_name) (
+                kube_horizontalpodautoscaler_status_current_replicas{%(namespace_matcher)s, horizontalpodautoscaler=~"%(hpa_name)s"}
+                # HPA doesn't go to 0 replicas, so we multiply by 0 if the HPA is not active.
+                * on (%(cluster_labels)s, horizontalpodautoscaler)
+                  kube_horizontalpodautoscaler_status_condition{%(namespace_matcher)s, horizontalpodautoscaler=~"%(hpa_name)s", condition="ScalingActive", status="true"}
+                # Add the scaletargetref_name label which is more readable than "kube-hpa-..."
+                + on (%(cluster_labels)s, horizontalpodautoscaler) group_left (scaletargetref_name)
+                  0*kube_horizontalpodautoscaler_info{%(namespace_matcher)s, horizontalpodautoscaler=~"%(hpa_name)s"}
+              )
             ||| % {
               namespace_matcher: $.namespaceMatcher(),
               cluster_labels: std.join(', ', $._config.cluster_labels),
               hpa_name: $._config.autoscaling.querier.hpa_name,
             },
             |||
-              kube_horizontalpodautoscaler_spec_min_replicas{%(namespace_matcher)s, horizontalpodautoscaler=~"%(hpa_name)s"}
-              # Add the scaletargetref_name label which is more readable than "kube-hpa-..."
-              + on (%(cluster_labels)s, horizontalpodautoscaler) group_left (scaletargetref_name)
-                0*kube_horizontalpodautoscaler_info{%(namespace_matcher)s, horizontalpodautoscaler=~"%(hpa_name)s"}
+              max by (scaletargetref_name) (
+                kube_horizontalpodautoscaler_spec_min_replicas{%(namespace_matcher)s, horizontalpodautoscaler=~"%(hpa_name)s"}
+                # Add the scaletargetref_name label which is more readable than "kube-hpa-..."
+                + on (%(cluster_labels)s, horizontalpodautoscaler) group_left (scaletargetref_name)
+                  0*kube_horizontalpodautoscaler_info{%(namespace_matcher)s, horizontalpodautoscaler=~"%(hpa_name)s"}
+              )
             ||| % {
               namespace_matcher: $.namespaceMatcher(),
               cluster_labels: std.join(', ', $._config.cluster_labels),

@@ -345,7 +345,7 @@
             },
             "gridPos": {
                "h": 10,
-               "w": 12,
+               "w": 8,
                "x": 0,
                "y": 20
             },
@@ -368,7 +368,7 @@
          },
          {
             "datasource": "${datasource}",
-            "description": "Total number of active series which are currently being tracked by\nprometheus.remote_write components.\n\nAn \"active series\" is a series that prometheus.remote_write recently\nreceived a sample for. Active series are garbage collected whenever a\ntruncation of the WAL occurs.\n",
+            "description": "Total number of active series which are currently being tracked by\nprometheus.remote_write components, with separate lines for each agent instance.\n\nAn \"active series\" is a series that prometheus.remote_write recently\nreceived a sample for. Active series are garbage collected whenever a\ntruncation of the WAL occurs.\n",
             "fieldConfig": {
                "defaults": {
                   "unit": "short"
@@ -376,16 +376,42 @@
             },
             "gridPos": {
                "h": 10,
-               "w": 12,
-               "x": 12,
+               "w": 8,
+               "x": 8,
                "y": 20
             },
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "agent_wal_storage_active_series{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_id=~\"$component\", url=~\"$url\"}\n",
+                  "expr": "agent_wal_storage_active_series{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_id!=\"\", component_id=~\"$component\", url=~\"$url\"}\n",
                   "instant": false,
                   "legendFormat": "{{instance}} / {{component_id}}",
+                  "range": true
+               }
+            ],
+            "title": "Active series (by instance/component)",
+            "type": "timeseries"
+         },
+         {
+            "datasource": "${datasource}",
+            "description": "Total number of active series which are currently being tracked by\nprometheus.remote_write components, aggregated across all instances.\n\nAn \"active series\" is a series that prometheus.remote_write recently\nreceived a sample for. Active series are garbage collected whenever a\ntruncation of the WAL occurs.\n",
+            "fieldConfig": {
+               "defaults": {
+                  "unit": "short"
+               }
+            },
+            "gridPos": {
+               "h": 10,
+               "w": 8,
+               "x": 16,
+               "y": 20
+            },
+            "targets": [
+               {
+                  "datasource": "${datasource}",
+                  "expr": "sum by (component_id) (agent_wal_storage_active_series{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_id!=\"\", component_id=~\"$component\", url=~\"$url\"})\n",
+                  "instant": false,
+                  "legendFormat": "{{component_id}}",
                   "range": true
                }
             ],
