@@ -13,10 +13,13 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	source "github.com/qclaogui/codelab-monitoring"
 )
 
 func ExecuteCommand(command string, args ...string) error {
 	cmd := exec.Command(command, args...)
+	cmd.Dir = source.GenDir
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	if err := cmd.Start(); err != nil {
