@@ -15,17 +15,24 @@ import (
 	"strings"
 )
 
-//go:embed gen.tar
+//go:embed .lgtmp.tar
 var DirFS embed.FS
 
-//go:generate tar cf gen.tar .bingo docker-compose kubernetes monitoring-mixins tools Makefile
-var GenDir = "gen"
+//go:generate tar cf .lgtmp.tar .bingo docker-compose kubernetes monitoring-mixins tools Makefile
+var GenDir = ".lgtmp"
+
+func init() {
+	if err := EmbedFsToGenDirectory(); err != nil {
+		fmt.Print(err)
+		os.Exit(1)
+	}
+}
 
 func EmbedFsToGenDirectory() error {
-	if err := os.MkdirAll(GenDir, 0700); err != nil {
+	if err := os.RemoveAll(GenDir); err != nil {
 		return err
 	}
-	r, err := DirFS.Open("gen.tar")
+	r, err := DirFS.Open(".lgtmp.tar")
 	if err != nil {
 		return err
 	}

@@ -1,0 +1,55 @@
+# https://goreleaser.com/customization/homebrew/
+brews:
+- name: lgtmp
+
+  # Repository to push the generated files to.
+  repository:
+    owner: qclaogui
+    name: homebrew-tap
+
+  commit_author:
+    name: "🤖GitHub Actions[Bot]"
+    email: qclaogui@gmail.com
+
+  folder: Formula
+
+  homepage: "https://github.com/qclaogui/codelab-monitoring/"
+
+  description: "Grafana LGTMP Stack from the command line."
+
+  # SPDX identifier of your app's license.
+  license: "Apache-2.0"
+
+  # Setting this will prevent goreleaser to actually try to commit the updated
+  # formula - instead, the formula file will be stored on the dist folder only,
+  # leaving the responsibility of publishing it to the user.
+  # If set to auto, the release will not be uploaded to the homebrew tap
+  # in case there is an indicator for prerelease in the tag e.g. v1.0.0-rc1
+  #
+  # Templates: allowed
+  skip_upload: true
+
+  dependencies:
+  - name: go
+  - name: docker
+    type: optional
+  - name: zsh
+    type: optional
+
+  custom_block: |
+    head "https://github.com/qclaogui/codelab-monitoring.git"
+
+  # So you can `brew test` your formula.
+  test: |
+    system "#{bin}/lgtmp version"
+
+  install: |
+    bin.install "lgtmp"
+    
+    # Install bash completion
+    output = Utils.popen_read("#{bin}/lgtmp completion bash")
+    (bash_completion/"lgtmp").write output
+    
+    # Install zsh completion
+    output = Utils.popen_read("#{bin}/lgtmp completion zsh")
+    (zsh_completion/"_lgtmp").write output

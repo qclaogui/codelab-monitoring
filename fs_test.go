@@ -7,9 +7,8 @@ package source
 import "testing"
 
 func TestDockerComposeFS(t *testing.T) {
-	// run go generate ./...
-
-	if _, err := DirFS.Open("gen.tar"); err != nil {
+	// run go generate
+	if _, err := DirFS.Open(".lgtmp.tar"); err != nil {
 		t.Errorf("\nOops 🔥\x1b[91m Failed asserting that\x1b[39m\n"+
 			"✘got: %v\n\x1b[92m"+
 			"want: %v\x1b[39m", err, nil)
