@@ -9,7 +9,7 @@ import (
 	"os"
 
 	source "github.com/qclaogui/codelab-monitoring"
-	"github.com/qclaogui/codelab-monitoring/internal/cmd"
+	"github.com/qclaogui/codelab-monitoring/pkg/cmd"
 )
 
 // Example:

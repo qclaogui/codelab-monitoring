@@ -6,23 +6,23 @@ package cmd
 
 import (
 	"github.com/MakeNowJust/heredoc"
-	"github.com/qclaogui/codelab-monitoring/internal/cmd/all"
-	"github.com/qclaogui/codelab-monitoring/internal/cmd/logs"
-	"github.com/qclaogui/codelab-monitoring/internal/cmd/metrics"
-	"github.com/qclaogui/codelab-monitoring/internal/cmd/profiles"
-	"github.com/qclaogui/codelab-monitoring/internal/cmd/traces"
+	"github.com/qclaogui/codelab-monitoring/pkg/cmd/all"
+	"github.com/qclaogui/codelab-monitoring/pkg/cmd/logs"
+	"github.com/qclaogui/codelab-monitoring/pkg/cmd/metrics"
+	"github.com/qclaogui/codelab-monitoring/pkg/cmd/profiles"
+	"github.com/qclaogui/codelab-monitoring/pkg/cmd/traces"
 
 	"github.com/spf13/cobra"
 )
 
-func NewCmdDeploy() *cobra.Command {
+func NewCmdDelete() *cobra.Command {
 	var cmd = &cobra.Command{
-		Use:   "deploy",
-		Short: "Deploy LGTMP stack.",
+		Use:   "delete",
+		Short: "Delete LGTMP stack.",
 		Long:  "Provisioning LGTMP stack by Kubernetes.",
 		Example: heredoc.Doc(`
-			# lgtmp deploy <command>
-			$ lgtmp deploy metrics
+			# lgtmp delete <command>
+			$ lgtmp delete metrics
 		`),
 	}
 

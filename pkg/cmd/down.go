@@ -6,23 +6,23 @@ package cmd
 
 import (
 	"github.com/MakeNowJust/heredoc"
-	"github.com/qclaogui/codelab-monitoring/internal/cmd/all"
-	"github.com/qclaogui/codelab-monitoring/internal/cmd/logs"
-	"github.com/qclaogui/codelab-monitoring/internal/cmd/metrics"
-	"github.com/qclaogui/codelab-monitoring/internal/cmd/profiles"
-	"github.com/qclaogui/codelab-monitoring/internal/cmd/traces"
+	"github.com/qclaogui/codelab-monitoring/pkg/cmd/all"
+	"github.com/qclaogui/codelab-monitoring/pkg/cmd/logs"
+	"github.com/qclaogui/codelab-monitoring/pkg/cmd/metrics"
+	"github.com/qclaogui/codelab-monitoring/pkg/cmd/profiles"
+	"github.com/qclaogui/codelab-monitoring/pkg/cmd/traces"
 
 	"github.com/spf13/cobra"
 )
 
-func NewCmdUp() *cobra.Command {
+func NewCmdDown() *cobra.Command {
 	var cmd = &cobra.Command{
-		Use:   "up",
-		Short: "Start up LGTMP stack.",
+		Use:   "down",
+		Short: "Stop LGTMP stack.",
 		Long:  "Provisioning LGTMP stack by Docker Compose.",
 		Example: heredoc.Doc(`
-			# lgtmp up <command>
-			$ lgtmp up metrics
+			# lgtmp down <command>
+			$ lgtmp down metrics
 		`),
 	}
 

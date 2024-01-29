@@ -464,6 +464,12 @@ deploy-microservices-mode-traces: deploy-grafana ## Deploy microservices-mode tr
 delete-microservices-mode-traces:
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/traces | kubectl delete -f -
 
+##@ Release
+
+.PHONY: print-version
+print-version: ## Prints the upcoming release number
+	@go run internal/version/generate/release_generate.go print-version
+
 
 ##@ General
 

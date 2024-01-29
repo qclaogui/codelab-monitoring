@@ -6,12 +6,11 @@ package traces
 
 import (
 	"fmt"
+	"github.com/qclaogui/codelab-monitoring/pkg"
 	"slices"
 	"strings"
 
 	"github.com/MakeNowJust/heredoc"
-	"github.com/qclaogui/codelab-monitoring/internal"
-
 	"github.com/spf13/cobra"
 )
 
@@ -39,7 +38,7 @@ func NewCmdTraces() *cobra.Command {
 			// deploy-monolithic-mode-traces            Deploy monolithic-mode traces
 			action := cmd.Parent().Use
 			target := fmt.Sprintf("%s-%s-traces", action, mode)
-			if err := internal.ExecuteCommand("make", "-C", ".", target); err != nil {
+			if err := pkg.ExecuteCommand("make", "-C", ".", target); err != nil {
 				return err
 			}
 			return nil
