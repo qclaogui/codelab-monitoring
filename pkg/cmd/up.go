@@ -18,8 +18,7 @@ import (
 func NewCmdUp() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   "up",
-		Short: "Start up LGTMP stack.",
-		Long:  "Provisioning LGTMP stack by Docker Compose.",
+		Short: "Provisioning Grafana LGTMP stack by Docker Compose",
 		Example: heredoc.Doc(`
 			# lgtmp up <command>
 			$ lgtmp up metrics

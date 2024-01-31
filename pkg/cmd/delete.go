@@ -18,8 +18,7 @@ import (
 func NewCmdDelete() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   "delete",
-		Short: "Delete LGTMP stack.",
-		Long:  "Provisioning LGTMP stack by Kubernetes.",
+		Short: "Clean up Grafana LGTMP stack from Kubernetes",
 		Example: heredoc.Doc(`
 			# lgtmp delete <command>
 			$ lgtmp delete metrics

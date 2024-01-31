@@ -18,8 +18,7 @@ import (
 func NewCmdDown() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   "down",
-		Short: "Stop LGTMP stack.",
-		Long:  "Provisioning LGTMP stack by Docker Compose.",
+		Short: "Clean up Grafana LGTMP stack from Docker Compose",
 		Example: heredoc.Doc(`
 			# lgtmp down <command>
 			$ lgtmp down metrics

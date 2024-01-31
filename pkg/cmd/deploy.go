@@ -18,8 +18,7 @@ import (
 func NewCmdDeploy() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   "deploy",
-		Short: "Deploy LGTMP stack.",
-		Long:  "Provisioning LGTMP stack by Kubernetes.",
+		Short: "Provisioning Grafana LGTMP stack by Kubernetes",
 		Example: heredoc.Doc(`
 			# lgtmp deploy <command>
 			$ lgtmp deploy metrics

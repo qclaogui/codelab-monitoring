@@ -12,8 +12,8 @@ builds:
   flags:
   - -trimpath
   ldflags:
-  - -s -w
-  - -extldflags "-static"
+  - >-
+    {{- if eq .Env.RELEASE_BUILD "1" }}-s -w{{- end }}
   - -X github.com/qclaogui/codelab-monitoring/pkg/version.Version={{.Version}}
   - -X github.com/qclaogui/codelab-monitoring/pkg/version.GitCommit={{.ShortCommit}}
   - -X github.com/qclaogui/codelab-monitoring/pkg/version.BuildDate={{.Date}}
@@ -39,6 +39,6 @@ archives:
   - none*
 
 checksum:
-  name_template: "checksums.txt"
+  name_template: "lgtmp_checksums.txt"
 
 report_sizes: true

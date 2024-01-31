@@ -469,6 +469,8 @@ GOOS             ?= $(shell go env GOOS)
 GOARCH           ?= $(shell go env GOARCH)
 GOARM            ?= $(shell go env GOARM)
 CGO_ENABLED      ?= 0
+RELEASE_BUILD    ?= 0
+
 
 GOPROXY          ?= https://proxy.golang.org
 export GOPROXY
@@ -484,7 +486,14 @@ GO_LDFLAGS  := -X $(VPREFIX).Version=$(VERSION)                         \
                -X $(VPREFIX).GitCommit=$(GIT_COMMIT)                    \
                -X $(VPREFIX).BuildDate=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-GO_FLAGS := -ldflags "-s -w $(GO_LDFLAGS)"
+DEFAULT_FLAGS	:= $(GO_FLAGS)
+
+ifeq ($(RELEASE_BUILD),1)
+GO_FLAGS	:= $(DEFAULT_FLAGS) -ldflags "-s -w $(GO_LDFLAGS)"
+else
+GO_FLAGS	:= $(DEFAULT_FLAGS) -ldflags "$(GO_LDFLAGS)"
+endif
+
 
 .PHONY: generate
 generate: ## generate embed deps
@@ -499,7 +508,7 @@ build: generate ## Build binary for current OS and place it at ./bin/lgtmp_$(GOO
 .PHONY: build-all
 build-all: $(GORELEASER) generate ## Build binaries for Linux and Mac and place them in dist/
 	@cat ./.goreleaser.yml ./.goreleaser.brew.yml > .goreleaser.combined.yml
-	PRE_RELEASE_ID="" $(GORELEASER) --config=.goreleaser.combined.yml --snapshot --skip=publish --clean
+	RELEASE_BUILD=$(RELEASE_BUILD) PRE_RELEASE_ID="" $(GORELEASER) --config=.goreleaser.combined.yml --snapshot --skip=publish --clean
 	@rm .goreleaser.combined.yml
 
 
