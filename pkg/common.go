@@ -91,6 +91,9 @@ func openArgs() []string {
 // OpenBrowser tries to open url in a browser and reports whether it succeeded.
 func OpenBrowser(url string) bool {
 	args := openArgs()
+	if len(args) < 1 {
+		return false
+	}
 	cmd := exec.Command(args[0], append(args[1:], url)...)
 	if cmd.Start() == nil && appearsSuccessful(cmd, 5*time.Second) {
 		return true
