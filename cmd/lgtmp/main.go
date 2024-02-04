@@ -5,8 +5,10 @@
 package main
 
 import (
-	"github.com/qclaogui/codelab-monitoring/internal/cmd"
+	"fmt"
 	"os"
+
+	"github.com/qclaogui/codelab-monitoring/pkg/cmd"
 )
 
 // Example:
@@ -17,6 +19,7 @@ import (
 func main() {
 	rootCmd := cmd.NewCmdRoot()
 	if err := rootCmd.Execute(); err != nil {
+		fmt.Print(err)
 		os.Exit(1)
 	}
 }

@@ -1,0 +1,44 @@
+release:
+  name_template: "{{ .ProjectName }} {{ .Env.RELEASE_DESCRIPTION }}"
+  prerelease: auto # this should detect a release candidate and mark it as pre-release in GitHub
+  skip_upload: true
+
+builds:
+- id: lgtmp
+  main: ./cmd/lgtmp
+  binary: bin/lgtmp
+  env:
+  - CGO_ENABLED=0
+  flags:
+  - -trimpath
+  ldflags:
+  - >-
+    {{- if eq .Env.RELEASE_BUILD "1" }}-s -w{{- end }}
+  - -X github.com/qclaogui/codelab-monitoring/pkg/version.Version={{.Version}}
+  - -X github.com/qclaogui/codelab-monitoring/pkg/version.GitCommit={{.ShortCommit}}
+  - -X github.com/qclaogui/codelab-monitoring/pkg/version.BuildDate={{.Date}}
+  - -X github.com/qclaogui/codelab-monitoring/pkg/version.PreReleaseID={{.Env.PRE_RELEASE_ID}}
+
+  # GOOS list to build for.
+  # For more info refer to: https://golang.org/doc/install/source#environment
+  #
+  # Default: [ 'darwin', 'linux', 'windows' ]
+  goos:
+  - linux
+  - darwin
+  goarch:
+  - amd64
+  - arm64
+
+archives:
+- builds:
+  - lgtmp
+  name_template: "lgtmp-{{.Version}}-{{ .Os }}-{{ .Arch }}"
+  format: tar.gz
+  files:
+  - none*
+
+checksum:
+  name_template: "lgtmp_checksums.txt"
+
+report_sizes: true

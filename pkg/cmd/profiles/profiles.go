@@ -6,12 +6,11 @@ package profiles
 
 import (
 	"fmt"
+	"github.com/qclaogui/codelab-monitoring/pkg"
 	"slices"
 	"strings"
 
 	"github.com/MakeNowJust/heredoc"
-	"github.com/qclaogui/codelab-monitoring/internal"
-
 	"github.com/spf13/cobra"
 )
 
@@ -39,7 +38,7 @@ func NewCmdProfiles() *cobra.Command {
 			// deploy-monolithic-mode-profiles            Deploy monolithic-mode profiles
 			action := cmd.Parent().Use
 			target := fmt.Sprintf("%s-%s-profiles", action, mode)
-			if err := internal.ExecuteCommand("make", "-C", ".", target); err != nil {
+			if err := pkg.ExecuteCommand("make", "-C", ".", target); err != nil {
 				return err
 			}
 			return nil

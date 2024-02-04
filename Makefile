@@ -2,9 +2,6 @@
 
 include .bingo/Variables.mk
 
-GOPROXY  ?= https://proxy.golang.org
-export GOPROXY
-
 # support app's mixin
 APPS_MIXIN := "agent-flow-mixin" "go-runtime-mixin"
 
@@ -44,7 +41,7 @@ check: $(JSONNETFMT) $(MIXTOOL) copyright
 
 .PHONY: copyright
 copyright: $(COPYRIGHT) ## Add Copyright header to .go files.
-	@$(COPYRIGHT) $(shell go list -f "{{.Dir}}" ./... | xargs -I {} find {} -name "*.go")
+	@$(COPYRIGHT) $(shell go list -f "{{.Dir}}" ./... | xargs -I {} find {} -name "*.go" | grep -iv "vendor/")
 	@echo ">> ensured all .go files have copyright headers"
 
 
@@ -183,6 +180,7 @@ cluster: ## Create k3s cluster
 
 clean: ## Clean cluster
 	k3d cluster delete k3s-codelab
+	@rm -rf bin dist .lgtmp .lgtmp.tar
 
 .PHONY: manifests
 manifests: ## Generates k8s manifests
@@ -463,6 +461,62 @@ deploy-microservices-mode-traces: deploy-grafana ## Deploy microservices-mode tr
 	@echo "Go to http://localhost:8080/explore for the traces."
 delete-microservices-mode-traces:
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/traces | kubectl delete -f -
+
+
+##@ Build
+
+GOOS             ?= $(shell go env GOOS)
+GOARCH           ?= $(shell go env GOARCH)
+GOARM            ?= $(shell go env GOARM)
+CGO_ENABLED      ?= 0
+RELEASE_BUILD    ?= 0
+
+
+GOPROXY          ?= https://proxy.golang.org
+export GOPROXY
+
+GO_ENV := GOOS=$(GOOS) GOARCH=$(GOARCH) GOARM=$(GOARM) CGO_ENABLED=$(CGO_ENABLED)
+
+VERSION 	?= $(shell ./tools/image-tag)
+COMMIT_NO 	?= $(shell git rev-parse --short HEAD 2> /dev/null || true)
+GIT_COMMIT 	?= $(if $(shell git status --porcelain --untracked-files=no),${COMMIT_NO}-dirty,${COMMIT_NO})
+VPREFIX 	:= github.com/qclaogui/codelab-monitoring/pkg/version
+
+GO_LDFLAGS  := -X $(VPREFIX).Version=$(VERSION)                         \
+               -X $(VPREFIX).GitCommit=$(GIT_COMMIT)                    \
+               -X $(VPREFIX).BuildDate=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+DEFAULT_FLAGS	:= $(GO_FLAGS)
+
+ifeq ($(RELEASE_BUILD),1)
+GO_FLAGS	:= $(DEFAULT_FLAGS) -ldflags "-s -w $(GO_LDFLAGS)"
+else
+GO_FLAGS	:= $(DEFAULT_FLAGS) -ldflags "$(GO_LDFLAGS)"
+endif
+
+
+.PHONY: generate
+generate: ## generate embed deps
+	@$(GO_ENV) go generate
+
+
+.PHONY: build
+build: generate ## Build binary for current OS and place it at ./bin/lgtmp_$(GOOS)_$(GOARCH)
+	@$(GO_ENV) go build $(GO_FLAGS) -o bin/lgtmp_$(GOOS)_$(GOARCH) ./cmd/lgtmp
+	@$(GO_ENV) go build $(GO_FLAGS) -o bin/lgtmp ./cmd/lgtmp
+
+.PHONY: build-all
+build-all: $(GORELEASER) generate ## Build binaries for Linux and Mac and place them in dist/
+	@cat ./.goreleaser.yml ./.goreleaser.brew.yml > .goreleaser.combined.yml
+	RELEASE_BUILD=$(RELEASE_BUILD) PRE_RELEASE_ID="" $(GORELEASER) --config=.goreleaser.combined.yml --snapshot --skip=publish --clean
+	@rm .goreleaser.combined.yml
+
+
+##@ Release
+
+.PHONY: print-version
+print-version: ## Prints the upcoming release number
+	@go run internal/version/generate/release_generate.go print-version
 
 
 ##@ General

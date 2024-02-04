@@ -1,0 +1,48 @@
+name: Publish (workflow call)
+
+# https://docs.github.com/zh/actions/security-guides/encrypted-secrets#using-encrypted-secrets-in-a-workflow
+on:
+  workflow_call:
+    inputs:
+      isReleaseCandidate:
+        required: true
+        type: boolean
+      name:
+        required: true
+        type: string
+    secrets:
+      ghPAT:
+        required: true
+
+permissions:
+  contents: read
+  packages: write # needed for ghcr access
+        
+jobs:
+
+  publish-release:
+    name: ${{ inputs.name }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Install GoReleaser
+        run: |
+          wget -q https://github.com/goreleaser/goreleaser/releases/download/v1.23.0/goreleaser_Linux_x86_64.tar.gz
+          tar -xzf goreleaser_Linux_x86_64.tar.gz
+          mv goreleaser /home/runner/go/bin/goreleaser-v1.23.0
+
+      - name: Publish release
+        if: ${{ !inputs.isReleaseCandidate }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.ghPAT }}
+        run: ./tools/scripts/do-release.sh
+
+      - name: Publish release candidate
+        if: ${{ inputs.isReleaseCandidate }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.ghPAT }}
+        run: ./tools/scripts/do-release-candidate.sh

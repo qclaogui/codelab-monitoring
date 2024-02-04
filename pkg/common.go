@@ -2,7 +2,7 @@
 //
 // Licensed under the Apache License 2.0.
 
-package internal
+package pkg
 
 import (
 	"fmt"
@@ -13,10 +13,13 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	source "github.com/qclaogui/codelab-monitoring"
 )
 
 func ExecuteCommand(command string, args ...string) error {
 	cmd := exec.Command(command, args...)
+	cmd.Dir = source.GenDir
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	if err := cmd.Start(); err != nil {
@@ -88,6 +91,9 @@ func openArgs() []string {
 // OpenBrowser tries to open url in a browser and reports whether it succeeded.
 func OpenBrowser(url string) bool {
 	args := openArgs()
+	if len(args) < 1 {
+		return false
+	}
 	cmd := exec.Command(args[0], append(args[1:], url)...)
 	if cmd.Start() == nil && appearsSuccessful(cmd, 5*time.Second) {
 		return true

@@ -15,12 +15,12 @@ func NewCmdRoot() *cobra.Command {
 		Use:   "lgtmp <command> <subcommand> [flags]",
 		Short: "LGTMP CLI",
 		Long: heredoc.Doc(`
-			Grafana LGTMP Stack from the command line.
-			L -> Loki	Like Prometheus, but for logs.
-			G -> Grafana	The open and composable observability and data visualization platform.
-			T -> Tempo	A high volume, minimal dependency distributed tracing backend.
-			M -> Mimir	The most scalable Prometheus backend.
-			P -> Pyroscope	Continuous Profiling Platform. Debug performance issues down to a single line of code.
+			Grafana LGTMP Stack from the command line
+			L -> Loki	Like Prometheus, but for logs
+			G -> Grafana	The open and composable observability and data visualization platform
+			T -> Tempo	A high volume, minimal dependency distributed tracing backend
+			M -> Mimir	The most scalable Prometheus backend
+			P -> Pyroscope	Continuous Profiling Platform. Debug performance issues down to a single line of code
 		`),
 
 		Example: heredoc.Doc(`
@@ -28,7 +28,7 @@ func NewCmdRoot() *cobra.Command {
 		`),
 	}
 
-	cmd.PersistentFlags().Bool("help", false, "Show help for command")
+	cmd.PersistentFlags().BoolP("help", "h", false, "Show help for command")
 
 	// Child commands provisioning by Docker Compose
 	cmd.AddCommand(NewCmdUp())
@@ -37,6 +37,9 @@ func NewCmdRoot() *cobra.Command {
 	// Child commands provisioning by Kubernetes
 	cmd.AddCommand(NewCmdDeploy())
 	cmd.AddCommand(NewCmdDelete())
+
+	// Version command
+	cmd.AddCommand(NewCmdVersion())
 
 	return cmd
 }

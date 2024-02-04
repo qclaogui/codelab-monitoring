@@ -6,12 +6,11 @@ package all
 
 import (
 	"fmt"
+	"github.com/qclaogui/codelab-monitoring/pkg"
 	"slices"
 	"strings"
 
 	"github.com/MakeNowJust/heredoc"
-	"github.com/qclaogui/codelab-monitoring/internal"
-
 	"github.com/spf13/cobra"
 )
 
@@ -39,7 +38,7 @@ func NewCmdAll() *cobra.Command {
 			// deploy-monolithic-mode-all-in-one            Deploy monolithic-mode all-in-one
 			action := cmd.Parent().Use
 			target := fmt.Sprintf("%s-%s-all-in-one", action, mode)
-			if err := internal.ExecuteCommand("make", "-C", ".", target); err != nil {
+			if err := pkg.ExecuteCommand("make", "-C", ".", target); err != nil {
 				return err
 			}
 			return nil

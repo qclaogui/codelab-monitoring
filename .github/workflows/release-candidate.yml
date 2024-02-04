@@ -1,0 +1,22 @@
+name: Release Candidate (Manually)
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  rc:
+    name: Trigger (Publish Release Candidate) build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.QCBOT_TOKEN }}
+          # Set fetch-depth: 0 to fetch all history for all branches and tags.
+          fetch-depth: 0
+      
+      - name: Setup identity
+        uses: ./.github/actions/setup-identity
+        with:
+          token: ${{ secrets.QCBOT_TOKEN }}
+      - name: Push tag and open PR to default branch
+        run: make prepare-release-candidate
