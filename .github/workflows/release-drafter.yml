@@ -1,0 +1,29 @@
+name: Release Drafter
+
+# this workflow will run when someone labeled a pull request that targets branch is main
+on:
+  push:
+    # branches to consider in the event; optional, defaults to all
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  update_release_draft:
+    name: Trigger a draft release update
+    permissions:
+      # write permission is required to create a github release
+      contents: write
+      pull-requests: read # required to read PR titles/labels
+    runs-on: ubuntu-latest
+    steps:
+      # Drafts your next Release notes as Pull Requests are merged into "main"
+      - uses: release-drafter/release-drafter@v6
+        # (Optional) specify config name to use, relative to .github/. Default: release-drafter.yml
+        # with:
+        #   config-name: my-config.yml
+        #   disable-autolabeler: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.QCBOT_TOKEN }}
