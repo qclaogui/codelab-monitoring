@@ -5,7 +5,7 @@ go 1.21
 toolchain go1.21.5
 
 require (
-	dagger.io/dagger v0.9.7
+	dagger.io/dagger v0.9.8
 	github.com/MakeNowJust/heredoc v1.0.0
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/dave/jennifer v1.7.0
@@ -16,7 +16,7 @@ require (
 	github.com/99designs/gqlgen v0.17.43 // indirect
 	github.com/Khan/genqlient v0.6.0 // indirect
 	github.com/adrg/xdg v0.4.0 // indirect
-	github.com/google/uuid v1.5.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/sosodev/duration v1.2.0 // indirect
