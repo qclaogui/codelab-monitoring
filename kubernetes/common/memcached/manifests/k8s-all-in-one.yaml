@@ -12,7 +12,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: memcached
     app.kubernetes.io/version: 1.6.23
-    helm.sh/chart: memcached-6.9.0
+    helm.sh/chart: memcached-6.10.1
   name: memcached
   namespace: memcached-system
 ---
@@ -24,7 +24,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: memcached
     app.kubernetes.io/version: 1.6.23
-    helm.sh/chart: memcached-6.9.0
+    helm.sh/chart: memcached-6.10.1
   name: memcached
   namespace: memcached-system
 spec:
@@ -46,7 +46,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: memcached
     app.kubernetes.io/version: 1.6.23
-    helm.sh/chart: memcached-6.9.0
+    helm.sh/chart: memcached-6.10.1
   name: memcached
   namespace: memcached-system
 spec:
@@ -68,7 +68,7 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: memcached
         app.kubernetes.io/version: 1.6.23
-        helm.sh/chart: memcached-6.9.0
+        helm.sh/chart: memcached-6.10.1
     spec:
       affinity:
         nodeAffinity: null
@@ -89,7 +89,7 @@ spec:
           value: "false"
         - name: MEMCACHED_PORT_NUMBER
           value: "11211"
-        image: docker.io/bitnami/memcached:1.6.23-debian-11-r0
+        image: docker.io/bitnami/memcached:1.6.23-debian-11-r3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 6
@@ -127,7 +127,7 @@ spec:
           readOnlyRootFilesystem: false
           runAsNonRoot: true
           runAsUser: 1001
-          seLinuxOptions: {}
+          seLinuxOptions: null
           seccompProfile:
             type: RuntimeDefault
         volumeMounts:
@@ -142,3 +142,31 @@ spec:
       volumes:
       - emptyDir: {}
         name: tmp
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/instance: memcached
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: memcached
+    app.kubernetes.io/version: 1.6.23
+    helm.sh/chart: memcached-6.10.1
+  name: memcached
+  namespace: memcached-system
+spec:
+  egress:
+  - {}
+  ingress:
+  - ports:
+    - port: 11211
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: memcached
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: memcached
+      app.kubernetes.io/version: 1.6.23
+      helm.sh/chart: memcached-6.10.1
+  policyTypes:
+  - Ingress
+  - Egress

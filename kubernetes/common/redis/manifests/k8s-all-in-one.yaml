@@ -12,21 +12,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
     app.kubernetes.io/version: 7.2.4
-    helm.sh/chart: redis-18.8.0
+    helm.sh/chart: redis-18.12.1
   name: redis-master
-  namespace: redis-system
----
-apiVersion: v1
-automountServiceAccountToken: false
-kind: ServiceAccount
-metadata:
-  labels:
-    app.kubernetes.io/instance: redis
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redis
-    app.kubernetes.io/version: 7.2.4
-    helm.sh/chart: redis-18.8.0
-  name: redis-replica
   namespace: redis-system
 ---
 apiVersion: v1
@@ -57,7 +44,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
     app.kubernetes.io/version: 7.2.4
-    helm.sh/chart: redis-18.8.0
+    helm.sh/chart: redis-18.12.1
   name: redis-configuration
   namespace: redis-system
 ---
@@ -164,7 +151,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
     app.kubernetes.io/version: 7.2.4
-    helm.sh/chart: redis-18.8.0
+    helm.sh/chart: redis-18.12.1
   name: redis-health
   namespace: redis-system
 ---
@@ -193,7 +180,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
     app.kubernetes.io/version: 7.2.4
-    helm.sh/chart: redis-18.8.0
+    helm.sh/chart: redis-18.12.1
   name: redis-scripts
   namespace: redis-system
 ---
@@ -214,7 +201,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
     app.kubernetes.io/version: 7.2.4
-    helm.sh/chart: redis-18.8.0
+    helm.sh/chart: redis-18.12.1
   name: redis-headless
   namespace: redis-system
 spec:
@@ -237,7 +224,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
     app.kubernetes.io/version: 7.2.4
-    helm.sh/chart: redis-18.8.0
+    helm.sh/chart: redis-18.12.1
   name: redis-master
   namespace: redis-system
 spec:
@@ -263,7 +250,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
     app.kubernetes.io/version: 7.2.4
-    helm.sh/chart: redis-18.8.0
+    helm.sh/chart: redis-18.12.1
   name: redis-master
   namespace: redis-system
 spec:
@@ -289,7 +276,7 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: redis
         app.kubernetes.io/version: 7.2.4
-        helm.sh/chart: redis-18.8.0
+        helm.sh/chart: redis-18.12.1
     spec:
       affinity:
         nodeAffinity: null
@@ -327,7 +314,7 @@ spec:
           value: "no"
         - name: REDIS_PORT
           value: "6379"
-        image: docker.io/bitnami/redis:7.2.4-debian-11-r2
+        image: docker.io/bitnami/redis:7.2.4-debian-11-r5
         imagePullPolicy: IfNotPresent
         livenessProbe:
           exec:
@@ -366,7 +353,7 @@ spec:
           runAsGroup: 0
           runAsNonRoot: true
           runAsUser: 1001
-          seLinuxOptions: {}
+          seLinuxOptions: null
           seccompProfile:
             type: RuntimeDefault
         volumeMounts:
@@ -423,3 +410,28 @@ spec:
       resources:
         requests:
           storage: 8Gi
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/instance: redis
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/version: 7.2.4
+    helm.sh/chart: redis-18.12.1
+  name: redis
+  namespace: redis-system
+spec:
+  egress:
+  - {}
+  ingress:
+  - ports:
+    - port: 6379
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: redis
+      app.kubernetes.io/name: redis
+  policyTypes:
+  - Ingress
+  - Egress
