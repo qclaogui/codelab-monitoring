@@ -5,7 +5,7 @@ go 1.21
 toolchain go1.21.5
 
 require (
-	dagger.io/dagger v0.9.8
+	dagger.io/dagger v0.9.9
 	github.com/MakeNowJust/heredoc v1.0.0
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/dave/jennifer v1.7.0
