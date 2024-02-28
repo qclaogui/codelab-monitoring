@@ -37,15 +37,10 @@ services:
     depends_on:
       minio:
         condition: service_healthy
-    image: &tempoImage grafana/tempo:2.3.1
+    image: &tempoImage grafana/tempo:2.4.0
     restart: always
     volumes:
       - ./config/tempo/scalable-single-binary.yaml:/etc/tempo.yaml # Note: Tempo use scalable-single-binary.yaml
-    environment:
-      - TEMPO_S3_ENDPOINT=minio:9000
-      - TEMPO_S3_ACCESS_KEY=lgtmp
-      - TEMPO_S3_SECRET_KEY=supersecret
-      - TEMPO_S3_INSECURE=true
     command:
       - -config.file=/etc/tempo.yaml
       - -target=scalable-single-binary
@@ -83,7 +78,7 @@ services:
     environment:
       - GF_LOG_LEVEL=error
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin_password}
-      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
+      # - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor pyroscopeFlameGraph traceqlSearch traceQLStreaming correlations metricsSummary traceToMetrics traceToProfiles
       # - GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS=agent:4317
       # - GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES=cluster:docker-compose,namespace:monitoring
     ports:

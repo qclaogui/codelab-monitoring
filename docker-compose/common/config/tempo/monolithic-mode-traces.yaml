@@ -1,27 +1,25 @@
+# For more information on this configuration, see the complete reference guide at
+# https://grafana.com/docs/tempo/latest/configuration/
+
+multitenancy_enabled: false
 usage_report:
   reporting_enabled: false
 
-multitenancy_enabled: false
-
-server:
-  http_listen_port: 3200
-  grpc_listen_port: 9095
-  log_level: warn
+compactor:
+  compaction:
+    block_retention: 1h
 
 distributor:
-  receivers:                           # this configuration will listen on all ports and protocols that tempo is capable of.
+  receivers:
     otlp:
       protocols:
         http:
         grpc:
 
+
 ingester:
-  max_block_duration: 5m               # cut the headblock when this much time passes. this is being set for demo purposes and should probably be left alone normally
+  max_block_duration: 5m
 
-
-compactor:
-  compaction:
-    block_retention: 1h                # overall Tempo trace retention. set for demo purposes
 
 metrics_generator:
   registry:
@@ -36,15 +34,22 @@ metrics_generator:
       headers:
         X-Scope-OrgID: "anonymous"
 
+server:
+  grpc_server_max_recv_msg_size: 4194304
+  grpc_server_max_send_msg_size: 4194304
+  http_listen_port: 3200
+  grpc_listen_port: 9095
+  log_level: info
+
 storage:
   trace:
-    backend: s3                     # backend configuration to use
+    backend: s3
     wal:
-      path: /tmp/tempo/wal             # where to store the the wal locally
+      path: /tmp/tempo/wal
     s3:
       bucket: tempo-data
-      endpoint: ${TEMPO_S3_ENDPOINT:minio:9000}
-      access_key: ${TEMPO_S3_ACCESS_KEY:lgtmp}
-      secret_key: ${TEMPO_S3_SECRET_KEY:supersecret}
-      insecure: ${TEMPO_S3_INSECURE:true}
+      endpoint: ${TEMPO_S3_ENDPOINT:-minio:9000}
+      access_key: ${TEMPO_S3_ACCESS_KEY:-lgtmp}
+      secret_key: ${TEMPO_S3_SECRET_KEY:-supersecret}
+      insecure: ${TEMPO_S3_INSECURE:-true}
       tls_insecure_skip_verify: true

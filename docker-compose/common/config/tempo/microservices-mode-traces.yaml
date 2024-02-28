@@ -1,37 +1,44 @@
-usage_report:
-  reporting_enabled: false
+# For more information on this configuration, see the complete reference guide at
+# https://grafana.com/docs/tempo/latest/configuration/
+
+# stream_over_http_enabled: true
 
 multitenancy_enabled: false
-
-server:
-  http_listen_port: 3100
-  grpc_listen_port: 9095
-  log_level: warn
-
-distributor:
-  receivers:                           # this configuration will listen on all ports and protocols that tempo is capable of.
-    otlp:
-      protocols:
-        http:
-        grpc:
-
-ingester:
-  max_block_duration: 5m               # cut the headblock when this much time passes. this is being set for demo purposes and should probably be left alone normally
-
-memberlist:
-  join_members:
-  - tempo-memberlist:7946
+usage_report:
+  reporting_enabled: false
 
 compactor:
   ring:
     kvstore:
       store: memberlist
   compaction:
-    block_retention: 1h                # overall Tempo trace retention. set for demo purposes
+    block_retention: 1h
+
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        http:
+        grpc:
+
+ingester:
+  max_block_duration: 5m
+
+memberlist:
+  join_members:
+  - tempo-memberlist:7946
 
 querier:
   frontend_worker:
     frontend_address: query-frontend:9095
+
+server:
+  grpc_server_max_recv_msg_size: 4194304
+  grpc_server_max_send_msg_size: 4194304
+  http_listen_port: 3100
+  grpc_listen_port: 9095
+  log_level: info
+
 
 storage:
   trace:
@@ -40,12 +47,8 @@ storage:
       path: /tmp/tempo/wal
     s3:
       bucket: tempo-data
-      # endpoint: ${TEMPO_S3_ENDPOINT:minio:9000}
-      # access_key: ${TEMPO_S3_ACCESS_KEY:lgtmp}
-      # secret_key: ${TEMPO_S3_SECRET_KEY:supersecret}
-      # insecure: ${TEMPO_S3_INSECURE:true}
-      endpoint: minio:9000
-      access_key: lgtmp
-      secret_key: supersecret
-      insecure: true
+      endpoint: ${TEMPO_S3_ENDPOINT:-minio:9000}
+      access_key: ${TEMPO_S3_ACCESS_KEY:-lgtmp}
+      secret_key: ${TEMPO_S3_SECRET_KEY:-supersecret}
+      insecure: ${TEMPO_S3_INSECURE:-true}
       tls_insecure_skip_verify: true
