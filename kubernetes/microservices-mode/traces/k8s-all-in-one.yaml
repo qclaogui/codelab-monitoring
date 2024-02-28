@@ -12,7 +12,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.2
+    helm.sh/chart: tempo-distributed-1.8.4
   name: tempo-distributed
   namespace: tracing-system
 ---
@@ -98,48 +98,47 @@ data:
       receivers:
         otlp:
           protocols:
-            grpc:
-              endpoint: 0.0.0.0:4317
             http:
-              endpoint: 0.0.0.0:4318
+            grpc:
+
       ring:
         kvstore:
           store: memberlist
 
     ingester:
+      max_block_duration: 5m
       lifecycler:
         ring:
           kvstore:
             store: memberlist
           replication_factor: 1
         tokens_file_path: /var/tempo/tokens.json
-      max_block_duration: 5m
 
     memberlist:
       join_members:
       - dns+tempo-distributed-gossip-ring:7946
 
-    overrides:
-      per_tenant_override_config: /runtime-config/overrides.yaml
-
     querier:
       frontend_worker:
         frontend_address: tempo-distributed-query-frontend-discovery:9095
       max_concurrent_queries: 20
+
     query_frontend:
+      max_outstanding_per_tenant: 2000
       max_retries: 2
       search:
         duration_slo: 5s
         throughput_bytes_slo: 1.073741824e+09
       trace_by_id:
         duration_slo: 5s
+
     server:
       grpc_server_max_recv_msg_size: 4194304
       grpc_server_max_send_msg_size: 4194304
       http_listen_port: 3100
       grpc_listen_port: 9095
-      log_format: logfmt
       log_level: info
+
     storage:
       trace:
         backend: s3
@@ -152,6 +151,9 @@ data:
           secret_key: ${TEMPO_S3_SECRET_KEY:supersecret}
           insecure: ${TEMPO_S3_INSECURE:false}
           tls_insecure_skip_verify: true
+
+    overrides:
+      per_tenant_override_config: /runtime-config/overrides.yaml
 kind: ConfigMap
 metadata:
   labels:
@@ -159,7 +161,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.2
+    helm.sh/chart: tempo-distributed-1.8.4
   name: tempo-distributed-config
   namespace: tracing-system
 ---
@@ -175,7 +177,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.2
+    helm.sh/chart: tempo-distributed-1.8.4
   name: tempo-distributed-runtime
   namespace: tracing-system
 ---
@@ -211,7 +213,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.2
+    helm.sh/chart: tempo-distributed-1.8.4
   name: tempo-distributed-compactor
   namespace: tracing-system
 spec:
@@ -235,7 +237,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.2
+    helm.sh/chart: tempo-distributed-1.8.4
   name: tempo-distributed-distributor
   namespace: tracing-system
 spec:
@@ -274,7 +276,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.2
+    helm.sh/chart: tempo-distributed-1.8.4
     prometheus.io/service-monitor: "false"
   name: tempo-distributed-distributor-discovery
   namespace: tracing-system
@@ -311,7 +313,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.2
+    helm.sh/chart: tempo-distributed-1.8.4
   name: tempo-distributed-gossip-ring
   namespace: tracing-system
 spec:
@@ -337,7 +339,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.2
+    helm.sh/chart: tempo-distributed-1.8.4
   name: tempo-distributed-ingester
   namespace: tracing-system
 spec:
@@ -364,7 +366,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.2
+    helm.sh/chart: tempo-distributed-1.8.4
     prometheus.io/service-monitor: "false"
   name: tempo-distributed-ingester-discovery
   namespace: tracing-system
@@ -394,7 +396,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.2
+    helm.sh/chart: tempo-distributed-1.8.4
   name: tempo-distributed-querier
   namespace: tracing-system
 spec:
@@ -421,7 +423,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.2
+    helm.sh/chart: tempo-distributed-1.8.4
   name: tempo-distributed-query-frontend
   namespace: tracing-system
 spec:
@@ -448,7 +450,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.2
+    helm.sh/chart: tempo-distributed-1.8.4
   name: tempo-distributed-query-frontend-discovery
   namespace: tracing-system
 spec:
@@ -482,7 +484,7 @@ metadata:
     app.kubernetes.io/name: tempo
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.2
+    helm.sh/chart: tempo-distributed-1.8.4
   name: tempo-distributed-compactor
   namespace: tracing-system
 spec:
@@ -501,7 +503,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 6d151173367b055739479e2cfdb3ebb8c312333aaaf1d4057adf9ad8e13e64ee
+        checksum/config: 3b43050793940503e124566dcf1b4d8297b890ab38872f7d3011b33d1885e3c5
       labels:
         app.kubernetes.io/component: compactor
         app.kubernetes.io/instance: tempo-distributed
@@ -509,7 +511,7 @@ spec:
         app.kubernetes.io/name: tempo
         app.kubernetes.io/part-of: memberlist
         app.kubernetes.io/version: 2.3.1
-        helm.sh/chart: tempo-distributed-1.8.2
+        helm.sh/chart: tempo-distributed-1.8.4
     spec:
       containers:
       - args:
@@ -576,7 +578,7 @@ metadata:
     app.kubernetes.io/name: tempo
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.2
+    helm.sh/chart: tempo-distributed-1.8.4
   name: tempo-distributed-distributor
   namespace: tracing-system
 spec:
@@ -591,7 +593,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 6d151173367b055739479e2cfdb3ebb8c312333aaaf1d4057adf9ad8e13e64ee
+        checksum/config: 3b43050793940503e124566dcf1b4d8297b890ab38872f7d3011b33d1885e3c5
       labels:
         app.kubernetes.io/component: distributor
         app.kubernetes.io/instance: tempo-distributed
@@ -599,7 +601,7 @@ spec:
         app.kubernetes.io/name: tempo
         app.kubernetes.io/part-of: memberlist
         app.kubernetes.io/version: 2.3.1
-        helm.sh/chart: tempo-distributed-1.8.2
+        helm.sh/chart: tempo-distributed-1.8.4
     spec:
       affinity:
         podAntiAffinity:
@@ -706,7 +708,7 @@ metadata:
     app.kubernetes.io/name: tempo
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.2
+    helm.sh/chart: tempo-distributed-1.8.4
   name: tempo-distributed-querier
   namespace: tracing-system
 spec:
@@ -725,7 +727,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 6d151173367b055739479e2cfdb3ebb8c312333aaaf1d4057adf9ad8e13e64ee
+        checksum/config: 3b43050793940503e124566dcf1b4d8297b890ab38872f7d3011b33d1885e3c5
       labels:
         app.kubernetes.io/component: querier
         app.kubernetes.io/instance: tempo-distributed
@@ -733,7 +735,7 @@ spec:
         app.kubernetes.io/name: tempo
         app.kubernetes.io/part-of: memberlist
         app.kubernetes.io/version: 2.3.1
-        helm.sh/chart: tempo-distributed-1.8.2
+        helm.sh/chart: tempo-distributed-1.8.4
     spec:
       affinity:
         podAntiAffinity:
@@ -833,7 +835,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.2
+    helm.sh/chart: tempo-distributed-1.8.4
   name: tempo-distributed-query-frontend
   namespace: tracing-system
 spec:
@@ -852,14 +854,14 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 6d151173367b055739479e2cfdb3ebb8c312333aaaf1d4057adf9ad8e13e64ee
+        checksum/config: 3b43050793940503e124566dcf1b4d8297b890ab38872f7d3011b33d1885e3c5
       labels:
         app.kubernetes.io/component: query-frontend
         app.kubernetes.io/instance: tempo-distributed
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: tempo
         app.kubernetes.io/version: 2.3.1
-        helm.sh/chart: tempo-distributed-1.8.2
+        helm.sh/chart: tempo-distributed-1.8.4
     spec:
       affinity:
         podAntiAffinity:
@@ -953,7 +955,7 @@ metadata:
     app.kubernetes.io/name: tempo
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.2
+    helm.sh/chart: tempo-distributed-1.8.4
   name: tempo-distributed-ingester
   namespace: tracing-system
 spec:
@@ -968,7 +970,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 6d151173367b055739479e2cfdb3ebb8c312333aaaf1d4057adf9ad8e13e64ee
+        checksum/config: 3b43050793940503e124566dcf1b4d8297b890ab38872f7d3011b33d1885e3c5
       labels:
         app.kubernetes.io/component: ingester
         app.kubernetes.io/instance: tempo-distributed
@@ -976,7 +978,7 @@ spec:
         app.kubernetes.io/name: tempo
         app.kubernetes.io/part-of: memberlist
         app.kubernetes.io/version: 2.3.1
-        helm.sh/chart: tempo-distributed-1.8.2
+        helm.sh/chart: tempo-distributed-1.8.4
     spec:
       affinity:
         podAntiAffinity:
@@ -1082,7 +1084,7 @@ metadata:
     app.kubernetes.io/name: tempo
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.2
+    helm.sh/chart: tempo-distributed-1.8.4
   name: tempo-distributed-ingester
   namespace: tracing-system
 spec:

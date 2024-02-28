@@ -1,29 +1,40 @@
 multitenancy_enabled: false
 usage_report:
   reporting_enabled: false
+
 compactor:
   compaction:
     block_retention: 1h
+
 distributor:
   receivers:
     otlp:
       protocols:
-        grpc:
-          endpoint: 0.0.0.0:4317
         http:
-          endpoint: 0.0.0.0:4318
+        grpc:
+
 ingester:
   max_block_duration: 5m
+
+querier:
+  max_concurrent_queries: 20
+
 query_frontend:
+  max_outstanding_per_tenant: 2000
+  max_retries: 2
   search:
     duration_slo: 5s
     throughput_bytes_slo: 1.073741824e+09
   trace_by_id:
     duration_slo: 5s
+
 server:
+  grpc_server_max_recv_msg_size: 4194304
+  grpc_server_max_send_msg_size: 4194304
   http_listen_port: 3100
   grpc_listen_port: 9095
-  log_level: debug
+  log_level: info
+
 storage:
   trace:
     backend: s3
@@ -36,5 +47,6 @@ storage:
       secret_key: ${TEMPO_S3_SECRET_KEY:supersecret}
       insecure: ${TEMPO_S3_INSECURE:false}
       tls_insecure_skip_verify: true
+
 overrides:
   per_tenant_override_config: /conf/overrides.yaml

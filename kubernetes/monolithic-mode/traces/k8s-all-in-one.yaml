@@ -11,8 +11,8 @@ metadata:
     app.kubernetes.io/instance: tempo
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
-    app.kubernetes.io/version: 2.3.0
-    helm.sh/chart: tempo-1.7.1
+    app.kubernetes.io/version: 2.3.1
+    helm.sh/chart: tempo-1.7.2
   name: tempo
   namespace: tracing-system
 ---
@@ -119,29 +119,40 @@ data:
     multitenancy_enabled: false
     usage_report:
       reporting_enabled: false
+
     compactor:
       compaction:
         block_retention: 1h
+
     distributor:
       receivers:
         otlp:
           protocols:
-            grpc:
-              endpoint: 0.0.0.0:4317
             http:
-              endpoint: 0.0.0.0:4318
+            grpc:
+
     ingester:
       max_block_duration: 5m
+
+    querier:
+      max_concurrent_queries: 20
+
     query_frontend:
+      max_outstanding_per_tenant: 2000
+      max_retries: 2
       search:
         duration_slo: 5s
         throughput_bytes_slo: 1.073741824e+09
       trace_by_id:
         duration_slo: 5s
+
     server:
+      grpc_server_max_recv_msg_size: 4194304
+      grpc_server_max_send_msg_size: 4194304
       http_listen_port: 3100
       grpc_listen_port: 9095
-      log_level: debug
+      log_level: info
+
     storage:
       trace:
         backend: s3
@@ -154,6 +165,7 @@ data:
           secret_key: ${TEMPO_S3_SECRET_KEY:supersecret}
           insecure: ${TEMPO_S3_INSECURE:false}
           tls_insecure_skip_verify: true
+
     overrides:
       per_tenant_override_config: /conf/overrides.yaml
 kind: ConfigMap
@@ -162,8 +174,8 @@ metadata:
     app.kubernetes.io/instance: tempo
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
-    app.kubernetes.io/version: 2.3.0
-    helm.sh/chart: tempo-1.7.1
+    app.kubernetes.io/version: 2.3.1
+    helm.sh/chart: tempo-1.7.2
   name: tempo
   namespace: tracing-system
 ---
@@ -197,8 +209,8 @@ metadata:
     app.kubernetes.io/instance: tempo
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
-    app.kubernetes.io/version: 2.3.0
-    helm.sh/chart: tempo-1.7.1
+    app.kubernetes.io/version: 2.3.1
+    helm.sh/chart: tempo-1.7.2
   name: tempo
   namespace: tracing-system
 spec:
@@ -258,8 +270,8 @@ metadata:
     app.kubernetes.io/instance: tempo
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
-    app.kubernetes.io/version: 2.3.0
-    helm.sh/chart: tempo-1.7.1
+    app.kubernetes.io/version: 2.3.1
+    helm.sh/chart: tempo-1.7.2
   name: tempo
   namespace: tracing-system
 spec:
@@ -272,7 +284,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: c94f8d736c70b37885f98de9b230742d8d719c7eb1619d4fa10f37d70c35bcb7
+        checksum/config: ff335d67c65ae69bf61e9f8ad19360b3fdb2d3af999a63dd5280520eb71404b3
       labels:
         app.kubernetes.io/instance: tempo
         app.kubernetes.io/name: tempo
@@ -287,7 +299,7 @@ spec:
         envFrom:
         - secretRef:
             name: tempo-env-44c28k2cmb
-        image: grafana/tempo:2.3.0
+        image: grafana/tempo:2.4.0
         imagePullPolicy: IfNotPresent
         name: tempo
         ports:

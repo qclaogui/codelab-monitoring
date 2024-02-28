@@ -1,37 +1,39 @@
+multitenancy_enabled: false
 usage_report:
   reporting_enabled: false
-
-multitenancy_enabled: false
-
-server:
-  http_listen_port: 3100
-  grpc_listen_port: 9095
-  log_level: warn
-
-distributor:
-  receivers:                           # this configuration will listen on all ports and protocols that tempo is capable of.
-    otlp:
-      protocols:
-        http:
-        grpc:
-
-ingester:
-  max_block_duration: 5m               # cut the headblock when this much time passes. this is being set for demo purposes and should probably be left alone normally
-
-memberlist:
-  join_members:
-  - tempo-memberlist:7946
 
 compactor:
   ring:
     kvstore:
       store: memberlist
   compaction:
-    block_retention: 1h                # overall Tempo trace retention. set for demo purposes
+    block_retention: 1h
+
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        http:
+        grpc:
+
+ingester:
+  max_block_duration: 5m
+
+memberlist:
+  join_members:
+  - tempo-memberlist:7946
 
 querier:
   frontend_worker:
     frontend_address: query-frontend:9095
+
+server:
+  grpc_server_max_recv_msg_size: 4194304
+  grpc_server_max_send_msg_size: 4194304
+  http_listen_port: 3100
+  grpc_listen_port: 9095
+  log_level: info
+
 
 storage:
   trace:
