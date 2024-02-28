@@ -116,6 +116,9 @@ data:
         ingestion_burst_size_bytes: 20000000
         ingestion_rate_limit_bytes: 15000000
   tempo.yaml: |
+    # For more information on this configuration, see the complete reference guide at
+    # https://grafana.com/docs/tempo/latest/configuration/
+
     multitenancy_enabled: false
     usage_report:
       reporting_enabled: false
@@ -160,10 +163,10 @@ data:
           path: /tmp/tempo/wal
         s3:
           bucket: tempo-data
-          endpoint: ${TEMPO_S3_ENDPOINT:minio.minio-system.svc:443}
-          access_key: ${TEMPO_S3_ACCESS_KEY:lgtmp}
-          secret_key: ${TEMPO_S3_SECRET_KEY:supersecret}
-          insecure: ${TEMPO_S3_INSECURE:false}
+          endpoint: ${TEMPO_S3_ENDPOINT:-minio.minio-system.svc:443}
+          access_key: ${TEMPO_S3_ACCESS_KEY:-lgtmp}
+          secret_key: ${TEMPO_S3_SECRET_KEY:-supersecret}
+          insecure: ${TEMPO_S3_INSECURE:-false}
           tls_insecure_skip_verify: true
 
     overrides:
@@ -193,12 +196,10 @@ type: Opaque
 ---
 apiVersion: v1
 data:
-  TEMPO_S3_ACCESS_KEY: bGd0bXA=
-  TEMPO_S3_ENDPOINT: bWluaW8ubWluaW8tc3lzdGVtLnN2Yzo0NDM=
   TEMPO_S3_SECRET_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:
-  name: tempo-env-44c28k2cmb
+  name: tempo-env-gf764927fk
   namespace: tracing-system
 type: Opaque
 ---
@@ -298,7 +299,7 @@ spec:
         env: null
         envFrom:
         - secretRef:
-            name: tempo-env-44c28k2cmb
+            name: tempo-env-gf764927fk
         image: grafana/tempo:2.4.0
         imagePullPolicy: IfNotPresent
         name: tempo
