@@ -124,10 +124,10 @@ data:
       backend: s3
       s3:
         bucket_name: pyroscope-data
-        endpoint: ${PYROSCOPE_STORAGE_S3_ENDPOINT:minio.minio-system.svc:443}
-        access_key_id: ${PYROSCOPE_STORAGE_S3_ACCESS_KEY_ID:lgtmp}
-        secret_access_key: ${PYROSCOPE_STORAGE_S3_SECRET_ACCESS_KEY:supersecret}
-        insecure: ${PYROSCOPE_STORAGE_S3_INSECURE:false}
+        endpoint: ${PYROSCOPE_STORAGE_S3_ENDPOINT:-minio.minio-system.svc:443}
+        access_key_id: ${PYROSCOPE_STORAGE_S3_ACCESS_KEY_ID:-lgtmp}
+        secret_access_key: ${PYROSCOPE_STORAGE_S3_SECRET_ACCESS_KEY:-supersecret}
+        insecure: ${PYROSCOPE_STORAGE_S3_INSECURE:-false}
         http:
           insecure_skip_verify: true
 kind: ConfigMap
@@ -159,12 +159,10 @@ metadata:
 ---
 apiVersion: v1
 data:
-  PYROSCOPE_STORAGE_S3_ACCESS_KEY_ID: bGd0bXA=
-  PYROSCOPE_STORAGE_S3_ENDPOINT: bWluaW8ubWluaW8tc3lzdGVtLnN2Yy5jbHVzdGVyLmxvY2FsOjQ0Mw==
   PYROSCOPE_STORAGE_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:
-  name: pyroscope-env-tgk2kdt8mh
+  name: pyroscope-env-h982fgc652
   namespace: profiles-system
 type: Opaque
 ---
@@ -291,7 +289,7 @@ spec:
         - -log.level=debug
         envFrom:
         - secretRef:
-            name: pyroscope-env-tgk2kdt8mh
+            name: pyroscope-env-h982fgc652
         image: grafana/pyroscope:1.3.0
         imagePullPolicy: IfNotPresent
         name: pyroscope
