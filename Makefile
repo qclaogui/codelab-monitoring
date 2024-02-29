@@ -2,13 +2,6 @@
 
 include .bingo/Variables.mk
 
-# support app's mixin
-APPS_MIXIN := "agent-flow-mixin" "go-runtime-mixin"
-
-# path to the grafana provisioning dashboards
-GRAFANA_DASHBOARDS_PATH := docker-compose/common/config/grafana/dashboards
-
-
 ##@ Dependencies
 
 .PHONY: install-build-deps
@@ -17,27 +10,7 @@ install-build-deps: ## Install dependencies tools
 	@echo ">> building bingo and setup dependencies tools"
 	@go install github.com/bwplotka/bingo@latest
 
-
-##@ Dashboards
-
-.PHONY: dashboards_out
-dashboards_out: ## Copy app's dashboards to grafana dashboards provision path
-	@for app in ${APPS_MIXIN}; do \
-		mkdir -p "$(GRAFANA_DASHBOARDS_PATH)/$$app"; \
-		cd "monitoring-mixins/$$app" && cp -f deploy/dashboards_out/* "../../$(GRAFANA_DASHBOARDS_PATH)/$$app/"; \
-		cd -; \
-	done
-
-
 ##@ Lint & fmt
-
-.PHONY: check
-check:  ## Check all the mixin files
-check: $(JSONNETFMT) $(MIXTOOL) copyright
-	@for app in ${APPS_MIXIN}; do \
-		cd "monitoring-mixins/$$app" && make check ; \
-		cd -; \
-	done
 
 .PHONY: copyright
 copyright: $(COPYRIGHT) ## Add Copyright header to .go files.
@@ -51,7 +24,7 @@ CONFIG_FILES_IN_DOCKER = $(subst ./, /data/, $(CONFIG_FILES))
 fmt: ## Uses Grafana Agent to fmt the river config
 	@for c in $(CONFIG_FILES_IN_DOCKER); do \
 		echo "$$c"; \
-		docker run -e AGENT_MODE=flow --rm --volume "$(shell pwd):/data" -u $(shell id -u) grafana/agent:v0.39.0 fmt -w $$c ; \
+		docker run -e AGENT_MODE=flow --rm --volume "$(shell pwd):/data" -u $(shell id -u) grafana/agent:v0.40.0 fmt -w $$c ; \
 	done
 
 ##@ Docker compose
