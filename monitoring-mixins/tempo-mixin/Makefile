@@ -12,18 +12,18 @@ fmt: ## Format the mixin files
 	@find . -type f -name '*.libsonnet' | xargs -n 1 -- $(JSONNET_FMT) -i
 
 .PHONY: update
-update: ## update mixin 
+update: $(JB) ## update mixin 
 	$(JB) update
 
 .PHONY: build
-build: ## Generates the mixin files
+build: $(MIXTOOL) ## Generates the mixin files
 	@mkdir -p "$(MIXIN_OUT_PATH)"; \
 	find "$(MIXIN_OUT_PATH)" ! -name "kustomization.yaml" -type f -delete; \
 	$(MIXTOOL) generate all --output-alerts "$(MIXIN_OUT_PATH)/alerts.yaml" --output-rules "$(MIXIN_OUT_PATH)/rules.yaml" --directory "$(MIXIN_OUT_PATH)/dashboards_out" "mixin.libsonnet"; \
 	../../tools/check-rules.sh "$(MIXIN_OUT_PATH)/rules.yaml" 20 ; \
 
 .PHONY: check
-check: build fmt ## Build, fmt and check the mixin files
+check: $(MIXTOOL) build fmt ## Build, fmt and check the mixin files
 	@../../tools/find-diff-or-untracked.sh . "$(MIXIN_OUT_PATH)" || (echo "Please build and fmt mixin by running 'make build fmt'" && false); \
 	# jb install && \
 	# $(MIXTOOL) lint mixin.libsonnet

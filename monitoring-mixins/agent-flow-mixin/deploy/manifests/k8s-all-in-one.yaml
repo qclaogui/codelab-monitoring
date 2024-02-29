@@ -15,6 +15,7 @@ data:
                 }
              ]
           },
+          "graphTooltip": 1,
           "links": [
              {
                 "icon": "doc",
@@ -516,6 +517,7 @@ data:
                 }
              ]
           },
+          "graphTooltip": 1,
           "links": [
              {
                 "icon": "doc",
@@ -865,6 +867,7 @@ data:
                 }
              ]
           },
+          "graphTooltip": 1,
           "links": [
              {
                 "icon": "doc",
@@ -1411,6 +1414,405 @@ metadata:
 ---
 apiVersion: v1
 data:
+  agent-flow-opentelemetry.json: |-
+    {
+          "graphTooltip": 1,
+          "links": [
+             {
+                "asDropdown": true,
+                "icon": "external link",
+                "includeVars": true,
+                "keepTime": true,
+                "tags": [
+                   "grafana-agent-flow-mixin"
+                ],
+                "targetBlank": false,
+                "title": "Dashboards",
+                "type": "dashboards"
+             }
+          ],
+          "panels": [
+             {
+                "datasource": "${datasource}",
+                "gridPos": {
+                   "h": 1,
+                   "w": 24,
+                   "x": 0,
+                   "y": 0
+                },
+                "title": "Receivers for traces [otelcol.receiver]",
+                "type": "row"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Number of spans successfully pushed into the pipeline.\n",
+                "gridPos": {
+                   "h": 10,
+                   "w": 8,
+                   "x": 0,
+                   "y": 0
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "rate(receiver_accepted_spans_ratio_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\"}[$__rate_interval])\n",
+                      "instant": false,
+                      "legendFormat": "{{ pod }} / {{ transport }}",
+                      "range": true
+                   }
+                ],
+                "title": "Accepted spans",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Number of spans that could not be pushed into the pipeline.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "custom": {
+                         "fillOpacity": 20,
+                         "gradientMode": "hue",
+                         "stacking": {
+                            "mode": "normal"
+                         }
+                      }
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 8,
+                   "x": 8,
+                   "y": 0
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "rate(receiver_refused_spans_ratio_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\"}[$__rate_interval])\n",
+                      "instant": false,
+                      "legendFormat": "{{ pod }} / {{ transport }}",
+                      "range": true
+                   }
+                ],
+                "title": "Refused spans",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "The duration of inbound RPCs.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "milliseconds"
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 8,
+                   "x": 16,
+                   "y": 0
+                },
+                "maxDataPoints": 30,
+                "options": {
+                   "calculate": false,
+                   "color": {
+                      "exponent": 0.5,
+                      "fill": "dark-orange",
+                      "mode": "scheme",
+                      "scale": "exponential",
+                      "scheme": "Oranges",
+                      "steps": 65
+                   },
+                   "exemplars": {
+                      "color": "rgba(255,0,255,0.7)"
+                   },
+                   "filterValues": {
+                      "le": 1.0000000000000001e-09
+                   },
+                   "tooltip": {
+                      "show": true,
+                      "yHistogram": true
+                   },
+                   "yAxis": {
+                      "unit": "s"
+                   }
+                },
+                "pluginVersion": "9.0.6",
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum by (le) (increase(rpc_server_duration_milliseconds_bucket{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", rpc_service=\"opentelemetry.proto.collector.trace.v1.TraceService\"}[$__rate_interval]))",
+                      "format": "heatmap",
+                      "instant": false,
+                      "legendFormat": "{{le}}",
+                      "range": true
+                   }
+                ],
+                "title": "RPC server duration (traces)",
+                "type": "heatmap"
+             },
+             {
+                "datasource": "${datasource}",
+                "gridPos": {
+                   "h": 1,
+                   "w": 24,
+                   "x": 0,
+                   "y": 10
+                },
+                "title": "Batching [otelcol.processor.batch]",
+                "type": "row"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Number of units in the batch\n",
+                "gridPos": {
+                   "h": 10,
+                   "w": 8,
+                   "x": 0,
+                   "y": 10
+                },
+                "maxDataPoints": 30,
+                "options": {
+                   "calculate": false,
+                   "color": {
+                      "exponent": 0.5,
+                      "fill": "dark-orange",
+                      "mode": "scheme",
+                      "scale": "exponential",
+                      "scheme": "Oranges",
+                      "steps": 65
+                   },
+                   "exemplars": {
+                      "color": "rgba(255,0,255,0.7)"
+                   },
+                   "filterValues": {
+                      "le": 1.0000000000000001e-09
+                   },
+                   "tooltip": {
+                      "show": true,
+                      "yHistogram": true
+                   },
+                   "yAxis": {
+                      "unit": "s"
+                   }
+                },
+                "pluginVersion": "9.0.6",
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum by (le) (increase(processor_batch_batch_send_size_ratio_bucket{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\"}[$__rate_interval]))",
+                      "format": "heatmap",
+                      "instant": false,
+                      "legendFormat": "{{le}}",
+                      "range": true
+                   }
+                ],
+                "title": "Number of units in the batch",
+                "type": "heatmap"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Number of distinct metadata value combinations being processed\n",
+                "gridPos": {
+                   "h": 10,
+                   "w": 8,
+                   "x": 8,
+                   "y": 10
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "processor_batch_metadata_cardinality_ratio{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\"}\n",
+                      "instant": false,
+                      "legendFormat": "{{ pod }}",
+                      "range": true
+                   }
+                ],
+                "title": "Distinct metadata values",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Number of times the batch was sent due to a timeout trigger\n",
+                "gridPos": {
+                   "h": 10,
+                   "w": 8,
+                   "x": 16,
+                   "y": 10
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "rate(processor_batch_timeout_trigger_send_ratio_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\"}[$__rate_interval])\n",
+                      "instant": false,
+                      "legendFormat": "{{ pod }}",
+                      "range": true
+                   }
+                ],
+                "title": "Timeout trigger",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "gridPos": {
+                   "h": 1,
+                   "w": 24,
+                   "x": 0,
+                   "y": 20
+                },
+                "title": "Exporters for traces [otelcol.exporter]",
+                "type": "row"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Number of spans successfully sent to destination.\n",
+                "gridPos": {
+                   "h": 10,
+                   "w": 8,
+                   "x": 0,
+                   "y": 20
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "rate(exporter_sent_spans_ratio_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\"}[$__rate_interval])\n",
+                      "instant": false,
+                      "legendFormat": "{{ pod }}",
+                      "range": true
+                   }
+                ],
+                "title": "Exported sent spans",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Number of spans in failed attempts to send to destination.\n",
+                "gridPos": {
+                   "h": 10,
+                   "w": 8,
+                   "x": 8,
+                   "y": 20
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "rate(exporter_send_failed_spans_ratio_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\"}[$__rate_interval])\n",
+                      "instant": false,
+                      "legendFormat": "{{ pod }}",
+                      "range": true
+                   }
+                ],
+                "title": "Exported failed spans",
+                "type": "timeseries"
+             }
+          ],
+          "refresh": "10s",
+          "schemaVersion": 36,
+          "tags": [
+             "grafana-agent-flow-mixin"
+          ],
+          "templating": {
+             "list": [
+                {
+                   "label": "Data Source",
+                   "name": "datasource",
+                   "query": "prometheus",
+                   "refresh": 1,
+                   "sort": 2,
+                   "type": "datasource"
+                },
+                {
+                   "label": "Loki Data Source",
+                   "name": "loki_datasource",
+                   "query": "loki",
+                   "refresh": 1,
+                   "sort": 2,
+                   "type": "datasource"
+                },
+                {
+                   "datasource": "${datasource}",
+                   "label": "cluster",
+                   "name": "cluster",
+                   "query": {
+                      "query": "label_values(agent_component_controller_running_components, cluster)\n",
+                      "refId": "cluster"
+                   },
+                   "refresh": 2,
+                   "sort": 2,
+                   "type": "query"
+                },
+                {
+                   "datasource": "${datasource}",
+                   "label": "namespace",
+                   "name": "namespace",
+                   "query": {
+                      "query": "label_values(agent_component_controller_running_components{cluster=\"$cluster\"}, namespace)\n",
+                      "refId": "namespace"
+                   },
+                   "refresh": 2,
+                   "sort": 2,
+                   "type": "query"
+                },
+                {
+                   "allValue": ".*",
+                   "datasource": "${datasource}",
+                   "includeAll": true,
+                   "label": "instance",
+                   "multi": true,
+                   "name": "instance",
+                   "query": {
+                      "query": "label_values(agent_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\"}, instance)\n",
+                      "refId": "instance"
+                   },
+                   "refresh": 2,
+                   "sort": 2,
+                   "type": "query"
+                }
+             ]
+          },
+          "time": {
+             "from": "now-1h",
+             "to": "now"
+          },
+          "timepicker": {
+             "refresh_intervals": [
+                "5s",
+                "10s",
+                "30s",
+                "1m",
+                "5m",
+                "15m",
+                "30m",
+                "1h",
+                "2h",
+                "1d"
+             ],
+             "time_options": [
+                "5m",
+                "15m",
+                "1h",
+                "6h",
+                "12h",
+                "24h",
+                "2d",
+                "7d",
+                "30d",
+                "90d"
+             ]
+          },
+          "timezone": "utc",
+          "title": "Grafana Agent Flow / OpenTelemetry",
+          "uid": "c90e752eb8c0fce588f906b7279aceea"
+       }
+kind: ConfigMap
+metadata:
+  annotations:
+    grafana_dashboard_folder: /dashboards/Agent Flow Mixin
+  labels:
+    grafana_dashboard: "1"
+  name: agent-flow-opentelemetry.json
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
   agent-flow-prometheus-remote-write.json: |-
     {
           "annotations": {
@@ -1426,6 +1828,7 @@ data:
                 }
              ]
           },
+          "graphTooltip": 1,
           "links": [
              {
                 "icon": "doc",
@@ -1450,6 +1853,96 @@ data:
           ],
           "panels": [
              {
+                "collapsed": false,
+                "datasource": "${datasource}",
+                "gridPos": {
+                   "h": 1,
+                   "w": 24,
+                   "x": 0,
+                   "y": 0
+                },
+                "title": "prometheus.scrape",
+                "type": "row"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Percentage of targets successfully scraped by prometheus.scrape\ncomponents.\n\nThis metric is calculated by dividing the number of targets\nsuccessfully scraped by the total number of targets scraped,\nacross all the namespaces in the selected cluster.\n\nLow success rates can indicate a problem with scrape targets,\nstale service discovery, or agent misconfiguration.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "percentunit"
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 12,
+                   "x": 0,
+                   "y": 1
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum(up{cluster=\"$cluster\"})\n/\ncount (up{cluster=\"$cluster\"})\n",
+                      "instant": false,
+                      "legendFormat": "% of targets successfully scraped",
+                      "range": true
+                   }
+                ],
+                "title": "Scrape success rate in $cluster",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Duration of successful scrapes by prometheus.scrape components,\nacross all the namespaces in the selected cluster.\n\nThis metric should be below your configured scrape interval.\nHigh durations can indicate a problem with a scrape target or\na performance issue with the agent.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "s"
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 12,
+                   "x": 12,
+                   "y": 1
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "quantile(0.99, scrape_duration_seconds{cluster=\"$cluster\"})\n",
+                      "instant": false,
+                      "legendFormat": "p99",
+                      "range": true
+                   },
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "quantile(0.95, scrape_duration_seconds{cluster=\"$cluster\"})\n",
+                      "instant": false,
+                      "legendFormat": "p95",
+                      "range": true
+                   },
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "quantile(0.50, scrape_duration_seconds{cluster=\"$cluster\"})\n",
+                      "instant": false,
+                      "legendFormat": "p50",
+                      "range": true
+                   }
+                ],
+                "title": "Scrape duration in $cluster",
+                "type": "timeseries"
+             },
+             {
+                "collapsed": false,
+                "datasource": "${datasource}",
+                "gridPos": {
+                   "h": 1,
+                   "w": 24,
+                   "x": 0,
+                   "y": 11
+                },
+                "title": "prometheus.remote_write",
+                "type": "row"
+             },
+             {
                 "datasource": "${datasource}",
                 "description": "How far behind prometheus.remote_write from samples recently written\nto the WAL.\n\nEach endpoint prometheus.remote_write is configured to send metrics\nhas its own delay. The time shown here is the sum across all\nendpoints for the given component.\n\nIt is normal for the WAL delay to be within 1-3 scrape intervals. If\nthe WAL delay continues to increase beyond that amount, try\nincreasing the number of maximum shards.\n",
                 "fieldConfig": {
@@ -1461,7 +1954,7 @@ data:
                    "h": 10,
                    "w": 6,
                    "x": 0,
-                   "y": 0
+                   "y": 12
                 },
                 "targets": [
                    {
@@ -1494,7 +1987,7 @@ data:
                    "h": 10,
                    "w": 6,
                    "x": 6,
-                   "y": 0
+                   "y": 12
                 },
                 "targets": [
                    {
@@ -1520,7 +2013,7 @@ data:
                    "h": 10,
                    "w": 6,
                    "x": 12,
-                   "y": 0
+                   "y": 12
                 },
                 "targets": [
                    {
@@ -1622,7 +2115,7 @@ data:
                    "h": 10,
                    "w": 6,
                    "x": 18,
-                   "y": 0
+                   "y": 12
                 },
                 "targets": [
                    {
@@ -1669,7 +2162,7 @@ data:
                    "h": 10,
                    "w": 8,
                    "x": 0,
-                   "y": 10
+                   "y": 22
                 },
                 "targets": [
                    {
@@ -1702,7 +2195,7 @@ data:
                    "h": 10,
                    "w": 8,
                    "x": 8,
-                   "y": 10
+                   "y": 22
                 },
                 "targets": [
                    {
@@ -1735,7 +2228,7 @@ data:
                    "h": 10,
                    "w": 8,
                    "x": 16,
-                   "y": 10
+                   "y": 22
                 },
                 "targets": [
                    {
@@ -1761,7 +2254,7 @@ data:
                    "h": 10,
                    "w": 8,
                    "x": 0,
-                   "y": 20
+                   "y": 32
                 },
                 "options": {
                    "legend": {
@@ -1792,7 +2285,7 @@ data:
                    "h": 10,
                    "w": 8,
                    "x": 8,
-                   "y": 20
+                   "y": 32
                 },
                 "targets": [
                    {
@@ -1818,7 +2311,7 @@ data:
                    "h": 10,
                    "w": 8,
                    "x": 16,
-                   "y": 20
+                   "y": 32
                 },
                 "targets": [
                    {
@@ -1958,7 +2451,7 @@ data:
              ]
           },
           "timezone": "utc",
-          "title": "Grafana Agent Flow / prometheus.remote_write",
+          "title": "Grafana Agent Flow / Prometheus Components",
           "uid": "ee34ffa2d084547d650e1d96a26306aa"
        }
 kind: ConfigMap
@@ -1987,6 +2480,7 @@ data:
                 }
              ]
           },
+          "graphTooltip": 1,
           "links": [
              {
                 "asDropdown": true,

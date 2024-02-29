@@ -12,6 +12,7 @@
             }
          ]
       },
+      "graphTooltip": 1,
       "links": [
          {
             "icon": "doc",
@@ -36,6 +37,96 @@
       ],
       "panels": [
          {
+            "collapsed": false,
+            "datasource": "${datasource}",
+            "gridPos": {
+               "h": 1,
+               "w": 24,
+               "x": 0,
+               "y": 0
+            },
+            "title": "prometheus.scrape",
+            "type": "row"
+         },
+         {
+            "datasource": "${datasource}",
+            "description": "Percentage of targets successfully scraped by prometheus.scrape\ncomponents.\n\nThis metric is calculated by dividing the number of targets\nsuccessfully scraped by the total number of targets scraped,\nacross all the namespaces in the selected cluster.\n\nLow success rates can indicate a problem with scrape targets,\nstale service discovery, or agent misconfiguration.\n",
+            "fieldConfig": {
+               "defaults": {
+                  "unit": "percentunit"
+               }
+            },
+            "gridPos": {
+               "h": 10,
+               "w": 12,
+               "x": 0,
+               "y": 1
+            },
+            "targets": [
+               {
+                  "datasource": "${datasource}",
+                  "expr": "sum(up{cluster=\"$cluster\"})\n/\ncount (up{cluster=\"$cluster\"})\n",
+                  "instant": false,
+                  "legendFormat": "% of targets successfully scraped",
+                  "range": true
+               }
+            ],
+            "title": "Scrape success rate in $cluster",
+            "type": "timeseries"
+         },
+         {
+            "datasource": "${datasource}",
+            "description": "Duration of successful scrapes by prometheus.scrape components,\nacross all the namespaces in the selected cluster.\n\nThis metric should be below your configured scrape interval.\nHigh durations can indicate a problem with a scrape target or\na performance issue with the agent.\n",
+            "fieldConfig": {
+               "defaults": {
+                  "unit": "s"
+               }
+            },
+            "gridPos": {
+               "h": 10,
+               "w": 12,
+               "x": 12,
+               "y": 1
+            },
+            "targets": [
+               {
+                  "datasource": "${datasource}",
+                  "expr": "quantile(0.99, scrape_duration_seconds{cluster=\"$cluster\"})\n",
+                  "instant": false,
+                  "legendFormat": "p99",
+                  "range": true
+               },
+               {
+                  "datasource": "${datasource}",
+                  "expr": "quantile(0.95, scrape_duration_seconds{cluster=\"$cluster\"})\n",
+                  "instant": false,
+                  "legendFormat": "p95",
+                  "range": true
+               },
+               {
+                  "datasource": "${datasource}",
+                  "expr": "quantile(0.50, scrape_duration_seconds{cluster=\"$cluster\"})\n",
+                  "instant": false,
+                  "legendFormat": "p50",
+                  "range": true
+               }
+            ],
+            "title": "Scrape duration in $cluster",
+            "type": "timeseries"
+         },
+         {
+            "collapsed": false,
+            "datasource": "${datasource}",
+            "gridPos": {
+               "h": 1,
+               "w": 24,
+               "x": 0,
+               "y": 11
+            },
+            "title": "prometheus.remote_write",
+            "type": "row"
+         },
+         {
             "datasource": "${datasource}",
             "description": "How far behind prometheus.remote_write from samples recently written\nto the WAL.\n\nEach endpoint prometheus.remote_write is configured to send metrics\nhas its own delay. The time shown here is the sum across all\nendpoints for the given component.\n\nIt is normal for the WAL delay to be within 1-3 scrape intervals. If\nthe WAL delay continues to increase beyond that amount, try\nincreasing the number of maximum shards.\n",
             "fieldConfig": {
@@ -47,7 +138,7 @@
                "h": 10,
                "w": 6,
                "x": 0,
-               "y": 0
+               "y": 12
             },
             "targets": [
                {
@@ -80,7 +171,7 @@
                "h": 10,
                "w": 6,
                "x": 6,
-               "y": 0
+               "y": 12
             },
             "targets": [
                {
@@ -106,7 +197,7 @@
                "h": 10,
                "w": 6,
                "x": 12,
-               "y": 0
+               "y": 12
             },
             "targets": [
                {
@@ -208,7 +299,7 @@
                "h": 10,
                "w": 6,
                "x": 18,
-               "y": 0
+               "y": 12
             },
             "targets": [
                {
@@ -255,7 +346,7 @@
                "h": 10,
                "w": 8,
                "x": 0,
-               "y": 10
+               "y": 22
             },
             "targets": [
                {
@@ -288,7 +379,7 @@
                "h": 10,
                "w": 8,
                "x": 8,
-               "y": 10
+               "y": 22
             },
             "targets": [
                {
@@ -321,7 +412,7 @@
                "h": 10,
                "w": 8,
                "x": 16,
-               "y": 10
+               "y": 22
             },
             "targets": [
                {
@@ -347,7 +438,7 @@
                "h": 10,
                "w": 8,
                "x": 0,
-               "y": 20
+               "y": 32
             },
             "options": {
                "legend": {
@@ -378,7 +469,7 @@
                "h": 10,
                "w": 8,
                "x": 8,
-               "y": 20
+               "y": 32
             },
             "targets": [
                {
@@ -404,7 +495,7 @@
                "h": 10,
                "w": 8,
                "x": 16,
-               "y": 20
+               "y": 32
             },
             "targets": [
                {
@@ -544,6 +635,6 @@
          ]
       },
       "timezone": "utc",
-      "title": "Grafana Agent Flow / prometheus.remote_write",
+      "title": "Grafana Agent Flow / Prometheus Components",
       "uid": "ee34ffa2d084547d650e1d96a26306aa"
    }

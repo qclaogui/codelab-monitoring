@@ -188,6 +188,12 @@
       namespace_query: 'cortex_build_info{%s=~"$cluster"}' % $._config.per_cluster_label,
     },
 
+    // Used to add extra labels to all alerts. Careful: takes precedence over default labels.
+    alert_extra_labels: {},
+
+    // Used to add extra annotations to all alerts, Careful: takes precedence over default annotations.
+    alert_extra_annotations: {},
+
     cortex_p99_latency_threshold_seconds: 2.5,
 
     // Whether resources dashboards are enabled (based on cAdvisor metrics).
@@ -579,6 +585,16 @@
                 / node_filesystem_size_bytes{%(namespaceMatcher)s,%(instanceLabel)s=~"%(instanceName)s", mountpoint="%(instanceDataDir)s"})
           |||,
       },
+    },
+
+    rollout_dashboard: {
+      // workload_label_replaces is used to create label_replace(...) calls on the statefulset and deployment series when rendering the Rollout Dashboard.
+      // Extendable to allow grouping multiple workloads into a single one.
+      workload_label_replaces: [
+        { src_label: 'deployment', regex: '(.+)', replacement: '$1' },
+        { src_label: 'statefulset', regex: '(.+)', replacement: '$1' },
+        { src_label: 'workload', regex: '(.*?)(?:-zone-[a-z])?', replacement: '$1' },
+      ],
     },
 
     // The label used to differentiate between different nodes (i.e. servers).
