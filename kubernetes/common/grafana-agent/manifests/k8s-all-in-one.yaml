@@ -152,8 +152,9 @@ data:
     {\n\t\tforward_to = [module.file.lgtmp.exports.logs_receiver]\n\t}\n}\n\n/********************************************\n
     * Traces\n ********************************************/\nmodule.file \"traces_primary\"
     {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent-modules\")
-    + \"/traces.river\"\n\n\targuments {\n\t\tforward_to = [module.file.lgtmp.exports.traces_receiver]\n\t\tcluster
-    \   = coalesce(env(\"CLUSTER\"), \"k3d-k3s-codelab\")\n\t}\n}\n\n/********************************************\n
+    + \"/traces.river\"\n\n\targuments {\n\t\tmetrics_forward_to = [module.file.lgtmp.exports.metrics_receiver]\n\t\tlogs_forward_to
+    \   = [module.file.lgtmp.exports.logs_receiver]\n\t\ttraces_forward_to  = [module.file.lgtmp.exports.traces_receiver]\n\t\tcluster
+    \           = coalesce(env(\"CLUSTER\"), \"k3d-k3s-codelab\")\n\t}\n}\n\n/********************************************\n
     * Profiles\n ********************************************/\nmodule.file \"profiles_primary\"
     {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent-modules\")
     + \"/profiles.river\"\n\n\targuments {\n\t\tforward_to = [module.file.lgtmp.exports.profiles_receiver]\n\t\tclustering
@@ -560,24 +561,68 @@ data:
     = false\n\t\t}\n\n\t\tprofile.process_cpu {\n\t\t\tenabled = false\n\t\t}\n\n\t\tprofile.goroutine
     {\n\t\t\tenabled = false\n\t\t}\n\n\t\tprofile.block {\n\t\t\tenabled = false\n\t\t}\n\n\t\tprofile.mutex
     {\n\t\t\tenabled = false\n\t\t}\n\n\t\tprofile.fgprof {\n\t\t\tenabled = true\n\t\t}\n\t}\n}\n"
-  traces.river: "/*\nModule: traces\n*/\nargument \"forward_to\" {\n\toptional = false\n}\n\nargument
-    \"cluster\" {\n\toptional = true\n\tdefault  = \"k3d-k3s-codelab\"\n}\n\nargument
-    \"otlp_http_endpoint\" {\n\toptional = true\n\tdefault  = \"0.0.0.0:4318\"\n}\n\nargument
-    \"otlp_grpc_endpoint\" {\n\toptional = true\n\tdefault  = \"0.0.0.0:4317\"\n}\n\n//
+  traces.river: "/*\nModule: traces\n*/\nargument \"traces_forward_to\" {\n\toptional
+    = false\n}\n\nargument \"logs_forward_to\" {\n\toptional = false\n}\n\nargument
+    \"metrics_forward_to\" {\n\toptional = false\n}\n\nargument \"cluster\" {\n\toptional
+    = true\n\tdefault  = \"k3d-k3s-codelab\"\n}\n\nargument \"otlp_http_endpoint\"
+    {\n\toptional = true\n\tdefault  = \"0.0.0.0:4318\"\n}\n\nargument \"otlp_grpc_endpoint\"
+    {\n\toptional = true\n\tdefault  = \"0.0.0.0:4317\"\n}\n\n/********************************************\n
+    * Jaeger for Metrics Logs Traces\n ********************************************/\n\notelcol.receiver.jaeger
+    \"default\" {\n\tprotocols {\n\t\tgrpc {\n\t\t\tendpoint = \"0.0.0.0:14250\"\n\t\t}\n\n\t\tthrift_http
+    {\n\t\t\tendpoint = \"0.0.0.0:14268\"\n\t\t}\n\n\t\tthrift_binary {\n\t\t\tendpoint
+    = \"0.0.0.0:6832\"\n\t\t}\n\n\t\tthrift_compact {\n\t\t\tendpoint = \"0.0.0.0:6831\"\n\t\t}\n\t}\n\n\toutput
+    {\n\t\tmetrics = [otelcol.processor.batch.default.input]\n\t\tlogs    = [otelcol.processor.batch.default.input]\n\t\ttraces
+    \ = [otelcol.processor.batch.default.input]\n\t}\n}\n\n/********************************************\n
+    * Otelcol for Metrics Logs Traces\n ********************************************/\n//
     https://grafana.com/docs/agent/latest/flow/reference/components/otelcol.receiver.otlp/\notelcol.receiver.otlp
-    \"trace_receiver\" {\n\tgrpc {\n\t\tendpoint = argument.otlp_grpc_endpoint.value\n\t}\n\n\thttp
-    {\n\t\tendpoint = argument.otlp_http_endpoint.value\n\t}\n\n\toutput {\n\t\ttraces
-    = [otelcol.processor.batch.default.input]\n\t}\n}\n\notelcol.processor.batch \"default\"
-    {\n\tsend_batch_size     = 16384\n\tsend_batch_max_size = 0\n\ttimeout             =
-    \"2s\"\n\n\toutput {\n\t\ttraces = [otelcol.processor.memory_limiter.default.input]\n\t}\n}\n\notelcol.processor.memory_limiter
-    \"default\" {\n\tcheck_interval = \"1s\"\n\n\t// limit = \"150MiB\" // alternatively,
-    set `limit_percentage` and `spike_limit_percentage`\n\tlimit_percentage       =
-    50\n\tspike_limit_percentage = 30\n\n\toutput {\n\t\ttraces = [otelcol.processor.attributes.default.input]\n\t}\n}\n\notelcol.processor.attributes
-    \"default\" {\n\taction {\n\t\tkey    = \"cluster\"\n\t\tvalue  = argument.cluster.value\n\t\taction
-    = \"insert\"\n\t}\n\n\toutput {\n\t\ttraces = argument.forward_to.value\n\t}\n}\n"
+    \"default\" {\n\tgrpc {\n\t\tendpoint = argument.otlp_grpc_endpoint.value\n\t}\n\n\thttp
+    {\n\t\tendpoint = argument.otlp_http_endpoint.value\n\t}\n\n\toutput {\n\t\tmetrics
+    = [otelcol.processor.batch.default.input]\n\t\tlogs    = [otelcol.processor.batch.default.input]\n\t\ttraces
+    \ = [\n\t\t\totelcol.processor.batch.default.input,\n\t\t\totelcol.connector.spanlogs.autologging.input,\n\t\t]\n\t}\n}\n\notelcol.processor.batch
+    \"default\" {\n\tsend_batch_size     = 16384\n\tsend_batch_max_size = 0\n\ttimeout
+    \            = \"2s\"\n\n\toutput {\n\t\tmetrics = [otelcol.processor.memory_limiter.default.input]\n\t\tlogs
+    \   = [otelcol.processor.memory_limiter.default.input]\n\t\ttraces  = [otelcol.processor.memory_limiter.default.input]\n\t}\n}\n\n//
+    The OpenTelemetry spanlog connector processes incoming trace spans and extracts
+    data from them ready\n// for logging.\notelcol.connector.spanlogs \"autologging\"
+    {\n\t// We only want to output a line for each root span (ie. every single trace),
+    and not for every\n\t// process or span (outputting a line for every span would
+    be extremely verbose).\n\tspans     = false\n\troots     = true\n\tprocesses =
+    false\n\n\t// We want to ensure that the following three span attributes are included
+    in the log line, if present.\n\tspan_attributes = [\n\t\t\"http.method\",\n\t\t\"http.target\",\n\t\t\"http.status_code\",\n\t]\n\n\t//
+    Overrides the default key in the log line to be `traceId`, which is then used
+    by Grafana to\n\t// identify the trace ID for correlation with the Tempo datasource.\n\toverrides
+    {\n\t\ttrace_id_key = \"traceId\"\n\t}\n\n\t// Send to the OpenTelemetry Loki
+    exporter.\n\toutput {\n\t\tlogs = [otelcol.exporter.loki.autologging.input]\n\t}\n}\n\n//
+    Simply forwards the incoming OpenTelemetry log format out as a Loki log.\n// We
+    need this stage to ensure we can then process the logline as a Loki object.\notelcol.exporter.loki
+    \"autologging\" {\n\tforward_to = [loki.process.autologging.receiver]\n}\n\n//
+    The Loki processor allows us to accept a correctly formatted Loki log and mutate
+    it into\n// a set of fields for output.\nloki.process \"autologging\" {\n\t//
+    The JSON stage simply extracts the `body` (the actual logline) from the Loki log,
+    ignoring\n\t// all other fields.\n\tstage.json {\n\t\texpressions = {\"body\"
+    = \"\"}\n\t}\n\t// The output stage takes the body (the main logline) and uses
+    this as the source for the output\n\t// logline. In this case, it essentially
+    turns it into logfmt.\n\tstage.output {\n\t\tsource = \"body\"\n\t}\n\n\tforward_to
+    = argument.logs_forward_to.value\n}\n\notelcol.processor.memory_limiter \"default\"
+    {\n\tcheck_interval = \"1s\"\n\n\t// limit = \"150MiB\" // alternatively, set
+    `limit_percentage` and `spike_limit_percentage`\n\tlimit_percentage       = 50\n\tspike_limit_percentage
+    = 30\n\n\toutput {\n\t\tmetrics = [otelcol.processor.k8sattributes.default.input]\n\t\tlogs
+    \   = [otelcol.processor.k8sattributes.default.input]\n\t\ttraces  = [otelcol.processor.k8sattributes.default.input]\n\t}\n}\n\notelcol.processor.k8sattributes
+    \"default\" {\n\toutput {\n\t\tmetrics = [otelcol.processor.resourcedetection.default.input]\n\t\tlogs
+    \   = [otelcol.processor.resourcedetection.default.input]\n\t\ttraces  = [otelcol.processor.resourcedetection.default.input]\n\t}\n}\n\notelcol.processor.resourcedetection
+    \"default\" {\n\t// If you set up a OTEL_RESOURCE_ATTRIBUTES environment variable
+    with value of TestKey=TestValue\n\t// then all logs, metrics, and traces have
+    a resource attribute with a key TestKey and value of TestValue.\n\tdetectors =
+    [\"env\"]\n\n\toutput {\n\t\tmetrics = [otelcol.exporter.prometheus.tracesmetrics.input]\n\t\tlogs
+    \   = [otelcol.exporter.loki.traceslogs.input]\n\t\ttraces  = argument.traces_forward_to.value\n\t}\n}\n\notelcol.exporter.prometheus
+    \"tracesmetrics\" {\n\tforward_to = argument.metrics_forward_to.value\n}\n\notelcol.exporter.loki
+    \"traceslogs\" {\n\tforward_to = [loki.process.traceslogs.receiver]\n}\n\nloki.process
+    \"traceslogs\" {\n\tstage.drop {\n\t\tlonger_than = \"8KB\"\n\t\tolder_than  =
+    \"12h\"\n\t}\n\n\tstage.tenant {\n\t\tvalue = \"fake\"\n\t}\n\n\tforward_to =
+    argument.logs_forward_to.value\n}\n"
 kind: ConfigMap
 metadata:
-  name: agent-modules-k4dbf9gh6k
+  name: agent-modules-99df868f24
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -639,6 +684,10 @@ spec:
     port: 9411
     protocol: TCP
     targetPort: 9411
+  - name: jaeger-compact
+    port: 6831
+    protocol: UDP
+    targetPort: 6831
   selector:
     app.kubernetes.io/instance: grafana-agent
     app.kubernetes.io/name: grafana-agent
@@ -674,6 +723,10 @@ spec:
     port: 9411
     protocol: TCP
     targetPort: 9411
+  - name: jaeger-compact
+    port: 6831
+    protocol: UDP
+    targetPort: 6831
   selector:
     app.kubernetes.io/instance: grafana-agent
     app.kubernetes.io/name: grafana-agent
@@ -750,6 +803,9 @@ spec:
         - containerPort: 9411
           name: zipkin
           protocol: TCP
+        - containerPort: 6831
+          name: jaeger-compact
+          protocol: UDP
         readinessProbe:
           httpGet:
             path: /-/ready
@@ -788,7 +844,7 @@ spec:
           path: /var/log
         name: varlog
       - configMap:
-          name: agent-modules-k4dbf9gh6k
+          name: agent-modules-99df868f24
         name: agent-modules
 ---
 apiVersion: monitoring.coreos.com/v1

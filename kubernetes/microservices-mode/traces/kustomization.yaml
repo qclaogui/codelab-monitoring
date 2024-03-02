@@ -9,6 +9,7 @@ kind: Kustomization
 
 resources:
 - tempo-distributed
+- ../../monolithic-mode/metrics
 
 secretGenerator:
 - name: grafana-env
@@ -20,11 +21,25 @@ secretGenerator:
   - GF_LOG_LEVEL=warn
   - GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS=grafana-agent.monitoring-system:4317
   - GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES=namespace:monitoring-system
+  - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor tracesEmbeddedFlameGraph traceqlSearch correlations metricsSummary traceToMetrics traceToProfiles
 
 - name: tempo-distributed-env
   namespace: tracing-system
   literals:
   - TEMPO_S3_SECRET_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
+
+- name: mimir-env
+  namespace: monitoring-system
+  behavior: replace
+  literals:
+  - MIMIR_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
+  - JAEGER_SERVICE_NAME=mimir
+  - JAEGER_AGENT_HOST=grafana-agent.monitoring-system
+  - JAEGER_AGENT_PORT=6831
+  - JAEGER_REPORTER_MAX_QUEUE_SIZE=1000
+  - JAEGER_SAMPLER_PARAM=1
+  - JAEGER_SAMPLER_TYPE=const
+  - JAEGER_TAGS=namespace=monitoring-system
 
 configMapGenerator:
 - name: grafana-datasources
@@ -35,6 +50,15 @@ configMapGenerator:
       grafana_datasource: "1"
   files:
   - datasources.yaml=configs/grafana-datasources-tempo.yaml
+
+- name: agent-config
+  namespace: monitoring-system
+  behavior: replace
+  options:
+    disableNameSuffixHash: true
+  files:
+  - configs/config.river
+
 
 - name: tempo-distributed-config
   namespace: tracing-system
@@ -47,6 +71,17 @@ configMapGenerator:
   files:
   - configs/overrides.yaml
 
+- name: mimir-config
+  namespace: monitoring-system
+  behavior: replace
+  files:
+  - configs/mimir.yaml
+- name: runtime-config
+  namespace: monitoring-system
+  behavior: replace
+  files:
+  - runtime.yaml=configs/mimir-runtime.yaml
+
 # replace nginx-templates and nginx-env configMap
 - name: nginx-templates
   namespace: gateway
@@ -54,6 +89,7 @@ configMapGenerator:
     disableNameSuffixHash: true
   files:
   - configs/gateway_tempo.conf.template
+  - configs/gateway_mimir.conf.template
 - name: nginx-env
   namespace: gateway
   options:
@@ -65,3 +101,8 @@ configMapGenerator:
   - TEMPO_INGESTER_HOST=tempo-distributed-ingester.tracing-system.svc.cluster.local
   - TEMPO_QUERY_FRONTEND_HOST=tempo-distributed-query-frontend.tracing-system.svc.cluster.local
   - TEMPO_COMPACTOR_HOST=tempo-distributed-compactor.tracing-system.svc.cluster.local
+  - MIMIR_DISTRIBUTOR_HOST=mimir.monitoring-system.svc.cluster.local
+  - MIMIR_QUERY_FRONTEND_HOST=mimir.monitoring-system.svc.cluster.local
+  - MIMIR_ALERT_MANAGER_HOST=mimir.monitoring-system.svc.cluster.local
+  - MIMIR_RULER_HOST=mimir.monitoring-system.svc.cluster.local
+  - MIMIR_COMPACTOR_HOST=mimir.monitoring-system.svc.cluster.local

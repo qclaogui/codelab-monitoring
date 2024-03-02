@@ -56,17 +56,45 @@ datasources:
   editable: true
   apiVersion: 1
   jsonData:
+    search:
+      hide: false
     lokiSearch:
       datasourceUid: logs
     nodeGraph:
       enabled: true
     serviceMap:
       datasourceUid: metrics
+    traceQuery:
+      timeShiftEnabled: true
+      spanStartTimeShift: '-1h'
+      spanEndTimeShift: '1h'
+    spanBar:
+      type: 'Tag'
+      tag: 'http.path'
     tracesToMetrics:
       datasourceUid: metrics
+      spanStartTimeShift: '-1h'
+      spanEndTimeShift: '1h'
+      tags: [{ key: 'service.name', value: 'service' }, { key: 'span_name' }, { key: 'http_method' }]
+      queries:
+      - name: '(R) Rate'
+        query: 'sum(rate(traces_spanmetrics_calls_total{$$__tags}[$$__rate_interval]))'
+      - name: '(E) Error Rate'
+        query: 'sum(rate(traces_spanmetrics_calls_total{$$__tags, status_code="STATUS_CODE_ERROR"}[$$__rate_interval]))'
+      - name: '(D) Duration'
+        query: 'histogram_quantile(0.9, sum(rate(traces_spanmetrics_latency_bucket{$$__tags}[$$__rate_interval])) by (le))'
     tracesToLogsV2:
-      customQuery: false
       datasourceUid: logs
+      spanStartTimeShift: '-1h'
+      spanEndTimeShift: '1h'
+      tags: [{ key: 'service.name', value: 'app' }, { key: 'namespace' }, { key: 'cluster' }]
+      filterByTraceID: false
+      filterBySpanID: false
+    tracesToProfiles:
+      customQuery: false
+      datasourceUid: "profiles"
+      profileTypeId: "process_cpu:cpu:nanoseconds:cpu:nanoseconds"
+      tags: [{ key: 'service.name', value: 'service_name' }]
 
 # Pyroscope for profiles
 - name: Profiles

@@ -45,12 +45,13 @@ services:
       - -config.expand-env=true
       - -log.level=warn
     environment:
+      - JAEGER_SERVICE_NAME=mimir
       - JAEGER_AGENT_HOST=agent
       - JAEGER_AGENT_PORT=6831
       - JAEGER_REPORTER_MAX_QUEUE_SIZE=1000
       - JAEGER_SAMPLER_PARAM=1
       - JAEGER_SAMPLER_TYPE=const
-      - JAEGER_TAGS=cluster=docker-compose,namespace=monitoring-system
+      - JAEGER_TAGS=namespace=monitoring-system
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
       interval: 10s
@@ -156,12 +157,13 @@ services:
     volumes:
       - ../../common/config/pyroscope/monolithic-mode-profiles.yaml:/etc/config.yaml
     environment:
+      - JAEGER_SERVICE_NAME=pyroscope
       - JAEGER_AGENT_HOST=agent
       - JAEGER_AGENT_PORT=6831
       - JAEGER_REPORTER_MAX_QUEUE_SIZE=1000
       - JAEGER_SAMPLER_PARAM=1
       - JAEGER_SAMPLER_TYPE=const
-      - JAEGER_TAGS=cluster=docker-compose,namespace=monitoring-system
+      - JAEGER_TAGS=namespace=monitoring-system
     command:
       - -config.file=/etc/config.yaml
       - -config.expand-env=true
@@ -191,7 +193,7 @@ services:
       - GF_DIAGNOSTICS_PROFILING_ADDR=0.0.0.0
       - GF_DIAGNOSTICS_PROFILING_PORT=6060
       - GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS=agent:4317
-      - GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES=cluster:docker-compose,namespace:monitoring-system
+      - GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES=namespace:monitoring-system
       # - GF_INSTALL_PLUGINS=pyroscope-datasource,pyroscope-panel
     ports:
       - "3000:3000"
