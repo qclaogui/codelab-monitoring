@@ -416,9 +416,6 @@ data:
         at: 250ms
         max_per_second: 20
         up_to: 3
-
-    tracing:
-      enabled: false
 kind: ConfigMap
 metadata:
   labels:
@@ -553,15 +550,15 @@ data:
           datasourceUid: metrics
         traceQuery:
           timeShiftEnabled: true
-          spanStartTimeShift: '-1h'
-          spanEndTimeShift: '1h'
+          spanStartTimeShift: '-30m'
+          spanEndTimeShift: '30m'
         spanBar:
           type: 'Tag'
           tag: 'http.path'
         tracesToMetrics:
           datasourceUid: metrics
-          spanStartTimeShift: '-1h'
-          spanEndTimeShift: '1h'
+          spanStartTimeShift: '-30m'
+          spanEndTimeShift: '30m'
           tags: [{ key: 'service.name', value: 'service' }, { key: 'span_name' }, { key: 'http_method' }]
           queries:
           - name: '(R) Rate'
@@ -572,8 +569,8 @@ data:
             query: 'histogram_quantile(0.9, sum(rate(traces_spanmetrics_latency_bucket{$$__tags}[$$__rate_interval])) by (le))'
         tracesToLogsV2:
           datasourceUid: logs
-          spanStartTimeShift: '-1h'
-          spanEndTimeShift: '1h'
+          spanStartTimeShift: '-30m'
+          spanEndTimeShift: '30m'
           tags: [{ key: 'service.name', value: 'app' }, { key: 'namespace' }, { key: 'cluster' }]
           filterByTraceID: false
           filterBySpanID: false
@@ -781,13 +778,6 @@ data:
       frontend_worker:
         frontend_address: tempo:9095
 
-    query_frontend:
-      search:
-        duration_slo: 5s
-        throughput_bytes_slo: 1.073741824e+09
-      trace_by_id:
-        duration_slo: 5s
-
     metrics_generator:
       processor:
         span_metrics:
@@ -852,6 +842,11 @@ metadata:
 ---
 apiVersion: v1
 data:
+  JAEGER_AGENT_HOST: YWdlbnQ=
+  JAEGER_AGENT_PORT: NjgzMQ==
+  JAEGER_SAMPLER_PARAM: MQ==
+  JAEGER_SAMPLER_TYPE: Y29uc3Q=
+  JAEGER_SERVICE_NAME: bG9raQ==
   LOKI_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:
@@ -876,13 +871,11 @@ type: Opaque
 ---
 apiVersion: v1
 data:
-  JAEGER_AGENT_HOST: Z3JhZmFuYS1hZ2VudC5tb25pdG9yaW5nLXN5c3RlbQ==
+  JAEGER_AGENT_HOST: YWdlbnQ=
   JAEGER_AGENT_PORT: NjgzMQ==
-  JAEGER_REPORTER_MAX_QUEUE_SIZE: MTAwMA==
   JAEGER_SAMPLER_PARAM: MQ==
   JAEGER_SAMPLER_TYPE: Y29uc3Q=
   JAEGER_SERVICE_NAME: bWltaXI=
-  JAEGER_TAGS: bmFtZXNwYWNlPW1vbml0b3Jpbmctc3lzdGVt
   MIMIR_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:
@@ -892,13 +885,11 @@ type: Opaque
 ---
 apiVersion: v1
 data:
-  JAEGER_AGENT_HOST: Z3JhZmFuYS1hZ2VudC5tb25pdG9yaW5nLXN5c3RlbQ==
+  JAEGER_AGENT_HOST: YWdlbnQ=
   JAEGER_AGENT_PORT: NjgzMQ==
-  JAEGER_REPORTER_MAX_QUEUE_SIZE: MTAwMA==
   JAEGER_SAMPLER_PARAM: MQ==
   JAEGER_SAMPLER_TYPE: Y29uc3Q=
   JAEGER_SERVICE_NAME: cHlyb3Njb3Bl
-  JAEGER_TAGS: bmFtZXNwYWNlPW1vbml0b3Jpbmctc3lzdGVt
   PYROSCOPE_STORAGE_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:
@@ -908,6 +899,11 @@ type: Opaque
 ---
 apiVersion: v1
 data:
+  JAEGER_AGENT_HOST: YWdlbnQ=
+  JAEGER_AGENT_PORT: NjgzMQ==
+  JAEGER_SAMPLER_PARAM: MQ==
+  JAEGER_SAMPLER_TYPE: Y29uc3Q=
+  JAEGER_SERVICE_NAME: dGVtcG8=
   TEMPO_S3_SECRET_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:

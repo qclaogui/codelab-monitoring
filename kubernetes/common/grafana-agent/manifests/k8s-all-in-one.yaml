@@ -603,17 +603,12 @@ data:
     = \"\"}\n\t}\n\t// The output stage takes the body (the main logline) and uses
     this as the source for the output\n\t// logline. In this case, it essentially
     turns it into logfmt.\n\tstage.output {\n\t\tsource = \"body\"\n\t}\n\n\tforward_to
-    = argument.logs_forward_to.value\n}\n\notelcol.processor.memory_limiter \"default\"
+    = [loki.process.traceslogs.receiver]\n}\n\notelcol.processor.memory_limiter \"default\"
     {\n\tcheck_interval = \"1s\"\n\n\t// limit = \"150MiB\" // alternatively, set
     `limit_percentage` and `spike_limit_percentage`\n\tlimit_percentage       = 50\n\tspike_limit_percentage
     = 30\n\n\toutput {\n\t\tmetrics = [otelcol.processor.k8sattributes.default.input]\n\t\tlogs
     \   = [otelcol.processor.k8sattributes.default.input]\n\t\ttraces  = [otelcol.processor.k8sattributes.default.input]\n\t}\n}\n\notelcol.processor.k8sattributes
-    \"default\" {\n\toutput {\n\t\tmetrics = [otelcol.processor.resourcedetection.default.input]\n\t\tlogs
-    \   = [otelcol.processor.resourcedetection.default.input]\n\t\ttraces  = [otelcol.processor.resourcedetection.default.input]\n\t}\n}\n\notelcol.processor.resourcedetection
-    \"default\" {\n\t// If you set up a OTEL_RESOURCE_ATTRIBUTES environment variable
-    with value of TestKey=TestValue\n\t// then all logs, metrics, and traces have
-    a resource attribute with a key TestKey and value of TestValue.\n\tdetectors =
-    [\"env\"]\n\n\toutput {\n\t\tmetrics = [otelcol.exporter.prometheus.tracesmetrics.input]\n\t\tlogs
+    \"default\" {\n\toutput {\n\t\tmetrics = [otelcol.exporter.prometheus.tracesmetrics.input]\n\t\tlogs
     \   = [otelcol.exporter.loki.traceslogs.input]\n\t\ttraces  = argument.traces_forward_to.value\n\t}\n}\n\notelcol.exporter.prometheus
     \"tracesmetrics\" {\n\tforward_to = argument.metrics_forward_to.value\n}\n\notelcol.exporter.loki
     \"traceslogs\" {\n\tforward_to = [loki.process.traceslogs.receiver]\n}\n\nloki.process
@@ -622,7 +617,7 @@ data:
     argument.logs_forward_to.value\n}\n"
 kind: ConfigMap
 metadata:
-  name: agent-modules-99df868f24
+  name: agent-modules-d2t5hbhhgg
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -844,7 +839,7 @@ spec:
           path: /var/log
         name: varlog
       - configMap:
-          name: agent-modules-99df868f24
+          name: agent-modules-d2t5hbhhgg
         name: agent-modules
 ---
 apiVersion: monitoring.coreos.com/v1

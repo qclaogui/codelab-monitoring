@@ -6,7 +6,7 @@ logging {
 }
 
 tracing {
-	sampling_fraction = 0.1
+	sampling_fraction = 0.8
 	write_to          = [otelcol.processor.batch.containers.input]
 }
 
@@ -263,7 +263,7 @@ loki.process "autologging" {
 		source = "body"
 	}
 
-	forward_to = [module.file.docker_compose.exports.logs_receiver]
+	forward_to = [loki.process.containers.receiver]
 }
 
 otelcol.processor.memory_limiter "containers" {
@@ -272,18 +272,6 @@ otelcol.processor.memory_limiter "containers" {
 	// limit = "150MiB" // alternatively, set `limit_percentage` and `spike_limit_percentage`
 	limit_percentage       = 50
 	spike_limit_percentage = 30
-
-	output {
-		metrics = [otelcol.processor.resourcedetection.containers.input]
-		logs    = [otelcol.processor.resourcedetection.containers.input]
-		traces  = [otelcol.processor.resourcedetection.containers.input]
-	}
-}
-
-otelcol.processor.resourcedetection "containers" {
-	// If you set up a OTEL_RESOURCE_ATTRIBUTES environment variable with value of TestKey=TestValue
-	// then all logs, metrics, and traces have a resource attribute with a key TestKey and value of TestValue.
-	detectors = ["env"]
 
 	output {
 		metrics = [otelcol.exporter.prometheus.containers.input]
@@ -306,6 +294,9 @@ otelcol.exporter.loki "containers" {
 
 pyroscope.scrape "containers" {
 	targets = [
+		{"__address__" = "mimir:8080", "service_name" = "mimir"},
+		{"__address__" = "loki:3100", "service_name" = "loki-all"},
+		{"__address__" = "tempo:3200", "service_name" = "tempo-all"},
 		{"__address__" = "grafana:6060", "service_name" = "grafana"},
 	]
 

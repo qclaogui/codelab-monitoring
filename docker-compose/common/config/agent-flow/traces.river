@@ -203,18 +203,6 @@ otelcol.processor.memory_limiter "containers" {
 	spike_limit_percentage = 30
 
 	output {
-		metrics = [otelcol.processor.resourcedetection.containers.input]
-		logs    = [otelcol.processor.resourcedetection.containers.input]
-		traces  = [otelcol.processor.resourcedetection.containers.input]
-	}
-}
-
-otelcol.processor.resourcedetection "containers" {
-	// If you set up a OTEL_RESOURCE_ATTRIBUTES environment variable with value of TestKey=TestValue
-	// then all logs, metrics, and traces have a resource attribute with a key TestKey and value of TestValue.
-	detectors = ["env"]
-
-	output {
 		metrics = [otelcol.exporter.prometheus.containers.input]
 		logs    = [otelcol.exporter.loki.containers.input]
 		traces  = [module.file.docker_compose.exports.traces_receiver]

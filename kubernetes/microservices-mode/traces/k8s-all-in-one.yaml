@@ -156,15 +156,15 @@ data:
           datasourceUid: metrics
         traceQuery:
           timeShiftEnabled: true
-          spanStartTimeShift: '-1h'
-          spanEndTimeShift: '1h'
+          spanStartTimeShift: '-30m'
+          spanEndTimeShift: '30m'
         spanBar:
           type: 'Tag'
           tag: 'http.path'
         tracesToMetrics:
           datasourceUid: metrics
-          spanStartTimeShift: '-1h'
-          spanEndTimeShift: '1h'
+          spanStartTimeShift: '-30m'
+          spanEndTimeShift: '30m'
           tags: [{ key: 'service.name', value: 'service' }, { key: 'span_name' }, { key: 'http_method' }]
           queries:
           - name: '(R) Rate'
@@ -328,13 +328,6 @@ data:
       frontend_worker:
         frontend_address: tempo-distributed-query-frontend-discovery:9095
 
-    query_frontend:
-      search:
-        duration_slo: 5s
-        throughput_bytes_slo: 1.073741824e+09
-      trace_by_id:
-        duration_slo: 5s
-
     metrics_generator:
       processor:
         span_metrics:
@@ -431,26 +424,29 @@ type: Opaque
 ---
 apiVersion: v1
 data:
-  JAEGER_AGENT_HOST: Z3JhZmFuYS1hZ2VudC5tb25pdG9yaW5nLXN5c3RlbQ==
+  JAEGER_AGENT_HOST: YWdlbnQ=
   JAEGER_AGENT_PORT: NjgzMQ==
-  JAEGER_REPORTER_MAX_QUEUE_SIZE: MTAwMA==
   JAEGER_SAMPLER_PARAM: MQ==
   JAEGER_SAMPLER_TYPE: Y29uc3Q=
   JAEGER_SERVICE_NAME: bWltaXI=
-  JAEGER_TAGS: bmFtZXNwYWNlPW1vbml0b3Jpbmctc3lzdGVt
   MIMIR_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:
-  name: mimir-env-58h6kmbtc6
+  name: mimir-env-82k4gdctm2
   namespace: monitoring-system
 type: Opaque
 ---
 apiVersion: v1
 data:
+  JAEGER_AGENT_HOST: YWdlbnQ=
+  JAEGER_AGENT_PORT: NjgzMQ==
+  JAEGER_SAMPLER_PARAM: MQ==
+  JAEGER_SAMPLER_TYPE: Y29uc3Q=
+  JAEGER_SERVICE_NAME: dGVtcG8=
   TEMPO_S3_SECRET_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:
-  name: tempo-distributed-env-gf764927fk
+  name: tempo-distributed-env-86t85mmdtc
   namespace: tracing-system
 type: Opaque
 ---
@@ -790,7 +786,7 @@ spec:
               fieldPath: status.podIP
         envFrom:
         - secretRef:
-            name: mimir-env-58h6kmbtc6
+            name: mimir-env-82k4gdctm2
         image: grafana/mimir:2.11.0
         imagePullPolicy: IfNotPresent
         name: mimir
@@ -873,7 +869,7 @@ spec:
         - -config.expand-env=true
         envFrom:
         - secretRef:
-            name: tempo-distributed-env-gf764927fk
+            name: tempo-distributed-env-86t85mmdtc
         image: docker.io/grafana/tempo:2.4.0
         imagePullPolicy: IfNotPresent
         name: compactor
@@ -981,7 +977,7 @@ spec:
         - -config.expand-env=true
         envFrom:
         - secretRef:
-            name: tempo-distributed-env-gf764927fk
+            name: tempo-distributed-env-86t85mmdtc
         image: docker.io/grafana/tempo:2.4.0
         imagePullPolicy: IfNotPresent
         name: distributor
@@ -1115,7 +1111,7 @@ spec:
         - -config.expand-env=true
         envFrom:
         - secretRef:
-            name: tempo-distributed-env-gf764927fk
+            name: tempo-distributed-env-86t85mmdtc
         image: docker.io/grafana/tempo:2.4.0
         imagePullPolicy: IfNotPresent
         name: querier
@@ -1241,7 +1237,7 @@ spec:
         - -config.expand-env=true
         envFrom:
         - secretRef:
-            name: tempo-distributed-env-gf764927fk
+            name: tempo-distributed-env-86t85mmdtc
         image: docker.io/grafana/tempo:2.4.0
         imagePullPolicy: IfNotPresent
         name: query-frontend
@@ -1359,7 +1355,7 @@ spec:
         - -config.expand-env=true
         envFrom:
         - secretRef:
-            name: tempo-distributed-env-gf764927fk
+            name: tempo-distributed-env-86t85mmdtc
         image: docker.io/grafana/tempo:2.4.0
         imagePullPolicy: IfNotPresent
         name: ingester

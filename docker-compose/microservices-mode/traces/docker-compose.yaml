@@ -36,11 +36,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    ports:
-      - "3200"
-      - "4317"
-      - "4318"
-      - "8080"
 
   distributor:
     depends_on:
@@ -68,8 +63,6 @@ services:
     image: *tempoImage
     volumes:
       - ../../common/config/tempo/microservices-mode-traces.yaml:/etc/tempo.yaml # Note: Tempo use microservices-mode-traces.yaml
-    ports:
-      - "3100"
     command:
       - -config.file=/etc/tempo.yaml
       - -target=ingester
@@ -138,10 +131,8 @@ services:
       - JAEGER_SERVICE_NAME=mimir
       - JAEGER_AGENT_HOST=agent
       - JAEGER_AGENT_PORT=6831
-      - JAEGER_REPORTER_MAX_QUEUE_SIZE=1000
-      - JAEGER_SAMPLER_PARAM=1
       - JAEGER_SAMPLER_TYPE=const
-      - JAEGER_TAGS=namespace=monitoring-system
+      - JAEGER_SAMPLER_PARAM=1
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
       interval: 10s

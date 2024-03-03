@@ -141,7 +141,7 @@ loki.process "autologging" {
 		source = "body"
 	}
 
-	forward_to = argument.logs_forward_to.value
+	forward_to = [loki.process.traceslogs.receiver]
 }
 
 otelcol.processor.memory_limiter "default" {
@@ -159,18 +159,6 @@ otelcol.processor.memory_limiter "default" {
 }
 
 otelcol.processor.k8sattributes "default" {
-	output {
-		metrics = [otelcol.processor.resourcedetection.default.input]
-		logs    = [otelcol.processor.resourcedetection.default.input]
-		traces  = [otelcol.processor.resourcedetection.default.input]
-	}
-}
-
-otelcol.processor.resourcedetection "default" {
-	// If you set up a OTEL_RESOURCE_ATTRIBUTES environment variable with value of TestKey=TestValue
-	// then all logs, metrics, and traces have a resource attribute with a key TestKey and value of TestValue.
-	detectors = ["env"]
-
 	output {
 		metrics = [otelcol.exporter.prometheus.tracesmetrics.input]
 		logs    = [otelcol.exporter.loki.traceslogs.input]
