@@ -78,9 +78,68 @@ data:
       rejoin_interval: 0s
       retransmit_factor: 2
       stream_timeout: 10s
+    metrics_generator:
+      metrics_ingestion_time_range_slack: 30s
+      processor:
+        service_graphs:
+          dimensions:
+          - http.method
+          - http.target
+          - http.status_code
+          - service.version
+          histogram_buckets:
+          - 0.1
+          - 0.2
+          - 0.4
+          - 0.8
+          - 1.6
+          - 3.2
+          - 6.4
+          - 12.8
+          max_items: 10000
+          wait: 10s
+          workers: 10
+        span_metrics:
+          dimensions:
+          - http.method
+          - http.target
+          - http.status_code
+          - service.version
+          histogram_buckets:
+          - 0.002
+          - 0.004
+          - 0.008
+          - 0.016
+          - 0.032
+          - 0.064
+          - 0.128
+          - 0.256
+          - 0.512
+          - 1.02
+          - 2.05
+          - 4.1
+      registry:
+        collection_interval: 15s
+        external_labels: {}
+        stale_duration: 15m
+      ring:
+        kvstore:
+          store: memberlist
+      storage:
+        path: /var/tempo/wal
+        remote_write:
+        - headers:
+            X-Scope-OrgID: anonymous
+          send_exemplars: true
+          send_native_histograms: true
+          url: http://nginx.gateway.svc.cluster.local:8080/api/v1/push
+        remote_write_add_org_id_header: true
+        remote_write_flush_deadline: 1m
+      traces_storage:
+        path: /var/tempo/traces
     multitenancy_enabled: false
     overrides:
-      metrics_generator_processors: []
+      metrics_generator_processors: null
       per_tenant_override_config: /runtime-config/overrides.yaml
     querier:
       frontend_worker:
@@ -341,6 +400,65 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
+    app.kubernetes.io/component: metrics-generator
+    app.kubernetes.io/instance: tempo-distributed
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: tempo
+    app.kubernetes.io/part-of: memberlist
+    app.kubernetes.io/version: 2.3.1
+    helm.sh/chart: tempo-distributed-1.8.4
+  name: tempo-distributed-metrics-generator
+  namespace: tracing-system
+spec:
+  ports:
+  - name: grpc
+    port: 9095
+    protocol: TCP
+    targetPort: 9095
+  - name: http-metrics
+    port: 3100
+    protocol: TCP
+    targetPort: 3100
+  selector:
+    app.kubernetes.io/component: metrics-generator
+    app.kubernetes.io/instance: tempo-distributed
+    app.kubernetes.io/name: tempo
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: metrics-generator
+    app.kubernetes.io/instance: tempo-distributed
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: tempo
+    app.kubernetes.io/part-of: memberlist
+    app.kubernetes.io/version: 2.3.1
+    helm.sh/chart: tempo-distributed-1.8.4
+    prometheus.io/service-monitor: "false"
+  name: tempo-distributed-metrics-generator-discovery
+  namespace: tracing-system
+spec:
+  clusterIP: None
+  ports:
+  - name: grpc
+    port: 9095
+    protocol: TCP
+    targetPort: 9095
+  - name: http-metrics
+    port: 3100
+    protocol: TCP
+    targetPort: 3100
+  selector:
+    app.kubernetes.io/component: metrics-generator
+    app.kubernetes.io/instance: tempo-distributed
+    app.kubernetes.io/name: tempo
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
     app.kubernetes.io/component: querier
     app.kubernetes.io/instance: tempo-distributed
     app.kubernetes.io/managed-by: Helm
@@ -453,7 +571,15 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 3b43050793940503e124566dcf1b4d8297b890ab38872f7d3011b33d1885e3c5
+        checksum/config: 06ff41b02bed1a15761bde4958bda0352aa44aa1a2767b5d2d7ac3cea3d0039e
+        logs.agent.grafana.com/scrape: "true"
+        logs.agent.grafana.com/scrub-level: info
+        profiles.grafana.com/cpu.port_name: http-metrics
+        profiles.grafana.com/cpu.scrape: "true"
+        profiles.grafana.com/goroutine.port_name: http-metrics
+        profiles.grafana.com/goroutine.scrape: "true"
+        profiles.grafana.com/memory.port_name: http-metrics
+        profiles.grafana.com/memory.scrape: "true"
       labels:
         app.kubernetes.io/component: compactor
         app.kubernetes.io/instance: tempo-distributed
@@ -543,7 +669,15 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 3b43050793940503e124566dcf1b4d8297b890ab38872f7d3011b33d1885e3c5
+        checksum/config: 06ff41b02bed1a15761bde4958bda0352aa44aa1a2767b5d2d7ac3cea3d0039e
+        logs.agent.grafana.com/scrape: "true"
+        logs.agent.grafana.com/scrub-level: info
+        profiles.grafana.com/cpu.port_name: http-metrics
+        profiles.grafana.com/cpu.scrape: "true"
+        profiles.grafana.com/goroutine.port_name: http-metrics
+        profiles.grafana.com/goroutine.scrape: "true"
+        profiles.grafana.com/memory.port_name: http-metrics
+        profiles.grafana.com/memory.scrape: "true"
       labels:
         app.kubernetes.io/component: distributor
         app.kubernetes.io/instance: tempo-distributed
@@ -652,6 +786,135 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
+    app.kubernetes.io/component: metrics-generator
+    app.kubernetes.io/instance: tempo-distributed
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: tempo
+    app.kubernetes.io/part-of: memberlist
+    app.kubernetes.io/version: 2.3.1
+    helm.sh/chart: tempo-distributed-1.8.4
+  name: tempo-distributed-metrics-generator
+  namespace: tracing-system
+spec:
+  minReadySeconds: 10
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: metrics-generator
+      app.kubernetes.io/instance: tempo-distributed
+      app.kubernetes.io/name: tempo
+  template:
+    metadata:
+      annotations:
+        checksum/config: 06ff41b02bed1a15761bde4958bda0352aa44aa1a2767b5d2d7ac3cea3d0039e
+        logs.agent.grafana.com/scrape: "true"
+        logs.agent.grafana.com/scrub-level: info
+        profiles.grafana.com/cpu.port_name: http-metrics
+        profiles.grafana.com/cpu.scrape: "true"
+        profiles.grafana.com/goroutine.port_name: http-metrics
+        profiles.grafana.com/goroutine.scrape: "true"
+        profiles.grafana.com/memory.port_name: http-metrics
+        profiles.grafana.com/memory.scrape: "true"
+      labels:
+        app.kubernetes.io/component: metrics-generator
+        app.kubernetes.io/instance: tempo-distributed
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: tempo
+        app.kubernetes.io/part-of: memberlist
+        app.kubernetes.io/version: 2.3.1
+        helm.sh/chart: tempo-distributed-1.8.4
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/component: metrics-generator
+                  app.kubernetes.io/instance: tempo-distributed
+                  app.kubernetes.io/name: tempo
+              topologyKey: topology.kubernetes.io/zone
+            weight: 100
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/component: metrics-generator
+                app.kubernetes.io/instance: tempo-distributed
+                app.kubernetes.io/name: tempo
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - args:
+        - -target=metrics-generator
+        - -config.file=/conf/tempo.yaml
+        - -mem-ballast-size-mbs=1024
+        image: docker.io/grafana/tempo:2.4.0
+        imagePullPolicy: IfNotPresent
+        name: metrics-generator
+        ports:
+        - containerPort: 9095
+          name: grpc
+        - containerPort: 7946
+          name: http-memberlist
+        - containerPort: 3100
+          name: http-metrics
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http-metrics
+          initialDelaySeconds: 30
+          timeoutSeconds: 1
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 1000
+          runAsNonRoot: true
+          runAsUser: 1000
+        volumeMounts:
+        - mountPath: /conf
+          name: config
+        - mountPath: /runtime-config
+          name: runtime-config
+        - mountPath: /var/tempo
+          name: wal
+      enableServiceLinks: false
+      securityContext:
+        fsGroup: 1000
+      serviceAccountName: tempo-distributed
+      terminationGracePeriodSeconds: 300
+      topologySpreadConstraints:
+      - labelSelector:
+          matchLabels:
+            app.kubernetes.io/component: metrics-generator
+            app.kubernetes.io/instance: tempo-distributed
+            app.kubernetes.io/name: tempo
+        maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+      volumes:
+      - configMap:
+          items:
+          - key: tempo.yaml
+            path: tempo.yaml
+          name: tempo-distributed-config
+        name: config
+      - configMap:
+          items:
+          - key: overrides.yaml
+            path: overrides.yaml
+          name: tempo-distributed-runtime
+        name: runtime-config
+      - emptyDir: {}
+        name: wal
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
     app.kubernetes.io/component: querier
     app.kubernetes.io/instance: tempo-distributed
     app.kubernetes.io/managed-by: Helm
@@ -677,7 +940,15 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 3b43050793940503e124566dcf1b4d8297b890ab38872f7d3011b33d1885e3c5
+        checksum/config: 06ff41b02bed1a15761bde4958bda0352aa44aa1a2767b5d2d7ac3cea3d0039e
+        logs.agent.grafana.com/scrape: "true"
+        logs.agent.grafana.com/scrub-level: info
+        profiles.grafana.com/cpu.port_name: http-metrics
+        profiles.grafana.com/cpu.scrape: "true"
+        profiles.grafana.com/goroutine.port_name: http-metrics
+        profiles.grafana.com/goroutine.scrape: "true"
+        profiles.grafana.com/memory.port_name: http-metrics
+        profiles.grafana.com/memory.scrape: "true"
       labels:
         app.kubernetes.io/component: querier
         app.kubernetes.io/instance: tempo-distributed
@@ -804,7 +1075,15 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 3b43050793940503e124566dcf1b4d8297b890ab38872f7d3011b33d1885e3c5
+        checksum/config: 06ff41b02bed1a15761bde4958bda0352aa44aa1a2767b5d2d7ac3cea3d0039e
+        logs.agent.grafana.com/scrape: "true"
+        logs.agent.grafana.com/scrub-level: info
+        profiles.grafana.com/cpu.port_name: http-metrics
+        profiles.grafana.com/cpu.scrape: "true"
+        profiles.grafana.com/goroutine.port_name: http-metrics
+        profiles.grafana.com/goroutine.scrape: "true"
+        profiles.grafana.com/memory.port_name: http-metrics
+        profiles.grafana.com/memory.scrape: "true"
       labels:
         app.kubernetes.io/component: query-frontend
         app.kubernetes.io/instance: tempo-distributed
@@ -920,7 +1199,15 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 3b43050793940503e124566dcf1b4d8297b890ab38872f7d3011b33d1885e3c5
+        checksum/config: 06ff41b02bed1a15761bde4958bda0352aa44aa1a2767b5d2d7ac3cea3d0039e
+        logs.agent.grafana.com/scrape: "true"
+        logs.agent.grafana.com/scrub-level: info
+        profiles.grafana.com/cpu.port_name: http-metrics
+        profiles.grafana.com/cpu.scrape: "true"
+        profiles.grafana.com/goroutine.port_name: http-metrics
+        profiles.grafana.com/goroutine.scrape: "true"
+        profiles.grafana.com/memory.port_name: http-metrics
+        profiles.grafana.com/memory.scrape: "true"
       labels:
         app.kubernetes.io/component: ingester
         app.kubernetes.io/instance: tempo-distributed

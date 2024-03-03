@@ -1,0 +1,33 @@
+# ----------------------------------------------------
+# apiVersion and kind of Kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: monitoring-system
+
+labels:
+- includeSelectors: true
+  pairs:
+    app.kubernetes.io/component: mimir
+    app.kubernetes.io/instance: mimir-monolithic-mode
+    app.kubernetes.io/name: mimir
+- includeSelectors: false
+  pairs:
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/version: 2.11.0
+
+images:
+- name: docker.io/grafana/mimir
+  newTag: 2.11.0
+
+resources:
+- gossip-ring-headless-svc.yaml
+- mimir-dep.yaml
+- mimir-svc.yaml
+- mimir-servicemonitor.yaml
+
+# Horizontally scale up support(Monolithic mode)
+# https://grafana.com/docs/mimir/latest/references/architecture/deployment-modes/#monolithic-mode
+replicas:
+- count: 1
+  name: mimir

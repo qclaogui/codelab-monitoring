@@ -9,7 +9,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-- ../metrics
+- ../metrics/mimir
 - ../logs/loki
 - ../profiles/pyroscope
 - ../traces/tempo
@@ -48,7 +48,6 @@ secretGenerator:
 
 - name: mimir-env
   namespace: monitoring-system
-  behavior: replace
   literals:
   - MIMIR_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
   - JAEGER_SERVICE_NAME=mimir
@@ -78,7 +77,6 @@ configMapGenerator:
 
 - name: agent-config
   namespace: monitoring-system
-  behavior: replace
   options:
     disableNameSuffixHash: true
   files:
@@ -92,12 +90,10 @@ configMapGenerator:
 
 - name: mimir-config
   namespace: monitoring-system
-  behavior: replace
   files:
   - configs/mimir.yaml
 - name: runtime-config
   namespace: monitoring-system
-  behavior: replace
   files:
   - runtime.yaml=configs/mimir-runtime.yaml
 

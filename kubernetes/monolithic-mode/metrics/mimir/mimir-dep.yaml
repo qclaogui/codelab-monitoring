@@ -2,20 +2,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
-    app: mimir
   name: mimir
-  namespace: monitoring-system
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: mimir
+      app.kubernetes.io/part-of: memberlist
   template:
     metadata:
+      annotations:
+        logs.agent.grafana.com/scrape: "true"
+        logs.agent.grafana.com/scrub-level: info
+        profiles.grafana.com/cpu.port_name: http-metrics
+        profiles.grafana.com/cpu.scrape: "true"
+        profiles.grafana.com/goroutine.port_name: http-metrics
+        profiles.grafana.com/goroutine.scrape: "true"
+        profiles.grafana.com/memory.port_name: http-metrics
+        profiles.grafana.com/memory.scrape: "true"
       labels:
-        app: mimir
-        gossip_ring_member: "true"
+        app.kubernetes.io/part-of: memberlist
     spec:
       containers:
       - args:
@@ -31,7 +36,7 @@ spec:
         envFrom:
         - secretRef:
             name: mimir-env
-        image: grafana/mimir
+        image: docker.io/grafana/mimir
         imagePullPolicy: IfNotPresent
         name: mimir
         resources:

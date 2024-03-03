@@ -113,7 +113,7 @@ services:
       - ../../common/config/grafana/provisioning:/etc/grafana/provisioning
       - ../../common/config/tempo/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml # load datasources
       - ../../../monitoring-mixins/mimir-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/mimir-mixin
-      - ../../../monitoring-mixins/tempo-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/tempo-mixin
+      # - ../../../monitoring-mixins/tempo-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/tempo-mixin
       - ../../../monitoring-mixins/agent-flow-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/agent-flow-mixin
       - ../../../monitoring-mixins/go-runtime-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/go-runtime-mixin
     environment:
@@ -121,6 +121,6 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin_password}
       - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor tracesEmbeddedFlameGraph traceqlSearch correlations metricsSummary traceToMetrics traceToProfiles
       - GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS=agent:4317
-      - GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES=namespace:monitoring-system
+      - GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES=service.namespace:monitoring-system
     ports:
       - "3000:3000"

@@ -188,6 +188,10 @@ otelcol.receiver.otlp "containers" {
 }
 
 otelcol.processor.batch "containers" {
+	send_batch_size     = 16384
+	send_batch_max_size = 0
+	timeout             = "2s"
+
 	output {
 		metrics = [otelcol.processor.memory_limiter.containers.input]
 		logs    = [otelcol.processor.memory_limiter.containers.input]
@@ -224,7 +228,7 @@ loki.process "containers" {
 	}
 
 	stage.tenant {
-		value = "fake"
+		value = "anonymous"
 	}
 
 	forward_to = [module.file.docker_compose.exports.logs_receiver]

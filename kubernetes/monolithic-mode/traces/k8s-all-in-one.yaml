@@ -96,15 +96,21 @@ data:
     {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent-modules\")
     + \"/traces.river\"\n\n\targuments {\n\t\tmetrics_forward_to = [module.file.lgtmp.exports.metrics_receiver]\n\t\tlogs_forward_to
     \   = [module.file.lgtmp.exports.logs_receiver]\n\t\ttraces_forward_to  = [module.file.lgtmp.exports.traces_receiver]\n\t\tcluster
-    \           = coalesce(env(\"CLUSTER\"), \"k3d-k3s-codelab\")\n\t}\n}\n\n/********************************************\n
+    \           = coalesce(env(\"CLUSTER\"), \"k3d-k3s-codelab\")\n\t}\n}\n\ntracing
+    {\n\tsampling_fraction = 0.8\n\twrite_to          = [otelcol.processor.batch.containers.input]\n}\n\notelcol.processor.batch
+    \"containers\" {\n\tsend_batch_size     = 16384\n\tsend_batch_max_size = 0\n\ttimeout
+    \            = \"2s\"\n\n\toutput {\n\t\tmetrics = [otelcol.processor.memory_limiter.containers.input]\n\t\ttraces
+    \ = [otelcol.processor.memory_limiter.containers.input]\n\t}\n}\n\notelcol.processor.memory_limiter
+    \"containers\" {\n\tcheck_interval         = \"1s\"\n\tlimit_percentage       =
+    50\n\tspike_limit_percentage = 30\n\n\toutput {\n\t\tmetrics = [otelcol.processor.k8sattributes.containers.input]\n\t\ttraces
+    \ = [otelcol.processor.k8sattributes.containers.input]\n\t}\n}\n\notelcol.processor.k8sattributes
+    \"containers\" {\n\toutput {\n\t\tmetrics = [otelcol.exporter.prometheus.containers.input]\n\t\ttraces
+    \ = [module.file.lgtmp.exports.traces_receiver]\n\t}\n}\n\notelcol.exporter.prometheus
+    \"containers\" {\n\tforward_to = [module.file.lgtmp.exports.metrics_receiver]\n}\n\n/********************************************\n
     * Metrics\n ********************************************/\nmodule.file \"metrics_primary\"
     {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent-modules\")
     + \"/metrics.river\"\n\n\targuments {\n\t\tforward_to = [module.file.lgtmp.exports.metrics_receiver]\n\t\tclustering
-    = true\n\t}\n}\n\n/********************************************\n * Agent Integrations\n
-    ********************************************/\nmodule.file \"agent_integrations\"
-    {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent-modules\")
-    + \"/integrations.river\"\n\n\targuments {\n\t\tname       = \"agent-integrations\"\n\t\tnamespace
-    \ = \"monitoring-system\"\n\t\tforward_to = [module.file.lgtmp.exports.metrics_receiver]\n\t}\n}\n"
+    = true\n\t}\n}\n"
 kind: ConfigMap
 metadata:
   name: agent-config
@@ -430,26 +436,38 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: gossip-ring
+    app.kubernetes.io/component: mimir
+    app.kubernetes.io/instance: mimir-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: mimir
+    app.kubernetes.io/version: 2.11.0
     prometheus.io/service-monitor: "false"
   name: gossip-ring-headless
   namespace: monitoring-system
 spec:
   clusterIP: None
   ports:
-  - name: tcp-gossip-ring
+  - appProtocol: tcp
+    name: tcp-gossip-ring
     port: 7946
     protocol: TCP
     targetPort: 7946
   publishNotReadyAddresses: true
   selector:
-    gossip_ring_member: "true"
+    app.kubernetes.io/component: mimir
+    app.kubernetes.io/instance: mimir-monolithic-mode
+    app.kubernetes.io/name: mimir
+    app.kubernetes.io/part-of: memberlist
 ---
 apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: mimir
+    app.kubernetes.io/component: mimir
+    app.kubernetes.io/instance: mimir-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: mimir
+    app.kubernetes.io/version: 2.11.0
   name: mimir
   namespace: monitoring-system
 spec:
@@ -459,7 +477,9 @@ spec:
   - name: grpc-distribut
     port: 9095
   selector:
-    app: mimir
+    app.kubernetes.io/component: mimir
+    app.kubernetes.io/instance: mimir-monolithic-mode
+    app.kubernetes.io/name: mimir
 ---
 apiVersion: v1
 kind: Service
@@ -529,19 +549,37 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: mimir
+    app.kubernetes.io/component: mimir
+    app.kubernetes.io/instance: mimir-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: mimir
+    app.kubernetes.io/version: 2.11.0
   name: mimir
   namespace: monitoring-system
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: mimir
+      app.kubernetes.io/component: mimir
+      app.kubernetes.io/instance: mimir-monolithic-mode
+      app.kubernetes.io/name: mimir
+      app.kubernetes.io/part-of: memberlist
   template:
     metadata:
+      annotations:
+        logs.agent.grafana.com/scrape: "true"
+        logs.agent.grafana.com/scrub-level: info
+        profiles.grafana.com/cpu.port_name: http-metrics
+        profiles.grafana.com/cpu.scrape: "true"
+        profiles.grafana.com/goroutine.port_name: http-metrics
+        profiles.grafana.com/goroutine.scrape: "true"
+        profiles.grafana.com/memory.port_name: http-metrics
+        profiles.grafana.com/memory.scrape: "true"
       labels:
-        app: mimir
-        gossip_ring_member: "true"
+        app.kubernetes.io/component: mimir
+        app.kubernetes.io/instance: mimir-monolithic-mode
+        app.kubernetes.io/name: mimir
+        app.kubernetes.io/part-of: memberlist
     spec:
       containers:
       - args:
@@ -557,7 +595,7 @@ spec:
         envFrom:
         - secretRef:
             name: mimir-env-kkhtd4d9mb
-        image: grafana/mimir:2.11.0
+        image: docker.io/grafana/mimir:2.11.0
         imagePullPolicy: IfNotPresent
         name: mimir
         ports:
@@ -614,6 +652,14 @@ spec:
     metadata:
       annotations:
         checksum/config: f1d170a0130edd0da1b51eab83df1f9642ad10ca67130fd306f69cabe9540145
+        logs.agent.grafana.com/scrape: "true"
+        logs.agent.grafana.com/scrub-level: info
+        profiles.grafana.com/cpu.port_name: prom-metrics
+        profiles.grafana.com/cpu.scrape: "true"
+        profiles.grafana.com/goroutine.port_name: prom-metrics
+        profiles.grafana.com/goroutine.scrape: "true"
+        profiles.grafana.com/memory.port_name: prom-metrics
+        profiles.grafana.com/memory.scrape: "true"
       labels:
         app.kubernetes.io/instance: tempo
         app.kubernetes.io/name: tempo
@@ -676,6 +722,12 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
+  labels:
+    app.kubernetes.io/component: mimir
+    app.kubernetes.io/instance: mimir-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: mimir
+    app.kubernetes.io/version: 2.11.0
   name: mimir
   namespace: monitoring-system
 spec:
@@ -697,7 +749,9 @@ spec:
       values:
       - "false"
     matchLabels:
-      app: mimir
+      app.kubernetes.io/component: mimir
+      app.kubernetes.io/instance: mimir-monolithic-mode
+      app.kubernetes.io/name: mimir
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor

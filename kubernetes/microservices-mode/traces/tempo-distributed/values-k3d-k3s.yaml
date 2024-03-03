@@ -7,6 +7,15 @@ reportingEnabled: false
 multitenancyEnabled: false
 
 ingester:
+  podAnnotations:
+    logs.agent.grafana.com/scrape: "true"
+    logs.agent.grafana.com/scrub-level: "info"
+    profiles.grafana.com/cpu.scrape: "true"
+    profiles.grafana.com/cpu.port_name: http-metrics
+    profiles.grafana.com/goroutine.scrape: "true"
+    profiles.grafana.com/goroutine.port_name: http-metrics
+    profiles.grafana.com/memory.scrape: "true"
+    profiles.grafana.com/memory.port_name: http-metrics
   extraArgs:
   - -config.expand-env=true
   extraEnvFrom:
@@ -14,17 +23,57 @@ ingester:
       name: tempo-distributed-env
 
 metricsGenerator:
-  enabled: false
+  podAnnotations:
+    logs.agent.grafana.com/scrape: "true"
+    logs.agent.grafana.com/scrub-level: "info"
+    profiles.grafana.com/cpu.scrape: "true"
+    profiles.grafana.com/cpu.port_name: http-metrics
+    profiles.grafana.com/goroutine.scrape: "true"
+    profiles.grafana.com/goroutine.port_name: http-metrics
+    profiles.grafana.com/memory.scrape: "true"
+    profiles.grafana.com/memory.port_name: http-metrics
+  enabled: true
   extraArgs: []
   extraEnvFrom: []
   config:
-    registry:
-      collection_interval: 15s
-      external_labels: {}
+    processor:
+      span_metrics:
+        # Configure extra dimensions to add as metric labels.
+        dimensions:
+        - http.method
+        - http.target
+        - http.status_code
+        - service.version
+      # Service graph metrics create node and edge metrics for determinng service interactions.
+      service_graphs:
+        # Configure extra dimensions to add as metric labels.
+        dimensions:
+        - http.method
+        - http.target
+        - http.status_code
+        - service.version
     storage:
-      remote_write: []
+      path: /var/tempo/wal
+      remote_write_add_org_id_header: true
+      remote_write:
+      - url: http://nginx.gateway.svc.cluster.local:8080/api/v1/push
+        send_exemplars: true
+        send_native_histograms: true
+        headers:
+          X-Scope-OrgID: "anonymous"
+    # traces_storage:
+    #   path: /var/tempo/traces
 
 distributor:
+  podAnnotations:
+    logs.agent.grafana.com/scrape: "true"
+    logs.agent.grafana.com/scrub-level: "info"
+    profiles.grafana.com/cpu.scrape: "true"
+    profiles.grafana.com/cpu.port_name: http-metrics
+    profiles.grafana.com/goroutine.scrape: "true"
+    profiles.grafana.com/goroutine.port_name: http-metrics
+    profiles.grafana.com/memory.scrape: "true"
+    profiles.grafana.com/memory.port_name: http-metrics
   extraArgs:
   - -config.expand-env=true
   extraEnvFrom:
@@ -32,6 +81,15 @@ distributor:
       name: tempo-distributed-env
 
 compactor:
+  podAnnotations:
+    logs.agent.grafana.com/scrape: "true"
+    logs.agent.grafana.com/scrub-level: "info"
+    profiles.grafana.com/cpu.scrape: "true"
+    profiles.grafana.com/cpu.port_name: http-metrics
+    profiles.grafana.com/goroutine.scrape: "true"
+    profiles.grafana.com/goroutine.port_name: http-metrics
+    profiles.grafana.com/memory.scrape: "true"
+    profiles.grafana.com/memory.port_name: http-metrics
   extraArgs:
   - -config.expand-env=true
   extraEnvFrom:
@@ -39,6 +97,15 @@ compactor:
       name: tempo-distributed-env
 
 querier:
+  podAnnotations:
+    logs.agent.grafana.com/scrape: "true"
+    logs.agent.grafana.com/scrub-level: "info"
+    profiles.grafana.com/cpu.scrape: "true"
+    profiles.grafana.com/cpu.port_name: http-metrics
+    profiles.grafana.com/goroutine.scrape: "true"
+    profiles.grafana.com/goroutine.port_name: http-metrics
+    profiles.grafana.com/memory.scrape: "true"
+    profiles.grafana.com/memory.port_name: http-metrics
   extraArgs:
   - -config.expand-env=true
   extraEnvFrom:
@@ -46,6 +113,15 @@ querier:
       name: tempo-distributed-env
 
 queryFrontend:
+  podAnnotations:
+    logs.agent.grafana.com/scrape: "true"
+    logs.agent.grafana.com/scrub-level: "info"
+    profiles.grafana.com/cpu.scrape: "true"
+    profiles.grafana.com/cpu.port_name: http-metrics
+    profiles.grafana.com/goroutine.scrape: "true"
+    profiles.grafana.com/goroutine.port_name: http-metrics
+    profiles.grafana.com/memory.scrape: "true"
+    profiles.grafana.com/memory.port_name: http-metrics
   extraArgs:
   - -config.expand-env=true
   extraEnvFrom:

@@ -1,0 +1,167 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: mimir
+    app.kubernetes.io/instance: mimir-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: mimir
+    app.kubernetes.io/version: 2.11.0
+    prometheus.io/service-monitor: "false"
+  name: gossip-ring-headless
+  namespace: monitoring-system
+spec:
+  clusterIP: None
+  ports:
+  - appProtocol: tcp
+    name: tcp-gossip-ring
+    port: 7946
+    protocol: TCP
+    targetPort: 7946
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/component: mimir
+    app.kubernetes.io/instance: mimir-monolithic-mode
+    app.kubernetes.io/name: mimir
+    app.kubernetes.io/part-of: memberlist
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: mimir
+    app.kubernetes.io/instance: mimir-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: mimir
+    app.kubernetes.io/version: 2.11.0
+  name: mimir
+  namespace: monitoring-system
+spec:
+  ports:
+  - name: http-metrics
+    port: 8080
+  - name: grpc-distribut
+    port: 9095
+  selector:
+    app.kubernetes.io/component: mimir
+    app.kubernetes.io/instance: mimir-monolithic-mode
+    app.kubernetes.io/name: mimir
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: mimir
+    app.kubernetes.io/instance: mimir-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: mimir
+    app.kubernetes.io/version: 2.11.0
+  name: mimir
+  namespace: monitoring-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: mimir
+      app.kubernetes.io/instance: mimir-monolithic-mode
+      app.kubernetes.io/name: mimir
+      app.kubernetes.io/part-of: memberlist
+  template:
+    metadata:
+      annotations:
+        logs.agent.grafana.com/scrape: "true"
+        logs.agent.grafana.com/scrub-level: info
+        profiles.grafana.com/cpu.port_name: http-metrics
+        profiles.grafana.com/cpu.scrape: "true"
+        profiles.grafana.com/goroutine.port_name: http-metrics
+        profiles.grafana.com/goroutine.scrape: "true"
+        profiles.grafana.com/memory.port_name: http-metrics
+        profiles.grafana.com/memory.scrape: "true"
+      labels:
+        app.kubernetes.io/component: mimir
+        app.kubernetes.io/instance: mimir-monolithic-mode
+        app.kubernetes.io/name: mimir
+        app.kubernetes.io/part-of: memberlist
+    spec:
+      containers:
+      - args:
+        - -target=all
+        - -config.expand-env=true
+        - -config.file=/etc/mimir/mimir.yaml
+        - -memberlist.bind-addr=$(POD_IP)
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        envFrom:
+        - secretRef:
+            name: mimir-env
+        image: docker.io/grafana/mimir:2.11.0
+        imagePullPolicy: IfNotPresent
+        name: mimir
+        ports:
+        - containerPort: 8080
+          name: http-metrics
+        - containerPort: 9095
+          name: grpc-distribut
+        - containerPort: 7946
+          name: http-memberlist
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http-metrics
+        resources:
+          limits:
+            cpu: 999m
+            memory: 1Gi
+          requests:
+            cpu: 10m
+            memory: 55Mi
+        volumeMounts:
+        - mountPath: /etc/mimir
+          name: mimir-config
+        - mountPath: /var/mimir
+          name: runtime-config
+      terminationGracePeriodSeconds: 60
+      volumes:
+      - configMap:
+          name: mimir-config
+        name: mimir-config
+      - configMap:
+          name: runtime-config
+        name: runtime-config
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/component: mimir
+    app.kubernetes.io/instance: mimir-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: mimir
+    app.kubernetes.io/version: 2.11.0
+  name: mimir
+  namespace: monitoring-system
+spec:
+  endpoints:
+  - port: http-metrics
+    relabelings:
+    - replacement: monitoring-system/mimir
+      sourceLabels:
+      - job
+      targetLabel: job
+    scheme: http
+  namespaceSelector:
+    matchNames:
+    - monitoring-system
+  selector:
+    matchExpressions:
+    - key: prometheus.io/service-monitor
+      operator: NotIn
+      values:
+      - "false"
+    matchLabels:
+      app.kubernetes.io/component: mimir
+      app.kubernetes.io/instance: mimir-monolithic-mode
+      app.kubernetes.io/name: mimir
