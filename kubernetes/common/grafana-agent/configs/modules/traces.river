@@ -1,7 +1,15 @@
 /*
 Module: traces
 */
-argument "forward_to" {
+argument "traces_forward_to" {
+	optional = false
+}
+
+argument "logs_forward_to" {
+	optional = false
+}
+
+argument "metrics_forward_to" {
 	optional = false
 }
 
@@ -20,8 +28,41 @@ argument "otlp_grpc_endpoint" {
 	default  = "0.0.0.0:4317"
 }
 
+/********************************************
+ * Jaeger for Metrics Logs Traces
+ ********************************************/
+
+otelcol.receiver.jaeger "default" {
+	protocols {
+		grpc {
+			endpoint = "0.0.0.0:14250"
+		}
+
+		thrift_http {
+			endpoint = "0.0.0.0:14268"
+		}
+
+		thrift_binary {
+			endpoint = "0.0.0.0:6832"
+		}
+
+		thrift_compact {
+			endpoint = "0.0.0.0:6831"
+		}
+	}
+
+	output {
+		metrics = [otelcol.processor.batch.default.input]
+		logs    = [otelcol.processor.batch.default.input]
+		traces  = [otelcol.processor.batch.default.input]
+	}
+}
+
+/********************************************
+ * Otelcol for Metrics Logs Traces
+ ********************************************/
 // https://grafana.com/docs/agent/latest/flow/reference/components/otelcol.receiver.otlp/
-otelcol.receiver.otlp "trace_receiver" {
+otelcol.receiver.otlp "default" {
 	grpc {
 		endpoint = argument.otlp_grpc_endpoint.value
 	}
@@ -31,7 +72,12 @@ otelcol.receiver.otlp "trace_receiver" {
 	}
 
 	output {
-		traces = [otelcol.processor.batch.default.input]
+		metrics = [otelcol.processor.batch.default.input]
+		logs    = [otelcol.processor.batch.default.input]
+		traces  = [
+			otelcol.processor.batch.default.input,
+			otelcol.connector.spanlogs.autologging.input,
+		]
 	}
 }
 
@@ -41,8 +87,61 @@ otelcol.processor.batch "default" {
 	timeout             = "2s"
 
 	output {
-		traces = [otelcol.processor.memory_limiter.default.input]
+		metrics = [otelcol.processor.memory_limiter.default.input]
+		logs    = [otelcol.processor.memory_limiter.default.input]
+		traces  = [otelcol.processor.memory_limiter.default.input]
 	}
+}
+
+// The OpenTelemetry spanlog connector processes incoming trace spans and extracts data from them ready
+// for logging.
+otelcol.connector.spanlogs "autologging" {
+	// We only want to output a line for each root span (ie. every single trace), and not for every
+	// process or span (outputting a line for every span would be extremely verbose).
+	spans     = false
+	roots     = true
+	processes = false
+
+	// We want to ensure that the following three span attributes are included in the log line, if present.
+	span_attributes = [
+		"http.method",
+		"http.target",
+		"http.status_code",
+	]
+
+	// Overrides the default key in the log line to be `traceId`, which is then used by Grafana to
+	// identify the trace ID for correlation with the Tempo datasource.
+	overrides {
+		trace_id_key = "traceId"
+	}
+
+	// Send to the OpenTelemetry Loki exporter.
+	output {
+		logs = [otelcol.exporter.loki.autologging.input]
+	}
+}
+
+// Simply forwards the incoming OpenTelemetry log format out as a Loki log.
+// We need this stage to ensure we can then process the logline as a Loki object.
+otelcol.exporter.loki "autologging" {
+	forward_to = [loki.process.autologging.receiver]
+}
+
+// The Loki processor allows us to accept a correctly formatted Loki log and mutate it into
+// a set of fields for output.
+loki.process "autologging" {
+	// The JSON stage simply extracts the `body` (the actual logline) from the Loki log, ignoring
+	// all other fields.
+	stage.json {
+		expressions = {"body" = ""}
+	}
+	// The output stage takes the body (the main logline) and uses this as the source for the output
+	// logline. In this case, it essentially turns it into logfmt.
+	stage.output {
+		source = "body"
+	}
+
+	forward_to = [loki.process.traceslogs.receiver]
 }
 
 otelcol.processor.memory_limiter "default" {
@@ -53,18 +152,37 @@ otelcol.processor.memory_limiter "default" {
 	spike_limit_percentage = 30
 
 	output {
-		traces = [otelcol.processor.attributes.default.input]
+		metrics = [otelcol.processor.k8sattributes.default.input]
+		logs    = [otelcol.processor.k8sattributes.default.input]
+		traces  = [otelcol.processor.k8sattributes.default.input]
 	}
 }
 
-otelcol.processor.attributes "default" {
-	action {
-		key    = "cluster"
-		value  = argument.cluster.value
-		action = "insert"
+otelcol.processor.k8sattributes "default" {
+	output {
+		metrics = [otelcol.exporter.prometheus.tracesmetrics.input]
+		logs    = [otelcol.exporter.loki.traceslogs.input]
+		traces  = argument.traces_forward_to.value
+	}
+}
+
+otelcol.exporter.prometheus "tracesmetrics" {
+	forward_to = argument.metrics_forward_to.value
+}
+
+otelcol.exporter.loki "traceslogs" {
+	forward_to = [loki.process.traceslogs.receiver]
+}
+
+loki.process "traceslogs" {
+	stage.drop {
+		longer_than = "8KB"
+		older_than  = "12h"
 	}
 
-	output {
-		traces = argument.forward_to.value
+	stage.tenant {
+		value = "fake"
 	}
+
+	forward_to = argument.logs_forward_to.value
 }

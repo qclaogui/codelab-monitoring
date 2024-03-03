@@ -1,9 +1,12 @@
 # For more information on this configuration, see the complete reference guide at
 # https://grafana.com/docs/tempo/latest/configuration/
 
+stream_over_http_enabled: true
+
 multitenancy_enabled: false
 usage_report:
   reporting_enabled: false
+
 compactor:
   compaction:
     block_retention: 1h
@@ -15,14 +18,18 @@ distributor:
   receivers:
     otlp:
       protocols:
-        http:
         grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
 
   ring:
     kvstore:
       store: memberlist
 
 ingester:
+  trace_idle_period: 10s
+  max_block_bytes: 1_000_000
   max_block_duration: 5m
   lifecycler:
     ring:
@@ -38,23 +45,37 @@ memberlist:
 querier:
   frontend_worker:
     frontend_address: tempo-distributed-query-frontend-discovery:9095
-  max_concurrent_queries: 20
 
-query_frontend:
-  max_outstanding_per_tenant: 2000
-  max_retries: 2
-  search:
-    duration_slo: 5s
-    throughput_bytes_slo: 1.073741824e+09
-  trace_by_id:
-    duration_slo: 5s
+metrics_generator:
+  processor:
+    span_metrics:
+      # Configure extra dimensions to add as metric labels.
+      dimensions:
+      - http.method
+      - http.target
+      - http.status_code
+      - service.version
+    # Service graph metrics create node and edge metrics for determinng service interactions.
+    service_graphs:
+      # Configure extra dimensions to add as metric labels.
+      dimensions:
+      - http.method
+      - http.target
+      - http.status_code
+      - service.version
+  storage:
+    path: /tmp/tempo/generator/wal
+    remote_write_add_org_id_header: true
+    remote_write:
+    - url: http://nginx.gateway.svc.cluster.local:8080/api/v1/push
+      send_exemplars: true
+      send_native_histograms: true
+      headers:
+        X-Scope-OrgID: "anonymous"
 
 server:
-  grpc_server_max_recv_msg_size: 4194304
-  grpc_server_max_send_msg_size: 4194304
   http_listen_port: 3100
   grpc_listen_port: 9095
-  log_level: info
 
 storage:
   trace:
@@ -71,3 +92,8 @@ storage:
 
 overrides:
   per_tenant_override_config: /runtime-config/overrides.yaml
+  defaults:
+    metrics_generator:
+      processors:
+      - service-graphs
+      - span-metrics

@@ -353,7 +353,6 @@ data:
     server:
       grpc_listen_port: 9095
       http_listen_port: 3100
-      log_level: warn
 
     # https://grafana.com/docs/loki/latest/configure/#use-environment-variables-in-the-configuration
     common:
@@ -417,9 +416,6 @@ data:
         at: 250ms
         max_per_second: 20
         up_to: 3
-
-    tracing:
-      enabled: false
 kind: ConfigMap
 metadata:
   labels:
@@ -467,8 +463,9 @@ data:
     {\n\t\tforward_to = [module.file.lgtmp.exports.logs_receiver]\n\t}\n}\n\n/********************************************\n
     * Traces\n ********************************************/\nmodule.file \"traces_primary\"
     {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent-modules\")
-    + \"/traces.river\"\n\n\targuments {\n\t\tforward_to = [module.file.lgtmp.exports.traces_receiver]\n\t\tcluster
-    \   = coalesce(env(\"CLUSTER\"), \"k3d-k3s-codelab\")\n\t}\n}\n\n/********************************************\n
+    + \"/traces.river\"\n\n\targuments {\n\t\tmetrics_forward_to = [module.file.lgtmp.exports.metrics_receiver]\n\t\tlogs_forward_to
+    \   = [module.file.lgtmp.exports.logs_receiver]\n\t\ttraces_forward_to  = [module.file.lgtmp.exports.traces_receiver]\n\t\tcluster
+    \           = coalesce(env(\"CLUSTER\"), \"k3d-k3s-codelab\")\n\t}\n}\n\n/********************************************\n
     * Profiles\n ********************************************/\nmodule.file \"profiles_primary\"
     {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent-modules\")
     + \"/profiles.river\"\n\n\targuments {\n\t\tforward_to = [module.file.lgtmp.exports.profiles_receiver]\n\t\tclustering
@@ -543,17 +540,45 @@ data:
       editable: true
       apiVersion: 1
       jsonData:
+        search:
+          hide: false
         lokiSearch:
           datasourceUid: logs
         nodeGraph:
           enabled: true
         serviceMap:
           datasourceUid: metrics
+        traceQuery:
+          timeShiftEnabled: true
+          spanStartTimeShift: '-30m'
+          spanEndTimeShift: '30m'
+        spanBar:
+          type: 'Tag'
+          tag: 'http.path'
         tracesToMetrics:
           datasourceUid: metrics
+          spanStartTimeShift: '-30m'
+          spanEndTimeShift: '30m'
+          tags: [{ key: 'service.name', value: 'service' }, { key: 'span_name' }, { key: 'http_method' }]
+          queries:
+          - name: '(R) Rate'
+            query: 'sum(rate(traces_spanmetrics_calls_total{$$__tags}[$$__rate_interval]))'
+          - name: '(E) Error Rate'
+            query: 'sum(rate(traces_spanmetrics_calls_total{$$__tags, status_code="STATUS_CODE_ERROR"}[$$__rate_interval]))'
+          - name: '(D) Duration'
+            query: 'histogram_quantile(0.9, sum(rate(traces_spanmetrics_latency_bucket{$$__tags}[$$__rate_interval])) by (le))'
         tracesToLogsV2:
-          customQuery: false
           datasourceUid: logs
+          spanStartTimeShift: '-30m'
+          spanEndTimeShift: '30m'
+          tags: [{ key: 'service.name', value: 'app' }, { key: 'namespace' }, { key: 'cluster' }]
+          filterByTraceID: false
+          filterBySpanID: false
+        tracesToProfiles:
+          customQuery: false
+          datasourceUid: "profiles"
+          profileTypeId: "process_cpu:cpu:nanoseconds:cpu:nanoseconds"
+          tags: [{ key: 'service.name', value: 'service_name' }]
 
     # Pyroscope for profiles
     - name: Profiles
@@ -680,10 +705,10 @@ data:
       backend: s3
       s3:
         bucket_name: pyroscope-data
-        endpoint: ${PYROSCOPE_STORAGE_S3_ENDPOINT:minio.minio-system.svc:443}
-        access_key_id: ${PYROSCOPE_STORAGE_S3_ACCESS_KEY_ID:lgtmp}
-        secret_access_key: ${PYROSCOPE_STORAGE_S3_SECRET_ACCESS_KEY:supersecret}
-        insecure: ${PYROSCOPE_STORAGE_S3_INSECURE:false}
+        endpoint: ${PYROSCOPE_STORAGE_S3_ENDPOINT:-minio.minio-system.svc:443}
+        access_key_id: ${PYROSCOPE_STORAGE_S3_ACCESS_KEY_ID:-lgtmp}
+        secret_access_key: ${PYROSCOPE_STORAGE_S3_SECRET_ACCESS_KEY:-supersecret}
+        insecure: ${PYROSCOPE_STORAGE_S3_INSECURE:-false}
         http:
           insecure_skip_verify: true
 kind: ConfigMap
@@ -721,13 +746,20 @@ data:
         block_retention: 7d
         ingestion_burst_size_bytes: 20000000
         ingestion_rate_limit_bytes: 15000000
-  tempo.yaml: |-
+  tempo.yaml: |
+    # For more information on this configuration, see the complete reference guide at
+    # https://grafana.com/docs/tempo/latest/configuration/
+
+    stream_over_http_enabled: true
+
     multitenancy_enabled: false
     usage_report:
       reporting_enabled: false
+
     compactor:
       compaction:
         block_retention: 1h
+
     distributor:
       receivers:
         otlp:
@@ -736,18 +768,47 @@ data:
               endpoint: 0.0.0.0:4317
             http:
               endpoint: 0.0.0.0:4318
+
     ingester:
+      trace_idle_period: 10s
+      max_block_bytes: 1_000_000
       max_block_duration: 5m
-    query_frontend:
-      search:
-        duration_slo: 5s
-        throughput_bytes_slo: 1.073741824e+09
-      trace_by_id:
-        duration_slo: 5s
+
+    querier:
+      frontend_worker:
+        frontend_address: tempo:9095
+
+    metrics_generator:
+      processor:
+        span_metrics:
+          # Configure extra dimensions to add as metric labels.
+          dimensions:
+          - http.method
+          - http.target
+          - http.status_code
+          - service.version
+        # Service graph metrics create node and edge metrics for determinng service interactions.
+        service_graphs:
+          # Configure extra dimensions to add as metric labels.
+          dimensions:
+          - http.method
+          - http.target
+          - http.status_code
+          - service.version
+      storage:
+        path: /tmp/tempo/generator/wal
+        remote_write_add_org_id_header: true
+        remote_write:
+        - url: http://nginx.gateway.svc.cluster.local:8080/api/v1/push
+          send_exemplars: true
+          send_native_histograms: true
+          headers:
+            X-Scope-OrgID: "anonymous"
+
     server:
       http_listen_port: 3100
       grpc_listen_port: 9095
-      log_level: debug
+
     storage:
       trace:
         backend: s3
@@ -755,31 +816,19 @@ data:
           path: /tmp/tempo/wal
         s3:
           bucket: tempo-data
-          endpoint: ${TEMPO_S3_ENDPOINT:minio.minio-system.svc:443}
-          access_key: ${TEMPO_S3_ACCESS_KEY:lgtmp}
-          secret_key: ${TEMPO_S3_SECRET_KEY:supersecret}
-          insecure: ${TEMPO_S3_INSECURE:false}
+          endpoint: ${TEMPO_S3_ENDPOINT:-minio.minio-system.svc:443}
+          access_key: ${TEMPO_S3_ACCESS_KEY:-lgtmp}
+          secret_key: ${TEMPO_S3_SECRET_KEY:-supersecret}
+          insecure: ${TEMPO_S3_INSECURE:-false}
           tls_insecure_skip_verify: true
+
     overrides:
       per_tenant_override_config: /conf/overrides.yaml
-      # Global ingestion limits configurations
-      # https://grafana.com/docs/tempo/latest/configuration/#overrides
       defaults:
         metrics_generator:
           processors:
           - service-graphs
           - span-metrics
-          - local-blocks
-
-    metrics_generator:
-      storage:
-        path: "/tmp/tempo"
-        remote_write:
-        - name: metrics-primary
-          url: http://nginx.gateway.svc.cluster.local:8080/api/v1/push
-          send_exemplars: true
-          headers:
-            X-Scope-OrgID: "anonymous"
 kind: ConfigMap
 metadata:
   labels:
@@ -793,6 +842,11 @@ metadata:
 ---
 apiVersion: v1
 data:
+  JAEGER_AGENT_HOST: YWdlbnQ=
+  JAEGER_AGENT_PORT: NjgzMQ==
+  JAEGER_SAMPLER_PARAM: MQ==
+  JAEGER_SAMPLER_TYPE: Y29uc3Q=
+  JAEGER_SERVICE_NAME: bG9raQ==
   LOKI_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:
@@ -802,7 +856,10 @@ type: Opaque
 ---
 apiVersion: v1
 data:
-  GF_FEATURE_TOGGLES_ENABLE: dHJhY2VxbEVkaXRvcixkYXNoZ3B0
+  GF_FEATURE_TOGGLES_ENABLE: |
+    dHJhY2VxbEVkaXRvciB0cmFjZXNFbWJlZGRlZEZsYW1lR3JhcGggdHJhY2VxbFNlYXJjaC
+    Bjb3JyZWxhdGlvbnMgbWV0cmljc1N1bW1hcnkgdHJhY2VUb01ldHJpY3MgdHJhY2VUb1By
+    b2ZpbGVz
   GF_LOG_LEVEL: d2Fybg==
   GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES: bmFtZXNwYWNlOm1vbml0b3Jpbmctc3lzdGVt
   GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS: Z3JhZmFuYS1hZ2VudC5tb25pdG9yaW5nLXN5c3RlbTo0MzE3
@@ -814,6 +871,11 @@ type: Opaque
 ---
 apiVersion: v1
 data:
+  JAEGER_AGENT_HOST: YWdlbnQ=
+  JAEGER_AGENT_PORT: NjgzMQ==
+  JAEGER_SAMPLER_PARAM: MQ==
+  JAEGER_SAMPLER_TYPE: Y29uc3Q=
+  JAEGER_SERVICE_NAME: bWltaXI=
   MIMIR_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:
@@ -823,8 +885,11 @@ type: Opaque
 ---
 apiVersion: v1
 data:
-  PYROSCOPE_STORAGE_S3_ACCESS_KEY_ID: bGd0bXA=
-  PYROSCOPE_STORAGE_S3_ENDPOINT: bWluaW8ubWluaW8tc3lzdGVtLnN2Yy5jbHVzdGVyLmxvY2FsOjQ0Mw==
+  JAEGER_AGENT_HOST: YWdlbnQ=
+  JAEGER_AGENT_PORT: NjgzMQ==
+  JAEGER_SAMPLER_PARAM: MQ==
+  JAEGER_SAMPLER_TYPE: Y29uc3Q=
+  JAEGER_SERVICE_NAME: cHlyb3Njb3Bl
   PYROSCOPE_STORAGE_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:
@@ -834,8 +899,11 @@ type: Opaque
 ---
 apiVersion: v1
 data:
-  TEMPO_S3_ACCESS_KEY: bGd0bXA=
-  TEMPO_S3_ENDPOINT: bWluaW8ubWluaW8tc3lzdGVtLnN2Yzo0NDM=
+  JAEGER_AGENT_HOST: YWdlbnQ=
+  JAEGER_AGENT_PORT: NjgzMQ==
+  JAEGER_SAMPLER_PARAM: MQ==
+  JAEGER_SAMPLER_TYPE: Y29uc3Q=
+  JAEGER_SERVICE_NAME: dGVtcG8=
   TEMPO_S3_SECRET_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:
@@ -1039,6 +1107,9 @@ metadata:
   namespace: tracing-system
 spec:
   ports:
+  - name: tempo-grpc
+    port: 9095
+    targetPort: 9095
   - name: tempo-prom-metrics
     port: 3100
     targetPort: 3100
@@ -1391,7 +1462,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: ff335d67c65ae69bf61e9f8ad19360b3fdb2d3af999a63dd5280520eb71404b3
+        checksum/config: f1d170a0130edd0da1b51eab83df1f9642ad10ca67130fd306f69cabe9540145
       labels:
         app.kubernetes.io/instance: tempo
         app.kubernetes.io/name: tempo
@@ -1402,7 +1473,6 @@ spec:
         - -config.file=/conf/tempo.yaml
         - -mem-ballast-size-mbs=1024
         - -config.expand-env=true
-        env: null
         envFrom:
         - secretRef:
             name: tempo-env
@@ -1410,6 +1480,8 @@ spec:
         imagePullPolicy: IfNotPresent
         name: tempo
         ports:
+        - containerPort: 9095
+          name: tempo-grpc
         - containerPort: 3100
           name: prom-metrics
         - containerPort: 6831

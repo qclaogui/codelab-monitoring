@@ -15,9 +15,10 @@ distributor:
   receivers:
     otlp:
       protocols:
-        http:
         grpc:
-
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
 
 ingester:
   trace_idle_period: 10s
@@ -28,11 +29,12 @@ querier:
   frontend_worker:
     frontend_address: tempo:9095
 
+server:
+  http_listen_port: 3200
+  grpc_listen_port: 9095
+
 metrics_generator:
   processor:
-    # keep all spans in the local blocks. this will allow for traceql metrics using structural queries
-    local_blocks:
-      filter_server_spans: false
     span_metrics:
       # Configure extra dimensions to add as metric labels.
       dimensions:
@@ -48,10 +50,6 @@ metrics_generator:
       - http.target
       - http.status_code
       - service.version
-  registry:
-    external_labels:
-      cluster: docker-compose
-      namespace: monitoring-system
   storage:
     path: /tmp/tempo/generator/wal
     remote_write_add_org_id_header: true
@@ -61,13 +59,6 @@ metrics_generator:
       send_native_histograms: true
       headers:
         X-Scope-OrgID: "anonymous"
-
-server:
-  grpc_server_max_recv_msg_size: 4194304
-  grpc_server_max_send_msg_size: 4194304
-  http_listen_port: 3200
-  grpc_listen_port: 9095
-  log_level: info
 
 storage:
   trace:
@@ -86,4 +77,6 @@ storage:
 overrides:
   defaults:
     metrics_generator:
-      processors: ['service-graphs', 'span-metrics']
+      processors:
+      - service-graphs
+      - span-metrics

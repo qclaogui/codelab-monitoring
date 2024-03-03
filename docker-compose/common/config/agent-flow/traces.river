@@ -162,6 +162,7 @@ otelcol.receiver.jaeger "containers" {
 
 	output {
 		metrics = [otelcol.processor.batch.containers.input]
+		logs    = [otelcol.processor.batch.containers.input]
 		traces  = [otelcol.processor.batch.containers.input]
 	}
 }
@@ -181,6 +182,7 @@ otelcol.receiver.otlp "containers" {
 
 	output {
 		metrics = [otelcol.processor.batch.containers.input]
+		logs    = [otelcol.processor.batch.containers.input]
 		traces  = [otelcol.processor.batch.containers.input]
 	}
 }
@@ -188,20 +190,42 @@ otelcol.receiver.otlp "containers" {
 otelcol.processor.batch "containers" {
 	output {
 		metrics = [otelcol.processor.memory_limiter.containers.input]
+		logs    = [otelcol.processor.memory_limiter.containers.input]
 		traces  = [otelcol.processor.memory_limiter.containers.input]
 	}
 }
 
 otelcol.processor.memory_limiter "containers" {
 	check_interval = "1s"
-	limit          = "256MiB"
+
+	// limit = "150MiB" // alternatively, set `limit_percentage` and `spike_limit_percentage`
+	limit_percentage       = 50
+	spike_limit_percentage = 30
 
 	output {
 		metrics = [otelcol.exporter.prometheus.containers.input]
+		logs    = [otelcol.exporter.loki.containers.input]
 		traces  = [module.file.docker_compose.exports.traces_receiver]
 	}
 }
 
 otelcol.exporter.prometheus "containers" {
 	forward_to = [module.file.docker_compose.exports.metrics_receiver]
+}
+
+otelcol.exporter.loki "containers" {
+	forward_to = [loki.process.containers.receiver]
+}
+
+loki.process "containers" {
+	stage.drop {
+		longer_than = "8KB"
+		older_than  = "12h"
+	}
+
+	stage.tenant {
+		value = "fake"
+	}
+
+	forward_to = [module.file.docker_compose.exports.logs_receiver]
 }

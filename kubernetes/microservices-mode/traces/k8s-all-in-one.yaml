@@ -18,6 +18,11 @@ metadata:
 ---
 apiVersion: v1
 data:
+  MIMIR_ALERT_MANAGER_HOST: mimir.monitoring-system.svc.cluster.local
+  MIMIR_COMPACTOR_HOST: mimir.monitoring-system.svc.cluster.local
+  MIMIR_DISTRIBUTOR_HOST: mimir.monitoring-system.svc.cluster.local
+  MIMIR_QUERY_FRONTEND_HOST: mimir.monitoring-system.svc.cluster.local
+  MIMIR_RULER_HOST: mimir.monitoring-system.svc.cluster.local
   TEMPO_COMPACTOR_HOST: tempo-distributed-compactor.tracing-system.svc.cluster.local
   TEMPO_DISTRIBUTOR_HOST: tempo-distributed-distributor.tracing-system.svc.cluster.local
   TEMPO_INGESTER_HOST: tempo-distributed-ingester.tracing-system.svc.cluster.local
@@ -29,6 +34,27 @@ metadata:
 ---
 apiVersion: v1
 data:
+  gateway_mimir.conf.template: "server {\n    listen 8080;\n    listen [::]:8080;\n\n
+    \   location = / {\n      return 200 'OK';\n      auth_basic off;\n      access_log
+    off;\n    }\n\n    proxy_set_header X-Scope-OrgID $ensured_x_scope_orgid;\n\n
+    \   # Distributor endpoints\n    location /distributor {\n      proxy_pass      http://${MIMIR_DISTRIBUTOR_HOST}:8080$request_uri;\n
+    \   }\n    location = /api/v1/push {\n      proxy_pass      http://${MIMIR_DISTRIBUTOR_HOST}:8080$request_uri;\n
+    \   }\n    location /otlp/v1/metrics {\n      proxy_pass      http://${MIMIR_DISTRIBUTOR_HOST}:8080$request_uri;\n
+    \   }\n\n    # Alertmanager endpoints\n    location /alertmanager {\n      proxy_pass
+    \     http://${MIMIR_ALERT_MANAGER_HOST}:8080$request_uri;\n    }\n    location
+    = /multitenant_alertmanager/status {\n      proxy_pass      http://${MIMIR_ALERT_MANAGER_HOST}:8080$request_uri;\n
+    \   }\n    location = /api/v1/alerts {\n      proxy_pass      http://${MIMIR_ALERT_MANAGER_HOST}:8080$request_uri;\n
+    \   }\n\n    # Ruler endpoints\n    location /prometheus/config/v1/rules {\n      proxy_pass
+    \     http://${MIMIR_RULER_HOST}:8080$request_uri;\n    }\n    location /prometheus/api/v1/rules
+    {\n      proxy_pass      http://${MIMIR_RULER_HOST}:8080$request_uri;\n    }\n
+    \   \n    location /prometheus/api/v1/alerts {\n      proxy_pass      http://${MIMIR_RULER_HOST}:8080$request_uri;\n
+    \   }\n    location = /ruler/ring {\n      proxy_pass      http://${MIMIR_RULER_HOST}:8080$request_uri;\n
+    \   }\n\n    # Rest of /prometheus goes to the query frontend\n    location /prometheus
+    {\n      proxy_pass      http://${MIMIR_QUERY_FRONTEND_HOST}:8080$request_uri;\n
+    \   }\n\n    # Buildinfo endpoint can go to any component\n    location = /api/v1/status/buildinfo
+    {\n      proxy_pass      http://${MIMIR_QUERY_FRONTEND_HOST}:8080$request_uri;\n
+    \   }\n\n    # Compactor endpoint for uploading blocks\n    location /api/v1/upload/block/
+    {\n      proxy_pass      http://${MIMIR_COMPACTOR_HOST}:8080$request_uri;\n    }\n}"
   gateway_tempo.conf.template: "upstream grpc_otlp_tempo {\n    server ${TEMPO_DISTRIBUTOR_HOST}:4317;\n}\nserver
     {\n    listen 4317;\n    http2 on;\n\n    location / {\n      grpc_set_header
     X-Scope-OrgID $ensured_x_scope_orgid;\n      grpc_pass grpc://grpc_otlp_tempo;\n
@@ -56,6 +82,36 @@ metadata:
 ---
 apiVersion: v1
 data:
+  config.river: "/*\nThe following example shows using the default all logs processing
+    module, for\na single tenant and specifying the destination url/credentials via
+    environment\nvariables.\n*/\nlogging {\n\tlevel  = coalesce(env(\"AGENT_LOG_LEVEL\"),
+    \"info\")\n\tformat = \"logfmt\"\n}\n\nmodule.file \"lgtmp\" {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"),
+    \"/etc/agent-modules\") + \"/lgtmp.river\"\n\n\targuments {\n\t\tcluster           =
+    coalesce(env(\"CLUSTER\"), \"k3d-k3s-codelab\")\n\t\tlogs_endpoint     = coalesce(env(\"LOGS_ENDPOINT\"),
+    \"http://nginx.gateway.svc:3100\")\n\t\tmetrics_endpoint  = coalesce(env(\"METRICS_ENDPOINT\"),
+    \"http://nginx.gateway.svc:8080\")\n\t\tprofiles_endpoint = coalesce(env(\"PROFILES_ENDPOINT\"),
+    \"http://nginx.gateway.svc:4040\")\n\t\ttraces_endpoint   = coalesce(env(\"TRACES_ENDPOINT\"),
+    \"nginx.gateway.svc:4317\")\n\t}\n}\n\n/********************************************\n
+    * Traces\n ********************************************/\nmodule.file \"traces_primary\"
+    {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent-modules\")
+    + \"/traces.river\"\n\n\targuments {\n\t\tmetrics_forward_to = [module.file.lgtmp.exports.metrics_receiver]\n\t\tlogs_forward_to
+    \   = [module.file.lgtmp.exports.logs_receiver]\n\t\ttraces_forward_to  = [module.file.lgtmp.exports.traces_receiver]\n\t\tcluster
+    \           = coalesce(env(\"CLUSTER\"), \"k3d-k3s-codelab\")\n\t}\n}\n\n/********************************************\n
+    * Metrics\n ********************************************/\nmodule.file \"metrics_primary\"
+    {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent-modules\")
+    + \"/metrics.river\"\n\n\targuments {\n\t\tforward_to = [module.file.lgtmp.exports.metrics_receiver]\n\t\tclustering
+    = true\n\t}\n}\n\n/********************************************\n * Agent Integrations\n
+    ********************************************/\nmodule.file \"agent_integrations\"
+    {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent-modules\")
+    + \"/integrations.river\"\n\n\targuments {\n\t\tname       = \"agent-integrations\"\n\t\tnamespace
+    \ = \"monitoring-system\"\n\t\tforward_to = [module.file.lgtmp.exports.metrics_receiver]\n\t}\n}\n"
+kind: ConfigMap
+metadata:
+  name: agent-config
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
   datasources.yaml: |
     apiVersion: 1
 
@@ -64,6 +120,23 @@ data:
       uid: traces
 
     datasources:
+    # Mimir for metrics
+    - name: Metrics
+      type: prometheus
+      uid: metrics
+      access: proxy
+      orgId: 1
+      url: http://nginx.gateway.svc.cluster.local:8080/prometheus
+      basicAuth: false
+      isDefault: false
+      version: 1
+      editable: true
+      jsonData:
+        prometheusType: Mimir
+        exemplarTraceIdDestinations:
+          - name: traceID
+            datasourceUid: traces
+
     # Tempo for traces
     - name: Traces
       type: tempo
@@ -74,6 +147,32 @@ data:
       isDefault: true
       version: 1
       editable: true
+      jsonData:
+        search:
+          hide: false
+        nodeGraph:
+          enabled: true
+        serviceMap:
+          datasourceUid: metrics
+        traceQuery:
+          timeShiftEnabled: true
+          spanStartTimeShift: '-30m'
+          spanEndTimeShift: '30m'
+        spanBar:
+          type: 'Tag'
+          tag: 'http.path'
+        tracesToMetrics:
+          datasourceUid: metrics
+          spanStartTimeShift: '-30m'
+          spanEndTimeShift: '30m'
+          tags: [{ key: 'service.name', value: 'service' }, { key: 'span_name' }, { key: 'http_method' }]
+          queries:
+          - name: '(R) Rate'
+            query: 'sum(rate(traces_spanmetrics_calls_total{$$__tags}[$$__rate_interval]))'
+          - name: '(E) Error Rate'
+            query: 'sum(rate(traces_spanmetrics_calls_total{$$__tags, status_code="STATUS_CODE_ERROR"}[$$__rate_interval]))'
+          - name: '(D) Duration'
+            query: 'histogram_quantile(0.9, sum(rate(traces_spanmetrics_latency_bucket{$$__tags}[$$__rate_interval])) by (le))'
 kind: ConfigMap
 metadata:
   labels:
@@ -83,13 +182,113 @@ metadata:
 ---
 apiVersion: v1
 data:
+  mimir.yaml: |
+    # Do not use this configuration in production.
+    # It is for demonstration purposes only.
+    multitenancy_enabled: false
+
+    # -usage-stats.enabled=false
+    usage_stats:
+      enabled: false
+
+    server:
+      http_listen_port: 8080
+      grpc_listen_port: 9095
+      log_level: warn
+
+    # https://grafana.com/docs/mimir/latest/references/configuration-parameters/#use-environment-variables-in-the-configuration
+    common:
+      storage:
+        backend: s3
+        s3:
+          endpoint:          ${MIMIR_S3_ENDPOINT:minio.minio-system.svc:443}
+          access_key_id:     ${MIMIR_S3_ACCESS_KEY_ID:lgtmp}
+          secret_access_key: ${MIMIR_S3_SECRET_ACCESS_KEY:supersecret}
+          insecure:          ${MIMIR_S3_INSECURE:false}
+          http:
+            insecure_skip_verify: true
+
+    compactor:
+      compaction_interval: 30s
+      data_dir: /tmp/mimir-compactor
+      cleanup_interval:    1m
+      tenant_cleanup_delay: 1m
+
+    memberlist:
+      join_members: [ gossip-ring-headless:7946 ]
+
+    ingester:
+      ring:
+        replication_factor: 1
+
+    store_gateway:
+      sharding_ring:
+        replication_factor: 1
+
+    alertmanager_storage:
+      s3:
+        bucket_name: mimir-alertmanager
+
+    blocks_storage:
+      s3:
+        bucket_name: mimir-blocks
+      tsdb:
+        dir: /data/ingester
+
+    ruler_storage:
+      s3:
+        bucket_name: mimir-ruler
+
+    runtime_config:
+      file: /var/mimir/runtime.yaml
+
+    limits:
+      native_histograms_ingestion_enabled: true
+kind: ConfigMap
+metadata:
+  name: mimir-config-k2d48ck5kh
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  runtime.yaml: |-
+    # https://grafana.com/docs/mimir/latest/configure/about-runtime-configuration/
+    ingester_limits: # limits that each ingester replica enforces
+      max_ingestion_rate: 20000
+      max_series: 1500000
+      max_tenants: 1000
+      max_inflight_push_requests: 30000
+
+    distributor_limits: # limits that each distributor replica enforces
+      max_ingestion_rate: 20000
+      max_inflight_push_requests: 30000
+      max_inflight_push_requests_bytes: 50000000
+
+    overrides:
+      anonymous: # limits for anonymous that the whole cluster enforces
+        # ingestion_tenant_shard_size: 9
+        max_global_series_per_user: 1500000
+        max_global_series_per_metric: 50000
+        max_fetched_series_per_query: 100000
+        ruler_max_rules_per_rule_group: 100
+        ruler_max_rule_groups_per_tenant: 100
+kind: ConfigMap
+metadata:
+  name: runtime-config-88gg5gk88d
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
   tempo.yaml: |
     # For more information on this configuration, see the complete reference guide at
     # https://grafana.com/docs/tempo/latest/configuration/
 
+    stream_over_http_enabled: true
+
     multitenancy_enabled: false
     usage_report:
       reporting_enabled: false
+
     compactor:
       compaction:
         block_retention: 1h
@@ -101,14 +300,18 @@ data:
       receivers:
         otlp:
           protocols:
-            http:
             grpc:
+              endpoint: 0.0.0.0:4317
+            http:
+              endpoint: 0.0.0.0:4318
 
       ring:
         kvstore:
           store: memberlist
 
     ingester:
+      trace_idle_period: 10s
+      max_block_bytes: 1_000_000
       max_block_duration: 5m
       lifecycler:
         ring:
@@ -124,23 +327,37 @@ data:
     querier:
       frontend_worker:
         frontend_address: tempo-distributed-query-frontend-discovery:9095
-      max_concurrent_queries: 20
 
-    query_frontend:
-      max_outstanding_per_tenant: 2000
-      max_retries: 2
-      search:
-        duration_slo: 5s
-        throughput_bytes_slo: 1.073741824e+09
-      trace_by_id:
-        duration_slo: 5s
+    metrics_generator:
+      processor:
+        span_metrics:
+          # Configure extra dimensions to add as metric labels.
+          dimensions:
+          - http.method
+          - http.target
+          - http.status_code
+          - service.version
+        # Service graph metrics create node and edge metrics for determinng service interactions.
+        service_graphs:
+          # Configure extra dimensions to add as metric labels.
+          dimensions:
+          - http.method
+          - http.target
+          - http.status_code
+          - service.version
+      storage:
+        path: /tmp/tempo/generator/wal
+        remote_write_add_org_id_header: true
+        remote_write:
+        - url: http://nginx.gateway.svc.cluster.local:8080/api/v1/push
+          send_exemplars: true
+          send_native_histograms: true
+          headers:
+            X-Scope-OrgID: "anonymous"
 
     server:
-      grpc_server_max_recv_msg_size: 4194304
-      grpc_server_max_send_msg_size: 4194304
       http_listen_port: 3100
       grpc_listen_port: 9095
-      log_level: info
 
     storage:
       trace:
@@ -157,6 +374,11 @@ data:
 
     overrides:
       per_tenant_override_config: /runtime-config/overrides.yaml
+      defaults:
+        metrics_generator:
+          processors:
+          - service-graphs
+          - span-metrics
 kind: ConfigMap
 metadata:
   labels:
@@ -186,6 +408,10 @@ metadata:
 ---
 apiVersion: v1
 data:
+  GF_FEATURE_TOGGLES_ENABLE: |
+    dHJhY2VxbEVkaXRvciB0cmFjZXNFbWJlZGRlZEZsYW1lR3JhcGggdHJhY2VxbFNlYXJjaC
+    Bjb3JyZWxhdGlvbnMgbWV0cmljc1N1bW1hcnkgdHJhY2VUb01ldHJpY3MgdHJhY2VUb1By
+    b2ZpbGVz
   GF_LOG_LEVEL: d2Fybg==
   GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES: bmFtZXNwYWNlOm1vbml0b3Jpbmctc3lzdGVt
   GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS: Z3JhZmFuYS1hZ2VudC5tb25pdG9yaW5nLXN5c3RlbTo0MzE3
@@ -198,12 +424,66 @@ type: Opaque
 ---
 apiVersion: v1
 data:
+  JAEGER_AGENT_HOST: YWdlbnQ=
+  JAEGER_AGENT_PORT: NjgzMQ==
+  JAEGER_SAMPLER_PARAM: MQ==
+  JAEGER_SAMPLER_TYPE: Y29uc3Q=
+  JAEGER_SERVICE_NAME: bWltaXI=
+  MIMIR_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
+kind: Secret
+metadata:
+  name: mimir-env-82k4gdctm2
+  namespace: monitoring-system
+type: Opaque
+---
+apiVersion: v1
+data:
+  JAEGER_AGENT_HOST: YWdlbnQ=
+  JAEGER_AGENT_PORT: NjgzMQ==
+  JAEGER_SAMPLER_PARAM: MQ==
+  JAEGER_SAMPLER_TYPE: Y29uc3Q=
+  JAEGER_SERVICE_NAME: dGVtcG8=
   TEMPO_S3_SECRET_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:
-  name: tempo-distributed-env-gf764927fk
+  name: tempo-distributed-env-86t85mmdtc
   namespace: tracing-system
 type: Opaque
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: gossip-ring
+    prometheus.io/service-monitor: "false"
+  name: gossip-ring-headless
+  namespace: monitoring-system
+spec:
+  clusterIP: None
+  ports:
+  - name: tcp-gossip-ring
+    port: 7946
+    protocol: TCP
+    targetPort: 7946
+  publishNotReadyAddresses: true
+  selector:
+    gossip_ring_member: "true"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: mimir
+  name: mimir
+  namespace: monitoring-system
+spec:
+  ports:
+  - name: http-metrics
+    port: 8080
+  - name: grpc-distribut
+    port: 9095
+  selector:
+    app: mimir
 ---
 apiVersion: v1
 kind: Service
@@ -479,6 +759,73 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
+    app: mimir
+  name: mimir
+  namespace: monitoring-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mimir
+  template:
+    metadata:
+      labels:
+        app: mimir
+        gossip_ring_member: "true"
+    spec:
+      containers:
+      - args:
+        - -target=all
+        - -config.expand-env=true
+        - -config.file=/etc/mimir/mimir.yaml
+        - -memberlist.bind-addr=$(POD_IP)
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        envFrom:
+        - secretRef:
+            name: mimir-env-82k4gdctm2
+        image: grafana/mimir:2.11.0
+        imagePullPolicy: IfNotPresent
+        name: mimir
+        ports:
+        - containerPort: 8080
+          name: http-metrics
+        - containerPort: 9095
+          name: grpc-distribut
+        - containerPort: 7946
+          name: http-memberlist
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http-metrics
+        resources:
+          limits:
+            cpu: 999m
+            memory: 1Gi
+          requests:
+            cpu: 10m
+            memory: 55Mi
+        volumeMounts:
+        - mountPath: /etc/mimir
+          name: mimir-config
+        - mountPath: /var/mimir
+          name: runtime-config
+      terminationGracePeriodSeconds: 60
+      volumes:
+      - configMap:
+          name: mimir-config-k2d48ck5kh
+        name: mimir-config
+      - configMap:
+          name: runtime-config-88gg5gk88d
+        name: runtime-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
     app.kubernetes.io/component: compactor
     app.kubernetes.io/instance: tempo-distributed
     app.kubernetes.io/managed-by: Helm
@@ -522,7 +869,7 @@ spec:
         - -config.expand-env=true
         envFrom:
         - secretRef:
-            name: tempo-distributed-env-gf764927fk
+            name: tempo-distributed-env-86t85mmdtc
         image: docker.io/grafana/tempo:2.4.0
         imagePullPolicy: IfNotPresent
         name: compactor
@@ -630,7 +977,7 @@ spec:
         - -config.expand-env=true
         envFrom:
         - secretRef:
-            name: tempo-distributed-env-gf764927fk
+            name: tempo-distributed-env-86t85mmdtc
         image: docker.io/grafana/tempo:2.4.0
         imagePullPolicy: IfNotPresent
         name: distributor
@@ -764,7 +1111,7 @@ spec:
         - -config.expand-env=true
         envFrom:
         - secretRef:
-            name: tempo-distributed-env-gf764927fk
+            name: tempo-distributed-env-86t85mmdtc
         image: docker.io/grafana/tempo:2.4.0
         imagePullPolicy: IfNotPresent
         name: querier
@@ -890,7 +1237,7 @@ spec:
         - -config.expand-env=true
         envFrom:
         - secretRef:
-            name: tempo-distributed-env-gf764927fk
+            name: tempo-distributed-env-86t85mmdtc
         image: docker.io/grafana/tempo:2.4.0
         imagePullPolicy: IfNotPresent
         name: query-frontend
@@ -1008,7 +1355,7 @@ spec:
         - -config.expand-env=true
         envFrom:
         - secretRef:
-            name: tempo-distributed-env-gf764927fk
+            name: tempo-distributed-env-86t85mmdtc
         image: docker.io/grafana/tempo:2.4.0
         imagePullPolicy: IfNotPresent
         name: ingester
@@ -1095,3 +1442,29 @@ spec:
       app.kubernetes.io/component: ingester
       app.kubernetes.io/instance: tempo-distributed
       app.kubernetes.io/name: tempo
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: mimir
+  namespace: monitoring-system
+spec:
+  endpoints:
+  - port: http-metrics
+    relabelings:
+    - replacement: monitoring-system/mimir
+      sourceLabels:
+      - job
+      targetLabel: job
+    scheme: http
+  namespaceSelector:
+    matchNames:
+    - monitoring-system
+  selector:
+    matchExpressions:
+    - key: prometheus.io/service-monitor
+      operator: NotIn
+      values:
+      - "false"
+    matchLabels:
+      app: mimir

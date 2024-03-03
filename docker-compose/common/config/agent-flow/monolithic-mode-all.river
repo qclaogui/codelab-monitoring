@@ -6,7 +6,7 @@ logging {
 }
 
 tracing {
-	sampling_fraction = 0.1
+	sampling_fraction = 0.8
 	write_to          = [otelcol.processor.batch.containers.input]
 }
 
@@ -144,16 +144,16 @@ loki.source.docker "containers" {
 }
 
 loki.process "containers" {
-	forward_to = [module.file.docker_compose.exports.logs_receiver]
-
 	stage.drop {
 		longer_than = "8KB"
 		older_than  = "12h"
 	}
 
 	stage.tenant {
-		value = "anonymous"
+		value = "fake"
 	}
+
+	forward_to = [module.file.docker_compose.exports.logs_receiver]
 }
 
 /********************************************
@@ -210,6 +210,10 @@ otelcol.receiver.otlp "containers" {
 }
 
 otelcol.processor.batch "containers" {
+	send_batch_size     = 16384
+	send_batch_max_size = 0
+	timeout             = "2s"
+
 	output {
 		metrics = [otelcol.processor.memory_limiter.containers.input]
 		logs    = [otelcol.processor.memory_limiter.containers.input]
@@ -259,12 +263,15 @@ loki.process "autologging" {
 		source = "body"
 	}
 
-	forward_to = [module.file.docker_compose.exports.logs_receiver]
+	forward_to = [loki.process.containers.receiver]
 }
 
 otelcol.processor.memory_limiter "containers" {
 	check_interval = "1s"
-	limit          = "256MiB"
+
+	// limit = "150MiB" // alternatively, set `limit_percentage` and `spike_limit_percentage`
+	limit_percentage       = 50
+	spike_limit_percentage = 30
 
 	output {
 		metrics = [otelcol.exporter.prometheus.containers.input]
@@ -278,7 +285,7 @@ otelcol.exporter.prometheus "containers" {
 }
 
 otelcol.exporter.loki "containers" {
-	forward_to = [module.file.docker_compose.exports.logs_receiver]
+	forward_to = [loki.process.containers.receiver]
 }
 
 /********************************************
@@ -287,6 +294,9 @@ otelcol.exporter.loki "containers" {
 
 pyroscope.scrape "containers" {
 	targets = [
+		{"__address__" = "mimir:8080", "service_name" = "mimir"},
+		{"__address__" = "loki:3100", "service_name" = "loki-all"},
+		{"__address__" = "tempo:3200", "service_name" = "tempo-all"},
 		{"__address__" = "grafana:6060", "service_name" = "grafana"},
 	]
 

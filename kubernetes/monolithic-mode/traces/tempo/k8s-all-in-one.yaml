@@ -49,6 +49,7 @@ data:
     ingester:
           max_block_duration: 5m
     server:
+          grpc_listen_port: 9095
           http_listen_port: 3100
     storage:
           trace:
@@ -95,6 +96,9 @@ metadata:
   namespace: tracing-system
 spec:
   ports:
+  - name: tempo-grpc
+    port: 9095
+    targetPort: 9095
   - name: tempo-prom-metrics
     port: 3100
     targetPort: 3100
@@ -164,7 +168,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: ff335d67c65ae69bf61e9f8ad19360b3fdb2d3af999a63dd5280520eb71404b3
+        checksum/config: f1d170a0130edd0da1b51eab83df1f9642ad10ca67130fd306f69cabe9540145
       labels:
         app.kubernetes.io/instance: tempo
         app.kubernetes.io/name: tempo
@@ -175,7 +179,6 @@ spec:
         - -config.file=/conf/tempo.yaml
         - -mem-ballast-size-mbs=1024
         - -config.expand-env=true
-        env: null
         envFrom:
         - secretRef:
             name: tempo-env
@@ -183,6 +186,8 @@ spec:
         imagePullPolicy: IfNotPresent
         name: tempo
         ports:
+        - containerPort: 9095
+          name: tempo-grpc
         - containerPort: 3100
           name: prom-metrics
         - containerPort: 6831
