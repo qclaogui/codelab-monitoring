@@ -12,7 +12,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mysql
     app.kubernetes.io/version: 8.0.36
-    helm.sh/chart: mysql-9.19.1
+    helm.sh/chart: mysql-9.22.0
   name: mysql
   namespace: mysql-system
 secrets:
@@ -57,7 +57,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mysql
     app.kubernetes.io/version: 8.0.36
-    helm.sh/chart: mysql-9.19.1
+    helm.sh/chart: mysql-9.22.0
   name: mysql
   namespace: mysql-system
 ---
@@ -81,7 +81,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mysql
     app.kubernetes.io/version: 8.0.36
-    helm.sh/chart: mysql-9.19.1
+    helm.sh/chart: mysql-9.22.0
   name: mysql
   namespace: mysql-system
 spec:
@@ -107,7 +107,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mysql
     app.kubernetes.io/version: 8.0.36
-    helm.sh/chart: mysql-9.19.1
+    helm.sh/chart: mysql-9.22.0
   name: mysql-headless
   namespace: mysql-system
 spec:
@@ -132,7 +132,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mysql
     app.kubernetes.io/version: 8.0.36
-    helm.sh/chart: mysql-9.19.1
+    helm.sh/chart: mysql-9.22.0
   name: mysql
   namespace: mysql-system
 spec:
@@ -147,7 +147,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/configuration: 171592695269542a9c566c2abcf0de910eb736bb0d0e159bddcce0a61effb5bd
+        checksum/configuration: 560a262d7553178beabfac3ca022dcdf08e629b7f9ef5dba76cfba6b7e1703d1
         logs.agent.grafana.com/scrape: "true"
         logs.agent.grafana.com/scrub-level: debug
       labels:
@@ -156,7 +156,7 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: mysql
         app.kubernetes.io/version: 8.0.36
-        helm.sh/chart: mysql-9.19.1
+        helm.sh/chart: mysql-9.22.0
     spec:
       affinity:
         nodeAffinity: null
@@ -192,7 +192,7 @@ spec:
         - name: MYSQL_DATABASE
           value: my_database
         envFrom: null
-        image: docker.io/bitnami/mysql:8.0.36-debian-11-r4
+        image: docker.io/bitnami/mysql:8.0.36-debian-12-r8
         imagePullPolicy: IfNotPresent
         livenessProbe:
           exec:
@@ -230,14 +230,13 @@ spec:
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 1
-        resources:
-          limits: {}
-          requests: {}
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
             drop:
             - ALL
+          readOnlyRootFilesystem: false
+          runAsGroup: 0
           runAsNonRoot: true
           runAsUser: 1001
           seLinuxOptions: null
@@ -262,6 +261,18 @@ spec:
         volumeMounts:
         - mountPath: /bitnami/mysql
           name: data
+        - mountPath: /tmp
+          name: empty-dir
+          subPath: tmp-dir
+        - mountPath: /opt/bitnami/mysql/conf
+          name: empty-dir
+          subPath: app-conf-dir
+        - mountPath: /opt/bitnami/mysql/tmp
+          name: empty-dir
+          subPath: app-tmp-dir
+        - mountPath: /opt/bitnami/mysql/logs
+          name: empty-dir
+          subPath: app-logs-dir
         - mountPath: /opt/bitnami/mysql/conf/my.cnf
           name: config
           subPath: my.cnf
@@ -276,6 +287,8 @@ spec:
       - configMap:
           name: mysql
         name: config
+      - emptyDir: {}
+        name: empty-dir
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
@@ -300,7 +313,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mysql
     app.kubernetes.io/version: 8.0.36
-    helm.sh/chart: mysql-9.19.1
+    helm.sh/chart: mysql-9.22.0
   name: mysql
   namespace: mysql-system
 spec:
@@ -316,7 +329,7 @@ spec:
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: mysql
       app.kubernetes.io/version: 8.0.36
-      helm.sh/chart: mysql-9.19.1
+      helm.sh/chart: mysql-9.22.0
   policyTypes:
   - Ingress
   - Egress

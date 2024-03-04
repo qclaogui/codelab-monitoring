@@ -98,11 +98,9 @@ data:
     \   = [module.file.lgtmp.exports.logs_receiver]\n\t\ttraces_forward_to  = [module.file.lgtmp.exports.traces_receiver]\n\t\tcluster
     \           = coalesce(env(\"CLUSTER\"), \"k3d-k3s-codelab\")\n\t}\n}\n\ntracing
     {\n\tsampling_fraction = 0.8\n\twrite_to          = [otelcol.processor.batch.containers.input]\n}\n\notelcol.processor.batch
-    \"containers\" {\n\tsend_batch_size     = 16384\n\tsend_batch_max_size = 0\n\ttimeout
-    \            = \"2s\"\n\n\toutput {\n\t\tmetrics = [otelcol.processor.memory_limiter.containers.input]\n\t\ttraces
+    \"containers\" {\n\toutput {\n\t\tmetrics = [otelcol.processor.memory_limiter.containers.input]\n\t\ttraces
     \ = [otelcol.processor.memory_limiter.containers.input]\n\t}\n}\n\notelcol.processor.memory_limiter
-    \"containers\" {\n\tcheck_interval         = \"1s\"\n\tlimit_percentage       =
-    50\n\tspike_limit_percentage = 30\n\n\toutput {\n\t\tmetrics = [otelcol.processor.k8sattributes.containers.input]\n\t\ttraces
+    \"containers\" {\n\toutput {\n\t\tmetrics = [otelcol.processor.k8sattributes.containers.input]\n\t\ttraces
     \ = [otelcol.processor.k8sattributes.containers.input]\n\t}\n}\n\notelcol.processor.k8sattributes
     \"containers\" {\n\toutput {\n\t\tmetrics = [otelcol.exporter.prometheus.containers.input]\n\t\ttraces
     \ = [module.file.lgtmp.exports.traces_receiver]\n\t}\n}\n\notelcol.exporter.prometheus
