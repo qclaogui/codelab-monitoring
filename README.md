@@ -144,11 +144,7 @@ Usage:
 Dependencies
   install-build-deps                        Install dependencies tools
 
-Dashboards
-  dashboards_out                            Copy app's dashboards to grafana dashboards provision path
-
 Lint & fmt
-  check                                     Check all the mixin files
   copyright                                 Add Copyright header to .go files.
   fmt                                       Uses Grafana Agent to fmt the river config
 
@@ -184,6 +180,14 @@ Kubernetes
   deploy-microservices-mode-metrics         Deploy microservices-mode metrics
   deploy-microservices-mode-profiles        Deploy microservices-mode profiles
   deploy-microservices-mode-traces          Deploy microservices-mode traces
+
+Build
+  generate                                  generate embed deps
+  build                                     Build binary for current OS and place it at ./bin/lgtmp_$(GOOS)_$(GOARCH)
+  build-all                                 Build binaries for Linux and Mac and place them in dist/
+
+Release
+  print-version                             Prints the upcoming release number
 
 General
   help                                      Display this help. Thanks to https://www.thapaliya.com/en/writings/well-documented-makefiles/

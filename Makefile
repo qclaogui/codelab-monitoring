@@ -497,7 +497,7 @@ build-all: $(GORELEASER) generate ## Build binaries for Linux and Mac and place 
 
 .PHONY: print-version
 print-version: ## Prints the upcoming release number
-	@go run internal/version/generate/release_generate.go print-version
+	@go run pkg/version/generate/release_generate.go print-version
 
 
 ##@ General
