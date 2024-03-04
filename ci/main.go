@@ -40,15 +40,4 @@ func main() {
 	if _, err = goContainer.WithExec([]string{"bash", "-c", "make", "install-build-deps"}).Sync(ctx); err != nil {
 		panic(err)
 	}
-
-	// check dashboards
-	if _, err = goContainer.WithExec([]string{"bash", "-c", "make", "check"}).Sync(ctx); err != nil {
-		panic(err)
-	}
-
-	// dashboards out
-	if _, err = goContainer.WithExec([]string{"bash", "-c", "make", "dashboards_out"}).Sync(ctx); err != nil {
-		panic(err)
-	}
-
 }

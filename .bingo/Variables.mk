@@ -23,11 +23,11 @@ $(COPYRIGHT): $(BINGO_DIR)/copyright.mod
 	@echo "(re)installing $(GOBIN)/copyright-v0.0.0-20230505153745-6b7392939a60"
 	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=copyright.mod -o=$(GOBIN)/copyright-v0.0.0-20230505153745-6b7392939a60 "github.com/efficientgo/tools/copyright"
 
-GORELEASER := $(GOBIN)/goreleaser-v1.23.0
+GORELEASER := $(GOBIN)/goreleaser-v1.24.0
 $(GORELEASER): $(BINGO_DIR)/goreleaser.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
-	@echo "(re)installing $(GOBIN)/goreleaser-v1.23.0"
-	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=goreleaser.mod -o=$(GOBIN)/goreleaser-v1.23.0 "github.com/goreleaser/goreleaser"
+	@echo "(re)installing $(GOBIN)/goreleaser-v1.24.0"
+	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=goreleaser.mod -o=$(GOBIN)/goreleaser-v1.24.0 "github.com/goreleaser/goreleaser"
 
 JB := $(GOBIN)/jb-v0.5.1
 $(JB): $(BINGO_DIR)/jb.mod
@@ -47,9 +47,9 @@ $(KUSTOMIZE): $(BINGO_DIR)/kustomize.mod
 	@echo "(re)installing $(GOBIN)/kustomize-v5.3.0"
 	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=kustomize.mod -o=$(GOBIN)/kustomize-v5.3.0 "sigs.k8s.io/kustomize/kustomize/v5"
 
-MIXTOOL := $(GOBIN)/mixtool-v0.0.0-20240208221950-117ecd3d3a1f
+MIXTOOL := $(GOBIN)/mixtool-v0.0.0-20240303152532-707cd675dd6e
 $(MIXTOOL): $(BINGO_DIR)/mixtool.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
-	@echo "(re)installing $(GOBIN)/mixtool-v0.0.0-20240208221950-117ecd3d3a1f"
-	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=mixtool.mod -o=$(GOBIN)/mixtool-v0.0.0-20240208221950-117ecd3d3a1f "github.com/monitoring-mixins/mixtool/cmd/mixtool"
+	@echo "(re)installing $(GOBIN)/mixtool-v0.0.0-20240303152532-707cd675dd6e"
+	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=mixtool.mod -o=$(GOBIN)/mixtool-v0.0.0-20240303152532-707cd675dd6e "github.com/monitoring-mixins/mixtool/cmd/mixtool"
 
