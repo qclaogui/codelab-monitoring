@@ -187,6 +187,8 @@ Build
   build-all                                 Build binaries for Linux and Mac and place them in dist/
 
 Release
+  prepare-release-candidate                 Create release candidate
+  prepare-release                           Create release
   print-version                             Prints the upcoming release number
 
 General
