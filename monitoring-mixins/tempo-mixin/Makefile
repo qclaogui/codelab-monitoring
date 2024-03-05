@@ -18,7 +18,7 @@ update: $(JB) ## update mixin
 .PHONY: build
 build: $(MIXTOOL) ## Generates the mixin files
 	@mkdir -p "$(MIXIN_OUT_PATH)"; \
-	find "$(MIXIN_OUT_PATH)" ! -name "kustomization.yaml" -type f -delete; \
+	find "$(MIXIN_OUT_PATH)" ! -name "kustomization.yaml" ! -name "prometheus-alerts.yaml" ! -name "prometheus-rules.yaml" -type f -delete; \
 	$(MIXTOOL) generate all --output-alerts "$(MIXIN_OUT_PATH)/alerts.yaml" --output-rules "$(MIXIN_OUT_PATH)/rules.yaml" --directory "$(MIXIN_OUT_PATH)/dashboards_out" "mixin.libsonnet"; \
 	../../tools/check-rules.sh "$(MIXIN_OUT_PATH)/rules.yaml" 20 ; \
 

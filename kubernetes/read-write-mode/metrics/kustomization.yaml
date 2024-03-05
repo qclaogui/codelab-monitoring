@@ -11,20 +11,10 @@ kind: Kustomization
 # https://grafana.com/docs/mimir/latest/references/architecture/deployment-modes/#read-write-mode
 
 resources:
-- mimir/gossip-ring-headless-svc.yaml
-- mimir/mimir-backend-dep.yaml
-- mimir/mimir-backend-svc.yaml
-- mimir/mimir-backend-servicemonitor.yaml
-- mimir/mimir-read-dep.yaml
-- mimir/mimir-read-svc.yaml
-- mimir/mimir-read-servicemonitor.yaml
-- mimir/mimir-write-dep.yaml
-- mimir/mimir-write-svc.yaml
-- mimir/mimir-write-servicemonitor.yaml
-
-images:
-- name: grafana/mimir
-  newTag: 2.11.0
+- mimir
+- ../../../monitoring-mixins/agent-flow-mixin/deploy
+- ../../../monitoring-mixins/go-runtime-mixin/deploy
+- ../../../monitoring-mixins/mimir-mixin/deploy
 
 secretGenerator:
 - name: mimir-env
@@ -33,6 +23,13 @@ secretGenerator:
   - MIMIR_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
 
 configMapGenerator:
+- name: agent-config
+  namespace: monitoring-system
+  options:
+    disableNameSuffixHash: true
+  files:
+  - configs/config.river
+
 - name: grafana-datasources
   namespace: monitoring-system
   options:

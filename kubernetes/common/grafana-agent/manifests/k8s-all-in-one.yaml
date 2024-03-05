@@ -579,7 +579,8 @@ data:
     {\n\t\tendpoint = argument.otlp_http_endpoint.value\n\t}\n\n\toutput {\n\t\tmetrics
     = [otelcol.processor.batch.default.input]\n\t\tlogs    = [otelcol.processor.batch.default.input]\n\t\ttraces
     \ = [\n\t\t\totelcol.processor.batch.default.input,\n\t\t\totelcol.connector.spanlogs.autologging.input,\n\t\t]\n\t}\n}\n\notelcol.processor.batch
-    \"default\" {\n\toutput {\n\t\tmetrics = [otelcol.processor.memory_limiter.default.input]\n\t\tlogs
+    \"default\" {\n\tsend_batch_size     = 16384\n\tsend_batch_max_size = 0\n\ttimeout
+    \            = \"2s\"\n\n\toutput {\n\t\tmetrics = [otelcol.processor.memory_limiter.default.input]\n\t\tlogs
     \   = [otelcol.processor.memory_limiter.default.input]\n\t\ttraces  = [otelcol.processor.memory_limiter.default.input]\n\t}\n}\n\n//
     The OpenTelemetry spanlog connector processes incoming trace spans and extracts
     data from them ready\n// for logging.\notelcol.connector.spanlogs \"autologging\"
@@ -603,7 +604,8 @@ data:
     this as the source for the output\n\t// logline. In this case, it essentially
     turns it into logfmt.\n\tstage.output {\n\t\tsource = \"body\"\n\t}\n\n\tforward_to
     = [loki.process.traceslogs.receiver]\n}\n\notelcol.processor.memory_limiter \"default\"
-    {\n\toutput {\n\t\tmetrics = [otelcol.processor.k8sattributes.default.input]\n\t\tlogs
+    {\n\tcheck_interval         = \"1s\"\n\tlimit_percentage       = 50\n\tspike_limit_percentage
+    = 30\n\n\toutput {\n\t\tmetrics = [otelcol.processor.k8sattributes.default.input]\n\t\tlogs
     \   = [otelcol.processor.k8sattributes.default.input]\n\t\ttraces  = [otelcol.processor.k8sattributes.default.input]\n\t}\n}\n\notelcol.processor.k8sattributes
     \"default\" {\n\toutput {\n\t\tmetrics = [otelcol.exporter.prometheus.tracesmetrics.input]\n\t\tlogs
     \   = [otelcol.exporter.loki.traceslogs.input]\n\t\ttraces  = argument.traces_forward_to.value\n\t}\n}\n\notelcol.exporter.prometheus
@@ -613,7 +615,7 @@ data:
     = argument.logs_forward_to.value\n}\n"
 kind: ConfigMap
 metadata:
-  name: agent-modules-d5hkbb8bkf
+  name: agent-modules-kbkcg9d4th
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -837,7 +839,7 @@ spec:
           path: /var/log
         name: varlog
       - configMap:
-          name: agent-modules-d5hkbb8bkf
+          name: agent-modules-kbkcg9d4th
         name: agent-modules
 ---
 apiVersion: monitoring.coreos.com/v1

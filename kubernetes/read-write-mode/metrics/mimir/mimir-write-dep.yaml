@@ -3,19 +3,20 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: mimir-write
+    app.kubernetes.io/component: mimir-write
+    app.kubernetes.io/part-of: memberlist
   name: mimir-write
-  namespace: monitoring-system
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: mimir-write
+      app.kubernetes.io/component: mimir-write
+      app.kubernetes.io/part-of: memberlist
   template:
     metadata:
       labels:
-        app: mimir-write
-        gossip_ring_member: "true"
+        app.kubernetes.io/component: mimir-write
+        app.kubernetes.io/part-of: memberlist
     spec:
       containers:
       - args:
@@ -31,7 +32,7 @@ spec:
         envFrom:
         - secretRef:
             name: mimir-env
-        image: grafana/mimir
+        image: docker.io/grafana/mimir
         imagePullPolicy: IfNotPresent
         name: mimir-write
         resources:

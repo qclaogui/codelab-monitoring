@@ -158,7 +158,6 @@ clean: ## Clean cluster
 .PHONY: manifests
 manifests: ## Generates k8s manifests
 manifests: $(KUSTOMIZE) manifests-common manifests-monolithic-mode manifests-read-write-mode manifests-microservices-mode
-	@$(KUSTOMIZE) build monitoring-mixins > monitoring-mixins/k8s-all-in-one.yaml
 
 manifests-common: $(KUSTOMIZE)
 	$(info ******************** generates manifests-common manifests ********************)
@@ -174,8 +173,6 @@ manifests-common: $(KUSTOMIZE)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/rancher-pushprox > kubernetes/common/rancher-pushprox/manifests/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/redis > kubernetes/common/redis/manifests/k8s-all-in-one.yaml
 
-
-.PHONY: manifests-monolithic-mode
 manifests-monolithic-mode: $(KUSTOMIZE)
 	$(info ******************** generates monolithic-mode manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/logs > kubernetes/monolithic-mode/logs/k8s-all-in-one.yaml
@@ -184,13 +181,11 @@ manifests-monolithic-mode: $(KUSTOMIZE)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/traces > kubernetes/monolithic-mode/traces/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/all-in-one > kubernetes/monolithic-mode/all-in-one/k8s-all-in-one.yaml
 
-.PHONY: manifests-read-write-mode
 manifests-read-write-mode: $(KUSTOMIZE)
 	$(info ******************** generates read-write-mode manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/read-write-mode/logs > kubernetes/read-write-mode/logs/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build kubernetes/read-write-mode/metrics > kubernetes/read-write-mode/metrics/k8s-all-in-one.yaml
 
-.PHONY: manifests-microservices-mode
 manifests-microservices-mode: $(KUSTOMIZE)
 	$(info ******************** generates microservices-mode manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/logs > kubernetes/microservices-mode/logs/k8s-all-in-one.yaml
@@ -198,9 +193,7 @@ manifests-microservices-mode: $(KUSTOMIZE)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/profiles > kubernetes/microservices-mode/profiles/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/traces > kubernetes/microservices-mode/traces/k8s-all-in-one.yaml
 
-
 # prometheus-operator-crds
-.PHONY: deploy-prometheus-operator-crds
 deploy-prometheus-operator-crds:
 	$(info ******************** deploy prometheus-operator-crds manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/prometheus-operator-crds | kubectl replace -f - || $(KUSTOMIZE) build --enable-helm kubernetes/common/prometheus-operator-crds | kubectl create -f -
@@ -271,14 +264,22 @@ delete-grafana:
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana | kubectl delete --ignore-not-found -f -
 
 
+define config_changes_trigger_pod_restart
+	@kubectl rollout restart deployment -n gateway nginx
+	kubectl rollout status -n gateway deployment/nginx --watch --timeout=600s
+	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
+	kubectl rollout status -n monitoring-system daemonset/grafana-agent --watch --timeout=600s
+	@kubectl rollout restart deployment -n monitoring-system grafana
+	kubectl rollout status -n monitoring-system deployment/grafana --watch --timeout=600s
+endef
 
 # Kubernetes monolithic-mode
 .PHONY: deploy-monolithic-mode-metrics
 deploy-monolithic-mode-metrics: deploy-grafana ## Deploy monolithic-mode metrics
 	$(info ******************** deploy monolithic-mode metrics manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/metrics | kubectl apply -f -
-	@$(KUSTOMIZE) build monitoring-mixins | kubectl apply -f -
 	kubectl rollout status -n monitoring-system deployment/mimir --watch --timeout=600s
+	@$(call config_changes_trigger_pod_restart)
 	@echo ""
 	@echo "Demo is running."
 	@echo "Go to http://localhost:8080/explore for the metrics."
@@ -291,6 +292,7 @@ deploy-monolithic-mode-logs: deploy-grafana ## Deploy monolithic-mode logs
 	$(info ******************** deploy monolithic-mode logs manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/logs | kubectl apply -f -
 	kubectl rollout status -n logging-system statefulset/loki --watch --timeout=600s
+	@$(call config_changes_trigger_pod_restart)
 	@echo ""
 	@echo "Demo is running."
 	@echo "Go to http://localhost:8080/explore for the logs."
@@ -303,6 +305,7 @@ deploy-monolithic-mode-profiles: deploy-grafana ## Deploy monolithic-mode profil
 	$(info ******************** deploy monolithic-mode profiles manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/profiles | kubectl apply -f -
 	kubectl rollout status -n profiles-system statefulset/pyroscope --watch --timeout=600s
+	@$(call config_changes_trigger_pod_restart)
 	@echo ""
 	@echo "Demo is running."
 	@echo "Go to http://localhost:8080/explore for the profiles."
@@ -314,14 +317,8 @@ delete-monolithic-mode-profiles:
 deploy-monolithic-mode-traces: deploy-grafana ## Deploy monolithic-mode traces
 	$(info ******************** deploy monolithic-mode traces manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/traces | kubectl apply -f -
-	@$(KUSTOMIZE) build monitoring-mixins | kubectl apply -f -
 	kubectl rollout status -n tracing-system statefulset/tempo --watch --timeout=600s
-	@kubectl rollout restart deployment -n gateway nginx
-	kubectl rollout status -n gateway deployment/nginx --watch --timeout=600s
-	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
-	kubectl rollout status -n monitoring-system daemonset/grafana-agent --watch --timeout=600s
-	@kubectl rollout restart deployment -n monitoring-system grafana
-	kubectl rollout status -n monitoring-system deployment/grafana --watch --timeout=600s
+	@$(call config_changes_trigger_pod_restart)
 	@echo ""
 	@echo "Demo is running."
 	@echo "Go to http://localhost:8080/explore for the traces."
@@ -333,14 +330,8 @@ delete-monolithic-mode-traces:
 deploy-monolithic-mode-all-in-one: deploy-grafana ## Deploy monolithic-mode all-in-one
 	$(info ******************** deploy monolithic-mode all-in-one manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/all-in-one | kubectl apply -f -
-	@$(KUSTOMIZE) build monitoring-mixins | kubectl apply -f -
 	kubectl rollout status -n monitoring-system deployment/mimir --watch --timeout=600s
-	@kubectl rollout restart deployment -n gateway nginx
-	kubectl rollout status -n gateway deployment/nginx --watch --timeout=600s
-	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
-	kubectl rollout status -n monitoring-system daemonset/grafana-agent --watch --timeout=600s	
-	@kubectl rollout restart deployment -n monitoring-system grafana
-	kubectl rollout status -n monitoring-system deployment/grafana --watch --timeout=600s
+	@$(call config_changes_trigger_pod_restart)
 	@echo ""
 	@echo "Demo is running."
 	@echo "Go to http://localhost:8080/explore for the all-in-one."
@@ -354,10 +345,8 @@ delete-monolithic-mode-all-in-one:
 deploy-read-write-mode-metrics: deploy-grafana ## Deploy read-write-mode metrics
 	$(info ******************** deploy read-write-mode metrics manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/read-write-mode/metrics | kubectl apply -f -
-	@$(KUSTOMIZE) build monitoring-mixins | kubectl apply -f -
 	kubectl rollout status -n monitoring-system deployment/mimir-write --watch --timeout=600s
-	@kubectl rollout restart deployment -n gateway nginx
-	kubectl rollout status -n gateway deployment/nginx --watch --timeout=600s
+	@$(call config_changes_trigger_pod_restart)
 	@echo ""
 	@echo "Demo is running."
 	@echo "Go to http://localhost:8080/explore for the metrics."
@@ -370,8 +359,7 @@ deploy-read-write-mode-logs: deploy-grafana ## Deploy read-write-mode logs
 	$(info ******************** deploy read-write-mode logs manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/read-write-mode/logs | kubectl apply -f -
 	kubectl rollout status -n logging-system statefulset/loki-write --watch --timeout=600s
-	@kubectl rollout restart deployment -n gateway nginx
-	kubectl rollout status -n gateway deployment/nginx --watch --timeout=600s
+	@$(call config_changes_trigger_pod_restart)
 	@echo ""
 	@echo "Demo is running."
 	@echo "Go to http://localhost:8080/explore for the logs."
@@ -387,8 +375,7 @@ deploy-microservices-mode-logs: deploy-grafana ## Deploy microservices-mode logs
 	$(info ******************** deploy microservices-mode logs manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/logs | kubectl apply -f -
 	kubectl rollout status -n logging-system statefulset/loki-distributed-ingester --watch --timeout=600s
-	@kubectl rollout restart deployment -n gateway nginx
-	kubectl rollout status -n gateway deployment/nginx --watch --timeout=600s
+	@$(call config_changes_trigger_pod_restart)
 	@echo ""
 	@echo "Demo is running."
 	@echo "Go to http://localhost:8080/explore for the logs."
@@ -400,24 +387,20 @@ delete-microservices-mode-logs:
 deploy-microservices-mode-metrics: deploy-grafana ## Deploy microservices-mode metrics
 	$(info ******************** deploy microservices-mode metrics manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/metrics | kubectl apply -f -
-	@$(KUSTOMIZE) build monitoring-mixins | kubectl apply -f -
 	kubectl rollout status -n monitoring-system statefulset/mimir-distributed-ingester --watch --timeout=600s
-	@kubectl rollout restart deployment -n gateway nginx
-	kubectl rollout status -n gateway deployment/nginx --watch --timeout=600s
+	@$(call config_changes_trigger_pod_restart)
 	@echo ""
 	@echo "Demo is running."
 	@echo "Go to http://localhost:8080/explore for the metrics."
 delete-microservices-mode-metrics:
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/metrics | kubectl delete -f -
-	@$(KUSTOMIZE) build monitoring-mixins | kubectl delete -f -
 
 
 .PHONY: deploy-microservices-mode-profiles
 deploy-microservices-mode-profiles: deploy-grafana ## Deploy microservices-mode profiles
 	$(info ******************** deploy microservices-mode profiles manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/profiles | kubectl apply -f -
-	@kubectl rollout restart deployment -n gateway nginx
-	kubectl rollout status -n gateway deployment/nginx --watch --timeout=600s
+	@$(call config_changes_trigger_pod_restart)
 	@echo ""
 	@echo "Demo is running."
 	@echo "Go to http://localhost:8080/explore for the profiles."
@@ -429,14 +412,8 @@ delete-microservices-mode-profiles:
 deploy-microservices-mode-traces: deploy-grafana ## Deploy microservices-mode traces
 	$(info ******************** deploy microservices-mode traces manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/traces | kubectl apply -f -
-	@$(KUSTOMIZE) build monitoring-mixins | kubectl apply -f -
 	kubectl rollout status -n tracing-system statefulset/tempo-distributed-ingester --watch --timeout=600s
-	@kubectl rollout restart deployment -n gateway nginx
-	kubectl rollout status -n gateway deployment/nginx --watch --timeout=600s
-	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
-	kubectl rollout status -n monitoring-system daemonset/grafana-agent --watch --timeout=600s
-	@kubectl rollout restart deployment -n monitoring-system grafana
-	kubectl rollout status -n monitoring-system deployment/grafana --watch --timeout=600s
+	@$(call config_changes_trigger_pod_restart)
 	@echo ""
 	@echo "Demo is running."
 	@echo "Go to http://localhost:8080/explore for the traces."

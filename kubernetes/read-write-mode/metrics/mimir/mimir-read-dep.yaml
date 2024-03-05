@@ -3,18 +3,17 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: mimir-read
+    app.kubernetes.io/component: mimir-read
   name: mimir-read
-  namespace: monitoring-system
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: mimir-read
+      app.kubernetes.io/component: mimir-read
   template:
     metadata:
       labels:
-        app: mimir-read
+        app.kubernetes.io/component: mimir-read
     spec:
       containers:
       - args:
@@ -30,7 +29,7 @@ spec:
         envFrom:
         - secretRef:
             name: mimir-env
-        image: grafana/mimir
+        image: docker.io/grafana/mimir
         imagePullPolicy: IfNotPresent
         name: mimir-read
         resources:

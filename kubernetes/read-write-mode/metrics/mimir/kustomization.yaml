@@ -1,0 +1,32 @@
+# ----------------------------------------------------
+# apiVersion and kind of Kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: monitoring-system
+
+labels:
+- includeSelectors: true
+  pairs:
+    app.kubernetes.io/instance: mimir-read-write-mode
+    app.kubernetes.io/name: mimir
+- includeSelectors: false
+  pairs:
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/version: 2.11.0
+
+images:
+- name: docker.io/grafana/mimir
+  newTag: 2.11.0
+
+resources:
+- gossip-ring-headless-svc.yaml
+- mimir-backend-dep.yaml
+- mimir-backend-svc.yaml
+- mimir-backend-servicemonitor.yaml
+- mimir-read-dep.yaml
+- mimir-read-svc.yaml
+- mimir-read-servicemonitor.yaml
+- mimir-write-dep.yaml
+- mimir-write-svc.yaml
+- mimir-write-servicemonitor.yaml

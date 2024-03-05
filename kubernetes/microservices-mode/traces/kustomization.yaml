@@ -9,7 +9,10 @@ kind: Kustomization
 
 resources:
 - tempo-distributed
-- ../../monolithic-mode/metrics
+- ../../monolithic-mode/metrics/mimir
+- ../../../monitoring-mixins/agent-flow-mixin/deploy
+- ../../../monitoring-mixins/go-runtime-mixin/deploy
+- ../../../monitoring-mixins/mimir-mixin/deploy
 
 secretGenerator:
 - name: grafana-env
@@ -35,7 +38,6 @@ secretGenerator:
 
 - name: mimir-env
   namespace: monitoring-system
-  behavior: replace
   literals:
   - MIMIR_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
   - JAEGER_SERVICE_NAME=mimir
@@ -56,7 +58,6 @@ configMapGenerator:
 
 - name: agent-config
   namespace: monitoring-system
-  behavior: replace
   options:
     disableNameSuffixHash: true
   files:
@@ -76,12 +77,10 @@ configMapGenerator:
 
 - name: mimir-config
   namespace: monitoring-system
-  behavior: replace
   files:
   - configs/mimir.yaml
 - name: runtime-config
   namespace: monitoring-system
-  behavior: replace
   files:
   - runtime.yaml=configs/mimir-runtime.yaml
 

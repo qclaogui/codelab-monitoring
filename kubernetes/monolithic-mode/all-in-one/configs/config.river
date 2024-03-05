@@ -65,6 +65,10 @@ tracing {
 }
 
 otelcol.processor.batch "containers" {
+	send_batch_size     = 16384
+	send_batch_max_size = 0
+	timeout             = "2s"
+
 	output {
 		metrics = [otelcol.processor.memory_limiter.containers.input]
 		logs    = [otelcol.processor.memory_limiter.containers.input]
@@ -73,6 +77,10 @@ otelcol.processor.batch "containers" {
 }
 
 otelcol.processor.memory_limiter "containers" {
+	check_interval         = "1s"
+	limit_percentage       = 50
+	spike_limit_percentage = 30
+
 	output {
 		metrics = [otelcol.processor.k8sattributes.containers.input]
 		logs    = [otelcol.processor.k8sattributes.containers.input]

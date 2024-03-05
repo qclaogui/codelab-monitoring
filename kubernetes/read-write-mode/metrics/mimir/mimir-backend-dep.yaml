@@ -3,18 +3,17 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: mimir-backend
+    app.kubernetes.io/component: mimir-backend
   name: mimir-backend
-  namespace: monitoring-system
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: mimir-backend
+      app.kubernetes.io/component: mimir-backend
   template:
     metadata:
       labels:
-        app: mimir-backend
+        app.kubernetes.io/component: mimir-backend
     spec:
       containers:
       - args:
@@ -30,7 +29,7 @@ spec:
         envFrom:
         - secretRef:
             name: mimir-env
-        image: grafana/mimir
+        image: docker.io/grafana/mimir
         imagePullPolicy: IfNotPresent
         name: mimir-backend
         resources:
