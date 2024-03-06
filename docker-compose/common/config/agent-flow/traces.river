@@ -54,7 +54,7 @@ discovery.relabel "containers" {
 	rule {
 		source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
 		regex         = "(.*)"
-		target_label  = "service_name"
+		target_label  = "app"
 	}
 
 	rule {
@@ -161,9 +161,8 @@ otelcol.receiver.jaeger "containers" {
 	}
 
 	output {
-		metrics = [otelcol.processor.batch.containers.input]
-		logs    = [otelcol.processor.batch.containers.input]
-		traces  = [otelcol.processor.batch.containers.input]
+		metrics = [otelcol.processor.transform.add_metric_datapoint_attributes.input]
+		traces  = [otelcol.processor.resourcedetection.containers.input]
 	}
 }
 
@@ -181,40 +180,104 @@ otelcol.receiver.otlp "containers" {
 	}
 
 	output {
+		metrics = [otelcol.processor.transform.add_metric_datapoint_attributes.input]
+		traces  = [otelcol.processor.resourcedetection.containers.input]
+	}
+}
+
+otelcol.processor.resourcedetection "containers" {
+	detectors = ["env"]
+
+	output {
+		metrics = [otelcol.processor.attributes.containers.input]
+		traces  = [otelcol.processor.attributes.containers.input]
+	}
+}
+
+otelcol.processor.transform "add_metric_datapoint_attributes" {
+	error_mode = "ignore"
+
+	metric_statements {
+		context    = "datapoint"
+		statements = [
+			`set(attributes["deployment.environment"], resource.attributes["deployment.environment"])`,
+			`set(attributes["service.version"], resource.attributes["service.version"])`,
+		]
+	}
+
+	output {
+		metrics = [otelcol.processor.attributes.containers.input]
+	}
+}
+
+otelcol.processor.attributes "containers" {
+	// Inserts a new attribute "cluster" to spans where the key doesn't exist.
+	action {
+		key    = "cluster"
+		value  = "docker-compose"
+		action = "insert"
+	}
+
+	output {
+		metrics = [otelcol.processor.transform.add_resource_attributes.input]
+		traces  = [otelcol.processor.transform.add_resource_attributes.input]
+	}
+}
+
+otelcol.processor.transform "add_resource_attributes" {
+	error_mode = "ignore"
+
+	metric_statements {
+		context    = "resource"
+		statements = [
+			`set(attributes["cluster"], "docker-compose") where attributes["cluster"] == nil`,
+		]
+	}
+
+	trace_statements {
+		context    = "resource"
+		statements = [
+			`set(attributes["cluster"], "docker-compose") where attributes["cluster"] == nil`,
+		]
+	}
+
+	output {
+		metrics = [otelcol.processor.filter.containers.input]
+		traces  = [otelcol.processor.filter.containers.input]
+	}
+}
+
+otelcol.processor.filter "containers" {
+	error_mode = "ignore"
+
+	output {
 		metrics = [otelcol.processor.batch.containers.input]
-		logs    = [otelcol.processor.batch.containers.input]
 		traces  = [otelcol.processor.batch.containers.input]
 	}
 }
 
 otelcol.processor.batch "containers" {
+	send_batch_size     = 16384
+	send_batch_max_size = 0
+	timeout             = "2s"
+
 	output {
 		metrics = [otelcol.processor.memory_limiter.containers.input]
-		logs    = [otelcol.processor.memory_limiter.containers.input]
 		traces  = [otelcol.processor.memory_limiter.containers.input]
 	}
 }
 
 otelcol.processor.memory_limiter "containers" {
+	check_interval         = "1s"
+	limit_percentage       = 50
+	spike_limit_percentage = 30
+
 	output {
 		metrics = [otelcol.exporter.prometheus.containers.input]
-		logs    = [otelcol.exporter.loki.containers.input]
 		traces  = [module.file.docker_compose.exports.traces_receiver]
 	}
 }
 
 otelcol.exporter.prometheus "containers" {
 	forward_to = [module.file.docker_compose.exports.metrics_receiver]
-}
-
-otelcol.exporter.loki "containers" {
-	forward_to = [loki.process.containers.receiver]
-}
-
-loki.process "containers" {
-	stage.tenant {
-		value = "anonymous"
-	}
-
-	forward_to = [module.file.docker_compose.exports.logs_receiver]
 }

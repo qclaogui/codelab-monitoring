@@ -1,5 +1,15 @@
 apiVersion: 1
 
+deleteDatasources:
+- name: Metrics
+  uid: metrics
+- name: Logs
+  uid: logs
+- name: Traces
+  uid: traces
+- name: Profiles
+  uid: profiles
+
 datasources:
 # Mimir for metrics
 - name: Metrics
@@ -60,7 +70,7 @@ datasources:
       datasourceUid: metrics
       spanStartTimeShift: '-30m'
       spanEndTimeShift: '30m'
-      tags: [{ key: 'service.name', value: 'service' }, { key: 'span_name' }, { key: 'http_method' }]
+      tags: [{ key: 'service.name', value: 'service' }]
       queries:
       - name: '(R) Rate'
         query: 'sum(rate(traces_spanmetrics_calls_total{$$__tags}[$$__rate_interval]))'

@@ -93,6 +93,34 @@ otelcol.processor.batch "default" {
 	}
 }
 
+otelcol.processor.memory_limiter "default" {
+	check_interval         = "1s"
+	limit_percentage       = 50
+	spike_limit_percentage = 30
+
+	output {
+		metrics = [otelcol.processor.k8sattributes.default.input]
+		logs    = [otelcol.processor.k8sattributes.default.input]
+		traces  = [otelcol.processor.k8sattributes.default.input]
+	}
+}
+
+otelcol.processor.k8sattributes "default" {
+	output {
+		metrics = [otelcol.exporter.prometheus.tracesmetrics.input]
+		logs    = [otelcol.exporter.loki.traceslogs.input]
+		traces  = argument.traces_forward_to.value
+	}
+}
+
+otelcol.exporter.prometheus "tracesmetrics" {
+	forward_to = argument.metrics_forward_to.value
+}
+
+otelcol.exporter.loki "traceslogs" {
+	forward_to = [loki.process.traceslogs.receiver]
+}
+
 // The OpenTelemetry spanlog connector processes incoming trace spans and extracts data from them ready
 // for logging.
 otelcol.connector.spanlogs "autologging" {
@@ -141,34 +169,6 @@ loki.process "autologging" {
 		source = "body"
 	}
 
-	forward_to = [loki.process.traceslogs.receiver]
-}
-
-otelcol.processor.memory_limiter "default" {
-	check_interval         = "1s"
-	limit_percentage       = 50
-	spike_limit_percentage = 30
-
-	output {
-		metrics = [otelcol.processor.k8sattributes.default.input]
-		logs    = [otelcol.processor.k8sattributes.default.input]
-		traces  = [otelcol.processor.k8sattributes.default.input]
-	}
-}
-
-otelcol.processor.k8sattributes "default" {
-	output {
-		metrics = [otelcol.exporter.prometheus.tracesmetrics.input]
-		logs    = [otelcol.exporter.loki.traceslogs.input]
-		traces  = argument.traces_forward_to.value
-	}
-}
-
-otelcol.exporter.prometheus "tracesmetrics" {
-	forward_to = argument.metrics_forward_to.value
-}
-
-otelcol.exporter.loki "traceslogs" {
 	forward_to = [loki.process.traceslogs.receiver]
 }
 

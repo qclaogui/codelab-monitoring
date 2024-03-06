@@ -48,9 +48,9 @@ services:
       - -config.expand-env=true
       - -log.level=warn
     environment:
-      - JAEGER_SERVICE_NAME=mimir
       - JAEGER_AGENT_HOST=agent
       - JAEGER_AGENT_PORT=6831
+      - JAEGER_TAGS=app=mimir
       - JAEGER_SAMPLER_TYPE=const
       - JAEGER_SAMPLER_PARAM=1
     healthcheck:
@@ -92,9 +92,9 @@ services:
       - -config.expand-env=true
       - -log.level=warn
     environment:
-      - JAEGER_SERVICE_NAME=loki
       - JAEGER_AGENT_HOST=agent
       - JAEGER_AGENT_PORT=6831
+      - JAEGER_TAGS=app=loki
       - JAEGER_SAMPLER_TYPE=const
       - JAEGER_SAMPLER_PARAM=1
     healthcheck:
@@ -138,9 +138,9 @@ services:
       - -config.expand-env=true
       - -log.level=warn
     environment:
-      - JAEGER_SERVICE_NAME=tempo
       - JAEGER_AGENT_HOST=agent
       - JAEGER_AGENT_PORT=6831
+      - JAEGER_TAGS=app=tempo
       - JAEGER_SAMPLER_TYPE=const
       - JAEGER_SAMPLER_PARAM=1
     healthcheck:
@@ -164,13 +164,16 @@ services:
       rules load /tempo-mixin/rules.yaml /tempo-mixin/alerts.yaml
 
   pyroscope:
+    depends_on:
+      minio:
+        condition: service_healthy
     image: grafana/pyroscope:1.4.0
     volumes:
       - ../../common/config/pyroscope/monolithic-mode-profiles.yaml:/etc/config.yaml
     environment:
-      - JAEGER_SERVICE_NAME=pyroscope
       - JAEGER_AGENT_HOST=agent
       - JAEGER_AGENT_PORT=6831
+      - JAEGER_TAGS=app=pyroscope
       - JAEGER_SAMPLER_TYPE=const
       - JAEGER_SAMPLER_PARAM=1
     command:
@@ -200,7 +203,7 @@ services:
       - GF_DIAGNOSTICS_PROFILING_ADDR=0.0.0.0
       - GF_DIAGNOSTICS_PROFILING_PORT=6060
       - GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS=agent:4317
-      - GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES=service.namespace:monitoring-system
+      - GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES=app:grafana
       # - GF_INSTALL_PLUGINS=pyroscope-datasource,pyroscope-panel
     ports:
       - "3000:3000"

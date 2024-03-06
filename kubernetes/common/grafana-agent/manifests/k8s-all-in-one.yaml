@@ -581,14 +581,21 @@ data:
     \ = [\n\t\t\totelcol.processor.batch.default.input,\n\t\t\totelcol.connector.spanlogs.autologging.input,\n\t\t]\n\t}\n}\n\notelcol.processor.batch
     \"default\" {\n\tsend_batch_size     = 16384\n\tsend_batch_max_size = 0\n\ttimeout
     \            = \"2s\"\n\n\toutput {\n\t\tmetrics = [otelcol.processor.memory_limiter.default.input]\n\t\tlogs
-    \   = [otelcol.processor.memory_limiter.default.input]\n\t\ttraces  = [otelcol.processor.memory_limiter.default.input]\n\t}\n}\n\n//
-    The OpenTelemetry spanlog connector processes incoming trace spans and extracts
-    data from them ready\n// for logging.\notelcol.connector.spanlogs \"autologging\"
-    {\n\t// We only want to output a line for each root span (ie. every single trace),
-    and not for every\n\t// process or span (outputting a line for every span would
-    be extremely verbose).\n\tspans     = false\n\troots     = true\n\tprocesses =
-    false\n\n\t// We want to ensure that the following three span attributes are included
-    in the log line, if present.\n\tspan_attributes = [\n\t\t\"http.method\",\n\t\t\"http.target\",\n\t\t\"http.status_code\",\n\t]\n\n\t//
+    \   = [otelcol.processor.memory_limiter.default.input]\n\t\ttraces  = [otelcol.processor.memory_limiter.default.input]\n\t}\n}\n\notelcol.processor.memory_limiter
+    \"default\" {\n\tcheck_interval         = \"1s\"\n\tlimit_percentage       = 50\n\tspike_limit_percentage
+    = 30\n\n\toutput {\n\t\tmetrics = [otelcol.processor.k8sattributes.default.input]\n\t\tlogs
+    \   = [otelcol.processor.k8sattributes.default.input]\n\t\ttraces  = [otelcol.processor.k8sattributes.default.input]\n\t}\n}\n\notelcol.processor.k8sattributes
+    \"default\" {\n\toutput {\n\t\tmetrics = [otelcol.exporter.prometheus.tracesmetrics.input]\n\t\tlogs
+    \   = [otelcol.exporter.loki.traceslogs.input]\n\t\ttraces  = argument.traces_forward_to.value\n\t}\n}\n\notelcol.exporter.prometheus
+    \"tracesmetrics\" {\n\tforward_to = argument.metrics_forward_to.value\n}\n\notelcol.exporter.loki
+    \"traceslogs\" {\n\tforward_to = [loki.process.traceslogs.receiver]\n}\n\n// The
+    OpenTelemetry spanlog connector processes incoming trace spans and extracts data
+    from them ready\n// for logging.\notelcol.connector.spanlogs \"autologging\" {\n\t//
+    We only want to output a line for each root span (ie. every single trace), and
+    not for every\n\t// process or span (outputting a line for every span would be
+    extremely verbose).\n\tspans     = false\n\troots     = true\n\tprocesses = false\n\n\t//
+    We want to ensure that the following three span attributes are included in the
+    log line, if present.\n\tspan_attributes = [\n\t\t\"http.method\",\n\t\t\"http.target\",\n\t\t\"http.status_code\",\n\t]\n\n\t//
     Overrides the default key in the log line to be `traceId`, which is then used
     by Grafana to\n\t// identify the trace ID for correlation with the Tempo datasource.\n\toverrides
     {\n\t\ttrace_id_key = \"traceId\"\n\t}\n\n\t// Send to the OpenTelemetry Loki
@@ -603,19 +610,11 @@ data:
     = \"\"}\n\t}\n\t// The output stage takes the body (the main logline) and uses
     this as the source for the output\n\t// logline. In this case, it essentially
     turns it into logfmt.\n\tstage.output {\n\t\tsource = \"body\"\n\t}\n\n\tforward_to
-    = [loki.process.traceslogs.receiver]\n}\n\notelcol.processor.memory_limiter \"default\"
-    {\n\tcheck_interval         = \"1s\"\n\tlimit_percentage       = 50\n\tspike_limit_percentage
-    = 30\n\n\toutput {\n\t\tmetrics = [otelcol.processor.k8sattributes.default.input]\n\t\tlogs
-    \   = [otelcol.processor.k8sattributes.default.input]\n\t\ttraces  = [otelcol.processor.k8sattributes.default.input]\n\t}\n}\n\notelcol.processor.k8sattributes
-    \"default\" {\n\toutput {\n\t\tmetrics = [otelcol.exporter.prometheus.tracesmetrics.input]\n\t\tlogs
-    \   = [otelcol.exporter.loki.traceslogs.input]\n\t\ttraces  = argument.traces_forward_to.value\n\t}\n}\n\notelcol.exporter.prometheus
-    \"tracesmetrics\" {\n\tforward_to = argument.metrics_forward_to.value\n}\n\notelcol.exporter.loki
-    \"traceslogs\" {\n\tforward_to = [loki.process.traceslogs.receiver]\n}\n\nloki.process
-    \"traceslogs\" {\n\tstage.tenant {\n\t\tvalue = \"anonymous\"\n\t}\n\n\tforward_to
-    = argument.logs_forward_to.value\n}\n"
+    = [loki.process.traceslogs.receiver]\n}\n\nloki.process \"traceslogs\" {\n\tstage.tenant
+    {\n\t\tvalue = \"anonymous\"\n\t}\n\n\tforward_to = argument.logs_forward_to.value\n}\n"
 kind: ConfigMap
 metadata:
-  name: agent-modules-kbkcg9d4th
+  name: agent-modules-k2kfd9mm27
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -839,7 +838,7 @@ spec:
           path: /var/log
         name: varlog
       - configMap:
-          name: agent-modules-kbkcg9d4th
+          name: agent-modules-k2kfd9mm27
         name: agent-modules
 ---
 apiVersion: monitoring.coreos.com/v1

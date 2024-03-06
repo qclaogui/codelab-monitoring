@@ -43,7 +43,7 @@ services:
   tempo:
     depends_on:
       minio:
-        condition: service_healthy
+        condition: service_started
     image: &tempoImage grafana/tempo:2.4.0
     restart: always
     volumes:
@@ -54,9 +54,9 @@ services:
       - -log.level=warn
       - -config.expand-env=true
     environment:
-      - JAEGER_SERVICE_NAME=tempo
       - JAEGER_AGENT_HOST=agent
       - JAEGER_AGENT_PORT=6831
+      - JAEGER_TAGS=app=tempo
       - JAEGER_SAMPLER_TYPE=const
       - JAEGER_SAMPLER_PARAM=1
     healthcheck:
@@ -76,7 +76,7 @@ services:
   mimir:
     depends_on:
       minio:
-        condition: service_healthy
+        condition: service_started
     image: grafana/mimir:2.11.0
     volumes:
       - ../../common/config/mimir/monolithic-mode-metrics.yaml:/etc/config.yaml
@@ -86,9 +86,9 @@ services:
       - -config.expand-env=true
       - -log.level=warn
     environment:
-      - JAEGER_SERVICE_NAME=mimir
       - JAEGER_AGENT_HOST=agent
       - JAEGER_AGENT_PORT=6831
+      - JAEGER_TAGS=app=mimir
       - JAEGER_SAMPLER_TYPE=const
       - JAEGER_SAMPLER_PARAM=1
     healthcheck:
@@ -124,6 +124,6 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin_password}
       - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor tracesEmbeddedFlameGraph traceqlSearch correlations metricsSummary traceToMetrics traceToProfiles
       - GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS=agent:4317
-      - GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES=service.namespace:monitoring-system
+      - GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES=app:grafana
     ports:
       - "3000:3000"
