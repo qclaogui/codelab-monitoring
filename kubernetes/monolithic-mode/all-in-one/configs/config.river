@@ -61,55 +61,7 @@ module.file "traces_primary" {
 
 tracing {
 	sampling_fraction = 0.8
-	write_to          = [otelcol.processor.batch.containers.input]
-}
-
-otelcol.processor.batch "containers" {
-	send_batch_size     = 16384
-	send_batch_max_size = 0
-	timeout             = "2s"
-
-	output {
-		metrics = [otelcol.processor.memory_limiter.containers.input]
-		logs    = [otelcol.processor.memory_limiter.containers.input]
-		traces  = [otelcol.processor.memory_limiter.containers.input]
-	}
-}
-
-otelcol.processor.memory_limiter "containers" {
-	check_interval         = "1s"
-	limit_percentage       = 50
-	spike_limit_percentage = 30
-
-	output {
-		metrics = [otelcol.processor.k8sattributes.containers.input]
-		logs    = [otelcol.processor.k8sattributes.containers.input]
-		traces  = [otelcol.processor.k8sattributes.containers.input]
-	}
-}
-
-otelcol.processor.k8sattributes "containers" {
-	output {
-		metrics = [otelcol.exporter.prometheus.containers.input]
-		logs    = [otelcol.exporter.loki.containers.input]
-		traces  = [module.file.lgtmp.exports.traces_receiver]
-	}
-}
-
-otelcol.exporter.prometheus "containers" {
-	forward_to = [module.file.lgtmp.exports.metrics_receiver]
-}
-
-otelcol.exporter.loki "containers" {
-	forward_to = [loki.process.containers.receiver]
-}
-
-loki.process "containers" {
-	stage.tenant {
-		value = "anonymous"
-	}
-
-	forward_to = [module.file.lgtmp.exports.logs_receiver]
+	write_to          = [module.file.traces_primary.exports.agent_traces_input]
 }
 
 /********************************************

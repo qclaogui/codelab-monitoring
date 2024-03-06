@@ -27,17 +27,17 @@ secretGenerator:
   namespace: monitoring-system
   literals:
   - GF_LOG_LEVEL=warn
-  - GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS=grafana-agent.monitoring-system:4317
-  - GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES=service.namespace:monitoring-system
+  - GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS=grafana-agent.monitoring-system.svc.cluster.local:4317
+  - GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES=app:grafana
   - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor tracesEmbeddedFlameGraph traceqlSearch correlations metricsSummary traceToMetrics traceToProfiles
 
 - name: loki-env
   namespace: logging-system
   literals:
   - LOKI_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
-  - JAEGER_SERVICE_NAME=loki
-  - JAEGER_AGENT_HOST=grafana-agent.monitoring-system
+  - JAEGER_AGENT_HOST=grafana-agent.monitoring-system.svc.cluster.local
   - JAEGER_AGENT_PORT=6831
+  - JAEGER_TAGS=app=loki
   - JAEGER_SAMPLER_TYPE=const
   - JAEGER_SAMPLER_PARAM=1
 
@@ -45,9 +45,9 @@ secretGenerator:
   namespace: tracing-system
   literals:
   - TEMPO_S3_SECRET_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
-  - JAEGER_SERVICE_NAME=tempo
-  - JAEGER_AGENT_HOST=grafana-agent.monitoring-system
+  - JAEGER_AGENT_HOST=grafana-agent.monitoring-system.svc.cluster.local
   - JAEGER_AGENT_PORT=6831
+  - JAEGER_TAGS=app=tempo
   - JAEGER_SAMPLER_TYPE=const
   - JAEGER_SAMPLER_PARAM=1
 
@@ -55,9 +55,9 @@ secretGenerator:
   namespace: monitoring-system
   literals:
   - MIMIR_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
-  - JAEGER_SERVICE_NAME=mimir
-  - JAEGER_AGENT_HOST=grafana-agent.monitoring-system
+  - JAEGER_AGENT_HOST=grafana-agent.monitoring-system.svc.cluster.local
   - JAEGER_AGENT_PORT=6831
+  - JAEGER_TAGS=app=mimir
   - JAEGER_SAMPLER_TYPE=const
   - JAEGER_SAMPLER_PARAM=1
 
@@ -65,9 +65,9 @@ secretGenerator:
   namespace: profiles-system
   literals:
   - PYROSCOPE_STORAGE_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
-  - JAEGER_SERVICE_NAME=pyroscope
-  - JAEGER_AGENT_HOST=grafana-agent.monitoring-system
+  - JAEGER_AGENT_HOST=grafana-agent.monitoring-system.svc.cluster.local
   - JAEGER_AGENT_PORT=6831
+  - JAEGER_TAGS=app=pyroscope
   - JAEGER_SAMPLER_TYPE=const
   - JAEGER_SAMPLER_PARAM=1
 

@@ -136,33 +136,7 @@ data:
   config.river: "/*\nThe following example shows using the default all logs processing
     module, for\na single tenant and specifying the destination url/credentials via
     environment\nvariables.\n*/\nlogging {\n\tlevel  = coalesce(env(\"AGENT_LOG_LEVEL\"),
-    \"info\")\n\tformat = \"logfmt\"\n}\n\nmodule.file \"lgtmp\" {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"),
-    \"/etc/agent-modules\") + \"/lgtmp.river\"\n\n\targuments {\n\t\tcluster           =
-    coalesce(env(\"CLUSTER\"), \"k3d-k3s-codelab\")\n\t\tlogs_endpoint     = coalesce(env(\"LOGS_ENDPOINT\"),
-    \"http://nginx.gateway.svc:3100\")\n\t\tmetrics_endpoint  = coalesce(env(\"METRICS_ENDPOINT\"),
-    \"http://nginx.gateway.svc:8080\")\n\t\tprofiles_endpoint = coalesce(env(\"PROFILES_ENDPOINT\"),
-    \"http://nginx.gateway.svc:4040\")\n\t\ttraces_endpoint   = coalesce(env(\"TRACES_ENDPOINT\"),
-    \"nginx.gateway.svc:4317\")\n\t}\n}\n\n/********************************************\n
-    * Metrics\n ********************************************/\nmodule.file \"metrics_primary\"
-    {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent-modules\")
-    + \"/metrics.river\"\n\n\targuments {\n\t\tforward_to = [module.file.lgtmp.exports.metrics_receiver]\n\t\tclustering
-    = true\n\t}\n}\n\n/********************************************\n * Logs\n ********************************************/\nmodule.git
-    \"logs_primary\" {\n\trepository = \"https://github.com/grafana/agent-modules.git\"\n\trevision
-    \  = \"main\"\n\tpath       = \"modules/kubernetes/logs/all.river\"\n\n\targuments
-    {\n\t\tforward_to = [module.file.lgtmp.exports.logs_receiver]\n\t}\n}\n\n/********************************************\n
-    * Traces\n ********************************************/\nmodule.file \"traces_primary\"
-    {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent-modules\")
-    + \"/traces.river\"\n\n\targuments {\n\t\tmetrics_forward_to = [module.file.lgtmp.exports.metrics_receiver]\n\t\tlogs_forward_to
-    \   = [module.file.lgtmp.exports.logs_receiver]\n\t\ttraces_forward_to  = [module.file.lgtmp.exports.traces_receiver]\n\t\tcluster
-    \           = coalesce(env(\"CLUSTER\"), \"k3d-k3s-codelab\")\n\t}\n}\n\n/********************************************\n
-    * Profiles\n ********************************************/\nmodule.file \"profiles_primary\"
-    {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent-modules\")
-    + \"/profiles.river\"\n\n\targuments {\n\t\tforward_to = [module.file.lgtmp.exports.profiles_receiver]\n\t\tclustering
-    = true\n\t}\n}\n\n/********************************************\n * Agent Integrations\n
-    ********************************************/\nmodule.file \"agent_integrations\"
-    {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent-modules\")
-    + \"/integrations.river\"\n\n\targuments {\n\t\tname       = \"agent-integrations\"\n\t\tnamespace
-    \ = \"monitoring-system\"\n\t\tforward_to = [module.file.lgtmp.exports.metrics_receiver]\n\t}\n}\n"
+    \"info\")\n\tformat = \"logfmt\"\n}\n"
 kind: ConfigMap
 metadata:
   name: agent-config
@@ -561,31 +535,56 @@ data:
     = false\n\t\t}\n\n\t\tprofile.process_cpu {\n\t\t\tenabled = false\n\t\t}\n\n\t\tprofile.goroutine
     {\n\t\t\tenabled = false\n\t\t}\n\n\t\tprofile.block {\n\t\t\tenabled = false\n\t\t}\n\n\t\tprofile.mutex
     {\n\t\t\tenabled = false\n\t\t}\n\n\t\tprofile.fgprof {\n\t\t\tenabled = true\n\t\t}\n\t}\n}\n"
-  traces.river: "/*\nModule: traces\n*/\nargument \"traces_forward_to\" {\n\toptional
-    = false\n}\n\nargument \"logs_forward_to\" {\n\toptional = false\n}\n\nargument
+  traces.river: "/*\nModule: traces\n*/\n\n/********************************************\n
+    * ARGUMENTS\n ********************************************/\nargument \"traces_forward_to\"
+    {\n\toptional = false\n}\n\nargument \"logs_forward_to\" {\n\toptional = false\n}\n\nargument
     \"metrics_forward_to\" {\n\toptional = false\n}\n\nargument \"cluster\" {\n\toptional
     = true\n\tdefault  = \"k3d-k3s-codelab\"\n}\n\nargument \"otlp_http_endpoint\"
     {\n\toptional = true\n\tdefault  = \"0.0.0.0:4318\"\n}\n\nargument \"otlp_grpc_endpoint\"
     {\n\toptional = true\n\tdefault  = \"0.0.0.0:4317\"\n}\n\n/********************************************\n
+    * EXPORTS\n ********************************************/\nexport \"agent_traces_input\"
+    {\n\tvalue = otelcol.processor.batch.default.input\n}\n\n/********************************************\n
     * Jaeger for Metrics Logs Traces\n ********************************************/\n\notelcol.receiver.jaeger
     \"default\" {\n\tprotocols {\n\t\tgrpc {\n\t\t\tendpoint = \"0.0.0.0:14250\"\n\t\t}\n\n\t\tthrift_http
     {\n\t\t\tendpoint = \"0.0.0.0:14268\"\n\t\t}\n\n\t\tthrift_binary {\n\t\t\tendpoint
     = \"0.0.0.0:6832\"\n\t\t}\n\n\t\tthrift_compact {\n\t\t\tendpoint = \"0.0.0.0:6831\"\n\t\t}\n\t}\n\n\toutput
-    {\n\t\tmetrics = [otelcol.processor.batch.default.input]\n\t\tlogs    = [otelcol.processor.batch.default.input]\n\t\ttraces
-    \ = [otelcol.processor.batch.default.input]\n\t}\n}\n\n/********************************************\n
+    {\n\t\tmetrics = [otelcol.processor.transform.add_metric_datapoint_attributes.input]\n\t\tlogs
+    \   = [otelcol.processor.resourcedetection.default.input]\n\t\ttraces  = [otelcol.processor.resourcedetection.default.input]\n\t}\n}\n\n/********************************************\n
     * Otelcol for Metrics Logs Traces\n ********************************************/\n//
     https://grafana.com/docs/agent/latest/flow/reference/components/otelcol.receiver.otlp/\notelcol.receiver.otlp
     \"default\" {\n\tgrpc {\n\t\tendpoint = argument.otlp_grpc_endpoint.value\n\t}\n\n\thttp
     {\n\t\tendpoint = argument.otlp_http_endpoint.value\n\t}\n\n\toutput {\n\t\tmetrics
-    = [otelcol.processor.batch.default.input]\n\t\tlogs    = [otelcol.processor.batch.default.input]\n\t\ttraces
-    \ = [\n\t\t\totelcol.processor.batch.default.input,\n\t\t\totelcol.connector.spanlogs.autologging.input,\n\t\t]\n\t}\n}\n\notelcol.processor.batch
+    = [otelcol.processor.transform.add_metric_datapoint_attributes.input]\n\t\tlogs
+    \   = [otelcol.processor.resourcedetection.default.input]\n\t\ttraces  = [\n\t\t\totelcol.processor.resourcedetection.default.input,\n\t\t\totelcol.connector.spanlogs.autologging.input,\n\t\t]\n\t}\n}\n\notelcol.processor.resourcedetection
+    \"default\" {\n\tdetectors = [\"env\"]\n\n\toutput {\n\t\tlogs    = [otelcol.processor.k8sattributes.default.input]\n\t\tmetrics
+    = [otelcol.processor.k8sattributes.default.input]\n\t\ttraces  = [otelcol.processor.k8sattributes.default.input]\n\t}\n}\n\notelcol.processor.transform
+    \"add_metric_datapoint_attributes\" {\n\terror_mode = \"ignore\"\n\n\tmetric_statements
+    {\n\t\tcontext    = \"datapoint\"\n\t\tstatements = [\n\t\t\t`set(attributes[\"deployment.environment\"],
+    resource.attributes[\"deployment.environment\"])`,\n\t\t\t`set(attributes[\"service.version\"],
+    resource.attributes[\"service.version\"])`,\n\t\t]\n\t}\n\n\toutput {\n\t\tmetrics
+    = [otelcol.processor.k8sattributes.default.input]\n\t}\n}\n\notelcol.processor.k8sattributes
+    \"default\" {\n\textract {\n\t\tmetadata = [\n\t\t\t\"k8s.namespace.name\",\n\t\t\t\"k8s.pod.name\",\n\t\t\t\"k8s.deployment.name\",\n\t\t\t\"k8s.statefulset.name\",\n\t\t\t\"k8s.daemonset.name\",\n\t\t\t\"k8s.cronjob.name\",\n\t\t\t\"k8s.job.name\",\n\t\t\t\"k8s.node.name\",\n\t\t\t\"k8s.pod.uid\",\n\t\t\t\"k8s.pod.start_time\",\n\t\t]\n\t}\n\n\tpod_association
+    {\n\t\tsource {\n\t\t\tfrom = \"connection\"\n\t\t}\n\t}\n\n\toutput {\n\t\tmetrics
+    = [otelcol.processor.transform.add_resource_attributes.input]\n\t\tlogs    = [otelcol.processor.transform.add_resource_attributes.input]\n\t\ttraces
+    \ = [otelcol.processor.transform.add_resource_attributes.input]\n\t}\n}\n\notelcol.processor.transform
+    \"add_resource_attributes\" {\n\terror_mode = \"ignore\"\n\n\tmetric_statements
+    {\n\t\tcontext    = \"resource\"\n\t\tstatements = [\n\t\t\t`set(attributes[\"k8s.cluster.name\"],
+    \"k3d-k3s-codelab\") where attributes[\"k8s.cluster.name\"] == nil`,\n\t\t]\n\t}\n\n\tlog_statements
+    {\n\t\tcontext    = \"resource\"\n\t\tstatements = [\n\t\t\t`set(attributes[\"pod\"],
+    attributes[\"k8s.pod.name\"])`,\n\t\t\t`set(attributes[\"namespace\"], attributes[\"k8s.namespace.name\"])`,\n\t\t\t`set(attributes[\"loki.resource.labels\"],
+    \"pod, namespace, cluster, job\")`,\n\t\t\t`set(attributes[\"k8s.cluster.name\"],
+    \"k3d-k3s-codelab\") where attributes[\"k8s.cluster.name\"] == nil`,\n\t\t]\n\t}\n\n\ttrace_statements
+    {\n\t\tcontext    = \"resource\"\n\t\tstatements = [\n\t\t\t`set(attributes[\"k8s.cluster.name\"],
+    \"k3d-k3s-codelab\") where attributes[\"k8s.cluster.name\"] == nil`,\n\t\t]\n\t}\n\n\toutput
+    {\n\t\tmetrics = [otelcol.processor.filter.default.input]\n\t\tlogs    = [otelcol.processor.filter.default.input]\n\t\ttraces
+    \ = [otelcol.processor.filter.default.input]\n\t}\n}\n\notelcol.processor.filter
+    \"default\" {\n\terror_mode = \"ignore\"\n\n\toutput {\n\t\tmetrics = [otelcol.processor.batch.default.input]\n\t\tlogs
+    \   = [otelcol.processor.batch.default.input]\n\t\ttraces  = [otelcol.processor.batch.default.input]\n\t}\n}\n\notelcol.processor.batch
     \"default\" {\n\tsend_batch_size     = 16384\n\tsend_batch_max_size = 0\n\ttimeout
     \            = \"2s\"\n\n\toutput {\n\t\tmetrics = [otelcol.processor.memory_limiter.default.input]\n\t\tlogs
     \   = [otelcol.processor.memory_limiter.default.input]\n\t\ttraces  = [otelcol.processor.memory_limiter.default.input]\n\t}\n}\n\notelcol.processor.memory_limiter
     \"default\" {\n\tcheck_interval         = \"1s\"\n\tlimit_percentage       = 50\n\tspike_limit_percentage
-    = 30\n\n\toutput {\n\t\tmetrics = [otelcol.processor.k8sattributes.default.input]\n\t\tlogs
-    \   = [otelcol.processor.k8sattributes.default.input]\n\t\ttraces  = [otelcol.processor.k8sattributes.default.input]\n\t}\n}\n\notelcol.processor.k8sattributes
-    \"default\" {\n\toutput {\n\t\tmetrics = [otelcol.exporter.prometheus.tracesmetrics.input]\n\t\tlogs
+    = 30\n\n\toutput {\n\t\tmetrics = [otelcol.exporter.prometheus.tracesmetrics.input]\n\t\tlogs
     \   = [otelcol.exporter.loki.traceslogs.input]\n\t\ttraces  = argument.traces_forward_to.value\n\t}\n}\n\notelcol.exporter.prometheus
     \"tracesmetrics\" {\n\tforward_to = argument.metrics_forward_to.value\n}\n\notelcol.exporter.loki
     \"traceslogs\" {\n\tforward_to = [loki.process.traceslogs.receiver]\n}\n\n// The
@@ -614,7 +613,7 @@ data:
     {\n\t\tvalue = \"anonymous\"\n\t}\n\n\tforward_to = argument.logs_forward_to.value\n}\n"
 kind: ConfigMap
 metadata:
-  name: agent-modules-k2kfd9mm27
+  name: agent-modules-bcccgk262t
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -754,6 +753,7 @@ spec:
         profiles.grafana.com/goroutine.scrape: "true"
         profiles.grafana.com/memory.port_name: http-metrics
         profiles.grafana.com/memory.scrape: "true"
+        pyroscope.io/service_name: grafana-agent
       labels:
         app.kubernetes.io/instance: grafana-agent
         app.kubernetes.io/name: grafana-agent
@@ -838,7 +838,7 @@ spec:
           path: /var/log
         name: varlog
       - configMap:
-          name: agent-modules-k2kfd9mm27
+          name: agent-modules-bcccgk262t
         name: agent-modules
 ---
 apiVersion: monitoring.coreos.com/v1

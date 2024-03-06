@@ -1318,19 +1318,7 @@ data:
     + \"/traces.river\"\n\n\targuments {\n\t\tmetrics_forward_to = [module.file.lgtmp.exports.metrics_receiver]\n\t\tlogs_forward_to
     \   = [module.file.lgtmp.exports.logs_receiver]\n\t\ttraces_forward_to  = [module.file.lgtmp.exports.traces_receiver]\n\t\tcluster
     \           = coalesce(env(\"CLUSTER\"), \"k3d-k3s-codelab\")\n\t}\n}\n\ntracing
-    {\n\tsampling_fraction = 0.8\n\twrite_to          = [otelcol.processor.batch.containers.input]\n}\n\notelcol.processor.batch
-    \"containers\" {\n\tsend_batch_size     = 16384\n\tsend_batch_max_size = 0\n\ttimeout
-    \            = \"2s\"\n\n\toutput {\n\t\tmetrics = [otelcol.processor.memory_limiter.containers.input]\n\t\tlogs
-    \   = [otelcol.processor.memory_limiter.containers.input]\n\t\ttraces  = [otelcol.processor.memory_limiter.containers.input]\n\t}\n}\n\notelcol.processor.memory_limiter
-    \"containers\" {\n\tcheck_interval         = \"1s\"\n\tlimit_percentage       =
-    50\n\tspike_limit_percentage = 30\n\n\toutput {\n\t\tmetrics = [otelcol.processor.k8sattributes.containers.input]\n\t\tlogs
-    \   = [otelcol.processor.k8sattributes.containers.input]\n\t\ttraces  = [otelcol.processor.k8sattributes.containers.input]\n\t}\n}\n\notelcol.processor.k8sattributes
-    \"containers\" {\n\toutput {\n\t\tmetrics = [otelcol.exporter.prometheus.containers.input]\n\t\tlogs
-    \   = [otelcol.exporter.loki.containers.input]\n\t\ttraces  = [module.file.lgtmp.exports.traces_receiver]\n\t}\n}\n\notelcol.exporter.prometheus
-    \"containers\" {\n\tforward_to = [module.file.lgtmp.exports.metrics_receiver]\n}\n\notelcol.exporter.loki
-    \"containers\" {\n\tforward_to = [loki.process.containers.receiver]\n}\n\nloki.process
-    \"containers\" {\n\tstage.tenant {\n\t\tvalue = \"anonymous\"\n\t}\n\n\tforward_to
-    = [module.file.lgtmp.exports.logs_receiver]\n}\n\n/********************************************\n
+    {\n\tsampling_fraction = 0.8\n\twrite_to          = [module.file.traces_primary.exports.agent_traces_input]\n}\n\n/********************************************\n
     * Profiles\n ********************************************/\nmodule.file \"profiles_primary\"
     {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent-modules\")
     + \"/profiles.river\"\n\n\targuments {\n\t\tforward_to = [module.file.lgtmp.exports.profiles_receiver]\n\t\tclustering
@@ -4558,7 +4546,7 @@ data:
           datasourceUid: metrics
           spanStartTimeShift: '-30m'
           spanEndTimeShift: '30m'
-          tags: [{ key: 'service.name', value: 'service' }, { key: 'span_name' }, { key: 'http_method' }]
+          tags: [{ key: 'service.name', value: 'service' }]
           queries:
           - name: '(R) Rate'
             query: 'sum(rate(traces_spanmetrics_calls_total{$$__tags}[$$__rate_interval]))'
@@ -4570,14 +4558,14 @@ data:
           datasourceUid: logs
           spanStartTimeShift: '-30m'
           spanEndTimeShift: '30m'
-          tags: [{ key: 'service.name', value: 'app' }, { key: 'namespace' }, { key: 'cluster' }]
+          tags: [{ key: 'app', value: 'app' }]
           filterByTraceID: false
           filterBySpanID: false
         tracesToProfiles:
           customQuery: false
           datasourceUid: "profiles"
           profileTypeId: "process_cpu:cpu:nanoseconds:cpu:nanoseconds"
-          tags: [{ key: 'service.name', value: 'service_name' }]
+          tags: [{ key: 'app', value: 'service_name' }]
 
     # Pyroscope for profiles
     - name: Profiles
@@ -62889,11 +62877,11 @@ metadata:
 ---
 apiVersion: v1
 data:
-  JAEGER_AGENT_HOST: Z3JhZmFuYS1hZ2VudC5tb25pdG9yaW5nLXN5c3RlbQ==
+  JAEGER_AGENT_HOST: Z3JhZmFuYS1hZ2VudC5tb25pdG9yaW5nLXN5c3RlbS5zdmMuY2x1c3Rlci5sb2NhbA==
   JAEGER_AGENT_PORT: NjgzMQ==
   JAEGER_SAMPLER_PARAM: MQ==
   JAEGER_SAMPLER_TYPE: Y29uc3Q=
-  JAEGER_SERVICE_NAME: bG9raQ==
+  JAEGER_TAGS: YXBwPWxva2k=
   LOKI_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:
@@ -62908,8 +62896,10 @@ data:
     Bjb3JyZWxhdGlvbnMgbWV0cmljc1N1bW1hcnkgdHJhY2VUb01ldHJpY3MgdHJhY2VUb1By
     b2ZpbGVz
   GF_LOG_LEVEL: d2Fybg==
-  GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES: c2VydmljZS5uYW1lc3BhY2U6bW9uaXRvcmluZy1zeXN0ZW0=
-  GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS: Z3JhZmFuYS1hZ2VudC5tb25pdG9yaW5nLXN5c3RlbTo0MzE3
+  GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES: YXBwOmdyYWZhbmE=
+  GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS: |
+    Z3JhZmFuYS1hZ2VudC5tb25pdG9yaW5nLXN5c3RlbS5zdmMuY2x1c3Rlci5sb2NhbDo0Mz
+    E3
 kind: Secret
 metadata:
   name: grafana-env
@@ -62918,11 +62908,11 @@ type: Opaque
 ---
 apiVersion: v1
 data:
-  JAEGER_AGENT_HOST: Z3JhZmFuYS1hZ2VudC5tb25pdG9yaW5nLXN5c3RlbQ==
+  JAEGER_AGENT_HOST: Z3JhZmFuYS1hZ2VudC5tb25pdG9yaW5nLXN5c3RlbS5zdmMuY2x1c3Rlci5sb2NhbA==
   JAEGER_AGENT_PORT: NjgzMQ==
   JAEGER_SAMPLER_PARAM: MQ==
   JAEGER_SAMPLER_TYPE: Y29uc3Q=
-  JAEGER_SERVICE_NAME: bWltaXI=
+  JAEGER_TAGS: YXBwPW1pbWly
   MIMIR_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:
@@ -62932,11 +62922,11 @@ type: Opaque
 ---
 apiVersion: v1
 data:
-  JAEGER_AGENT_HOST: Z3JhZmFuYS1hZ2VudC5tb25pdG9yaW5nLXN5c3RlbQ==
+  JAEGER_AGENT_HOST: Z3JhZmFuYS1hZ2VudC5tb25pdG9yaW5nLXN5c3RlbS5zdmMuY2x1c3Rlci5sb2NhbA==
   JAEGER_AGENT_PORT: NjgzMQ==
   JAEGER_SAMPLER_PARAM: MQ==
   JAEGER_SAMPLER_TYPE: Y29uc3Q=
-  JAEGER_SERVICE_NAME: cHlyb3Njb3Bl
+  JAEGER_TAGS: YXBwPXB5cm9zY29wZQ==
   PYROSCOPE_STORAGE_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:
@@ -62946,11 +62936,11 @@ type: Opaque
 ---
 apiVersion: v1
 data:
-  JAEGER_AGENT_HOST: Z3JhZmFuYS1hZ2VudC5tb25pdG9yaW5nLXN5c3RlbQ==
+  JAEGER_AGENT_HOST: Z3JhZmFuYS1hZ2VudC5tb25pdG9yaW5nLXN5c3RlbS5zdmMuY2x1c3Rlci5sb2NhbA==
   JAEGER_AGENT_PORT: NjgzMQ==
   JAEGER_SAMPLER_PARAM: MQ==
   JAEGER_SAMPLER_TYPE: Y29uc3Q=
-  JAEGER_SERVICE_NAME: dGVtcG8=
+  JAEGER_TAGS: YXBwPXRlbXBv
   TEMPO_S3_SECRET_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:
@@ -63250,6 +63240,7 @@ spec:
         profiles.grafana.com/goroutine.scrape: "true"
         profiles.grafana.com/memory.port_name: http-metrics
         profiles.grafana.com/memory.scrape: "true"
+        pyroscope.io/service_name: mimir
       labels:
         app.kubernetes.io/component: mimir
         app.kubernetes.io/instance: mimir-monolithic-mode
@@ -63343,6 +63334,7 @@ spec:
         profiles.grafana.com/goroutine.scrape: "true"
         profiles.grafana.com/memory.port_name: http-metrics
         profiles.grafana.com/memory.scrape: "true"
+        pyroscope.io/service_name: loki
       labels:
         app.kubernetes.io/component: single-binary
         app.kubernetes.io/instance: loki
@@ -63468,6 +63460,7 @@ spec:
         profiles.grafana.com/goroutine.scrape: "true"
         profiles.grafana.com/memory.port_name: http2
         profiles.grafana.com/memory.scrape: "true"
+        pyroscope.io/service_name: pyroscope
       labels:
         app.kubernetes.io/component: all
         app.kubernetes.io/instance: pyroscope
@@ -63559,6 +63552,7 @@ spec:
         profiles.grafana.com/goroutine.scrape: "true"
         profiles.grafana.com/memory.port_name: prom-metrics
         profiles.grafana.com/memory.scrape: "true"
+        pyroscope.io/service_name: tempo
       labels:
         app.kubernetes.io/instance: tempo
         app.kubernetes.io/name: tempo
