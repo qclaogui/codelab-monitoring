@@ -166,9 +166,6 @@ Kubernetes
   clean                                     Clean cluster
   manifests                                 Generates k8s manifests
   deploy-kube-prometheus-stack              Deploy kube-prometheus-stack manifests
-  deploy-memcached                          Deploy memcached manifests
-  deploy-mysql                              Deploy mysql manifests
-  deploy-redis                              Deploy redis manifests
   deploy-monolithic-mode-metrics            Deploy monolithic-mode metrics
   deploy-monolithic-mode-logs               Deploy monolithic-mode logs
   deploy-monolithic-mode-profiles           Deploy monolithic-mode profiles
@@ -181,6 +178,11 @@ Kubernetes
   deploy-microservices-mode-profiles        Deploy microservices-mode profiles
   deploy-microservices-mode-traces          Deploy microservices-mode traces
 
+Grafana Agent Integrations
+  deploy-memcached                          Deploy integration memcached manifests
+  deploy-mysql                              Deploy integration mysql manifests
+  deploy-redis                              Deploy integration redis manifests
+
 Build
   generate                                  generate embed deps
   build                                     Build binary for current OS and place it at ./bin/lgtmp_$(GOOS)_$(GOARCH)
@@ -192,6 +194,7 @@ Release
   print-version                             Prints the upcoming release number
 
 General
+  console-token                             Prints the minio-operator console jwt token
   help                                      Display this help. Thanks to https://www.thapaliya.com/en/writings/well-documented-makefiles/
 
 ```

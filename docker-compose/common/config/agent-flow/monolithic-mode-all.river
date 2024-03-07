@@ -180,8 +180,8 @@ otelcol.receiver.jaeger "containers" {
 	}
 
 	output {
-		metrics = [otelcol.processor.transform.add_metric_datapoint_attributes.input]
-		logs    = [otelcol.processor.resourcedetection.containers.input]
+		metrics = [otelcol.processor.batch.containers.input]
+		logs    = [otelcol.processor.batch.containers.input]
 		traces  = [otelcol.processor.resourcedetection.containers.input]
 	}
 }
@@ -200,8 +200,8 @@ otelcol.receiver.otlp "containers" {
 	}
 
 	output {
-		metrics = [otelcol.processor.transform.add_metric_datapoint_attributes.input]
-		logs    = [otelcol.processor.resourcedetection.containers.input]
+		metrics = [otelcol.processor.batch.containers.input]
+		logs    = [otelcol.processor.batch.containers.input]
 		traces  = [
 			otelcol.processor.resourcedetection.containers.input,
 			otelcol.connector.spanlogs.autologging.input,
@@ -216,22 +216,6 @@ otelcol.processor.resourcedetection "containers" {
 		logs    = [otelcol.processor.attributes.containers.input]
 		metrics = [otelcol.processor.attributes.containers.input]
 		traces  = [otelcol.processor.attributes.containers.input]
-	}
-}
-
-otelcol.processor.transform "add_metric_datapoint_attributes" {
-	error_mode = "ignore"
-
-	metric_statements {
-		context    = "datapoint"
-		statements = [
-			`set(attributes["deployment.environment"], resource.attributes["deployment.environment"])`,
-			`set(attributes["service.version"], resource.attributes["service.version"])`,
-		]
-	}
-
-	output {
-		metrics = [otelcol.processor.attributes.containers.input]
 	}
 }
 
@@ -376,10 +360,11 @@ loki.process "autologging" {
 
 pyroscope.scrape "containers" {
 	targets = [
-		{"__address__" = "loki:3100", "service_name" = "loki"},
-		{"__address__" = "grafana:6060", "service_name" = "grafana"},
+		// {"__address__" = "agent:12345", "service_name" = "agent"},
+		// {"__address__" = "loki:3100", "service_name" = "loki"},
+		// {"__address__" = "grafana:6060", "service_name" = "grafana"},
+		// {"__address__" = "mimir:8080", "service_name" = "mimir"},
 		{"__address__" = "tempo:3200", "service_name" = "tempo"},
-		{"__address__" = "mimir:8080", "service_name" = "mimir"},
 	]
 
 	clustering {

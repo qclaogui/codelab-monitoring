@@ -27,16 +27,15 @@ fmt: ## Uses Grafana Agent to fmt the river config
 		docker run -e AGENT_MODE=flow --rm --volume "$(shell pwd):/data" -u $(shell id -u) grafana/agent:v0.40.2 fmt -w $$c ; \
 	done
 
+
 ##@ Docker compose
 
-# Docker monolithic-mode
+
 .PHONY: up-monolithic-mode-metrics
 up-monolithic-mode-metrics: ## Run monolithic-mode metrics
 	$(info ******************** run monolithic-mode metrics ********************)
 	docker compose --project-directory docker-compose/monolithic-mode/metrics --file docker-compose/monolithic-mode/metrics/docker-compose.yaml up -d --remove-orphans
-	@echo ""
-	@echo "Demo is running."
-	@echo "Go to http://localhost:3000/explore for the metrics."
+	@$(call echo_info, "Go to http://localhost:3000/explore for the metrics.")
 down-monolithic-mode-metrics:
 	docker compose --project-directory docker-compose/monolithic-mode/metrics --file docker-compose/monolithic-mode/metrics/docker-compose.yaml down
 
@@ -44,10 +43,7 @@ down-monolithic-mode-metrics:
 up-monolithic-mode-logs: ## Run monolithic-mode logs
 	$(info ******************** run monolithic-mode logs ********************)
 	docker compose --project-directory docker-compose/monolithic-mode/logs --file docker-compose/monolithic-mode/logs/docker-compose.yaml up -d --remove-orphans
-	@echo ""
-	@echo "Demo is running."
-	@echo "Go to http://localhost:3000/explore for the logs."
-
+	@$(call echo_info, "Go to http://localhost:3000/explore for the logs.")
 down-monolithic-mode-logs:
 	docker compose --project-directory docker-compose/monolithic-mode/logs --file docker-compose/monolithic-mode/logs/docker-compose.yaml down
 
@@ -55,9 +51,7 @@ down-monolithic-mode-logs:
 up-monolithic-mode-traces: ## Run monolithic-mode traces
 	$(info ******************** run monolithic-mode traces ********************)
 	docker compose --project-directory docker-compose/monolithic-mode/traces --file docker-compose/monolithic-mode/traces/docker-compose.yaml up -d --remove-orphans
-	@echo ""
-	@echo "Demo is running."
-	@echo "Go to http://localhost:3000/explore for the traces."
+	@$(call echo_info, "Go to http://localhost:3000/explore for the traces.")
 down-monolithic-mode-traces:
 	docker compose --project-directory docker-compose/monolithic-mode/traces --file docker-compose/monolithic-mode/traces/docker-compose.yaml down
 
@@ -65,9 +59,7 @@ down-monolithic-mode-traces:
 up-monolithic-mode-profiles: ## Run monolithic-mode profiles
 	$(info ******************** run monolithic-mode profiles ********************)
 	docker compose --project-directory docker-compose/monolithic-mode/profiles --file docker-compose/monolithic-mode/profiles/docker-compose.yaml up -d --remove-orphans
-	@echo ""
-	@echo "Demo is running."
-	@echo "Go to http://localhost:3000/explore for the profiles."
+	@$(call echo_info, "Go to http://localhost:3000/explore for the profiles.")
 down-monolithic-mode-profiles:
 	docker compose --project-directory docker-compose/monolithic-mode/profiles --file docker-compose/monolithic-mode/profiles/docker-compose.yaml down
 
@@ -75,20 +67,16 @@ down-monolithic-mode-profiles:
 up-monolithic-mode-all-in-one: ## Run monolithic-mode all-in-one
 	$(info ******************** run monolithic-mode all-in-one ********************)
 	docker compose --project-directory docker-compose/monolithic-mode/all-in-one --file docker-compose/monolithic-mode/all-in-one/docker-compose.yaml up -d --remove-orphans
-	@echo ""
-	@echo "Demo is running."
-	@echo "Go to http://localhost:3000/explore for the metrics."
+	@$(call echo_info, "Go to http://localhost:3000/explore for the metrics.")
 down-monolithic-mode-all-in-one:
 	docker compose --project-directory docker-compose/monolithic-mode/all-in-one --file docker-compose/monolithic-mode/all-in-one/docker-compose.yaml down
 
-# Docker read-write-mode
+
 .PHONY: up-read-write-mode-metrics
 up-read-write-mode-metrics: ## Run read-write-mode metrics
 	$(info ******************** run read-write-mode metrics ********************)
 	docker compose --project-directory docker-compose/read-write-mode/metrics --file docker-compose/read-write-mode/metrics/docker-compose.yaml up -d --remove-orphans
-	@echo ""
-	@echo "Demo is running."
-	@echo "Go to http://localhost:3000/explore for the metrics."
+	@$(call echo_info, "Go to http://localhost:3000/explore for the metrics.")
 down-read-write-mode-metrics:
 	docker compose --project-directory docker-compose/read-write-mode/metrics --file docker-compose/read-write-mode/metrics/docker-compose.yaml down
 
@@ -96,21 +84,16 @@ down-read-write-mode-metrics:
 up-read-write-mode-logs: ## Run read-write-mode logs
 	$(info ******************** run read-write-mode logs ********************)
 	docker compose --project-directory docker-compose/read-write-mode/logs --file docker-compose/read-write-mode/logs/docker-compose.yaml up -d --remove-orphans
-	@echo ""
-	@echo "Demo is running."
-	@echo "Go to http://localhost:3000/explore for the logs."
+	@$(call echo_info, "Go to http://localhost:3000/explore for the logs.")
 down-read-write-mode-logs:
 	docker compose --project-directory docker-compose/read-write-mode/logs --file docker-compose/read-write-mode/logs/docker-compose.yaml down
 
 
-# Docker microservices-mode
 .PHONY: up-microservices-mode-metrics
 up-microservices-mode-metrics: ## Run microservices-mode metrics
 	$(info ******************** run microservices-mode metrics ********************)
 	docker compose --project-directory docker-compose/microservices-mode/metrics --file docker-compose/microservices-mode/metrics/docker-compose.yaml up -d --remove-orphans
-	@echo ""
-	@echo "Demo is running."
-	@echo "Go to http://localhost:3000/explore for the metrics."
+	@$(call echo_info, "Go to http://localhost:3000/explore for the metrics.")
 down-microservices-mode-metrics:
 	docker compose --project-directory docker-compose/microservices-mode/metrics --file docker-compose/microservices-mode/metrics/docker-compose.yaml down
 
@@ -118,9 +101,7 @@ down-microservices-mode-metrics:
 up-microservices-mode-logs: ## Run microservices-mode logs
 	$(info ******************** run microservices-mode logs ********************)
 	docker compose --project-directory docker-compose/microservices-mode/logs --file docker-compose/microservices-mode/logs/docker-compose.yaml up -d --remove-orphans
-	@echo ""
-	@echo "Demo is running."
-	@echo "Go to http://localhost:3000/explore for the logs."
+	@$(call echo_info, "Go to http://localhost:3000/explore for the logs.")
 down-microservices-mode-logs:
 	docker compose --project-directory docker-compose/microservices-mode/logs --file docker-compose/microservices-mode/logs/docker-compose.yaml down
 
@@ -128,9 +109,7 @@ down-microservices-mode-logs:
 up-microservices-mode-traces: ## Run microservices-mode traces
 	$(info ******************** run microservices-mode traces ********************)
 	docker compose --project-directory docker-compose/microservices-mode/traces --file docker-compose/microservices-mode/traces/docker-compose.yaml up -d --remove-orphans
-	@echo ""
-	@echo "Demo is running."
-	@echo "Go to http://localhost:3000/explore for the traces."
+	@$(call echo_info, "Go to http://localhost:3000/explore for the traces.")
 down-microservices-mode-traces:
 	docker compose --project-directory docker-compose/microservices-mode/traces --file docker-compose/microservices-mode/traces/docker-compose.yaml down
 
@@ -138,14 +117,13 @@ down-microservices-mode-traces:
 up-microservices-mode-profiles: ## Run microservices-mode profiles
 	$(info ******************** run microservices-mode profiles ********************)
 	docker compose --project-directory docker-compose/microservices-mode/profiles --file docker-compose/microservices-mode/profiles/docker-compose.yaml up -d --remove-orphans
-	@echo ""
-	@echo "Demo is running."
-	@echo "Go to http://localhost:3000/explore for the profiles."
+	@$(call echo_info, "Go to http://localhost:3000/explore for the profiles.")
 down-microservices-mode-profiles:
 	docker compose --project-directory docker-compose/microservices-mode/profiles --file docker-compose/microservices-mode/profiles/docker-compose.yaml down
 
 
 ##@ Kubernetes
+
 
 .PHONY: cluster
 cluster: ## Create k3s cluster
@@ -193,7 +171,6 @@ manifests-microservices-mode: $(KUSTOMIZE)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/profiles > kubernetes/microservices-mode/profiles/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/traces > kubernetes/microservices-mode/traces/k8s-all-in-one.yaml
 
-# prometheus-operator-crds
 deploy-prometheus-operator-crds:
 	$(info ******************** deploy prometheus-operator-crds manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/prometheus-operator-crds | kubectl replace -f - || $(KUSTOMIZE) build --enable-helm kubernetes/common/prometheus-operator-crds | kubectl create -f -
@@ -209,15 +186,6 @@ delete-kube-prometheus-stack:
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/kube-prometheus-stack | kubectl delete -f -
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/rancher-pushprox | kubectl delete -f -
 
-# memcached
-.PHONY: deploy-memcached
-deploy-memcached: ## Deploy memcached manifests
-	$(info ******************** deploy memcached manifests ********************)
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/memcached | kubectl apply -f -
-delete-memcached:
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/memcached | kubectl delete --ignore-not-found -f -
-
-# minio
 .PHONY: deploy-minio
 deploy-minio:
 	$(info ******************** deploy minio manifests ********************)
@@ -225,32 +193,11 @@ deploy-minio:
 	kubectl rollout status -n minio-system deployment/minio-operator --watch --timeout=600s
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/minio-tenant | kubectl apply -f -
 
-# mysql
-.PHONY: deploy-mysql
-deploy-mysql: ## Deploy mysql manifests
-	$(info ******************** deploy mysql manifests ********************)
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/mysql | kubectl apply -f -
-delete-mysql:
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/mysql | kubectl delete --ignore-not-found -f -
-
-# redis
-.PHONY: deploy-redis
-deploy-redis: ## Deploy redis manifests
-	$(info ******************** deploy redis manifests ********************)
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/redis | kubectl apply -f -
-delete-redis:
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/redis | kubectl delete --ignore-not-found -f -
-
-# gateway
 .PHONY: deploy-gateway
 deploy-gateway:
 	$(info ******************** deploy gateway manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/common/gateway | kubectl apply -f -
 	kubectl rollout status -n gateway deployment/nginx --watch --timeout=600s
-
-# minio-operator console jwt token 
-minio-token:
-	@kubectl get secret/console-sa-secret -n minio-system -o json | jq -r ".data.token" | base64 -d
 
 .PHONY: deploy-grafana
 deploy-grafana: deploy-prometheus-operator-crds deploy-minio deploy-gateway
@@ -263,6 +210,12 @@ delete-grafana:
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana-agent | kubectl delete --ignore-not-found -f -
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana | kubectl delete --ignore-not-found -f -
 
+define echo_info
+	$(eval $@_MSG = $(1))
+	@echo ""
+	@echo "Demo is running."
+	@echo "${$@_MSG}"
+endef
 
 define config_changes_trigger_pod_restart
 	$(eval $@_MSG = $(1))
@@ -272,11 +225,8 @@ define config_changes_trigger_pod_restart
 	kubectl rollout status -n monitoring-system daemonset/grafana-agent --watch --timeout=600s
 	@kubectl rollout restart deployment -n monitoring-system grafana
 	kubectl rollout status -n monitoring-system deployment/grafana --watch --timeout=600s
-	@echo ""
-	@echo "Demo is running."
-	@echo "${$@_MSG}"
+	@$(call echo_info, ${$@_MSG})
 endef
-
 
 
 .PHONY: deploy-monolithic-mode-metrics
@@ -390,6 +340,30 @@ delete-microservices-mode-traces:
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/traces | kubectl delete -f -
 
 
+##@ Grafana Agent Integrations
+
+.PHONY: deploy-memcached
+deploy-memcached: ## Deploy integration memcached manifests
+	$(info ******************** deploy integration memcached manifests ********************)
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/memcached | kubectl apply -f -
+delete-memcached:
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/memcached | kubectl delete --ignore-not-found -f -
+
+.PHONY: deploy-mysql
+deploy-mysql: ## Deploy integration mysql manifests
+	$(info ******************** deploy integration mysql manifests ********************)
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/mysql | kubectl apply -f -
+delete-mysql:
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/mysql | kubectl delete --ignore-not-found -f -
+
+.PHONY: deploy-redis
+deploy-redis: ## Deploy integration redis manifests
+	$(info ******************** deploy integration redis manifests ********************)
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/redis | kubectl apply -f -
+delete-redis:
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/redis | kubectl delete --ignore-not-found -f -
+
+
 ##@ Build
 
 GOOS             ?= $(shell go env GOOS)
@@ -453,6 +427,9 @@ print-version: ## Prints the upcoming release number
 
 
 ##@ General
+
+console-token: ## Prints the minio-operator console jwt token
+	@kubectl get secret/console-sa-secret -n minio-system -o json | jq -r ".data.token" | base64 -d
 
 .PHONY: help
 help:  ## Display this help. Thanks to https://www.thapaliya.com/en/writings/well-documented-makefiles/

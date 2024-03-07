@@ -161,7 +161,7 @@ otelcol.receiver.jaeger "containers" {
 	}
 
 	output {
-		metrics = [otelcol.processor.transform.add_metric_datapoint_attributes.input]
+		metrics = [otelcol.processor.batch.containers.input]
 		traces  = [otelcol.processor.resourcedetection.containers.input]
 	}
 }
@@ -180,7 +180,7 @@ otelcol.receiver.otlp "containers" {
 	}
 
 	output {
-		metrics = [otelcol.processor.transform.add_metric_datapoint_attributes.input]
+		metrics = [otelcol.processor.batch.containers.input]
 		traces  = [otelcol.processor.resourcedetection.containers.input]
 	}
 }
@@ -191,22 +191,6 @@ otelcol.processor.resourcedetection "containers" {
 	output {
 		metrics = [otelcol.processor.attributes.containers.input]
 		traces  = [otelcol.processor.attributes.containers.input]
-	}
-}
-
-otelcol.processor.transform "add_metric_datapoint_attributes" {
-	error_mode = "ignore"
-
-	metric_statements {
-		context    = "datapoint"
-		statements = [
-			`set(attributes["deployment.environment"], resource.attributes["deployment.environment"])`,
-			`set(attributes["service.version"], resource.attributes["service.version"])`,
-		]
-	}
-
-	output {
-		metrics = [otelcol.processor.attributes.containers.input]
 	}
 }
 
