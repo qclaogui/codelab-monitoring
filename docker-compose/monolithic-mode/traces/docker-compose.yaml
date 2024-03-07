@@ -85,12 +85,12 @@ services:
       - -target=all
       - -config.expand-env=true
       - -log.level=warn
-    environment:
-      - JAEGER_AGENT_HOST=agent
-      - JAEGER_AGENT_PORT=6831
-      - JAEGER_TAGS=app=mimir
-      - JAEGER_SAMPLER_TYPE=const
-      - JAEGER_SAMPLER_PARAM=1
+    # environment:
+    #   - JAEGER_AGENT_HOST=agent
+    #   - JAEGER_AGENT_PORT=6831
+    #   - JAEGER_TAGS=app=mimir
+    #   - JAEGER_SAMPLER_TYPE=const
+    #   - JAEGER_SAMPLER_PARAM=1
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
       interval: 10s
@@ -107,7 +107,7 @@ services:
     depends_on:
       minio:
         condition: service_started
-    image: grafana/grafana:10.3.3
+    image: grafana/grafana:10.4.0
     command:
       - --config=/etc/grafana-config/grafana.ini
     volumes:
@@ -123,7 +123,7 @@ services:
       - GF_LOG_LEVEL=warn
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin_password}
       - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor tracesEmbeddedFlameGraph traceqlSearch correlations metricsSummary traceToMetrics traceToProfiles
-      - GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS=agent:4317
-      - GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES=app:grafana
+      # - GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS=agent:4317
+      # - GF_TRACING_OPENTELEMETRY_CUSTOM_ATTRIBUTES=app:grafana
     ports:
       - "3000:3000"

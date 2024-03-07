@@ -63,7 +63,7 @@ otelcol.receiver.jaeger "default" {
 	}
 
 	output {
-		metrics = [otelcol.processor.transform.add_metric_datapoint_attributes.input]
+		metrics = [otelcol.processor.batch.default.input]
 		logs    = [otelcol.processor.resourcedetection.default.input]
 		traces  = [otelcol.processor.resourcedetection.default.input]
 	}
@@ -83,7 +83,7 @@ otelcol.receiver.otlp "default" {
 	}
 
 	output {
-		metrics = [otelcol.processor.transform.add_metric_datapoint_attributes.input]
+		metrics = [otelcol.processor.batch.default.input]
 		logs    = [otelcol.processor.resourcedetection.default.input]
 		traces  = [
 			otelcol.processor.resourcedetection.default.input,
@@ -96,25 +96,8 @@ otelcol.processor.resourcedetection "default" {
 	detectors = ["env"]
 
 	output {
-		logs    = [otelcol.processor.k8sattributes.default.input]
-		metrics = [otelcol.processor.k8sattributes.default.input]
-		traces  = [otelcol.processor.k8sattributes.default.input]
-	}
-}
-
-otelcol.processor.transform "add_metric_datapoint_attributes" {
-	error_mode = "ignore"
-
-	metric_statements {
-		context    = "datapoint"
-		statements = [
-			`set(attributes["deployment.environment"], resource.attributes["deployment.environment"])`,
-			`set(attributes["service.version"], resource.attributes["service.version"])`,
-		]
-	}
-
-	output {
-		metrics = [otelcol.processor.k8sattributes.default.input]
+		logs   = [otelcol.processor.k8sattributes.default.input]
+		traces = [otelcol.processor.k8sattributes.default.input]
 	}
 }
 
@@ -141,21 +124,13 @@ otelcol.processor.k8sattributes "default" {
 	}
 
 	output {
-		metrics = [otelcol.processor.transform.add_resource_attributes.input]
-		logs    = [otelcol.processor.transform.add_resource_attributes.input]
-		traces  = [otelcol.processor.transform.add_resource_attributes.input]
+		logs   = [otelcol.processor.transform.add_resource_attributes.input]
+		traces = [otelcol.processor.transform.add_resource_attributes.input]
 	}
 }
 
 otelcol.processor.transform "add_resource_attributes" {
 	error_mode = "ignore"
-
-	metric_statements {
-		context    = "resource"
-		statements = [
-			`set(attributes["k8s.cluster.name"], "k3d-k3s-codelab") where attributes["k8s.cluster.name"] == nil`,
-		]
-	}
 
 	log_statements {
 		context    = "resource"
@@ -175,9 +150,8 @@ otelcol.processor.transform "add_resource_attributes" {
 	}
 
 	output {
-		metrics = [otelcol.processor.filter.default.input]
-		logs    = [otelcol.processor.filter.default.input]
-		traces  = [otelcol.processor.filter.default.input]
+		logs   = [otelcol.processor.filter.default.input]
+		traces = [otelcol.processor.filter.default.input]
 	}
 }
 
@@ -185,9 +159,8 @@ otelcol.processor.filter "default" {
 	error_mode = "ignore"
 
 	output {
-		metrics = [otelcol.processor.batch.default.input]
-		logs    = [otelcol.processor.batch.default.input]
-		traces  = [otelcol.processor.batch.default.input]
+		logs   = [otelcol.processor.batch.default.input]
+		traces = [otelcol.processor.batch.default.input]
 	}
 }
 
