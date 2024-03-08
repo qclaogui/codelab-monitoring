@@ -60,11 +60,16 @@ controller:
     logs.agent.grafana.com/scrub-level: "debug" # Boolean whether or not the level should be dropped from the log message (as it is a label).
     # logs.agent.grafana.com/tenant: ".*"       # Allow a pod to override the tenant for its logs.
     pyroscope.io/service_name: grafana-agent
-    profiles.grafana.com/memory.scrape: "true"
+    profiles.grafana.com/memory.scrape: "false"
     profiles.grafana.com/memory.port_name: "http-metrics"
-    profiles.grafana.com/cpu.scrape: "true"
+    profiles.grafana.com/cpu.scrape: "false"
     profiles.grafana.com/cpu.port_name: "http-metrics"
-    profiles.grafana.com/goroutine.scrape: "true"
+    profiles.grafana.com/goroutine.scrape: "false"
     profiles.grafana.com/goroutine.port_name: "http-metrics"
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 2
+      maxSurge: 0
   nodeSelector:
     kubernetes.io/os: linux

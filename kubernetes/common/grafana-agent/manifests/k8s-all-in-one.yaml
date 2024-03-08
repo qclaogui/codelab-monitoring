@@ -573,7 +573,7 @@ data:
     \"default\" {\n\terror_mode = \"ignore\"\n\n\toutput {\n\t\tlogs   = [otelcol.processor.batch.default.input]\n\t\ttraces
     = [otelcol.processor.batch.default.input]\n\t}\n}\n\notelcol.processor.batch \"default\"
     {\n\tsend_batch_size     = 16384\n\tsend_batch_max_size = 0\n\ttimeout             =
-    \"2s\"\n\n\toutput {\n\t\tmetrics = [otelcol.processor.memory_limiter.default.input]\n\t\tlogs
+    \"5s\"\n\n\toutput {\n\t\tmetrics = [otelcol.processor.memory_limiter.default.input]\n\t\tlogs
     \   = [otelcol.processor.memory_limiter.default.input]\n\t\ttraces  = [otelcol.processor.memory_limiter.default.input]\n\t}\n}\n\notelcol.processor.memory_limiter
     \"default\" {\n\tcheck_interval         = \"1s\"\n\tlimit_percentage       = 50\n\tspike_limit_percentage
     = 30\n\n\toutput {\n\t\tmetrics = [otelcol.exporter.prometheus.tracesmetrics.input]\n\t\tlogs
@@ -605,7 +605,7 @@ data:
     {\n\t\tvalue = \"anonymous\"\n\t}\n\n\tforward_to = argument.logs_forward_to.value\n}\n"
 kind: ConfigMap
 metadata:
-  name: agent-modules-cc5m9dk4mm
+  name: agent-modules-9bm7gf8558
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -740,11 +740,11 @@ spec:
         logs.agent.grafana.com/scrape: "true"
         logs.agent.grafana.com/scrub-level: debug
         profiles.grafana.com/cpu.port_name: http-metrics
-        profiles.grafana.com/cpu.scrape: "true"
+        profiles.grafana.com/cpu.scrape: "false"
         profiles.grafana.com/goroutine.port_name: http-metrics
-        profiles.grafana.com/goroutine.scrape: "true"
+        profiles.grafana.com/goroutine.scrape: "false"
         profiles.grafana.com/memory.port_name: http-metrics
-        profiles.grafana.com/memory.scrape: "true"
+        profiles.grafana.com/memory.scrape: "false"
         pyroscope.io/service_name: grafana-agent
       labels:
         app.kubernetes.io/instance: grafana-agent
@@ -830,8 +830,13 @@ spec:
           path: /var/log
         name: varlog
       - configMap:
-          name: agent-modules-cc5m9dk4mm
+          name: agent-modules-9bm7gf8558
         name: agent-modules
+  updateStrategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 2
+    type: RollingUpdate
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor

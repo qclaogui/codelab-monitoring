@@ -22,9 +22,21 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.4
-    helm.sh/chart: loki-5.43.5
+    helm.sh/chart: loki-5.43.6
   name: loki
   namespace: logging-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/component: mimir
+    app.kubernetes.io/instance: mimir-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: mimir
+    app.kubernetes.io/version: 2.11.0
+  name: mimir
+  namespace: monitoring-system
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -85,7 +97,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.4
-    helm.sh/chart: loki-5.43.5
+    helm.sh/chart: loki-5.43.6
   name: loki-clusterrole
 rules:
 - apiGroups:
@@ -126,7 +138,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.4
-    helm.sh/chart: loki-5.43.5
+    helm.sh/chart: loki-5.43.6
   name: loki-clusterrolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -423,7 +435,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.4
-    helm.sh/chart: loki-5.43.5
+    helm.sh/chart: loki-5.43.6
   name: loki-config
   namespace: logging-system
 ---
@@ -438,7 +450,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.4
-    helm.sh/chart: loki-5.43.5
+    helm.sh/chart: loki-5.43.6
   name: loki-runtime
   namespace: logging-system
 ---
@@ -62937,7 +62949,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.4
-    helm.sh/chart: loki-5.43.5
+    helm.sh/chart: loki-5.43.6
   name: loki
   namespace: logging-system
 spec:
@@ -62964,7 +62976,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.4
-    helm.sh/chart: loki-5.43.5
+    helm.sh/chart: loki-5.43.6
     prometheus.io/service-monitor: "false"
     variant: headless
   name: loki-headless
@@ -62988,7 +63000,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 2.9.4
-    helm.sh/chart: loki-5.43.5
+    helm.sh/chart: loki-5.43.6
   name: loki-memberlist
   namespace: logging-system
 spec:
@@ -63013,8 +63025,30 @@ metadata:
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: mimir
     app.kubernetes.io/version: 2.11.0
+  name: mimir
+  namespace: monitoring-system
+spec:
+  ports:
+  - name: http-metrics
+    port: 8080
+  - name: grpc-distribut
+    port: 9095
+  selector:
+    app.kubernetes.io/component: mimir
+    app.kubernetes.io/instance: mimir-monolithic-mode
+    app.kubernetes.io/name: mimir
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: mimir
+    app.kubernetes.io/instance: mimir-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: mimir
+    app.kubernetes.io/version: 2.11.0
     prometheus.io/service-monitor: "false"
-  name: gossip-ring-headless
+  name: mimir-memberlist
   namespace: monitoring-system
 spec:
   clusterIP: None
@@ -63030,28 +63064,6 @@ spec:
     app.kubernetes.io/instance: mimir-monolithic-mode
     app.kubernetes.io/name: mimir
     app.kubernetes.io/part-of: memberlist
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    app.kubernetes.io/component: mimir
-    app.kubernetes.io/instance: mimir-monolithic-mode
-    app.kubernetes.io/managed-by: Kustomize
-    app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 2.11.0
-  name: mimir
-  namespace: monitoring-system
-spec:
-  ports:
-  - name: http-metrics
-    port: 8080
-  - name: grpc-distribut
-    port: 9095
-  selector:
-    app.kubernetes.io/component: mimir
-    app.kubernetes.io/instance: mimir-monolithic-mode
-    app.kubernetes.io/name: mimir
 ---
 apiVersion: v1
 kind: Service
@@ -63213,14 +63225,14 @@ spec:
   template:
     metadata:
       annotations:
-        logs.agent.grafana.com/scrape: "false"
+        logs.agent.grafana.com/scrape: "true"
         logs.agent.grafana.com/scrub-level: info
         profiles.grafana.com/cpu.port_name: http-metrics
-        profiles.grafana.com/cpu.scrape: "true"
+        profiles.grafana.com/cpu.scrape: "false"
         profiles.grafana.com/goroutine.port_name: http-metrics
-        profiles.grafana.com/goroutine.scrape: "true"
+        profiles.grafana.com/goroutine.scrape: "false"
         profiles.grafana.com/memory.port_name: http-metrics
-        profiles.grafana.com/memory.scrape: "true"
+        profiles.grafana.com/memory.scrape: "false"
         pyroscope.io/service_name: mimir
       labels:
         app.kubernetes.io/component: mimir
@@ -63287,7 +63299,7 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 2.9.4
-    helm.sh/chart: loki-5.43.5
+    helm.sh/chart: loki-5.43.6
   name: loki
   namespace: logging-system
 spec:
@@ -63306,15 +63318,15 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 2cd1dc9440d9e9662eeaedfb4e0278ee964e44b737cdce4aa38fde9014d3fa63
-        logs.agent.grafana.com/scrape: "false"
+        checksum/config: 0bc60a7ec24e3654ed47f89a1019fce6bc5b43dc73387067e2f48401854b7b12
+        logs.agent.grafana.com/scrape: "true"
         logs.agent.grafana.com/scrub-level: info
         profiles.grafana.com/cpu.port_name: http-metrics
-        profiles.grafana.com/cpu.scrape: "true"
+        profiles.grafana.com/cpu.scrape: "false"
         profiles.grafana.com/goroutine.port_name: http-metrics
-        profiles.grafana.com/goroutine.scrape: "true"
+        profiles.grafana.com/goroutine.scrape: "false"
         profiles.grafana.com/memory.port_name: http-metrics
-        profiles.grafana.com/memory.scrape: "true"
+        profiles.grafana.com/memory.scrape: "false"
         pyroscope.io/service_name: loki
       labels:
         app.kubernetes.io/component: single-binary

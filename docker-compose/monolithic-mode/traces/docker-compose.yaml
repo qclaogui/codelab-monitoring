@@ -39,6 +39,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    ports:
+      - "3200:3200"
+      - "8080:8080"
 
   tempo:
     depends_on:
@@ -51,7 +54,6 @@ services:
     command:
       - -config.file=/etc/tempo.yaml
       - -target=scalable-single-binary
-      - -log.level=warn
       - -config.expand-env=true
     environment:
       - JAEGER_AGENT_HOST=agent
@@ -84,7 +86,6 @@ services:
       - -config.file=/etc/config.yaml
       - -target=all
       - -config.expand-env=true
-      - -log.level=warn
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
       interval: 10s
@@ -108,7 +109,7 @@ services:
       - ../../common/config/grafana/grafana.ini:/etc/grafana-config/grafana.ini
       - ../../common/config/grafana/dashboards:/var/lib/grafana/dashboards
       - ../../common/config/grafana/provisioning:/etc/grafana/provisioning
-      - ../../common/config/tempo/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml # load datasources
+      - ../../common/config/tempo/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
       - ../../../monitoring-mixins/mimir-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/mimir-mixin
       # - ../../../monitoring-mixins/tempo-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/tempo-mixin
       - ../../../monitoring-mixins/agent-flow-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/agent-flow-mixin

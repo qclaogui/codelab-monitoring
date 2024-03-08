@@ -4,6 +4,18 @@ metadata:
   name: tracing-system
 ---
 apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/component: mimir
+    app.kubernetes.io/instance: mimir-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: mimir
+    app.kubernetes.io/version: 2.11.0
+  name: mimir
+  namespace: monitoring-system
+---
+apiVersion: v1
 automountServiceAccountToken: false
 kind: ServiceAccount
 metadata:
@@ -12,7 +24,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.4
+    helm.sh/chart: tempo-distributed-1.8.5
   name: tempo-distributed
   namespace: tracing-system
 ---
@@ -43539,7 +43551,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.4
+    helm.sh/chart: tempo-distributed-1.8.5
   name: tempo-distributed-config
   namespace: tracing-system
 ---
@@ -43555,7 +43567,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.4
+    helm.sh/chart: tempo-distributed-1.8.5
   name: tempo-distributed-runtime
   namespace: tracing-system
 ---
@@ -43605,8 +43617,30 @@ metadata:
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: mimir
     app.kubernetes.io/version: 2.11.0
+  name: mimir
+  namespace: monitoring-system
+spec:
+  ports:
+  - name: http-metrics
+    port: 8080
+  - name: grpc-distribut
+    port: 9095
+  selector:
+    app.kubernetes.io/component: mimir
+    app.kubernetes.io/instance: mimir-monolithic-mode
+    app.kubernetes.io/name: mimir
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: mimir
+    app.kubernetes.io/instance: mimir-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: mimir
+    app.kubernetes.io/version: 2.11.0
     prometheus.io/service-monitor: "false"
-  name: gossip-ring-headless
+  name: mimir-memberlist
   namespace: monitoring-system
 spec:
   clusterIP: None
@@ -43627,34 +43661,12 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app.kubernetes.io/component: mimir
-    app.kubernetes.io/instance: mimir-monolithic-mode
-    app.kubernetes.io/managed-by: Kustomize
-    app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 2.11.0
-  name: mimir
-  namespace: monitoring-system
-spec:
-  ports:
-  - name: http-metrics
-    port: 8080
-  - name: grpc-distribut
-    port: 9095
-  selector:
-    app.kubernetes.io/component: mimir
-    app.kubernetes.io/instance: mimir-monolithic-mode
-    app.kubernetes.io/name: mimir
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
     app.kubernetes.io/component: compactor
     app.kubernetes.io/instance: tempo-distributed
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.4
+    helm.sh/chart: tempo-distributed-1.8.5
   name: tempo-distributed-compactor
   namespace: tracing-system
 spec:
@@ -43678,7 +43690,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.4
+    helm.sh/chart: tempo-distributed-1.8.5
   name: tempo-distributed-distributor
   namespace: tracing-system
 spec:
@@ -43717,7 +43729,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.4
+    helm.sh/chart: tempo-distributed-1.8.5
     prometheus.io/service-monitor: "false"
   name: tempo-distributed-distributor-discovery
   namespace: tracing-system
@@ -43754,7 +43766,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.4
+    helm.sh/chart: tempo-distributed-1.8.5
   name: tempo-distributed-gossip-ring
   namespace: tracing-system
 spec:
@@ -43780,7 +43792,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.4
+    helm.sh/chart: tempo-distributed-1.8.5
   name: tempo-distributed-ingester
   namespace: tracing-system
 spec:
@@ -43807,7 +43819,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.4
+    helm.sh/chart: tempo-distributed-1.8.5
     prometheus.io/service-monitor: "false"
   name: tempo-distributed-ingester-discovery
   namespace: tracing-system
@@ -43838,7 +43850,7 @@ metadata:
     app.kubernetes.io/name: tempo
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.4
+    helm.sh/chart: tempo-distributed-1.8.5
   name: tempo-distributed-metrics-generator
   namespace: tracing-system
 spec:
@@ -43866,7 +43878,7 @@ metadata:
     app.kubernetes.io/name: tempo
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.4
+    helm.sh/chart: tempo-distributed-1.8.5
     prometheus.io/service-monitor: "false"
   name: tempo-distributed-metrics-generator-discovery
   namespace: tracing-system
@@ -43896,7 +43908,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.4
+    helm.sh/chart: tempo-distributed-1.8.5
   name: tempo-distributed-querier
   namespace: tracing-system
 spec:
@@ -43923,7 +43935,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.4
+    helm.sh/chart: tempo-distributed-1.8.5
   name: tempo-distributed-query-frontend
   namespace: tracing-system
 spec:
@@ -43950,7 +43962,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.4
+    helm.sh/chart: tempo-distributed-1.8.5
   name: tempo-distributed-query-frontend-discovery
   namespace: tracing-system
 spec:
@@ -43997,14 +44009,14 @@ spec:
   template:
     metadata:
       annotations:
-        logs.agent.grafana.com/scrape: "false"
+        logs.agent.grafana.com/scrape: "true"
         logs.agent.grafana.com/scrub-level: info
         profiles.grafana.com/cpu.port_name: http-metrics
-        profiles.grafana.com/cpu.scrape: "true"
+        profiles.grafana.com/cpu.scrape: "false"
         profiles.grafana.com/goroutine.port_name: http-metrics
-        profiles.grafana.com/goroutine.scrape: "true"
+        profiles.grafana.com/goroutine.scrape: "false"
         profiles.grafana.com/memory.port_name: http-metrics
-        profiles.grafana.com/memory.scrape: "true"
+        profiles.grafana.com/memory.scrape: "false"
         pyroscope.io/service_name: mimir
       labels:
         app.kubernetes.io/component: mimir
@@ -44071,7 +44083,7 @@ metadata:
     app.kubernetes.io/name: tempo
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.4
+    helm.sh/chart: tempo-distributed-1.8.5
   name: tempo-distributed-compactor
   namespace: tracing-system
 spec:
@@ -44090,7 +44102,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 06ff41b02bed1a15761bde4958bda0352aa44aa1a2767b5d2d7ac3cea3d0039e
+        checksum/config: 43788236d703d96d8e96de44a51bafc3fda2ce68c7af12c4f8dfd12d5fb31a4d
         logs.agent.grafana.com/scrape: "true"
         logs.agent.grafana.com/scrub-level: info
         profiles.grafana.com/cpu.port_name: http-metrics
@@ -44106,7 +44118,7 @@ spec:
         app.kubernetes.io/name: tempo
         app.kubernetes.io/part-of: memberlist
         app.kubernetes.io/version: 2.3.1
-        helm.sh/chart: tempo-distributed-1.8.4
+        helm.sh/chart: tempo-distributed-1.8.5
     spec:
       containers:
       - args:
@@ -44173,7 +44185,7 @@ metadata:
     app.kubernetes.io/name: tempo
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.4
+    helm.sh/chart: tempo-distributed-1.8.5
   name: tempo-distributed-distributor
   namespace: tracing-system
 spec:
@@ -44188,7 +44200,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 06ff41b02bed1a15761bde4958bda0352aa44aa1a2767b5d2d7ac3cea3d0039e
+        checksum/config: 43788236d703d96d8e96de44a51bafc3fda2ce68c7af12c4f8dfd12d5fb31a4d
         logs.agent.grafana.com/scrape: "true"
         logs.agent.grafana.com/scrub-level: info
         profiles.grafana.com/cpu.port_name: http-metrics
@@ -44204,7 +44216,7 @@ spec:
         app.kubernetes.io/name: tempo
         app.kubernetes.io/part-of: memberlist
         app.kubernetes.io/version: 2.3.1
-        helm.sh/chart: tempo-distributed-1.8.4
+        helm.sh/chart: tempo-distributed-1.8.5
     spec:
       affinity:
         podAntiAffinity:
@@ -44311,7 +44323,7 @@ metadata:
     app.kubernetes.io/name: tempo
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.4
+    helm.sh/chart: tempo-distributed-1.8.5
   name: tempo-distributed-metrics-generator
   namespace: tracing-system
 spec:
@@ -44326,7 +44338,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 06ff41b02bed1a15761bde4958bda0352aa44aa1a2767b5d2d7ac3cea3d0039e
+        checksum/config: 43788236d703d96d8e96de44a51bafc3fda2ce68c7af12c4f8dfd12d5fb31a4d
         logs.agent.grafana.com/scrape: "true"
         logs.agent.grafana.com/scrub-level: info
         profiles.grafana.com/cpu.port_name: http-metrics
@@ -44342,7 +44354,7 @@ spec:
         app.kubernetes.io/name: tempo
         app.kubernetes.io/part-of: memberlist
         app.kubernetes.io/version: 2.3.1
-        helm.sh/chart: tempo-distributed-1.8.4
+        helm.sh/chart: tempo-distributed-1.8.5
     spec:
       affinity:
         podAntiAffinity:
@@ -44440,7 +44452,7 @@ metadata:
     app.kubernetes.io/name: tempo
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.4
+    helm.sh/chart: tempo-distributed-1.8.5
   name: tempo-distributed-querier
   namespace: tracing-system
 spec:
@@ -44459,7 +44471,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 06ff41b02bed1a15761bde4958bda0352aa44aa1a2767b5d2d7ac3cea3d0039e
+        checksum/config: 43788236d703d96d8e96de44a51bafc3fda2ce68c7af12c4f8dfd12d5fb31a4d
         logs.agent.grafana.com/scrape: "true"
         logs.agent.grafana.com/scrub-level: info
         profiles.grafana.com/cpu.port_name: http-metrics
@@ -44475,7 +44487,7 @@ spec:
         app.kubernetes.io/name: tempo
         app.kubernetes.io/part-of: memberlist
         app.kubernetes.io/version: 2.3.1
-        helm.sh/chart: tempo-distributed-1.8.4
+        helm.sh/chart: tempo-distributed-1.8.5
     spec:
       affinity:
         podAntiAffinity:
@@ -44575,7 +44587,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.4
+    helm.sh/chart: tempo-distributed-1.8.5
   name: tempo-distributed-query-frontend
   namespace: tracing-system
 spec:
@@ -44594,7 +44606,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 06ff41b02bed1a15761bde4958bda0352aa44aa1a2767b5d2d7ac3cea3d0039e
+        checksum/config: 43788236d703d96d8e96de44a51bafc3fda2ce68c7af12c4f8dfd12d5fb31a4d
         logs.agent.grafana.com/scrape: "true"
         logs.agent.grafana.com/scrub-level: info
         profiles.grafana.com/cpu.port_name: http-metrics
@@ -44609,7 +44621,7 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: tempo
         app.kubernetes.io/version: 2.3.1
-        helm.sh/chart: tempo-distributed-1.8.4
+        helm.sh/chart: tempo-distributed-1.8.5
     spec:
       affinity:
         podAntiAffinity:
@@ -44703,7 +44715,7 @@ metadata:
     app.kubernetes.io/name: tempo
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.4
+    helm.sh/chart: tempo-distributed-1.8.5
   name: tempo-distributed-ingester
   namespace: tracing-system
 spec:
@@ -44718,7 +44730,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 06ff41b02bed1a15761bde4958bda0352aa44aa1a2767b5d2d7ac3cea3d0039e
+        checksum/config: 43788236d703d96d8e96de44a51bafc3fda2ce68c7af12c4f8dfd12d5fb31a4d
         logs.agent.grafana.com/scrape: "true"
         logs.agent.grafana.com/scrub-level: info
         profiles.grafana.com/cpu.port_name: http-metrics
@@ -44734,7 +44746,7 @@ spec:
         app.kubernetes.io/name: tempo
         app.kubernetes.io/part-of: memberlist
         app.kubernetes.io/version: 2.3.1
-        helm.sh/chart: tempo-distributed-1.8.4
+        helm.sh/chart: tempo-distributed-1.8.5
     spec:
       affinity:
         podAntiAffinity:
@@ -44840,7 +44852,7 @@ metadata:
     app.kubernetes.io/name: tempo
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 2.3.1
-    helm.sh/chart: tempo-distributed-1.8.4
+    helm.sh/chart: tempo-distributed-1.8.5
   name: tempo-distributed-ingester
   namespace: tracing-system
 spec:

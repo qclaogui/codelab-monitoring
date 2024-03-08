@@ -10270,7 +10270,7 @@ data:
       tenant_cleanup_delay: 1m
 
     memberlist:
-      join_members: [ gossip-ring-headless:7946 ]
+      join_members: [ mimir-memberlist:7946 ]
 
     ingester:
       ring:
@@ -10301,7 +10301,7 @@ data:
       native_histograms_ingestion_enabled: true
 kind: ConfigMap
 metadata:
-  name: mimir-config-tfbf9bg7f8
+  name: mimir-config-5d8db6m2k8
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -43354,31 +43354,6 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app.kubernetes.io/instance: mimir-read-write-mode
-    app.kubernetes.io/managed-by: Kustomize
-    app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 2.11.0
-    prometheus.io/service-monitor: "false"
-  name: gossip-ring-headless
-  namespace: monitoring-system
-spec:
-  clusterIP: None
-  ports:
-  - appProtocol: tcp
-    name: tcp-gossip-ring
-    port: 7946
-    protocol: TCP
-    targetPort: 7946
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: mimir-read-write-mode
-    app.kubernetes.io/name: mimir
-    app.kubernetes.io/part-of: memberlist
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
     app.kubernetes.io/component: mimir-backend
     app.kubernetes.io/instance: mimir-read-write-mode
     app.kubernetes.io/managed-by: Kustomize
@@ -43396,6 +43371,31 @@ spec:
     app.kubernetes.io/component: mimir-backend
     app.kubernetes.io/instance: mimir-read-write-mode
     app.kubernetes.io/name: mimir
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: mimir-read-write-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: mimir
+    app.kubernetes.io/version: 2.11.0
+    prometheus.io/service-monitor: "false"
+  name: mimir-memberlist
+  namespace: monitoring-system
+spec:
+  clusterIP: None
+  ports:
+  - appProtocol: tcp
+    name: tcp-gossip-ring
+    port: 7946
+    protocol: TCP
+    targetPort: 7946
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: mimir-read-write-mode
+    app.kubernetes.io/name: mimir
+    app.kubernetes.io/part-of: memberlist
 ---
 apiVersion: v1
 kind: Service
@@ -43509,7 +43509,7 @@ spec:
       terminationGracePeriodSeconds: 60
       volumes:
       - configMap:
-          name: mimir-config-tfbf9bg7f8
+          name: mimir-config-5d8db6m2k8
         name: mimir-config
       - configMap:
           name: runtime-config-88gg5gk88d
@@ -43583,7 +43583,7 @@ spec:
       terminationGracePeriodSeconds: 60
       volumes:
       - configMap:
-          name: mimir-config-tfbf9bg7f8
+          name: mimir-config-5d8db6m2k8
         name: mimir-config
       - configMap:
           name: runtime-config-88gg5gk88d
@@ -43660,7 +43660,7 @@ spec:
       terminationGracePeriodSeconds: 60
       volumes:
       - configMap:
-          name: mimir-config-tfbf9bg7f8
+          name: mimir-config-5d8db6m2k8
         name: mimir-config
       - configMap:
           name: runtime-config-88gg5gk88d

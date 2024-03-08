@@ -204,8 +204,6 @@ deploy-grafana: deploy-prometheus-operator-crds deploy-minio deploy-gateway
 	$(info ******************** deploy grafana manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana | kubectl apply -f -
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana-agent | kubectl apply -f -
-	kubectl rollout status -n monitoring-system deployment/grafana --watch --timeout=600s
-	kubectl rollout status -n minio-system statefulset/codelab-pool-10gb --watch --timeout=600s
 delete-grafana:
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana-agent | kubectl delete --ignore-not-found -f -
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana | kubectl delete --ignore-not-found -f -

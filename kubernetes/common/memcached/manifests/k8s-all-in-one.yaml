@@ -12,7 +12,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: memcached
     app.kubernetes.io/version: 1.6.24
-    helm.sh/chart: memcached-6.12.2
+    helm.sh/chart: memcached-6.14.0
   name: memcached
   namespace: memcached-system
 ---
@@ -1306,7 +1306,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: memcached
     app.kubernetes.io/version: 1.6.24
-    helm.sh/chart: memcached-6.12.2
+    helm.sh/chart: memcached-6.14.0
   name: memcached
   namespace: memcached-system
 spec:
@@ -1328,7 +1328,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: memcached
     app.kubernetes.io/version: 1.6.24
-    helm.sh/chart: memcached-6.12.2
+    helm.sh/chart: memcached-6.14.0
   name: memcached
   namespace: memcached-system
 spec:
@@ -1350,7 +1350,7 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: memcached
         app.kubernetes.io/version: 1.6.24
-        helm.sh/chart: memcached-6.12.2
+        helm.sh/chart: memcached-6.14.0
     spec:
       affinity:
         nodeAffinity: null
@@ -1407,14 +1407,19 @@ spec:
             - ALL
           privileged: false
           readOnlyRootFilesystem: false
+          runAsGroup: 1001
           runAsNonRoot: true
           runAsUser: 1001
           seLinuxOptions: null
           seccompProfile:
             type: RuntimeDefault
         volumeMounts:
+        - mountPath: /opt/bitnami/memcached/conf
+          name: empty-dir
+          subPath: app-conf-dir
         - mountPath: /tmp
-          name: tmp
+          name: empty-dir
+          subPath: tmp-dir
       securityContext:
         fsGroup: 1001
         fsGroupChangePolicy: Always
@@ -1423,7 +1428,7 @@ spec:
       serviceAccountName: memcached
       volumes:
       - emptyDir: {}
-        name: tmp
+        name: empty-dir
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
@@ -1473,7 +1478,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: memcached
     app.kubernetes.io/version: 1.6.24
-    helm.sh/chart: memcached-6.12.2
+    helm.sh/chart: memcached-6.14.0
   name: memcached
   namespace: memcached-system
 spec:
@@ -1488,7 +1493,7 @@ spec:
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: memcached
       app.kubernetes.io/version: 1.6.24
-      helm.sh/chart: memcached-6.12.2
+      helm.sh/chart: memcached-6.14.0
   policyTypes:
   - Ingress
   - Egress
