@@ -60,7 +60,7 @@ These instructions will get you through the deploying samples with Docker Compos
 ```shell
 git clone https://github.com/qclaogui/codelab-monitoring.git && cd "$(basename "$_" .git)"
 
-make up-monolithic-mode-metrics
+make up-monolithic-mode-all-in-one
 ```
 
 That's it.
@@ -72,7 +72,7 @@ Navigate to [http://localhost:3000/explore](http://localhost:3000/explore) and s
 ### Clean up(docker-compose)
 
 ```shell
-make down-monolithic-mode-metrics
+make down-monolithic-mode-all-in-one
 ```
 
 ## Kubernetes

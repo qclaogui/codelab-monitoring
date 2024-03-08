@@ -58,7 +58,7 @@ services:
         aliases:
           - mimir-memberlist
 
-  load-mimir-rules:
+  load-rules-to-mimir:
     depends_on:
       mimir:
         condition: service_healthy
@@ -66,11 +66,15 @@ services:
     volumes:
       - ../../../monitoring-mixins/mimir-mixin/deploy/rules.yaml:/mimir-mixin/rules.yaml
       - ../../../monitoring-mixins/mimir-mixin/deploy/alerts.yaml:/mimir-mixin/alerts.yaml
+      - ../../../monitoring-mixins/loki-mixin/deploy/rules.yaml:/loki-mixin/rules.yaml
+      - ../../../monitoring-mixins/loki-mixin/deploy/alerts.yaml:/loki-mixin/alerts.yaml
+      # - ../../../monitoring-mixins/tempo-mixin/deploy/rules.yaml:/tempo-mixin/rules.yaml
+      # - ../../../monitoring-mixins/tempo-mixin/deploy/alerts.yaml:/tempo-mixin/alerts.yaml
     environment:
       - MIMIR_ADDRESS=http://mimir:8080
       - MIMIR_TENANT_ID=anonymous
     command: >-
-      rules load /mimir-mixin/rules.yaml /mimir-mixin/alerts.yaml
+      rules load /mimir-mixin/rules.yaml /mimir-mixin/alerts.yaml /loki-mixin/rules.yaml /loki-mixin/alerts.yaml
 
   loki:
     depends_on:
@@ -94,20 +98,6 @@ services:
       default:
         aliases:
           - loki-memberlist
-
-  load-loki-rules:
-    depends_on:
-      loki:
-        condition: service_healthy
-    image: grafana/mimirtool:2.11.0
-    volumes:
-      - ../../../monitoring-mixins/loki-mixin/deploy/rules.yaml:/loki-mixin/rules.yaml
-      - ../../../monitoring-mixins/loki-mixin/deploy/alerts.yaml:/loki-mixin/alerts.yaml
-    environment:
-      - MIMIR_ADDRESS=http://mimir:8080
-      - MIMIR_TENANT_ID=anonymous
-    command: >-
-      rules load /loki-mixin/rules.yaml /loki-mixin/alerts.yaml
 
   tempo:
     depends_on:
@@ -133,20 +123,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
-  load-tempo-rules:
-    depends_on:
-      tempo:
-        condition: service_healthy
-    image: grafana/mimirtool:2.11.0
-    volumes:
-      - ../../../monitoring-mixins/tempo-mixin/deploy/rules.yaml:/tempo-mixin/rules.yaml
-      - ../../../monitoring-mixins/tempo-mixin/deploy/alerts.yaml:/tempo-mixin/alerts.yaml
-    environment:
-      - MIMIR_ADDRESS=http://mimir:8080
-      - MIMIR_TENANT_ID=anonymous
-    command: >-
-      rules load /tempo-mixin/rules.yaml /tempo-mixin/alerts.yaml
 
   pyroscope:
     depends_on:
