@@ -19,9 +19,6 @@ resources:
 - ../../../monitoring-mixins/mimir-mixin/deploy
 # - ../../../monitoring-mixins/tempo-mixin/deploy
 
-generatorOptions:
-  disableNameSuffixHash: true
-
 secretGenerator:
 - name: loki-env
   namespace: logging-system
@@ -49,6 +46,13 @@ secretGenerator:
   - PYROSCOPE_STORAGE_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
 
 configMapGenerator:
+- name: agent-config
+  namespace: monitoring-system
+  options:
+    disableNameSuffixHash: true
+  files:
+  - configs/config.river
+
 - name: grafana-datasources
   namespace: monitoring-system
   options:
@@ -57,18 +61,18 @@ configMapGenerator:
   files:
   - datasources.yaml=configs/grafana-datasources-all-in-one.yaml
 
-- name: agent-config
-  namespace: monitoring-system
-  options:
-    disableNameSuffixHash: true
-  files:
-  - configs/config.river
-
 - name: loki-config
   namespace: logging-system
   behavior: replace
   files:
   - config.yaml=configs/loki.yaml
+
+- name: tempo
+  namespace: tracing-system
+  behavior: replace
+  files:
+  - configs/tempo.yaml
+  - overrides.yaml=configs/tempo-overrides.yaml
 
 - name: mimir-config
   namespace: monitoring-system
@@ -85,16 +89,11 @@ configMapGenerator:
   files:
   - config.yaml=configs/pyroscope.yaml
 
-- name: tempo
-  namespace: tracing-system
-  behavior: replace
-  files:
-  - configs/tempo.yaml
-  - overrides.yaml=configs/tempo-overrides.yaml
-
 # replace nginx-templates and nginx-env configMap
 - name: nginx-templates
   namespace: gateway
+  options:
+    disableNameSuffixHash: true
   files:
   - configs/gateway_loki.conf.template
   - configs/gateway_mimir.conf.template
@@ -102,5 +101,7 @@ configMapGenerator:
   - configs/gateway_tempo.conf.template
 - name: nginx-env
   namespace: gateway
+  options:
+    disableNameSuffixHash: true
   envs:
   - configs/nginx.env
