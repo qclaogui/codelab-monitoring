@@ -4023,6 +4023,46 @@ metadata:
 ---
 apiVersion: v1
 data:
+  datasources.yaml: |
+    apiVersion: 1
+
+    deleteDatasources:
+    - name: Metrics
+      uid: metrics
+    - name: Logs
+      uid: logs
+
+    datasources:
+    # Mimir for metrics
+    - name: Metrics
+      type: prometheus
+      uid: metrics
+      access: proxy
+      url: http://nginx.gateway.svc.cluster.local:8080/prometheus
+      basicAuth: false
+      isDefault: true
+      version: 1
+      editable: true
+
+    # Loki for logs
+    - name: Logs
+      type: loki
+      uid: logs
+      access: proxy
+      url: http://nginx.gateway.svc.cluster.local:3100
+      basicAuth: false
+      isDefault: false
+      version: 1
+      editable: true
+kind: ConfigMap
+metadata:
+  labels:
+    grafana_datasource: "1"
+  name: grafana-datasources-45d66kgh8f
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
   mimir-alertmanager-resources.json: |
     {
        "__requires": [

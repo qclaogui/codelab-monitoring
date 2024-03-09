@@ -165,6 +165,16 @@ data:
   datasources.yaml: |
     apiVersion: 1
 
+    deleteDatasources:
+    - name: Metrics
+      uid: metrics
+    - name: Logs
+      uid: logs
+    - name: Traces
+      uid: traces
+    - name: Profiles
+      uid: profiles
+
     datasources:
     # Mimir for metrics
     - name: Metrics
@@ -215,7 +225,7 @@ kind: ConfigMap
 metadata:
   labels:
     grafana_datasource: "1"
-  name: grafana-datasources-6chtc6cfg8
+  name: grafana-datasources-gcc7kf6bh4
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -3439,6 +3449,10 @@ metadata:
 ---
 apiVersion: v1
 data:
+  GF_FEATURE_TOGGLES_ENABLE: |
+    dHJhY2VxbEVkaXRvciB0cmFjZXNFbWJlZGRlZEZsYW1lR3JhcGggdHJhY2VxbFNlYXJjaC
+    Bjb3JyZWxhdGlvbnMgbWV0cmljc1N1bW1hcnkgdHJhY2VUb01ldHJpY3MgdHJhY2VUb1By
+    b2ZpbGVz
   GF_LOG_LEVEL: aW5mbw==
   NAMESPACE: bW9uaXRvcmluZy1zeXN0ZW0=
 kind: Secret
@@ -3542,7 +3556,7 @@ spec:
           value: http://localhost:3000/api/admin/provisioning/dashboards/reload
         - name: REQ_METHOD
           value: POST
-        image: quay.io/kiwigrid/k8s-sidecar:1.25.2
+        image: quay.io/kiwigrid/k8s-sidecar:1.26.1
         imagePullPolicy: IfNotPresent
         name: grafana-sc-dashboard
         securityContext:
@@ -3582,7 +3596,7 @@ spec:
           value: http://localhost:3000/api/admin/provisioning/datasources/reload
         - name: REQ_METHOD
           value: POST
-        image: quay.io/kiwigrid/k8s-sidecar:1.25.2
+        image: quay.io/kiwigrid/k8s-sidecar:1.26.1
         imagePullPolicy: IfNotPresent
         name: grafana-sc-datasources
         securityContext:

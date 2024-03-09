@@ -15,15 +15,6 @@ resources:
 - ../../../monitoring-mixins/mimir-mixin/deploy
 
 secretGenerator:
-- name: grafana-env
-  namespace: monitoring-system
-  options:
-    disableNameSuffixHash: true
-  literals:
-  - NAMESPACE=monitoring-system
-  - GF_LOG_LEVEL=warn
-  - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor tracesEmbeddedFlameGraph traceqlSearch correlations metricsSummary traceToMetrics traceToProfiles
-
 - name: tempo-distributed-env
   namespace: tracing-system
   literals:
@@ -43,7 +34,6 @@ configMapGenerator:
 - name: grafana-datasources
   namespace: monitoring-system
   options:
-    disableNameSuffixHash: true
     labels:
       grafana_datasource: "1"
   files:
