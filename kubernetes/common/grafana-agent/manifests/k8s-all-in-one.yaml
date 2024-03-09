@@ -277,33 +277,45 @@ data:
     = argument.git_pull_freq.value\n\t}\n}\n\nmodule.git \"log_level_default\" {\n\trepository
     \    = argument.git_repo.value\n\trevision       = argument.git_rev.value\n\tpull_frequency
     = argument.git_pull_freq.value\n\tpath           = \"modules/kubernetes/logs/labels/log-level.river\"\n\n\targuments
-    {\n\t\tforward_to = [module.git.drop_levels.exports.process.receiver]\n\t}\n}\n\nmodule.git
-    \"drop_levels\" {\n\trepository     = argument.git_repo.value\n\trevision       =
-    argument.git_rev.value\n\tpull_frequency = argument.git_pull_freq.value\n\tpath
-    \          = \"modules/kubernetes/logs/drops/levels.river\"\n\n\targuments {\n\t\tforward_to
-    \   = [module.git.scrub_all.exports.process.receiver]\n\t\tgit_repo      = argument.git_repo.value\n\t\tgit_rev
-    \      = argument.git_rev.value\n\t\tgit_pull_freq = argument.git_pull_freq.value\n\t}\n}\n\nmodule.git
-    \"scrub_all\" {\n\trepository     = argument.git_repo.value\n\trevision       =
-    argument.git_rev.value\n\tpull_frequency = argument.git_pull_freq.value\n\tpath
-    \          = \"modules/kubernetes/logs/scrubs/all.river\"\n\n\targuments {\n\t\tforward_to
-    \   = [module.git.embed_pod.exports.process.receiver]\n\t\tgit_repo      = argument.git_repo.value\n\t\tgit_rev
-    \      = argument.git_rev.value\n\t\tgit_pull_freq = argument.git_pull_freq.value\n\t}\n}\n\nmodule.git
-    \"embed_pod\" {\n\trepository     = argument.git_repo.value\n\trevision       =
-    argument.git_rev.value\n\tpull_frequency = argument.git_pull_freq.value\n\tpath
-    \          = \"modules/kubernetes/logs/embed/pod.river\"\n\n\targuments {\n\t\tforward_to
-    = [module.git.mask_all.exports.process.receiver]\n\t}\n}\n\nmodule.git \"mask_all\"
-    {\n\trepository     = argument.git_repo.value\n\trevision       = argument.git_rev.value\n\tpull_frequency
-    = argument.git_pull_freq.value\n\tpath           = \"modules/kubernetes/logs/masks/all.river\"\n\n\targuments
-    {\n\t\tforward_to    = [module.git.label_normalize_filename.exports.process.receiver]\n\t\tgit_repo
+    {\n\t\tforward_to = [module.git.label_normalize_filename.exports.process.receiver]\n\t}\n}\n\nmodule.git
+    \"label_normalize_filename\" {\n\trepository     = argument.git_repo.value\n\trevision
+    \      = argument.git_rev.value\n\tpull_frequency = argument.git_pull_freq.value\n\tpath
+    \          = \"modules/kubernetes/logs/labels/normalize-filename.river\"\n\n\targuments
+    {\n\t\t// here we fork, one branch goes to the log level module, the other goes
+    to the metrics module\n\t\t// this is because we need to reduce the labels on
+    the pre-metrics but they are still necessary in\n\t\t// downstream modules\n\t\tforward_to
+    = [\n\t\t\tmodule.git.pre_process_metrics.exports.process.receiver,\n\t\t\tmodule.git.drop_levels.exports.process.receiver,\n\t\t]\n\t}\n}\n\nmodule.git
+    \"pre_process_metrics\" {\n\trepository     = argument.git_repo.value\n\trevision
+    \      = argument.git_rev.value\n\tpull_frequency = argument.git_pull_freq.value\n\tpath
+    \          = \"modules/kubernetes/logs/metrics/pre-process-bytes-lines.river\"\n\n\targuments
+    {\n\t\tforward_to  = [module.git.drop_levels.exports.process.receiver]\n\t\tkeep_labels
+    = argument.keep_labels.value\n\t}\n}\n\nmodule.git \"drop_levels\" {\n\trepository
+    \    = argument.git_repo.value\n\trevision       = argument.git_rev.value\n\tpull_frequency
+    = argument.git_pull_freq.value\n\tpath           = \"modules/kubernetes/logs/drops/levels.river\"\n\n\targuments
+    {\n\t\tforward_to    = [module.git.scrub_all.exports.process.receiver]\n\t\tgit_repo
     \     = argument.git_repo.value\n\t\tgit_rev       = argument.git_rev.value\n\t\tgit_pull_freq
-    = argument.git_pull_freq.value\n\t}\n}\n\nmodule.git \"label_normalize_filename\"
-    {\n\trepository     = argument.git_repo.value\n\trevision       = argument.git_rev.value\n\tpull_frequency
-    = argument.git_pull_freq.value\n\tpath           = \"modules/kubernetes/logs/labels/normalize-filename.river\"\n\n\targuments
-    {\n\t\tforward_to = [module.git.label_keep.exports.process.receiver]\n\t}\n}\n\nmodule.git
+    = argument.git_pull_freq.value\n\t}\n}\n\nmodule.git \"scrub_all\" {\n\trepository
+    \    = argument.git_repo.value\n\trevision       = argument.git_rev.value\n\tpull_frequency
+    = argument.git_pull_freq.value\n\tpath           = \"modules/kubernetes/logs/scrubs/all.river\"\n\n\targuments
+    {\n\t\tforward_to    = [module.git.embed_pod.exports.process.receiver]\n\t\tgit_repo
+    \     = argument.git_repo.value\n\t\tgit_rev       = argument.git_rev.value\n\t\tgit_pull_freq
+    = argument.git_pull_freq.value\n\t}\n}\n\nmodule.git \"embed_pod\" {\n\trepository
+    \    = argument.git_repo.value\n\trevision       = argument.git_rev.value\n\tpull_frequency
+    = argument.git_pull_freq.value\n\tpath           = \"modules/kubernetes/logs/embed/pod.river\"\n\n\targuments
+    {\n\t\tforward_to = [module.git.mask_all.exports.process.receiver]\n\t}\n}\n\nmodule.git
+    \"mask_all\" {\n\trepository     = argument.git_repo.value\n\trevision       =
+    argument.git_rev.value\n\tpull_frequency = argument.git_pull_freq.value\n\tpath
+    \          = \"modules/kubernetes/logs/masks/all.river\"\n\n\targuments {\n\t\tforward_to
+    \   = [module.git.label_keep.exports.process.receiver]\n\t\tgit_repo      = argument.git_repo.value\n\t\tgit_rev
+    \      = argument.git_rev.value\n\t\tgit_pull_freq = argument.git_pull_freq.value\n\t}\n}\n\nmodule.git
     \"label_keep\" {\n\trepository     = argument.git_repo.value\n\trevision       =
     argument.git_rev.value\n\tpull_frequency = argument.git_pull_freq.value\n\tpath
     \          = \"modules/kubernetes/logs/labels/keep-labels.river\"\n\n\targuments
-    {\n\t\tforward_to  = argument.forward_to.value\n\t\tkeep_labels = argument.keep_labels.value\n\t}\n}\n"
+    {\n\t\tforward_to  = [module.git.post_process_metrics.exports.process.receiver]\n\t\tkeep_labels
+    = argument.keep_labels.value\n\t}\n}\n\nmodule.git \"post_process_metrics\" {\n\trepository
+    \    = argument.git_repo.value\n\trevision       = argument.git_rev.value\n\tpull_frequency
+    = argument.git_pull_freq.value\n\tpath           = \"modules/kubernetes/logs/metrics/post-process-bytes-lines.river\"\n\n\targuments
+    {\n\t\tforward_to = argument.forward_to.value\n\t}\n}\n"
   metrics.river: "/*\nModule: metrics-all\nDescription: Wrapper module to include
     all kubernetes metric modules and use cri parsing\n*/\nargument \"forward_to\"
     {\n\t// comment = \"Must be a list(MetricssReceiver) where collected logs should
@@ -605,7 +617,7 @@ data:
     {\n\t\tvalue = \"anonymous\"\n\t}\n\n\tforward_to = argument.logs_forward_to.value\n}\n"
 kind: ConfigMap
 metadata:
-  name: agent-modules-9bm7gf8558
+  name: agent-modules-cf8t5bf7t9
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -830,7 +842,7 @@ spec:
           path: /var/log
         name: varlog
       - configMap:
-          name: agent-modules-9bm7gf8558
+          name: agent-modules-cf8t5bf7t9
         name: agent-modules
   updateStrategy:
     rollingUpdate:

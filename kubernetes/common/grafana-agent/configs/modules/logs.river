@@ -88,7 +88,36 @@ module.git "log_level_default" {
 	path           = "modules/kubernetes/logs/labels/log-level.river"
 
 	arguments {
-		forward_to = [module.git.drop_levels.exports.process.receiver]
+		forward_to = [module.git.label_normalize_filename.exports.process.receiver]
+	}
+}
+
+module.git "label_normalize_filename" {
+	repository     = argument.git_repo.value
+	revision       = argument.git_rev.value
+	pull_frequency = argument.git_pull_freq.value
+	path           = "modules/kubernetes/logs/labels/normalize-filename.river"
+
+	arguments {
+		// here we fork, one branch goes to the log level module, the other goes to the metrics module
+		// this is because we need to reduce the labels on the pre-metrics but they are still necessary in
+		// downstream modules
+		forward_to = [
+			module.git.pre_process_metrics.exports.process.receiver,
+			module.git.drop_levels.exports.process.receiver,
+		]
+	}
+}
+
+module.git "pre_process_metrics" {
+	repository     = argument.git_repo.value
+	revision       = argument.git_rev.value
+	pull_frequency = argument.git_pull_freq.value
+	path           = "modules/kubernetes/logs/metrics/pre-process-bytes-lines.river"
+
+	arguments {
+		forward_to  = [module.git.drop_levels.exports.process.receiver]
+		keep_labels = argument.keep_labels.value
 	}
 }
 
@@ -138,21 +167,10 @@ module.git "mask_all" {
 	path           = "modules/kubernetes/logs/masks/all.river"
 
 	arguments {
-		forward_to    = [module.git.label_normalize_filename.exports.process.receiver]
+		forward_to    = [module.git.label_keep.exports.process.receiver]
 		git_repo      = argument.git_repo.value
 		git_rev       = argument.git_rev.value
 		git_pull_freq = argument.git_pull_freq.value
-	}
-}
-
-module.git "label_normalize_filename" {
-	repository     = argument.git_repo.value
-	revision       = argument.git_rev.value
-	pull_frequency = argument.git_pull_freq.value
-	path           = "modules/kubernetes/logs/labels/normalize-filename.river"
-
-	arguments {
-		forward_to = [module.git.label_keep.exports.process.receiver]
 	}
 }
 
@@ -163,7 +181,18 @@ module.git "label_keep" {
 	path           = "modules/kubernetes/logs/labels/keep-labels.river"
 
 	arguments {
-		forward_to  = argument.forward_to.value
+		forward_to  = [module.git.post_process_metrics.exports.process.receiver]
 		keep_labels = argument.keep_labels.value
+	}
+}
+
+module.git "post_process_metrics" {
+	repository     = argument.git_repo.value
+	revision       = argument.git_rev.value
+	pull_frequency = argument.git_pull_freq.value
+	path           = "modules/kubernetes/logs/metrics/post-process-bytes-lines.river"
+
+	arguments {
+		forward_to = argument.forward_to.value
 	}
 }
