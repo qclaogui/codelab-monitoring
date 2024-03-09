@@ -17,37 +17,16 @@ argument "tenant" {
 	default  = ".*"
 }
 
-argument "git_repo" {
-	optional = true
-	default  = coalesce(env("GIT_REPO"), "https://github.com/grafana/agent-modules.git")
-}
-
-argument "git_rev" {
-	optional = true
-	default  = coalesce(env("GIT_REV"), env("GIT_REVISION"), env("GIT_BRANCH"), "main")
-}
-
-argument "git_pull_freq" {
-	optional = true
-	default  = "5m"
-}
-
 discovery.kubernetes "pods" {
 	role = "pod"
 }
 
-module.git "relabelings_log" {
-	repository     = argument.git_repo.value
-	revision       = argument.git_rev.value
-	pull_frequency = argument.git_pull_freq.value
-	path           = "modules/kubernetes/logs/relabelings.river"
+module.file "relabelings_log" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-modules") + "/kubernetes/logs/relabelings.river"
 
 	arguments {
-		targets       = discovery.kubernetes.pods.targets
-		tenant        = argument.tenant.value
-		git_repo      = argument.git_repo.value
-		git_rev       = argument.git_rev.value
-		git_pull_freq = argument.git_pull_freq.value
+		targets = discovery.kubernetes.pods.targets
+		tenant  = argument.tenant.value
 	}
 }
 
@@ -58,7 +37,7 @@ module.git "relabelings_log" {
 // (pipeline) stages. Use a relabeling stage to set a label that can be used a LogQL selector in the stage
 // below so parsing can be automatically determined, then drop the label from the loki.process stage.
 discovery.relabel "container_runtime" {
-	targets = module.git.relabelings_log.exports.relabelings.output
+	targets = module.file.relabelings_log.exports.relabelings.output
 
 	// set the container runtime as a label
 	rule {

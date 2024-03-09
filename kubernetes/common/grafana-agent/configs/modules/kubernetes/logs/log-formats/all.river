@@ -7,162 +7,108 @@ argument "forward_to" {
 	optional = false
 }
 
-argument "git_repo" {
-	optional = true
-	default  = coalesce(env("GIT_REPO"), "https://github.com/grafana/agent-modules.git")
-}
-
-argument "git_rev" {
-	optional = true
-	default  = coalesce(env("GIT_REV"), env("GIT_REVISION"), env("GIT_BRANCH"), "main")
-}
-
-argument "git_pull_freq" {
-	optional = true
-	default  = "5m"
-}
-
 export "process" {
-	value = module.git.log_format_common_log.exports.process
+	value = module.file.log_format_common_log.exports.process
 }
 
-module.git "log_format_common_log" {
-	repository     = argument.git_repo.value
-	revision       = argument.git_rev.value
-	pull_frequency = argument.git_pull_freq.value
-	path           = "modules/kubernetes/logs/log-formats/common-log.river"
+module.file "log_format_common_log" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-modules") + "/kubernetes/logs/log-formats/common-log.river"
 
 	arguments {
-		forward_to = [module.git.log_format_dotnet.exports.process.receiver]
+		forward_to = [module.file.log_format_dotnet.exports.process.receiver]
 	}
 }
 
-module.git "log_format_dotnet" {
-	repository     = argument.git_repo.value
-	revision       = argument.git_rev.value
-	pull_frequency = argument.git_pull_freq.value
-	path           = "modules/kubernetes/logs/log-formats/dotnet.river"
+module.file "log_format_dotnet" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-modules") + "/kubernetes/logs/log-formats/dotnet.river"
 
 	arguments {
-		forward_to = [module.git.log_format_istio.exports.process.receiver]
+		forward_to = [module.file.log_format_istio.exports.process.receiver]
 	}
 }
 
-module.git "log_format_istio" {
-	repository     = argument.git_repo.value
-	revision       = argument.git_rev.value
-	pull_frequency = argument.git_pull_freq.value
-	path           = "modules/kubernetes/logs/log-formats/istio.river"
+module.file "log_format_istio" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-modules") + "/kubernetes/logs/log-formats/istio.river"
 
 	arguments {
-		forward_to = [module.git.log_format_json.exports.process.receiver]
+		forward_to = [module.file.log_format_json.exports.process.receiver]
 	}
 }
 
-module.git "log_format_json" {
-	repository     = argument.git_repo.value
-	revision       = argument.git_rev.value
-	pull_frequency = argument.git_pull_freq.value
-	path           = "modules/kubernetes/logs/log-formats/json.river"
+module.file "log_format_json" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-modules") + "/kubernetes/logs/log-formats/json.river"
 
 	arguments {
-		forward_to = [module.git.log_format_klog.exports.process.receiver]
+		forward_to = [module.file.log_format_klog.exports.process.receiver]
 	}
 }
 
-module.git "log_format_klog" {
-	repository     = argument.git_repo.value
-	revision       = argument.git_rev.value
-	pull_frequency = argument.git_pull_freq.value
-	path           = "modules/kubernetes/logs/log-formats/klog.river"
+module.file "log_format_klog" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-modules") + "/kubernetes/logs/log-formats/klog.river"
 
 	arguments {
-		forward_to = [module.git.log_format_log4j.exports.process.receiver]
+		forward_to = [module.file.log_format_log4j.exports.process.receiver]
 	}
 }
 
-module.git "log_format_log4j" {
-	repository     = argument.git_repo.value
-	revision       = argument.git_rev.value
-	pull_frequency = argument.git_pull_freq.value
-	path           = "modules/kubernetes/logs/log-formats/log4j.river"
+module.file "log_format_log4j" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-modules") + "/kubernetes/logs/log-formats/log4j.river"
 
 	arguments {
-		forward_to = [module.git.log_format_logfmt.exports.process.receiver]
+		forward_to = [module.file.log_format_logfmt.exports.process.receiver]
 	}
 }
 
-module.git "log_format_logfmt" {
-	repository     = argument.git_repo.value
-	revision       = argument.git_rev.value
-	pull_frequency = argument.git_pull_freq.value
-	path           = "modules/kubernetes/logs/log-formats/logfmt.river"
+module.file "log_format_logfmt" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-modules") + "/kubernetes/logs/log-formats/logfmt.river"
 
 	arguments {
-		forward_to = [module.git.log_format_otel.exports.process.receiver]
+		forward_to = [module.file.log_format_otel.exports.process.receiver]
 	}
 }
 
-module.git "log_format_otel" {
-	repository     = argument.git_repo.value
-	revision       = argument.git_rev.value
-	pull_frequency = argument.git_pull_freq.value
-	path           = "modules/kubernetes/logs/log-formats/otel.river"
+module.file "log_format_otel" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-modules") + "/kubernetes/logs/log-formats/otel.river"
 
 	arguments {
-		forward_to = [module.git.log_format_postgres.exports.process.receiver]
+		forward_to = [module.file.log_format_postgres.exports.process.receiver]
 	}
 }
 
-module.git "log_format_postgres" {
-	repository     = argument.git_repo.value
-	revision       = argument.git_rev.value
-	pull_frequency = argument.git_pull_freq.value
-	path           = "modules/kubernetes/logs/log-formats/otel.river"
+module.file "log_format_postgres" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-modules") + "/kubernetes/logs/log-formats/postgres.river"
 
 	arguments {
-		forward_to = [module.git.log_format_python.exports.process.receiver]
+		forward_to = [module.file.log_format_python.exports.process.receiver]
 	}
 }
 
-module.git "log_format_python" {
-	repository     = argument.git_repo.value
-	revision       = argument.git_rev.value
-	pull_frequency = argument.git_pull_freq.value
-	path           = "modules/kubernetes/logs/log-formats/python.river"
+module.file "log_format_python" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-modules") + "/kubernetes/logs/log-formats/python.river"
 
 	arguments {
-		forward_to = [module.git.log_format_spring_boot.exports.process.receiver]
+		forward_to = [module.file.log_format_spring_boot.exports.process.receiver]
 	}
 }
 
-module.git "log_format_spring_boot" {
-	repository     = argument.git_repo.value
-	revision       = argument.git_rev.value
-	pull_frequency = argument.git_pull_freq.value
-	path           = "modules/kubernetes/logs/log-formats/spring-boot.river"
+module.file "log_format_spring_boot" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-modules") + "/kubernetes/logs/log-formats/spring-boot.river"
 
 	arguments {
-		forward_to = [module.git.log_format_syslog.exports.process.receiver]
+		forward_to = [module.file.log_format_syslog.exports.process.receiver]
 	}
 }
 
-module.git "log_format_syslog" {
-	repository     = argument.git_repo.value
-	revision       = argument.git_rev.value
-	pull_frequency = argument.git_pull_freq.value
-	path           = "modules/kubernetes/logs/log-formats/syslog.river"
+module.file "log_format_syslog" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-modules") + "/kubernetes/logs/log-formats/syslog.river"
 
 	arguments {
-		forward_to = [module.git.log_format_zerolog.exports.process.receiver]
+		forward_to = [module.file.log_format_zerolog.exports.process.receiver]
 	}
 }
 
-module.git "log_format_zerolog" {
-	repository     = argument.git_repo.value
-	revision       = argument.git_rev.value
-	pull_frequency = argument.git_pull_freq.value
-	path           = "modules/kubernetes/logs/log-formats/spring-boot.river"
+module.file "log_format_zerolog" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-modules") + "/kubernetes/logs/log-formats/zerolog.river"
 
 	arguments {
 		forward_to = argument.forward_to.value
