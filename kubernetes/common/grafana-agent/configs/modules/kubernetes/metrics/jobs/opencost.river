@@ -1,0 +1,129 @@
+/*
+Module: job-opencost
+Description: Scrapes opencost, this is a separate scrape job, if you are also using annotation based scraping, you will want to explicitly
+             disable opencost from being scraped by this module and annotations by setting the following annotation on the opencost
+             metrics.agent.grafana.com/scrape: "false"
+
+Note: Every argument except for "forward_to" is optional, and does have a defined default value.  However, the values for these
+      arguments are not defined using the default = " ... " argument syntax, but rather using the coalesce(argument.value, " ... ").
+      This is because if the argument passed in from another consuming module is set to null, the default = " ... " syntax will
+      does not override the value passed in, where coalesce() will return the first non-null value.
+*/
+argument "forward_to" {
+	comment  = "Must be a list(MetricsReceiver) where collected logs should be forwarded to"
+	optional = false
+}
+
+argument "enabled" {
+	comment  = "Whether or not the opencost job should be enabled, this is useful for disabling the job when it is being consumed by other modules in a multi-tenancy environment (default: true)"
+	optional = true
+}
+
+argument "namespaces" {
+	comment  = "The namespaces to look for targets in (default: [] is all namespaces)"
+	optional = true
+}
+
+argument "selectors" {
+	// see: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+	comment  = "The label selectors to use to find matching targets (default: [\"app.kubernetes.io/name=opencost\"])"
+	optional = true
+}
+
+argument "port_name" {
+	comment  = "The of the port to scrape metrics from (default: http)"
+	optional = true
+}
+
+argument "job_label" {
+	comment  = "The job label to add for all opencost metrics (default: integrations/kubernetes/opencost)"
+	optional = true
+}
+
+argument "keep_metrics" {
+	comment  = "A regex of metrics to keep"
+	optional = true
+}
+
+argument "scrape_interval" {
+	comment  = "How often to scrape metrics from the targets (default: 60s)"
+	optional = true
+}
+
+argument "scrape_timeout" {
+	comment  = "How long before a scrape times out (default: 10s)"
+	optional = true
+}
+
+argument "max_cache_size" {
+	comment  = "The maximum number of elements to hold in the relabeling cache (default: 100000).  This should be at least 2x-5x your largest scrape target or samples appended rate."
+	optional = true
+}
+
+argument "clustering" {
+	// Docs: https://grafana.com/docs/agent/latest/flow/concepts/clustering/
+	comment  = "Whether or not clustering should be enabled (default: false)"
+	optional = true
+}
+
+// opencost service discovery
+discovery.kubernetes "opencost" {
+	role = "service"
+
+	selectors {
+		role  = "service"
+		label = join(coalesce(argument.selectors.value, ["app.kubernetes.io/name=opencost"]), ",")
+	}
+
+	namespaces {
+		names = coalesce(argument.namespaces.value, [])
+	}
+}
+
+// opencost relabelings (pre-scrape)
+discovery.relabel "opencost" {
+	targets = discovery.kubernetes.opencost.targets
+
+	// drop all targets if enabled is false
+	rule {
+		target_label = "__enabled"
+		replacement  = format("%s", coalesce(argument.enabled.value, "true"))
+	}
+
+	rule {
+		source_labels = ["__enabled"]
+		regex         = "false"
+		action        = "drop"
+	}
+
+	rule {
+		source_labels = ["__meta_kubernetes_service_port_name"]
+		regex         = coalesce(argument.port_name.value, "http")
+		action        = "keep"
+	}
+}
+
+// opencost scrape job
+prometheus.scrape "opencost" {
+	job_name        = coalesce(argument.job_label.value, "integrations/kubernetes/opencost")
+	forward_to      = [prometheus.relabel.opencost.receiver]
+	targets         = discovery.relabel.opencost.output
+	scrape_interval = coalesce(argument.scrape_interval.value, "60s")
+	scrape_timeout  = coalesce(argument.scrape_timeout.value, "10s")
+
+	clustering {
+		enabled = coalesce(argument.clustering.value, false)
+	}
+}
+
+// opencost metric relabelings (post-scrape)
+prometheus.relabel "opencost" {
+	forward_to     = argument.forward_to.value
+	max_cache_size = coalesce(argument.max_cache_size.value, 100000)
+
+	rule {
+		source_labels = ["__name__"]
+		regex         = coalesce(argument.keep_metrics.value, "(up|container_(cpu|gpu|memory)_allocation(_bytes)?|deployment_match_labels|kubecost_(cluster_(info|management_cost|memory_working_set_bytes)|http_requests_total|http_response_(size_bytes|time_seconds)|load_balancer_cost|network_(internet|region|zone)_egress_cost|node_is_spot)|node_(cpu_hourly_cost|gpu_(count|hourly_cost)|ram_hourly_cost|total_hourly_cost)|opencost_build_info|pod_pvc_allocation|pv_hourly_cost|service_selector_labels|statefulSet_match_labels)")
+		action        = "keep"
+	}
+}

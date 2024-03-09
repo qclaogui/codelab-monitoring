@@ -1,0 +1,209 @@
+/*
+Module: logs-kubernetes-events
+Description: Retrieves and processes kubernetes events.  This module should only be deployed as part of a StatefulSet with
+             a single replica.  As events are captured from API calls, any more than a single pod would result in duplicate
+              events being sent to Loki.
+*/
+argument "forward_to" {
+	// comment = "Must be a list(LogsReceiver) where collected logs should be forwarded to"
+	optional = false
+}
+
+argument "namespaces" {
+	// comment = "List of namespaces to collect events from"
+	optional = true
+	default  = []
+}
+
+argument "label_job" {
+	// comment = "The job label to set for all collected logs"
+	optional = true
+	default  = "integrations/kubernetes/eventhandler"
+}
+
+argument "keep_labels" {
+	// comment = "List of labels to keep before the log message is written to Loki"
+	optional = true
+	default  = [
+		"app",
+		"cluster",
+		"component",
+		"env",
+		"instance",
+		"job",
+		"level",
+		"log_type",
+		"region",
+		"squad",
+		"team",
+	]
+}
+
+argument "drop_debug" {
+	// comment = "Whether or not to drop debug messages"
+	optional = true
+	default  = "true"
+}
+
+argument "drop_info" {
+	// comment = "Whether or not to drop info messages"
+	optional = true
+	default  = "false"
+}
+
+argument "git_repo" {
+	optional = true
+	default  = coalesce(env("GIT_REPO"), "https://github.com/grafana/agent-modules.git")
+}
+
+argument "git_rev" {
+	optional = true
+	default  = coalesce(env("GIT_REV"), env("GIT_REVISION"), env("GIT_BRANCH"), "main")
+}
+
+argument "git_pull_freq" {
+	optional = true
+	default  = "5m"
+}
+
+loki.source.kubernetes_events "events" {
+	job_name   = argument.label_job.value
+	namespaces = argument.namespaces.value
+	forward_to = [loki.relabel.events.receiver]
+}
+
+loki.relabel "events" {
+	forward_to = [module.git.log_format_logfmt.exports.process.receiver]
+
+	// events are in logfmt format
+	rule {
+		action       = "replace"
+		replacement  = "logfmt"
+		target_label = "logs_agent_grafana_com_log_format"
+	}
+
+	// default to log level info as events don't always have a level
+	rule {
+		action       = "replace"
+		replacement  = "Info"
+		target_label = "level"
+	}
+
+	// set the annotations for drop_debug and drop_info
+	rule {
+		action       = "replace"
+		replacement  = argument.drop_debug.value
+		target_label = "logs_agent_grafana_com_drop_debug"
+	}
+
+	rule {
+		action       = "replace"
+		replacement  = argument.drop_info.value
+		target_label = "logs_agent_grafana_com_drop_info"
+	}
+}
+
+module.git "log_format_logfmt" {
+	repository     = argument.git_repo.value
+	revision       = argument.git_rev.value
+	pull_frequency = argument.git_pull_freq.value
+	path           = "modules/kubernetes/logs/log-formats/logfmt.river"
+
+	arguments {
+		forward_to = [loki.process.events.receiver]
+	}
+}
+
+// set the instance label to the source host
+loki.process "events" {
+	forward_to = [module.git.drop_levels.exports.process.receiver]
+
+	stage.logfmt {
+		mapping = {
+			"component" = "sourcecomponent",
+			"instance"  = "sourcehost",
+			// most events don't have a level but they do have a "type" i.e. Normal, Warning, Error, etc.
+			"level" = "type",
+		}
+	}
+
+	// set the instance extracted value as a label
+	stage.labels {
+		values = {
+			component = "",
+			instance  = "",
+			level     = "",
+		}
+	}
+
+	// since we're using the level label derived from the "type" property, one type is "Normal" which is not a log level
+	// and will not properly color to an info level message, set the level to info.  This is also relavent for if dropping
+	// info level messages is desired. As Normal will contain messages about pods starting, stopping, etc. which may be
+	// something undesirable to keep.
+	stage.match {
+		selector = "{level=\"Normal\"}"
+
+		stage.static_labels {
+			values = {
+				level = "Info",
+			}
+		}
+	}
+
+	// if instance is not set then look for the assigned keyword as it may be part of the msg string
+	// look for certain keywords and set a log level based on that
+	// i.e. msg="Successfully assigned agents/blackbox-prometheus-blackbox-exporter-696d8fcd54-8qgz5 to gke-dev-default-pool-0a5344ff-0eea"
+	stage.match {
+		selector = "{instance=~\".*module.git.*|\"}"
+
+		// while the level could be extracted as logfmt, this allows for multiple possible log levels formats
+		// i.e. loglevel=info, level=info, lvl=info, loglvl=info
+		stage.regex {
+			// unescaped regex: (?:".+ assigned \w+\/(\w+|-)+ to )(?P<instance>[^ "]+)"
+			expression = "(?:\".+ assigned \\w+\\/(\\w+|-)+ to )(?P<instance>[^ \"]+)\""
+		}
+
+		// set the extracted level value as a label
+		stage.labels {
+			values = {
+				instance = "",
+			}
+		}
+	}
+
+	// if instance is still not set, drop the label because its value is something similar to "module.git.event_logs/loki.source.kubernetes_events.events"
+	// which is not useful
+	stage.match {
+		selector = "{instance=~\".*module.git.*|\"}"
+
+		stage.label_drop {
+			values = ["instance"]
+		}
+	}
+}
+
+module.git "drop_levels" {
+	repository     = argument.git_repo.value
+	revision       = argument.git_rev.value
+	pull_frequency = argument.git_pull_freq.value
+	path           = "modules/kubernetes/logs/drops/levels.river"
+
+	arguments {
+		forward_to    = [module.git.label_keep.exports.process.receiver]
+		git_repo      = argument.git_repo.value
+		git_rev       = argument.git_rev.value
+		git_pull_freq = argument.git_pull_freq.value
+	}
+}
+
+module.git "label_keep" {
+	repository     = argument.git_repo.value
+	revision       = argument.git_rev.value
+	pull_frequency = argument.git_pull_freq.value
+	path           = "modules/kubernetes/logs/labels/keep-labels.river"
+
+	arguments {
+		forward_to  = argument.forward_to.value
+		keep_labels = argument.keep_labels.value
+	}
+}

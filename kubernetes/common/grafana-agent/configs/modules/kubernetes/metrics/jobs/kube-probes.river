@@ -1,0 +1,120 @@
+/*
+Module: job-kube-probes
+Description: Scrapes Kube Probes Metrics
+
+Note: Every argument except for "forward_to" is optional, and does have a defined default value.  However, the values for these
+      arguments are not defined using the default = " ... " argument syntax, but rather using the coalesce(argument.value, " ... ").
+      This is because if the argument passed in from another consuming module is set to null, the default = " ... " syntax will
+      does not override the value passed in, where coalesce() will return the first non-null value.
+*/
+argument "forward_to" {
+	comment  = "Must be a list(MetricsReceiver) where collected logs should be forwarded to"
+	optional = false
+}
+
+argument "enabled" {
+	comment  = "Whether or not the kube-probes job should be enabled, this is useful for disabling the job when it is being consumed by other modules in a multi-tenancy environment (default: true)"
+	optional = true
+}
+
+argument "job_label" {
+	comment  = "The job label to add for all kube metrics (default: integrations/kubernetes/kube-probes)"
+	optional = true
+}
+
+argument "keep_metrics" {
+	comment  = "A regex of metrics to keep"
+	optional = true
+}
+
+argument "scrape_interval" {
+	comment  = "How often to scrape metrics from the targets (default: 60s)"
+	optional = true
+}
+
+argument "scrape_timeout" {
+	comment  = "How long before a scrape times out (default: 10s)"
+	optional = true
+}
+
+argument "max_cache_size" {
+	comment  = "The maximum number of elements to hold in the relabeling cache (default: 100000).  This should be at least 2x-5x your largest scrape target or samples appended rate."
+	optional = true
+}
+
+argument "clustering" {
+	// Docs: https://grafana.com/docs/agent/latest/flow/concepts/clustering/
+	comment  = "Whether or not clustering should be enabled (default: false)"
+	optional = true
+}
+
+// kube probes service discovery
+discovery.kubernetes "kube_probes" {
+	role = "node"
+}
+
+// kube probes relabelings (pre-scrape)
+discovery.relabel "kube_probes" {
+	targets = discovery.kubernetes.kube_probes.targets
+
+	// drop all targets if enabled is false
+	rule {
+		target_label = "__enabled"
+		replacement  = format("%s", coalesce(argument.enabled.value, "true"))
+	}
+
+	rule {
+		source_labels = ["__enabled"]
+		regex         = "false"
+		action        = "drop"
+	}
+
+	// set the address to use the kubernetes service dns name
+	rule {
+		target_label = "__address__"
+		replacement  = "kubernetes.default.svc.cluster.local:443"
+	}
+
+	// set the metrics path to use the proxy path to the nodes probes metrics endpoint
+	rule {
+		action        = "replace"
+		source_labels = ["__meta_kubernetes_node_name"]
+		regex         = "(.+)"
+		replacement   = "/api/v1/nodes/${1}/proxy/metrics/probes"
+		target_label  = "__metrics_path__"
+	}
+}
+
+// kube probes scrape job
+prometheus.scrape "kube_probes" {
+	job_name          = coalesce(argument.job_label.value, "integrations/kubernetes/kube-probes")
+	forward_to        = [prometheus.relabel.kube_probes.receiver]
+	targets           = discovery.relabel.kube_probes.output
+	scheme            = "https"
+	scrape_interval   = coalesce(argument.scrape_interval.value, "60s")
+	scrape_timeout    = coalesce(argument.scrape_timeout.value, "10s")
+	bearer_token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+
+	tls_config {
+		ca_file              = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+		insecure_skip_verify = false
+		server_name          = "kubernetes"
+	}
+
+	clustering {
+		enabled = coalesce(argument.clustering.value, false)
+	}
+}
+
+// kube probes metric relabelings (post-scrape)
+prometheus.relabel "kube_probes" {
+	forward_to     = argument.forward_to.value
+	max_cache_size = coalesce(argument.max_cache_size.value, 100000)
+
+	// keep only metrics that match the keep_metrics regex
+	rule {
+		source_labels = ["__name__"]
+		regex         = coalesce(argument.keep_metrics.value, "(.+)")
+		action        = "keep"
+	}
+}

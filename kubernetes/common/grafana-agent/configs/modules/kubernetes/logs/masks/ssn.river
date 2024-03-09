@@ -1,0 +1,29 @@
+/*
+Module: mask-ssn
+Description: Checks the logs.agent.grafana.com/mask-ssn annotation, if set to "true" any logs that match the ssn
+             pattern will have the value of the ssn replaced with "*ssn*hash*
+*/
+argument "forward_to" {
+	// comment = "Must be a list(LogsReceiver) where collected logs should be forwarded to"
+	optional = false
+}
+
+export "process" {
+	value = loki.process.mask_ssn
+}
+
+loki.process "mask_ssn" {
+	forward_to = argument.forward_to.value
+
+	// check logs.agent.grafana.com/mask-ssn annotation, if true the data will be masked as *ssn*salt*
+	stage.match {
+		pipeline_name = "pipeline for annotation || logs.agent.grafana.com/mask-ssn: true"
+		selector      = "{logs_agent_grafana_com_mask_ssn=~\"(?i)true\"}"
+
+		stage.replace {
+			// unescaped regex: ([0-9]{3}-[0-9]{2}-[0-9]{4})
+			expression = "([0-9]{3}-[0-9]{2}-[0-9]{4})"
+			replace    = "*ssn*{{ .Value | Hash \"salt\" }}*"
+		}
+	}
+}

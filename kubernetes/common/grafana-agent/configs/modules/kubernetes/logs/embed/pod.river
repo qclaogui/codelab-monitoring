@@ -1,0 +1,60 @@
+/*
+Module: embed-pod
+Description: Embeds the name of the pod to the json or text log line
+*/
+argument "forward_to" {
+	// comment = "Must be a list(LogsReceiver) where collected logs should be forwarded to"
+	optional = false
+}
+
+export "process" {
+	value = loki.process.embed_pod
+}
+
+loki.process "embed_pod" {
+	forward_to = argument.forward_to.value
+
+	// check logs.agent.grafana.com/embed-pod annotation, if true embed the name of the pod to the end of the log line
+	// this can reduce the overall cardinality, by not using a label of "pod", individual pods can still be searched
+	// using a line selector i.e. __pod=your-pod-name
+	stage.match {
+		selector      = "{logs_agent_grafana_com_embed_pod=~\"(?i)true\"}"
+		pipeline_name = "pipeline for annotation || logs.agent.grafana.com/embed-pod: true"
+
+		// embed as json property
+		stage.match {
+			selector = "{logs_agent_grafana_com_log_format=~\"(?i)(.*json|istio|otel|open-?telemetry)\"}"
+			// render a new label called log_line, and add the name of the pod to the end of the log message
+			// knowing the pod name can be valuable for debugging, but it should not be a label in Loki due
+			// to the high cardinality it would create.
+			// note: .Entry is a special key that is used to reference the current line
+			stage.replace {
+				expression = "\\}$"
+				replace    = ""
+			}
+
+			stage.template {
+				source   = "log_line"
+				template = "{{ .Entry }},\"__pod\":\"{{ .pod }}\"}"
+			}
+		}
+
+		// embed as text property
+		stage.match {
+			selector = "{logs_agent_grafana_com_log_format!~\"(?i)(.*json|istio|otel|open-?telemetry)\"}"
+			// render a new label called log_line, and add the name of the pod to the end of the log message
+			// knowing the pod name can be valuable for debugging, but it should not be a label in Loki due
+			// to the high cardinality it would create.
+			// note: .Entry is a special key that is used to reference the current line
+			stage.template {
+				source   = "log_line"
+				template = "{{ .Entry }} __pod={{ .pod }}"
+			}
+		}
+
+		// reset the output to the log_line
+		stage.output {
+			source = "log_line"
+		}
+	}
+}

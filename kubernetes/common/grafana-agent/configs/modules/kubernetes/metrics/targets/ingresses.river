@@ -1,0 +1,171 @@
+/*
+Module: metrics-target-ingresses
+Description: Performs Kubernetes ingress discovery for ingresses, applies relabelings
+*/
+argument "tenant" {
+	// comment = "The tenant to write metrics to.  This does not have to be the tenantId, this is the value to look for in the logs.agent.grafana.com/tenant annotation, and this can be a regex."
+	optional = true
+	default  = ".*"
+}
+
+argument "prober_url" {
+	// comment = "The address of the probing exporter (i.e. blackbox, json, snmp) to use (without the protocol), only the hostname and port i.e. blackbox-prometheus-blackbox-exporter.default.svc.cluster.local:9115"
+	optional = false
+}
+
+argument "git_repo" {
+	optional = true
+	default  = coalesce(env("GIT_REPO"), "https://github.com/grafana/agent-modules.git")
+}
+
+argument "git_rev" {
+	optional = true
+	default  = coalesce(env("GIT_REV"), env("GIT_REVISION"), env("GIT_BRANCH"), "main")
+}
+
+argument "git_pull_freq" {
+	optional = true
+	default  = "0s"
+}
+
+export "relabelings" {
+	value = module.git.relabelings_ingress.exports.relabelings
+}
+
+// get the available ingresses
+discovery.kubernetes "ingresses" {
+	role = "ingress"
+}
+
+// apply metric annotation relabelings
+module.git "relabelings_annotations" {
+	repository     = argument.git_repo.value
+	revision       = argument.git_rev.value
+	pull_frequency = argument.git_pull_freq.value
+	path           = "modules/kubernetes/metrics/relabelings/annotations/probes/ingress.river"
+
+	arguments {
+		targets = discovery.kubernetes.ingresses.targets
+	}
+}
+
+// drop any targets with __tmp_probe = false
+discovery.relabel "probe_targets" {
+	targets = module.git.relabelings_annotations.exports.relabelings.output
+
+	// allow ingresses to declare where tenant their metrics should be written to, the following annotations are supported:
+	//   probes.agent.grafana.com/tenant: "primary"
+	// or
+	//   metrics.agent.grafana.com/tenant: "primary"
+	rule {
+		action        = "keep"
+		source_labels = ["__tmp_probe_tenant"]
+		regex         = "^(" + argument.tenant.value + ")$"
+	}
+
+	// allow ingresses to declare what module to use when the ingress is probed, the following annotations are supported:
+	//   probes.agent.grafana.com/module: "http_2xx"
+	// or
+	//   prometheus.io/module: "http_2xx"
+	rule {
+		action        = "replace"
+		source_labels = ["__tmp_probe_module"]
+		target_label  = "__param_module"
+	}
+
+	// allow ingresses to declare what port to use when probing the ingress, the following annotations are supported:
+	//   probes.agent.grafana.com/port: 9090
+	rule {
+		action        = "replace"
+		source_labels = [
+			"__address__",
+			"__tmp_probe_port",
+		]
+		separator    = ";"
+		regex        = "^([^:]+)(?::\\d+)?;(\\d+)$"
+		replacement  = "$1:$2"
+		target_label = "__address__"
+	}
+
+	// set the target address to probe
+	rule {
+		action        = "replace"
+		source_labels = [
+			"__tmp_probe_scheme",
+			"__address__",
+			"__tmp_probe_path",
+		]
+		separator    = ";"
+		regex        = "(.+);(.+);(.+)"
+		replacement  = "${1}${2}${3}"
+		target_label = "__param_target"
+	}
+
+	// set the instance label to the target
+	rule {
+		action        = "replace"
+		source_labels = ["__param_target"]
+		target_label  = "instance"
+	}
+
+	// ensure the __metrics_path is set to /probe
+	rule {
+		action       = "replace"
+		replacement  = "/probe"
+		target_label = "__metrics_path__"
+	}
+
+	// set the __address__ to send the scrape request to be the probing exporter ingress address that has been deployed
+	rule {
+		action       = "replace"
+		replacement  = argument.prober_url.value
+		target_label = "__address__"
+	}
+
+	// allow endpoints to declare how often to scrape metrics, the following annotations are supported:
+	//   probes.agent.grafana.com/interval: 5m
+	// or
+	//   prometheus.io/interval: 5m
+	rule {
+		action        = "replace"
+		source_labels = ["__tmp_probe_interval"]
+		target_label  = "__scrape_interval__"
+	}
+
+	// allow endpoints to declare how long before a scrape times out, the following annotations are supported:
+	//   probes.agent.grafana.com/timeout: 30s
+	// or
+	//   prometheus.io/timeout: 30s
+	rule {
+		action        = "replace"
+		source_labels = ["__tmp_probe_timeout"]
+		target_label  = "__scrape_timeout__"
+	}
+}
+
+// apply common relabelings
+module.git "relabelings_common" {
+	repository     = argument.git_repo.value
+	revision       = argument.git_rev.value
+	pull_frequency = argument.git_pull_freq.value
+	path           = "modules/kubernetes/relabelings/common.river"
+
+	arguments {
+		targets       = discovery.relabel.probe_targets.output
+		git_repo      = argument.git_repo.value
+		git_rev       = argument.git_rev.value
+		git_pull_freq = argument.git_pull_freq.value
+	}
+}
+
+// apply endpoint ingress
+module.git "relabelings_ingress" {
+	repository     = argument.git_repo.value
+	revision       = argument.git_rev.value
+	pull_frequency = argument.git_pull_freq.value
+	path           = "modules/kubernetes/relabelings/ingress.river"
+
+	arguments {
+		targets = module.git.relabelings_common.exports.relabelings.output
+	}
+}

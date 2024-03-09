@@ -1,0 +1,102 @@
+/*
+Module: scrape-opencost
+Description: Scrapes opencost, this is a separate scrape job, if you are also using annotation based scraping, you will want to explicitly
+             disable opencost from being scraped by this module and annotations by setting the following annotation on the opencost
+             metrics.agent.grafana.cmo/scrape: "false"
+*/
+argument "forward_to" {
+	// comment = "Must be a list(MetricssReceiver) where collected logs should be forwarded to"
+	optional = false
+}
+
+argument "app_name" {
+	// comment = "The name of the opencost app"
+	optional = true
+	default  = "opencost"
+}
+
+argument "job_label" {
+	// comment = "The job label to add for all opencost, see ../relabelings/opencost.river for the default value""
+	optional = true
+}
+
+argument "keep_metrics" {
+	// comment = "Regex of metrics to keep, see ../relabelings/opencost.river for the default value"
+	optional = true
+}
+
+argument "clustering" {
+	// comment = "Whether or not clustering should be enabled"
+	optional = true
+	default  = false
+}
+
+argument "git_repo" {
+	optional = true
+	default  = coalesce(env("GIT_REPO"), "https://github.com/grafana/agent-modules.git")
+}
+
+argument "git_rev" {
+	optional = true
+	default  = coalesce(env("GIT_REV"), env("GIT_REVISION"), env("GIT_BRANCH"), "main")
+}
+
+argument "git_pull_freq" {
+	optional = true
+	default  = "0s"
+}
+
+// get the available endpoints
+discovery.kubernetes "endpoints" {
+	role = "endpoints"
+}
+
+discovery.relabel "opencost" {
+	targets = discovery.kubernetes.endpoints.targets
+
+	// endpoints get all of the service labels they are attached to, filter to just the opencost service
+	rule {
+		action        = "keep"
+		source_labels = [
+			"__meta_kubernetes_service_label_app_kubernetes_io_name",
+		]
+		regex = argument.app_name.value
+	}
+
+	// set the namespace
+	rule {
+		action        = "replace"
+		source_labels = ["__meta_kubernetes_namespace"]
+		target_label  = "namespace"
+	}
+
+	// set the service_name
+	rule {
+		action        = "replace"
+		source_labels = ["__meta_kubernetes_service_name"]
+		target_label  = "service"
+	}
+}
+
+prometheus.scrape "opencost" {
+	targets    = discovery.relabel.opencost.output
+	forward_to = [module.git.opencost.exports.metric_relabelings.receiver]
+
+	clustering {
+		enabled = argument.clustering.value
+	}
+}
+
+// metric relabelings
+module.git "relabelings_opencost" {
+	repository     = argument.git_repo.value
+	revision       = argument.git_rev.value
+	pull_frequency = argument.git_pull_freq.value
+	path           = "modules/kubernetes/metrics/relabelings/opencost.river"
+
+	arguments {
+		forward_to   = argument.forward_to.value
+		job_label    = argument.job_label.value
+		keep_metrics = argument.keep_metrics.value
+	}
+}

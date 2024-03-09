@@ -1,0 +1,43 @@
+/*
+Module: relabelings-service
+Description: Handles relabelings for service that are common across sources i.e. metrics and logs.  The labels
+             may still be dropped through metric relabelings, pipeline stages, etc.
+*/
+argument "targets" {
+	// comment = "Discovered targets to apply relabelings to"
+	optional = false
+}
+
+export "relabelings" {
+	value = discovery.relabel.service
+}
+
+discovery.relabel "service" {
+	targets = argument.targets.value
+
+	// the service name
+	rule {
+		action        = "replace"
+		source_labels = ["__meta_kubernetes_service_name"]
+		target_label  = "service"
+	}
+
+	// set whether or not the service is headless, by checking for the exist of a label:
+	// service.kubernetes.io/headless: ""
+	rule {
+		action       = "replace"
+		replacement  = "false"
+		target_label = "__tmp_headless"
+	}
+
+	rule {
+		action        = "replace"
+		source_labels = [
+			"__meta_kubernetes_service_labelpresent_service_kubernetes_io_headless",
+			"__meta_kubernetes_endpoints_labelpresent_service_kubernetes_io_headless",
+		]
+		regex        = "^(?:;*)?(true).*$"
+		replacement  = "$1"
+		target_label = "__tmp_headless"
+	}
+}

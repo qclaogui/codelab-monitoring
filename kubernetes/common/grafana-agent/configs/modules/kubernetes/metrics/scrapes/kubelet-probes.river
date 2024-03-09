@@ -1,0 +1,99 @@
+/*
+Module: scrape-kubelet-probes
+Description: Scrapes Kube probes
+*/
+argument "forward_to" {
+	// comment = "Must be a list(MetricssReceiver) where collected logs should be forwarded to"
+	optional = false
+}
+
+argument "tenant" {
+	// comment = "The tenant to filter logs to.  This does not have to be the tenantId, this is the value to look for in the logs.agent.grafana.com/tenant annotation, and this can be a regex."
+	optional = true
+	default  = ".*"
+}
+
+argument "job_label" {
+	optional = true
+	// from Grafana Cloud Integration:
+	default = "integrations/kubernetes/probes"
+	// comment = "The job label to add for all cadvisor metrics"
+}
+
+argument "clustering" {
+	// comment = "Whether or not clustering should be enabled"
+	optional = true
+	default  = false
+}
+
+argument "git_repo" {
+	optional = true
+	default  = coalesce(env("GIT_REPO"), "https://github.com/grafana/agent-modules.git")
+}
+
+argument "git_rev" {
+	optional = true
+	default  = coalesce(env("GIT_REV"), env("GIT_REVISION"), env("GIT_BRANCH"), "main")
+}
+
+argument "git_pull_freq" {
+	optional = true
+	default  = "0s"
+}
+
+module.git "node_targets" {
+	repository     = argument.git_repo.value
+	revision       = argument.git_rev.value
+	pull_frequency = argument.git_pull_freq.value
+	path           = "modules/kubernetes/metrics/targets/nodes.river"
+
+	arguments {
+		tenant        = argument.tenant.value
+		git_repo      = argument.git_repo.value
+		git_rev       = argument.git_rev.value
+		git_pull_freq = argument.git_pull_freq.value
+	}
+}
+
+discovery.relabel "kubelet_probes" {
+	targets = module.git.node_targets.exports.relabelings.output
+
+	// set the path to use for kubelet-probes
+	rule {
+		action        = "replace"
+		source_labels = ["__meta_kubernetes_node_name"]
+		regex         = "(.+)"
+		replacement   = "/api/v1/nodes/${1}/proxy/metrics/probes"
+		target_label  = "__metrics_path__"
+	}
+}
+
+prometheus.scrape "kubelet_probes" {
+	targets           = discovery.relabel.kubelet_probes.output
+	scheme            = "https"
+	bearer_token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+	forward_to        = [module.git.relabelings_kubelet_probes.exports.metric_relabelings.receiver]
+
+	tls_config {
+		ca_file              = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+		insecure_skip_verify = false
+		server_name          = "kubernetes"
+	}
+
+	clustering {
+		enabled = argument.clustering.value
+	}
+}
+
+// metric relabelings
+module.git "relabelings_kubelet_probes" {
+	repository     = argument.git_repo.value
+	revision       = argument.git_rev.value
+	pull_frequency = argument.git_pull_freq.value
+	path           = "modules/kubernetes/metrics/relabelings/kubelet-probes.river"
+
+	arguments {
+		forward_to = argument.forward_to.value
+		job_label  = argument.job_label.value
+	}
+}

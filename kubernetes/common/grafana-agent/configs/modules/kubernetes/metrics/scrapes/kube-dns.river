@@ -1,0 +1,111 @@
+/*
+Module: scrape-kube-dns
+Description: Scrapes Kube dns, most of these same metrics can come from cAdvisor use only if necessary.  If using annotations
+             then this module does not need to be used as the kube-dns pods most likely already have the annotation
+             prometheus.io/scrape: true set
+
+             !!Note!!
+             This module most likely does not need to be included, if you're using the auto-scrape-pods.river module, as
+             most kube-dns pods have the annotation prometheus.io/scrape: "true" set already on the pods but not the services.
+
+*/
+argument "forward_to" {
+	// comment = "Must be a list(MetricssReceiver) where collected logs should be forwarded to"
+	optional = false
+}
+
+argument "tenant" {
+	// comment = "The tenant to filter logs to.  This does not have to be the tenantId, this is the value to look for in the logs.agent.grafana.com/tenant annotation, and this can be a regex."
+	optional = true
+	default  = ".*"
+}
+
+argument "job_label" {
+	optional = true
+	default  = "integrations/kubernetes/coredns"
+	// comment = "The job label to add for all coredns"
+}
+
+argument "clustering" {
+	// comment = "Whether or not clustering should be enabled"
+	optional = true
+	default  = false
+}
+
+argument "git_repo" {
+	optional = true
+	default  = coalesce(env("GIT_REPO"), "https://github.com/grafana/agent-modules.git")
+}
+
+argument "git_rev" {
+	optional = true
+	default  = coalesce(env("GIT_REV"), env("GIT_REVISION"), env("GIT_BRANCH"), "main")
+}
+
+argument "git_pull_freq" {
+	optional = true
+	default  = "0s"
+}
+
+// get the available endpoints
+discovery.kubernetes "endpoints" {
+	role = "endpoints"
+}
+
+discovery.relabel "kube_dns" {
+	targets = discovery.kubernetes.endpoints.targets
+
+	// only keep namespace=kube-system, k8s-app=kube-dns, port=metrics
+	rule {
+		action        = "keep"
+		source_labels = [
+			"__meta_kubernetes_namespace",
+			"__meta_kubernetes_pod_label_k8s_app",
+			"__meta_kubernetes_pod_container_port_name",
+		]
+		regex = "kube-system;kube-dns;.*metrics"
+	}
+
+	// set the namespace
+	rule {
+		action        = "replace"
+		source_labels = ["__meta_kubernetes_namespace"]
+		target_label  = "namespace"
+	}
+
+	// set the pod
+	rule {
+		action        = "replace"
+		source_labels = ["__meta_kubernetes_pod_name"]
+		target_label  = "pod"
+	}
+
+	// set the service_name
+	rule {
+		action        = "replace"
+		source_labels = ["__meta_kubernetes_service_name"]
+		target_label  = "service"
+	}
+}
+
+prometheus.scrape "kube_dns" {
+	targets    = discovery.relabel.kube_dns.output
+	forward_to = [module.git.relabelings_kube_dns.exports.metric_relabelings.receiver]
+
+	clustering {
+		enabled = argument.clustering.value
+	}
+}
+
+// metric relabelings
+module.git "relabelings_kube_dns" {
+	repository     = argument.git_repo.value
+	revision       = argument.git_rev.value
+	pull_frequency = argument.git_pull_freq.value
+	path           = "modules/kubernetes/metrics/relabelings/kube-dns.river"
+
+	arguments {
+		forward_to = argument.forward_to.value
+		job_label  = argument.job_label.value
+	}
+}

@@ -1,0 +1,142 @@
+/*
+Module: log-relabelings
+Description: Handles log relabelings
+*/
+argument "targets" {
+	// comment = "Discovered targets to apply relabelings to"
+	optional = false
+}
+
+argument "tenant" {
+	// comment = "The tenant to filter logs to.  This does not have to be the tenantId, this is the value to look for in the logs.agent.grafana.com/tenant annotation, and this can be a regex."
+	optional = true
+	default  = "^(primary|)$"
+}
+
+argument "git_repo" {
+	optional = true
+	default  = coalesce(env("GIT_REPO"), "https://github.com/grafana/agent-modules.git")
+}
+
+argument "git_rev" {
+	optional = true
+	default  = coalesce(env("GIT_REV"), env("GIT_REVISION"), env("GIT_BRANCH"), "main")
+}
+
+argument "git_pull_freq" {
+	optional = true
+	default  = "5m"
+}
+
+export "relabelings" {
+	value = discovery.relabel.logs
+}
+
+// apply common relabelings
+module.git "relabelings_common" {
+	repository     = argument.git_repo.value
+	revision       = argument.git_rev.value
+	pull_frequency = argument.git_pull_freq.value
+	path           = "modules/kubernetes/relabelings/common.river"
+
+	arguments {
+		targets       = argument.targets.value
+		git_repo      = argument.git_repo.value
+		git_rev       = argument.git_rev.value
+		git_pull_freq = argument.git_pull_freq.value
+	}
+}
+
+// apply common pod relabelings
+module.git "relabelings_pod" {
+	repository     = argument.git_repo.value
+	revision       = argument.git_rev.value
+	pull_frequency = argument.git_pull_freq.value
+	path           = "modules/kubernetes/relabelings/pod.river"
+
+	arguments {
+		targets = module.git.relabelings_common.exports.relabelings.output
+	}
+}
+
+// apply pod log specific relabelings
+discovery.relabel "logs" {
+	targets = module.git.relabelings_pod.exports.relabelings.output
+
+	// allow pods to declare their logs to be ingested or not, the following annotation is supported:
+	//   logs.agent.grafana.com/ingest: false
+	rule {
+		action        = "replace"
+		source_labels = ["__meta_kubernetes_pod_annotation_logs_agent_grafana_com_ingest"]
+		separator     = ";"
+		regex         = "^(?:;*)?(true|false).*$"
+		replacement   = "$1"
+		target_label  = "__tmp_ingest"
+	}
+
+	// drop any targets that have ingest: false
+	rule {
+		action        = "drop"
+		source_labels = ["__tmp_ingest"]
+		regex         = "false"
+	}
+
+	// allow pods to declare what tenant their logs should be written to, the following annotation is supported:
+	//   logs.agent.grafana.com/tenant: "primary"
+	rule {
+		action        = "keep"
+		source_labels = ["__meta_kubernetes_pod_annotation_logs_agent_grafana_com_tenant"]
+		regex         = "^(" + argument.tenant.value + ")$"
+	}
+
+	// set the __path__, this is automatically translated as a label of filename (which should be dropped or normalized)
+	// DO NOT delete this line as it is needed to tail the pod logs on the node
+	rule {
+		action        = "replace"
+		separator     = "/"
+		source_labels = [
+			"__meta_kubernetes_pod_uid",
+			"__meta_kubernetes_pod_container_name",
+		]
+		replacement  = "/var/log/pods/*$1/*.log"
+		target_label = "__path__"
+	}
+	// set the __host__
+	rule {
+		action        = "replace"
+		source_labels = ["__meta_kubernetes_pod_node_name"]
+		target_label  = "__host__"
+	}
+
+	// set the job label to be namespace / friendly pod name
+	rule {
+		action        = "replace"
+		source_labels = [
+			"deployment",
+			"__meta_kubernetes_namespace",
+		]
+		regex        = ".+\\/(.+);(.+)"
+		replacement  = "$2/$1"
+		target_label = "job"
+	}
+
+	// set the container label
+	rule {
+		action        = "replace"
+		source_labels = ["__meta_kubernetes_pod_container_name"]
+		target_label  = "container"
+	}
+
+	// make all labels on the pod available to the pipeline as labels,
+	// they are omitted before write via labelallow unless explicitly set
+	rule {
+		action = "labelmap"
+		regex  = "__meta_kubernetes_pod_label_(.+)"
+	}
+	// make all annotations on the pod available to the pipeline as labels,
+	// they are omitted before write via labelallow unless explicitly set
+	rule {
+		action = "labelmap"
+		regex  = "__meta_kubernetes_pod_annotation_(.+)"
+	}
+}

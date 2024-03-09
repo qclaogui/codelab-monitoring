@@ -1,0 +1,46 @@
+/*
+Module: relabelings-kube-coredns
+Description: Handles metric relabelings for collected metrics from kubernetes coredns
+*/
+argument "forward_to" {
+	// comment = "Must be a list(MetricssReceiver) where collected logs should be forwarded to"
+	optional = false
+}
+
+argument "job_label" {
+	optional = true
+	default  = "integrations/kubernetes/coredns"
+	// comment = "The job label to add for all coredns"
+}
+
+// drop metrics and les from kube-prometheus
+// https://github.com/prometheus-operator/kube-prometheus/blob/main/manifests/kubernetesControlPlane-serviceMonitorcoredns.yaml
+argument "drop_metrics" {
+	optional = true
+	default  = "coredns_cache_misses_total"
+	// comment = "Regex of metrics to drop"
+}
+
+export "metric_relabelings" {
+	value = prometheus.relabel.kube_coredns
+}
+
+prometheus.relabel "kube_coredns" {
+	forward_to = argument.forward_to.value
+
+	// drop metrics
+	rule {
+		action        = "drop"
+		source_labels = ["__name__"]
+		regex         = argument.drop_metrics.value
+	}
+
+	// set the job label, only if job label is not set or contains "module." is not specified
+	rule {
+		action        = "replace"
+		source_labels = ["job"]
+		regex         = "|.*module\\..*"
+		replacement   = argument.job_label.value
+		target_label  = "job"
+	}
+}

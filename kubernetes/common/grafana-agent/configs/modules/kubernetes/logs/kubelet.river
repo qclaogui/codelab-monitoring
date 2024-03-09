@@ -1,0 +1,234 @@
+/*
+Module: log-kubelet
+Description: Retrieves and processes the systemd journal logs for the kubelet
+*/
+argument "forward_to" {
+	// comment = "Must be a list(LogsReceiver) where collected logs should be forwarded to"
+	optional = false
+}
+
+argument "journal_max_age" {
+	// comment = "The oldest relative time from process start that will be read."
+	optional = true
+	default  = "12h"
+}
+
+argument "journal_path" {
+	// comment = "The path to the journal files"
+	optional = true
+	default  = "/var/log/journal"
+}
+
+argument "journal_filter" {
+	// comment = "Filter the system unit files to read from the journal"
+	optional = true
+	default  = ".+"
+}
+
+argument "scrub_level" {
+	// comment = "Whether or not to scrub the log level from the log line"
+	optional = true
+	default  = "false"
+}
+
+argument "scrub_timestamp" {
+	// comment = "Whether or not to scrub the timestamp from the log line"
+	optional = true
+	default  = "false"
+}
+
+argument "drop_debug" {
+	// comment = "Whether or not to drop debug messages"
+	optional = true
+	default  = "true"
+}
+
+argument "label_job" {
+	// comment = "The job label to set for all collected logs"
+	optional = true
+	default  = "loki.source.journal.kubelet"
+}
+
+argument "keep_labels" {
+	// comment = "List of labels to keep before the log message is written to Loki"
+	optional = true
+	default  = [
+		"app",
+		"cluster",
+		"env",
+		"instance",
+		"job",
+		"level",
+		"log_type",
+		"region",
+		"squad",
+		"unit",
+		"team",
+	]
+}
+
+argument "git_repo" {
+	optional = true
+	default  = coalesce(env("GIT_REPO"), "https://github.com/grafana/agent-modules.git")
+}
+
+argument "git_rev" {
+	optional = true
+	default  = coalesce(env("GIT_REV"), env("GIT_REVISION"), env("GIT_BRANCH"), "main")
+}
+
+argument "git_pull_freq" {
+	optional = true
+	default  = "5m"
+}
+
+loki.relabel "journal" {
+	forward_to = []
+
+	// filter unit files
+	rule {
+		action        = "keep"
+		source_labels = ["__journal__systemd_unit"]
+		regex         = argument.journal_filter.value
+	}
+
+	// copy all journal labels and make the available to the pipeline stages as labels, there is a label keep defined to filter
+	// out unwanted labels, the following labels are available:
+	// - boot_id
+	// - cap_effective
+	// - cmdline
+	// - comm
+	// - exe
+	// - gid
+	// - hostname
+	// - machine_id
+	// - pid
+	// - stream_id
+	// - systemd_cgroup
+	// - systemd_invocation_id
+	// - systemd_slice
+	// - systemd_unit
+	// - transport
+	// - uid
+	//
+	// More Info: https://www.freedesktop.org/software/systemd/man/systemd.journal-fields.html
+	rule {
+		action = "labelmap"
+		regex  = "__journal__(.+)"
+	}
+
+	rule {
+		action        = "replace"
+		source_labels = ["__journal__systemd_unit"]
+		replacement   = "$1"
+		target_label  = "unit"
+	}
+
+	// kubelet logs are in klog format
+	rule {
+		action        = "replace"
+		source_labels = ["__journal__systemd_unit"]
+		regex         = "(kubelet|node-problem-detector)\\.service"
+		replacement   = "klog"
+		target_label  = "logs_agent_grafana_com_log_format"
+	}
+
+	// containerd logs are in logfmt format
+	rule {
+		action        = "replace"
+		source_labels = ["__journal__systemd_unit"]
+		regex         = "(containerd).service"
+		replacement   = "logfmt"
+		target_label  = "logs_agent_grafana_com_log_format"
+	}
+}
+
+loki.source.journal "kubelet" {
+	max_age       = argument.journal_max_age.value
+	path          = argument.journal_path.value
+	forward_to    = [module.git.log_format_klog.exports.process.receiver]
+	relabel_rules = loki.relabel.journal.rules
+	labels        = {
+		job = argument.label_job.value,
+		// set the log format
+		logs_agent_grafana_com_log_format = "syslog",
+		// set whether or not to scrub the timestamp
+		logs_agent_grafana_com_scrub_timestamp = argument.scrub_timestamp.value,
+		// set whether or not to scrub the log level
+		logs_agent_grafana_com_scrub_level = argument.scrub_level.value,
+		// set whether or not to drop debug level messages
+		logs_agent_grafana_com_log_format = argument.drop_debug.value,
+		// set an instance label to be the hostname
+		instance = env("HOSTNAME"),
+	}
+}
+
+module.git "log_format_klog" {
+	repository     = argument.git_repo.value
+	revision       = argument.git_rev.value
+	pull_frequency = argument.git_pull_freq.value
+	path           = "modules/kubernetes/logs/log-formats/klog.river"
+
+	arguments {
+		forward_to = [module.git.log_format_logfmt.exports.process.receiver]
+	}
+}
+
+module.git "log_format_logfmt" {
+	repository     = argument.git_repo.value
+	revision       = argument.git_rev.value
+	pull_frequency = argument.git_pull_freq.value
+	path           = "modules/kubernetes/logs/log-formats/logfmt.river"
+
+	arguments {
+		forward_to = [module.git.log_format_syslog.exports.process.receiver]
+	}
+}
+
+module.git "log_format_syslog" {
+	repository     = argument.git_repo.value
+	revision       = argument.git_rev.value
+	pull_frequency = argument.git_pull_freq.value
+	path           = "modules/kubernetes/logs/log-formats/syslog.river"
+
+	arguments {
+		forward_to = [module.git.log_level_default.exports.process.receiver]
+	}
+}
+
+module.git "log_level_default" {
+	repository     = argument.git_repo.value
+	revision       = argument.git_rev.value
+	pull_frequency = argument.git_pull_freq.value
+	path           = "modules/kubernetes/logs/labels/log-level.river"
+
+	arguments {
+		forward_to = [module.git.drop_levels.exports.process.receiver]
+	}
+}
+
+module.git "drop_levels" {
+	repository     = argument.git_repo.value
+	revision       = argument.git_rev.value
+	pull_frequency = argument.git_pull_freq.value
+	path           = "modules/kubernetes/logs/drops/levels.river"
+
+	arguments {
+		forward_to    = [module.git.label_keep.exports.process.receiver]
+		git_repo      = argument.git_repo.value
+		git_rev       = argument.git_rev.value
+		git_pull_freq = argument.git_pull_freq.value
+	}
+}
+
+module.git "label_keep" {
+	repository     = argument.git_repo.value
+	revision       = argument.git_rev.value
+	pull_frequency = argument.git_pull_freq.value
+	path           = "modules/kubernetes/logs/labels/keep-labels.river"
+
+	arguments {
+		forward_to  = argument.forward_to.value
+		keep_labels = argument.keep_labels.value
+	}
+}
