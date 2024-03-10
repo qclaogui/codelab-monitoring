@@ -13,49 +13,8 @@ module.file "docker_compose" {
 	}
 }
 
-discovery.docker "containers" {
-	host = "unix:///var/run/docker.sock"
-
-	filter {
-		name   = "status"
-		values = ["running"]
-	}
-}
-
 discovery.relabel "containers" {
-	targets = discovery.docker.containers.targets
-
-	// filter by service name
-	rule {
-		source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
-		action        = "keep"
-		regex         = "(agent|mimir|mimir-.*|grafana|loki|loki-.*|tempo|tempo-.*|pyroscope|distributor|ingester|query-frontend|querier|query-scheduler|store-gateway|alertmanager|compactor|ruler|overrides-exporter)"
-	}
-
-	rule {
-		source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
-		regex         = "(.*)"
-		replacement   = "monitoring-system/$1"
-		target_label  = "job"
-	}
-
-	rule {
-		source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
-		regex         = "(.*)"
-		target_label  = "pod"
-	}
-
-	rule {
-		source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
-		regex         = "(.*)"
-		target_label  = "service_name"
-	}
-
-	rule {
-		source_labels = ["__meta_docker_container_name"]
-		regex         = "/(.*)"
-		target_label  = "container"
-	}
+	targets = module.file.docker_compose.exports.relabelings_common.output
 }
 
 /********************************************

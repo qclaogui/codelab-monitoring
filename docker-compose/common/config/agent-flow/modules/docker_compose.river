@@ -44,6 +44,10 @@ argument "profiles_endpoint" {
  * EXPORTS
  ********************************************/
 
+export "relabelings_common" {
+	value = discovery.relabel.common
+}
+
 export "metrics_receiver" {
 	value = prometheus.remote_write.docker_compose.receiver
 }
@@ -114,5 +118,64 @@ pyroscope.write "docker_compose" {
 		"scraped_by" = "grafana-agent",
 		"cluster"    = argument.cluster.value,
 		"namespace"  = argument.namespace.value,
+	}
+}
+
+discovery.docker "containers" {
+	host = "unix:///var/run/docker.sock"
+
+	filter {
+		name   = "status"
+		values = ["running"]
+	}
+}
+
+discovery.relabel "common" {
+	targets = discovery.docker.containers.targets
+
+	// filter by service name
+	rule {
+		action        = "keep"
+		source_labels = [
+			"__meta_docker_container_label_com_docker_compose_service",
+		]
+		regex         = "(agent|mimir|mimir-.*|grafana|loki|loki-.*|tempo|tempo-.*|pyroscope|distributor|ingester|query-frontend|querier|query-scheduler|ruler|compactor|store-gateway|alertmanager|overrides-exporter|index-gateway|gateway)"
+	}
+
+	rule {
+		action        = "replace"
+		source_labels = [
+			"__meta_docker_container_label_com_docker_compose_service",
+		]
+		regex        = "^(?:;*)?([^;]+).*$"
+		replacement  = argument.namespace.value + "/$1"
+		target_label = "job"
+	}
+
+	rule {
+		action        = "replace"
+		source_labels = [
+			"__meta_docker_container_label_com_docker_compose_service",
+		]
+		regex        = "^(?:;*)?([^;]+).*$"
+		replacement  = "$1"
+		target_label = "pod"
+	}
+
+	rule {
+		action        = "replace"
+		source_labels = [
+			"__meta_docker_container_label_com_docker_compose_service",
+			"__meta_docker_container_label_app",
+		]
+		regex        = "^(?:;*)?([^;]+).*$"
+		replacement  = "$1"
+		target_label = "app"
+	}
+
+	rule {
+		source_labels = ["__meta_docker_container_name"]
+		regex         = "/(.*)"
+		target_label  = "container"
 	}
 }
