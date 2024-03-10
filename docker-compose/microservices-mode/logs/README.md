@@ -13,7 +13,7 @@ The microservices deployment mode instantiates components of Loki as distinct pr
 
 Running components as individual microservices allows scaling up by increasing the quantity of microservices.
 
-![Loki microservices mode](https://grafana.com/docs/loki/latest/fundamentals/architecture/components/loki_architecture_components.svg)
+![Loki components](https://grafana.com/docs/loki/latest/get-started/loki_architecture_components.svg)
 
 ## Diagram
 
