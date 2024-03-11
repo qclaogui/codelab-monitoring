@@ -1,0 +1,29 @@
+/*
+Module: mask-phone
+Description: Checks the logs.agent.grafana.com/mask-phone annotation, if set to "true" any logs that match the phone
+             pattern will have the value of the phone replaced with "*phone*hash*
+*/
+argument "forward_to" {
+	// comment = "Must be a list(LogsReceiver) where collected logs should be forwarded to"
+	optional = false
+}
+
+export "process" {
+	value = loki.process.mask_phone
+}
+
+loki.process "mask_phone" {
+	forward_to = argument.forward_to.value
+
+	// check logs.agent.grafana.com/mask-phone annotation, if true the data will be masked as *phone*salt*
+	stage.match {
+		pipeline_name = "pipeline for annotation || logs.agent.grafana.com/mask-phone: true"
+		selector      = "{logs_agent_grafana_com_mask_phone=~\"(?i)true\"}"
+
+		stage.replace {
+			// unescaped regex: ([\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6})
+			expression = "([\\+]?[(]?[0-9]{3}[)]?[-\\s\\.]?[0-9]{3}[-\\s\\.]?[0-9]{4,6})"
+			replace    = "*phone*{{ .Value | Hash \"salt\" }}*"
+		}
+	}
+}

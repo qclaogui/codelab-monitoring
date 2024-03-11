@@ -1,0 +1,40 @@
+/*
+Module: logs-from-api
+Description: Performs Kubernetes service discovery for pods, applies relabelings, the discovered target logs are
+             then retrieved from the kubernetes api
+*/
+argument "forward_to" {
+	// comment = "Must be a list(LogsReceiver) where collected logs should be forwarded to"
+	optional = false
+}
+
+argument "tenant" {
+	// comment = "The tenant to filter logs to.  This does not have to be the tenantId, this is the value to look for in the logs.agent.grafana.com/tenant annotation, and this can be a regex."
+	optional = true
+	default  = ".*"
+}
+
+discovery.docker "containers" {
+	host = "unix:///var/run/docker.sock"
+
+	filter {
+		name   = "status"
+		values = ["running"]
+	}
+}
+
+module.file "relabelings_log" {
+	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker/logs/relabelings.river"
+
+	arguments {
+		targets = discovery.docker.containers.targets
+		tenant  = argument.tenant.value
+	}
+}
+
+loki.source.docker "containers" {
+	host    = "unix:///var/run/docker.sock"
+	targets = module.file.relabelings_log.exports.relabelings.output
+	//relabel_rules = module.file.relabelings_log.exports.relabelings.rules
+	forward_to = argument.forward_to.value
+}

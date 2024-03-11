@@ -1,0 +1,116 @@
+/*
+Module: log-format-all
+Description: Wrapper module to include all log-format modules
+*/
+argument "forward_to" {
+	// comment = "Must be a list(LogsReceiver) where collected logs should be forwarded to"
+	optional = false
+}
+
+export "process" {
+	value = module.file.log_format_common_log.exports.process
+}
+
+module.file "log_format_common_log" {
+	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker/logs/log-formats/common-log.river"
+
+	arguments {
+		forward_to = [module.file.log_format_dotnet.exports.process.receiver]
+	}
+}
+
+module.file "log_format_dotnet" {
+	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker/logs/log-formats/dotnet.river"
+
+	arguments {
+		forward_to = [module.file.log_format_istio.exports.process.receiver]
+	}
+}
+
+module.file "log_format_istio" {
+	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker/logs/log-formats/istio.river"
+
+	arguments {
+		forward_to = [module.file.log_format_json.exports.process.receiver]
+	}
+}
+
+module.file "log_format_json" {
+	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker/logs/log-formats/json.river"
+
+	arguments {
+		forward_to = [module.file.log_format_klog.exports.process.receiver]
+	}
+}
+
+module.file "log_format_klog" {
+	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker/logs/log-formats/klog.river"
+
+	arguments {
+		forward_to = [module.file.log_format_log4j.exports.process.receiver]
+	}
+}
+
+module.file "log_format_log4j" {
+	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker/logs/log-formats/log4j.river"
+
+	arguments {
+		forward_to = [module.file.log_format_logfmt.exports.process.receiver]
+	}
+}
+
+module.file "log_format_logfmt" {
+	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker/logs/log-formats/logfmt.river"
+
+	arguments {
+		forward_to = [module.file.log_format_otel.exports.process.receiver]
+	}
+}
+
+module.file "log_format_otel" {
+	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker/logs/log-formats/otel.river"
+
+	arguments {
+		forward_to = [module.file.log_format_postgres.exports.process.receiver]
+	}
+}
+
+module.file "log_format_postgres" {
+	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker/logs/log-formats/postgres.river"
+
+	arguments {
+		forward_to = [module.file.log_format_python.exports.process.receiver]
+	}
+}
+
+module.file "log_format_python" {
+	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker/logs/log-formats/python.river"
+
+	arguments {
+		forward_to = [module.file.log_format_spring_boot.exports.process.receiver]
+	}
+}
+
+module.file "log_format_spring_boot" {
+	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker/logs/log-formats/spring-boot.river"
+
+	arguments {
+		forward_to = [module.file.log_format_syslog.exports.process.receiver]
+	}
+}
+
+module.file "log_format_syslog" {
+	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker/logs/log-formats/syslog.river"
+
+	arguments {
+		forward_to = [module.file.log_format_zerolog.exports.process.receiver]
+	}
+}
+
+module.file "log_format_zerolog" {
+	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker/logs/log-formats/zerolog.river"
+
+	arguments {
+		forward_to = argument.forward_to.value
+	}
+}

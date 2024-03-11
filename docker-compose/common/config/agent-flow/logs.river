@@ -1,9 +1,13 @@
 // https://github.com/grafana/agent-configurator
 
 logging {
-	level  = "warn"
+	level  = "info"
 	format = "logfmt"
 }
+
+/********************************************
+ * LGTMP Receiver provider
+ ********************************************/
 
 module.file "docker_compose" {
 	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker_compose.river"
@@ -13,72 +17,14 @@ module.file "docker_compose" {
 	}
 }
 
-discovery.relabel "containers" {
-	targets = module.file.docker_compose.exports.relabelings_common.output
-}
-
 /********************************************
  * Logs
  ********************************************/
 
-loki.source.docker "containers" {
-	host          = "unix:///var/run/docker.sock"
-	targets       = discovery.relabel.containers.output
-	relabel_rules = discovery.relabel.containers.rules
-	forward_to    = [loki.process.containers.receiver]
-}
+module.file "logs_primary" {
+	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker/logs/all.river"
 
-loki.process "containers" {
-	forward_to = [module.file.docker_compose.exports.logs_receiver]
-
-	stage.drop {
-		longer_than = "8KB"
-		older_than  = "12h"
+	arguments {
+		forward_to = [module.file.docker_compose.exports.logs_receiver]
 	}
-
-	stage.tenant {
-		value = "anonymous"
-	}
-}
-
-/********************************************
- * Otelcol for Logs
- ********************************************/
-
-otelcol.receiver.otlp "containers" {
-	grpc {
-		endpoint = "0.0.0.0:4317"
-	}
-
-	http {
-		endpoint = "0.0.0.0:4318"
-	}
-
-	output {
-		logs = [otelcol.processor.batch.containers.input]
-	}
-}
-
-otelcol.processor.batch "containers" {
-	send_batch_size     = 16384
-	send_batch_max_size = 0
-	timeout             = "2s"
-
-	output {
-		logs = [otelcol.processor.memory_limiter.containers.input]
-	}
-}
-
-otelcol.processor.memory_limiter "containers" {
-	check_interval         = "1s"
-	limit_percentage       = 50
-	spike_limit_percentage = 30
-
-	output {
-		logs = [otelcol.exporter.loki.containers.input]
-	}
-}
-
-otelcol.exporter.loki "containers" {
-	forward_to = [loki.process.containers.receiver]
 }

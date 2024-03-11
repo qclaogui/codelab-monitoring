@@ -12,6 +12,9 @@ include:
 
 services:
   gateway:
+    labels:
+      - logs.agent.grafana.com/scrape=true
+      - logs.agent.grafana.com/log-format=nginx
     depends_on:
       loki:
         condition: service_healthy
@@ -36,6 +39,8 @@ services:
       - "3100:3100"
 
   loki:
+    labels:
+      - logs.agent.grafana.com/log-format=logfmt
     depends_on:
       minio:
         condition: service_healthy

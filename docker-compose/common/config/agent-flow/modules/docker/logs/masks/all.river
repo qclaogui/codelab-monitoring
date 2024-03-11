@@ -1,0 +1,60 @@
+/*
+Module: mask-all
+Description: Wrapper module to include all masking modules
+*/
+argument "forward_to" {
+	// comment = "Must be a list(LogsReceiver) where collected logs should be forwarded to"
+	optional = false
+}
+
+export "process" {
+	value = module.file.mask_ssn.exports.process
+}
+
+module.file "mask_ssn" {
+	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker/logs/masks/ssn.river"
+
+	arguments {
+		forward_to = [module.file.mask_credit_card.exports.process.receiver]
+	}
+}
+
+module.file "mask_credit_card" {
+	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker/logs/masks/credit-card.river"
+
+	arguments {
+		forward_to = [module.file.mask_email.exports.process.receiver]
+	}
+}
+
+module.file "mask_email" {
+	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker/logs/masks/email.river"
+
+	arguments {
+		forward_to = [module.file.mask_phone.exports.process.receiver]
+	}
+}
+
+module.file "mask_phone" {
+	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker/logs/masks/phone.river"
+
+	arguments {
+		forward_to = [module.file.mask_ipv4.exports.process.receiver]
+	}
+}
+
+module.file "mask_ipv4" {
+	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker/logs/masks/ipv4.river"
+
+	arguments {
+		forward_to = [module.file.mask_ipv6.exports.process.receiver]
+	}
+}
+
+module.file "mask_ipv6" {
+	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker/logs/masks/ipv6.river"
+
+	arguments {
+		forward_to = argument.forward_to.value
+	}
+}
