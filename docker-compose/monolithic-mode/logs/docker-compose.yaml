@@ -13,7 +13,7 @@ include:
 services:
   gateway:
     labels:
-      - logs.agent.grafana.com/scrape=true
+      # - logs.agent.grafana.com/scrape=false
       - logs.agent.grafana.com/log-format=nginx
     depends_on:
       loki:
@@ -40,7 +40,7 @@ services:
 
   loki:
     labels:
-      - logs.agent.grafana.com/log-format=logfmt
+      - logs.agent.grafana.com/log-format=json
     depends_on:
       minio:
         condition: service_healthy
@@ -66,6 +66,8 @@ services:
           - loki-memberlist
 
   grafana:
+    labels:
+      - logs.agent.grafana.com/log-format=logfmt
     image: grafana/grafana:10.4.0
     command:
       - --config=/etc/grafana-config/grafana.ini

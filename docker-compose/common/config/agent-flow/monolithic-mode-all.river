@@ -1,7 +1,7 @@
 // https://github.com/grafana/agent-configurator
 
 logging {
-	level  = "warn"
+	level  = "info"
 	format = "logfmt"
 }
 
@@ -9,6 +9,10 @@ tracing {
 	sampling_fraction = 0.8
 	write_to          = [otelcol.processor.batch.containers.input]
 }
+
+/********************************************
+ * LGTMP Receiver provider
+ ********************************************/
 
 module.file "docker_compose" {
 	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker_compose.river"
@@ -95,24 +99,12 @@ prometheus.relabel "integrations" {
  * Logs
  ********************************************/
 
-loki.source.docker "containers" {
-	host          = "unix:///var/run/docker.sock"
-	targets       = discovery.relabel.containers.output
-	relabel_rules = discovery.relabel.containers.rules
-	forward_to    = [loki.process.containers.receiver]
-}
+module.file "logs_primary" {
+	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker/logs/all.river"
 
-loki.process "containers" {
-	stage.drop {
-		longer_than = "8KB"
-		older_than  = "12h"
+	arguments {
+		forward_to = [module.file.docker_compose.exports.logs_receiver]
 	}
-
-	stage.tenant {
-		value = "anonymous"
-	}
-
-	forward_to = [module.file.docker_compose.exports.logs_receiver]
 }
 
 /********************************************
@@ -265,7 +257,7 @@ otelcol.exporter.prometheus "containers" {
 }
 
 otelcol.exporter.loki "containers" {
-	forward_to = [loki.process.containers.receiver]
+	forward_to = [module.file.docker_compose.exports.logs_receiver]
 }
 
 // The OpenTelemetry spanlog connector processes incoming trace spans and extracts data from them ready
@@ -310,7 +302,7 @@ loki.process "autologging" {
 		source = "body"
 	}
 
-	forward_to = [loki.process.containers.receiver]
+	forward_to = [module.file.docker_compose.exports.logs_receiver]
 }
 
 /********************************************
