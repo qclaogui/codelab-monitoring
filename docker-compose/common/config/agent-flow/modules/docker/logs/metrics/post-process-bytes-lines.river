@@ -1,0 +1,39 @@
+/*
+Module: pre-process-lines-bytes-metrics
+Description: Generates metrics for the number of lines and bytes in the log line before any processing is done
+*/
+argument "forward_to" {
+	// comment = "Must be a list(LogsReceiver) where collected logs should be forwarded to"
+	optional = false
+}
+
+export "process" {
+	value = loki.process.pre_process_lines_bytes_metrics
+}
+
+loki.process "pre_process_lines_bytes_metrics" {
+	forward_to = argument.forward_to.value
+
+	stage.metrics {
+		metric.counter {
+			name              = "lines_total"
+			description       = "total number of log lines ingested, processed and forwarded for storage"
+			prefix            = "log_"
+			match_all         = true
+			action            = "inc"
+			max_idle_duration = "24h"
+		}
+	}
+
+	stage.metrics {
+		metric.counter {
+			name              = "bytes_total"
+			description       = "total log bytes ingested, processed and forwarded for storage"
+			prefix            = "log_"
+			match_all         = true
+			count_entry_bytes = true
+			action            = "add"
+			max_idle_duration = "24h"
+		}
+	}
+}

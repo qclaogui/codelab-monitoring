@@ -44,10 +44,6 @@ argument "profiles_endpoint" {
  * EXPORTS
  ********************************************/
 
-export "relabelings_common" {
-	value = discovery.relabel.common
-}
-
 export "metrics_receiver" {
 	value = prometheus.remote_write.docker_compose.receiver
 }
@@ -64,6 +60,10 @@ export "profiles_receiver" {
 	value = pyroscope.write.docker_compose.receiver
 }
 
+export "relabelings_common" {
+	value = discovery.relabel.common
+}
+
 /********************************************
  * Endpoints
  ********************************************/
@@ -77,8 +77,6 @@ prometheus.remote_write "docker_compose" {
 
 	external_labels = {
 		"scraped_by" = "grafana-agent",
-		"cluster"    = argument.cluster.value,
-		"namespace"  = argument.namespace.value,
 	}
 }
 
@@ -91,8 +89,6 @@ loki.write "docker_compose" {
 
 	external_labels = {
 		"scraped_by" = "grafana-agent",
-		"cluster"    = argument.cluster.value,
-		"namespace"  = argument.namespace.value,
 	}
 }
 
@@ -139,7 +135,21 @@ discovery.relabel "common" {
 		source_labels = [
 			"__meta_docker_container_label_com_docker_compose_service",
 		]
-		regex         = "(agent|mimir|mimir-.*|grafana|loki|loki-.*|tempo|tempo-.*|pyroscope|distributor|ingester|query-frontend|querier|query-scheduler|ruler|compactor|store-gateway|alertmanager|overrides-exporter|index-gateway|gateway)"
+		regex = "(agent|mimir|mimir-.*|grafana|loki|loki-.*|tempo|tempo-.*|pyroscope|distributor|ingester|query-frontend|querier|query-scheduler|ruler|compactor|store-gateway|alertmanager|overrides-exporter|index-gateway|gateway)"
+	}
+
+	// set the cluster label
+	rule {
+		action       = "replace"
+		replacement  = argument.cluster.value
+		target_label = "cluster"
+	}
+
+	// set the namespace label
+	rule {
+		action       = "replace"
+		replacement  = argument.namespace.value
+		target_label = "namespace"
 	}
 
 	rule {

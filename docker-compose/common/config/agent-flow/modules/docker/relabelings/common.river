@@ -1,0 +1,87 @@
+/*
+Module: relabelings-common
+Description: Handles relabelings for extracting common fields across various roles
+*/
+
+argument "targets" {
+	// comment = "Discovered targets to apply relabelings to"
+	optional = false
+}
+
+argument "cluster" {
+	optional = true
+	default  = "docker-compose"
+}
+
+argument "namespace" {
+	optional = true
+	default  = "monitoring-system"
+}
+
+export "relabelings" {
+	value = discovery.relabel.common
+}
+
+discovery.relabel "common" {
+	targets = argument.targets.value
+
+	// filter by service name
+	rule {
+		action        = "keep"
+		source_labels = [
+			"__meta_docker_container_label_com_docker_compose_service",
+		]
+		regex = "(agent|mimir|mimir-.*|grafana|loki|loki-.*|tempo|tempo-.*|pyroscope|distributor|ingester|query-frontend|querier|query-scheduler|ruler|compactor|store-gateway|alertmanager|overrides-exporter|index-gateway|gateway)"
+	}
+
+	// set the cluster label
+	rule {
+		action       = "replace"
+		replacement  = argument.cluster.value
+		target_label = "cluster"
+	}
+
+	// set the namespace label
+	rule {
+		action       = "replace"
+		replacement  = argument.namespace.value
+		target_label = "namespace"
+	}
+
+	rule {
+		action        = "replace"
+		source_labels = [
+			"__meta_docker_container_label_com_docker_compose_service",
+		]
+		regex        = "^(?:;*)?([^;]+).*$"
+		replacement  = argument.namespace.value + "/$1"
+		target_label = "job"
+	}
+
+	rule {
+		action        = "replace"
+		source_labels = [
+			"__meta_docker_container_label_com_docker_compose_service",
+		]
+		regex        = "^(?:;*)?([^;]+).*$"
+		replacement  = "$1"
+		target_label = "pod"
+	}
+
+	rule {
+		action        = "replace"
+		source_labels = [
+			"__meta_docker_container_label_com_docker_compose_service",
+			"__meta_docker_container_label_app",
+		]
+		regex        = "^(?:;*)?([^;]+).*$"
+		replacement  = "$1"
+		target_label = "app"
+	}
+
+	rule {
+		source_labels = ["__meta_docker_container_name"]
+		regex         = "/(.*)"
+		target_label  = "container"
+	}
+}

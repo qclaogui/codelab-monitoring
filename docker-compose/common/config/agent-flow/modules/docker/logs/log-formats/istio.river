@@ -1,0 +1,78 @@
+/*
+Module: log-format-istio
+Description: Log Processing for istio
+Docs: https://istio.io/latest/docs/tasks/observability/logs/access-log/
+*/
+argument "forward_to" {
+	// comment = "Must be a list(LogsReceiver) where collected logs should be forwarded to"
+	optional = false
+}
+
+export "process" {
+	value = loki.process.log_format_istio
+}
+
+loki.process "log_format_istio" {
+	forward_to = argument.forward_to.value
+
+	// check logs.agent.grafana.com/log-format annotation, if the log_type is empty the line hasn't been processed, if it contains istio and the line matches the format, then process the line as json
+	stage.match {
+		pipeline_name = "pipeline for annotation || logs.agent.grafana.com/log-format: istio"
+		selector      = "{log_type=\"\", logs_agent_grafana_com_log_format=~\"(?i).*(istio-?(json)?).*\"} |~ \"^\\\\s*\\\\{.+\\\\}\\\\s*$\""
+
+		// not all istio logs contain a level, default to info and set the log_type
+		stage.static_labels {
+			values = {
+				level    = "info",
+				log_type = "istio",
+			}
+		}
+
+		// extract the level, response_code, method if they exist
+		stage.json {
+			expressions = {
+				level          = "level",
+				response_code  = "response_code",
+				request_method = "method",
+			}
+		}
+
+		// set the extracted level, response code and request method as labels
+		stage.labels {
+			values = {
+				level          = "",
+				response_code  = "",
+				request_method = "",
+			}
+		}
+
+		// check logs.agent.grafana.com/scrub-timestamp annotation, if true remove the timestamp from the log line
+		// this can reduce the overall # of bytes sent and stored in Loki
+		// remove timestamp from the log line, depending on the entry it can be "start_time" or "time"
+		stage.match {
+			selector      = "{logs_agent_grafana_com_scrub_timestamp=\"true\"}"
+			pipeline_name = "pipeline for annotation || logs.agent.grafana.com/scrub-timestamp: true"
+
+			// remove timestamp from the log line
+			// unescaped regex: ("(start_)?time"\s*:\s*"[^"]+",)
+			stage.replace {
+				expression = "(\"(start_)?time\"\\s*:\\s*\"[^\"]+\",)"
+				replace    = ""
+			}
+		}
+
+		// check logs.agent.grafana.com/scrub-level annotation, if true remove the level from the log line (it is still a label)
+		// this can reduce the overall # of bytes sent and stored in Loki
+		stage.match {
+			selector      = "{logs_agent_grafana_com_scrub_level=~\"(?i)true\"}"
+			pipeline_name = "pipeline for annotation || logs.agent.grafana.com/scrub-level: true"
+
+			// remove level from the log line
+			stage.replace {
+				// unescaped regex: "level"\s*:\s*"[^"]+",?
+				expression = "(?i)(\"level\"\\s*:\\s*\"[^\"]+\",?)"
+				replace    = ""
+			}
+		}
+	}
+}

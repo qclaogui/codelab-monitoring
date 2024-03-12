@@ -11,6 +11,8 @@ include:
 
 services:
   agent:
+    labels:
+      - logs.agent.grafana.com/log-format=logfmt
     depends_on:
       tempo:
         condition: service_started
@@ -36,6 +38,8 @@ services:
       - "12345:12345"
 
   mimir:
+    labels:
+      - logs.agent.grafana.com/log-format=logfmt
     depends_on:
       minio:
         condition: service_healthy
@@ -77,6 +81,8 @@ services:
       rules load /mimir-mixin/rules.yaml /mimir-mixin/alerts.yaml /loki-mixin/rules.yaml /loki-mixin/alerts.yaml
 
   loki:
+    labels:
+      - logs.agent.grafana.com/log-format=json
     depends_on:
       minio:
         condition: service_healthy
@@ -100,6 +106,8 @@ services:
           - loki-memberlist
 
   tempo:
+    labels:
+      - logs.agent.grafana.com/log-format=logfmt
     depends_on:
       minio:
         condition: service_healthy
@@ -125,6 +133,8 @@ services:
       retries: 5
 
   pyroscope:
+    labels:
+      - logs.agent.grafana.com/log-format=logfmt
     depends_on:
       minio:
         condition: service_healthy
@@ -137,6 +147,8 @@ services:
       - -config.expand-env=true
 
   grafana:
+    labels:
+      - logs.agent.grafana.com/log-format=logfmt
     image: grafana/grafana:10.4.0
     command:
       - --config=/etc/grafana-config/grafana.ini

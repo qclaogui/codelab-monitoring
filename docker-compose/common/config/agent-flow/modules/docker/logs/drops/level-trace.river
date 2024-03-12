@@ -1,0 +1,28 @@
+/*
+Module: drop-trace
+Description: The default behavior is to drop trace level messaging automatically, however, trace level
+             messages can still be logged by adding the annotation:
+
+             logs.agent.grafana.com/drop-trace: false
+*/
+argument "forward_to" {
+	// comment = "Must be a list(LogsReceiver) where collected logs should be forwarded to"
+	optional = false
+}
+
+export "process" {
+	value = loki.process.drop_trace
+}
+
+loki.process "drop_trace" {
+	forward_to = argument.forward_to.value
+
+	// check logs.agent.grafana.com/drop-trace annotation, if not set or set to true then drop
+	// any log message with level=trace
+	stage.match {
+		pipeline_name       = "pipeline for annotation || logs.agent.grafana.com/drop-trace: true"
+		selector            = "{level=~\"(?i)trace?\",logs_agent_grafana_com_drop_trace!=\"false\"}"
+		action              = "drop"
+		drop_counter_reason = "trace"
+	}
+}
