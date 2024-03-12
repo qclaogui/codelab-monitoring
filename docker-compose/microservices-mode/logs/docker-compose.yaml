@@ -21,7 +21,7 @@ services:
     depends_on:
       distributor:
         condition: service_healthy
-    image: nginxinc/nginx-unprivileged:1.25-alpine
+    image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:latest}
     volumes:
       - ../../common/config/nginx:/etc/nginx/templates
       - ../../common/config/loki/gateway_loki.conf.template:/etc/nginx/templates/gateway_loki.conf.template
@@ -46,7 +46,7 @@ services:
     depends_on:
       ingester:
         condition: service_started
-    image: &lokiImage grafana/loki:2.9.5
+    image: &lokiImage ${LOKI_IMAGE:-docker.io/grafana/loki:latest}
     volumes:
       - ../../common/config/loki/microservices-mode-logs.yaml:/etc/loki.yaml # Note: Loki use microservices-mode-logs.yaml
     command:
@@ -160,7 +160,7 @@ services:
   grafana:
     labels:
       - logs.agent.grafana.com/log-format=logfmt
-    image: grafana/grafana:10.4.0
+    image: ${GRAFANA_IMAGE:-docker.io/grafana/grafana:latest}
     command:
       - --config=/etc/grafana-config/grafana.ini
     volumes:

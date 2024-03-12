@@ -21,7 +21,7 @@ services:
     depends_on:
       pyroscope:
         condition: service_healthy
-    image: nginxinc/nginx-unprivileged:1.25-alpine
+    image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:latest}
     volumes:
       - ../../common/config/nginx:/etc/nginx/templates
       - ../../common/config/pyroscope/gateway_pyroscope.conf.template:/etc/nginx/templates/gateway_pyroscope.conf.template
@@ -38,7 +38,7 @@ services:
       - "4040:4040"
 
   pyroscope:
-    image: grafana/pyroscope:1.4.0
+    image: ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:latest}
     container_name: pyroscope
     volumes:
       - ../../common/config/pyroscope/monolithic-mode-profiles.yaml:/etc/config.yaml
@@ -54,7 +54,7 @@ services:
       retries: 5
 
   grafana:
-    image: grafana/grafana:10.4.0
+    image: ${GRAFANA_IMAGE:-docker.io/grafana/grafana:latest}
     hostname: grafana
     command:
       - --config=/etc/grafana-config/grafana.ini
