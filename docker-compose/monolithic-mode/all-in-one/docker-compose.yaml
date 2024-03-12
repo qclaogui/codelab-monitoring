@@ -55,8 +55,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    deploy:
-      replicas: 1
+    ports:
+      - "38080:8080"
     networks:
       default:
         aliases:
@@ -70,15 +70,15 @@ services:
     volumes:
       - ../../../monitoring-mixins/mimir-mixin/deploy/rules.yaml:/mimir-mixin/rules.yaml
       - ../../../monitoring-mixins/mimir-mixin/deploy/alerts.yaml:/mimir-mixin/alerts.yaml
-      - ../../../monitoring-mixins/loki-mixin/deploy/rules.yaml:/loki-mixin/rules.yaml
-      - ../../../monitoring-mixins/loki-mixin/deploy/alerts.yaml:/loki-mixin/alerts.yaml
+      - ../../../monitoring-mixins/loki-mixin/deploy/loki-mixin-rules.yaml:/loki-mixin-rules.yaml
+      - ../../../monitoring-mixins/loki-mixin/deploy/loki-mixin-alerts.yaml:/loki-mixin-alerts.yaml
       # - ../../../monitoring-mixins/tempo-mixin/deploy/rules.yaml:/tempo-mixin/rules.yaml
       # - ../../../monitoring-mixins/tempo-mixin/deploy/alerts.yaml:/tempo-mixin/alerts.yaml
     environment:
       - MIMIR_ADDRESS=http://mimir:8080
       - MIMIR_TENANT_ID=anonymous
     command: >-
-      rules load /mimir-mixin/rules.yaml /mimir-mixin/alerts.yaml /loki-mixin/rules.yaml /loki-mixin/alerts.yaml
+      rules load /mimir-mixin/rules.yaml /mimir-mixin/alerts.yaml /loki-mixin-rules.yaml /loki-mixin-alerts.yaml
 
   loki:
     labels:
@@ -98,8 +98,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    deploy:
-      replicas: 1
+    ports:
+      - "33100:3100"
     networks:
       default:
         aliases:
@@ -131,6 +131,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    ports:
+      - "33200:3200"
 
   pyroscope:
     labels:
@@ -145,6 +147,8 @@ services:
     command:
       - -config.file=/etc/config.yaml
       - -config.expand-env=true
+    ports:
+      - "34040:4040"
 
   grafana:
     labels:

@@ -7,6 +7,8 @@ JSONNET_FMT := $(JSONNETFMT) -n 2 --max-blank-lines 2 --string-style s --comment
 # path to the mixin
 MIXIN_OUT_PATH := deploy
 
+CURRENT_DIR = $(notdir $(shell pwd))
+
 .PHONY: fmt
 fmt: ## Format the mixin files
 	@find . -type f -name '*.libsonnet' | xargs -n 1 -- $(JSONNET_FMT) -i
@@ -16,11 +18,13 @@ update: ## update mixin
 	$(JB) update
 
 .PHONY: build
-build: ## Generates the mixin files
+build: $(MIXTOOL) ## Generates the mixin files
 	@mkdir -p "$(MIXIN_OUT_PATH)"; \
-	find "$(MIXIN_OUT_PATH)" ! -name "kustomization.yaml" ! -name "prometheus-alerts.yaml" ! -name "prometheus-rules.yaml" -type f -delete; \
-	$(MIXTOOL) generate all --output-alerts "$(MIXIN_OUT_PATH)/alerts.yaml" --output-rules "$(MIXIN_OUT_PATH)/rules.yaml" --directory "$(MIXIN_OUT_PATH)/dashboards_out" "mixin.libsonnet"; \
-	../../tools/check-rules.sh "$(MIXIN_OUT_PATH)/rules.yaml" 20 ; \
+	find "$(MIXIN_OUT_PATH)" ! -name "kustomization.yaml" ! -name "prometheus-alerts.yaml" ! -name "prometheus-rules.yaml" -type f -delete
+	@$(MIXTOOL) generate all --output-alerts "$(MIXIN_OUT_PATH)/alerts.yaml" --output-rules "$(MIXIN_OUT_PATH)/rules.yaml" --directory "$(MIXIN_OUT_PATH)/dashboards_out" "mixin.libsonnet"
+	@../../tools/check-rules.sh "$(MIXIN_OUT_PATH)/rules.yaml" 20
+	@mv $(MIXIN_OUT_PATH)/alerts.yaml $(MIXIN_OUT_PATH)/${CURRENT_DIR}-alerts.yaml
+	@mv $(MIXIN_OUT_PATH)/rules.yaml $(MIXIN_OUT_PATH)/${CURRENT_DIR}-rules.yaml
 
 .PHONY: check
 check: build fmt ## Build, fmt and check the mixin files
@@ -42,7 +46,7 @@ prom_rules.yaml:
 
 dashboards_out:
 	@mkdir -p deploy/dashboards_out deploy/manifests
-	jsonnet -J vendor -e '(import "mixin.libsonnet").grafanaDashboards' -m deploy/dashboards_out
+	@jsonnet -J vendor -e '(import "mixin.libsonnet").grafanaDashboards' -m deploy/dashboards_out
 
 ##@ General
 
