@@ -68,17 +68,17 @@ services:
         condition: service_healthy
     image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:latest}
     volumes:
-      - ../../../monitoring-mixins/mimir-mixin/deploy/rules.yaml:/mimir-mixin/rules.yaml
-      - ../../../monitoring-mixins/mimir-mixin/deploy/alerts.yaml:/mimir-mixin/alerts.yaml
+      - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-rules.yaml:/mimir-mixin-rules.yaml
+      - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-alerts.yaml:/mimir-mixin-alerts.yaml
       - ../../../monitoring-mixins/loki-mixin/deploy/loki-mixin-rules.yaml:/loki-mixin-rules.yaml
       - ../../../monitoring-mixins/loki-mixin/deploy/loki-mixin-alerts.yaml:/loki-mixin-alerts.yaml
-      # - ../../../monitoring-mixins/tempo-mixin/deploy/rules.yaml:/tempo-mixin/rules.yaml
-      # - ../../../monitoring-mixins/tempo-mixin/deploy/alerts.yaml:/tempo-mixin/alerts.yaml
+      # - ../../../monitoring-mixins/tempo-mixin/deploy/tempo-mixin-rules.yaml:/tempo-mixin-rules.yaml
+      # - ../../../monitoring-mixins/tempo-mixin/deploy/tempo-mixin-alerts.yaml:/tempo-mixin-alerts.yaml
     environment:
       - MIMIR_ADDRESS=http://mimir:8080
       - MIMIR_TENANT_ID=anonymous
     command: >-
-      rules load /mimir-mixin/rules.yaml /mimir-mixin/alerts.yaml /loki-mixin-rules.yaml /loki-mixin-alerts.yaml
+      rules load /mimir-mixin-rules.yaml /mimir-mixin-alerts.yaml /loki-mixin-rules.yaml /loki-mixin-alerts.yaml
 
   loki:
     labels:
