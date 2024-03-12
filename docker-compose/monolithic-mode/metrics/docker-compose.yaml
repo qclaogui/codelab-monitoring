@@ -16,7 +16,7 @@ services:
     depends_on:
       mimir:
         condition: service_healthy
-    image: nginxinc/nginx-unprivileged:1.25-alpine
+    image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:latest}
     volumes:
       - ../../common/config/nginx:/etc/nginx/templates
       - ../../common/config/mimir/gateway_mimir.conf.template:/etc/nginx/templates/gateway_mimir.conf.template
@@ -43,7 +43,7 @@ services:
     depends_on:
       minio:
         condition: service_healthy
-    image: grafana/mimir:2.11.0
+    image: ${MIMIR_IMAGE:-docker.io/grafana/mimir:latest}
     command:
       - -config.file=/etc/mimir.yaml
       - -target=all
@@ -65,7 +65,7 @@ services:
           - mimir-memberlist
 
   grafana:
-    image: grafana/grafana:10.4.0
+    image: ${GRAFANA_IMAGE:-docker.io/grafana/grafana:latest}
     command:
       - --config=/etc/grafana-config/grafana.ini
     volumes:

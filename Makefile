@@ -34,92 +34,169 @@ fmt: ## Uses Grafana Agent to fmt the river config
 .PHONY: up-monolithic-mode-metrics
 up-monolithic-mode-metrics: ## Run monolithic-mode metrics
 	$(info ******************** run monolithic-mode metrics ********************)
-	docker compose --project-directory docker-compose/monolithic-mode/metrics --file docker-compose/monolithic-mode/metrics/docker-compose.yaml up -d --remove-orphans
+	docker compose \
+		--project-directory docker-compose/monolithic-mode/metrics \
+		--file docker-compose/monolithic-mode/metrics/docker-compose.yaml \
+		--env-file docker-compose/common/config/.env \
+		up -d --remove-orphans
 	@$(call echo_info, "Go to http://localhost:3000/explore for the metrics.")
 down-monolithic-mode-metrics:
-	docker compose --project-directory docker-compose/monolithic-mode/metrics --file docker-compose/monolithic-mode/metrics/docker-compose.yaml down
+	docker compose \
+		--project-directory docker-compose/monolithic-mode/metrics \
+		--file docker-compose/monolithic-mode/metrics/docker-compose.yaml \
+		down
 
 .PHONY: up-monolithic-mode-logs
 up-monolithic-mode-logs: ## Run monolithic-mode logs
 	$(info ******************** run monolithic-mode logs ********************)
-	docker compose --project-directory docker-compose/monolithic-mode/logs --file docker-compose/monolithic-mode/logs/docker-compose.yaml up -d --remove-orphans
+	docker compose \
+		--project-directory docker-compose/monolithic-mode/logs \
+		--file docker-compose/monolithic-mode/logs/docker-compose.yaml \
+		--env-file docker-compose/common/config/.env \
+		up -d --remove-orphans
 	@$(call echo_info, "Go to http://localhost:3000/explore for the logs.")
 down-monolithic-mode-logs:
-	docker compose --project-directory docker-compose/monolithic-mode/logs --file docker-compose/monolithic-mode/logs/docker-compose.yaml down
+	docker compose \
+		--project-directory docker-compose/monolithic-mode/logs \
+		--file docker-compose/monolithic-mode/logs/docker-compose.yaml \
+		down
 
 .PHONY: up-monolithic-mode-traces
 up-monolithic-mode-traces: ## Run monolithic-mode traces
 	$(info ******************** run monolithic-mode traces ********************)
-	docker compose --project-directory docker-compose/monolithic-mode/traces --file docker-compose/monolithic-mode/traces/docker-compose.yaml up -d --remove-orphans
+	docker compose \
+		--project-directory docker-compose/monolithic-mode/traces \
+		--file docker-compose/monolithic-mode/traces/docker-compose.yaml \
+		--env-file docker-compose/common/config/.env \
+		up -d --remove-orphans
 	@$(call echo_info, "Go to http://localhost:3000/explore for the traces.")
 down-monolithic-mode-traces:
-	docker compose --project-directory docker-compose/monolithic-mode/traces --file docker-compose/monolithic-mode/traces/docker-compose.yaml down
+	docker compose \
+		--project-directory docker-compose/monolithic-mode/traces \
+		--file docker-compose/monolithic-mode/traces/docker-compose.yaml \
+		down
 
 .PHONY: up-monolithic-mode-profiles
 up-monolithic-mode-profiles: ## Run monolithic-mode profiles
 	$(info ******************** run monolithic-mode profiles ********************)
-	docker compose --project-directory docker-compose/monolithic-mode/profiles --file docker-compose/monolithic-mode/profiles/docker-compose.yaml up -d --remove-orphans
+	docker compose \
+		--project-directory docker-compose/monolithic-mode/profiles \
+		--file docker-compose/monolithic-mode/profiles/docker-compose.yaml \
+		--env-file docker-compose/common/config/.env \
+		up -d --remove-orphans
 	@$(call echo_info, "Go to http://localhost:3000/explore for the profiles.")
 down-monolithic-mode-profiles:
-	docker compose --project-directory docker-compose/monolithic-mode/profiles --file docker-compose/monolithic-mode/profiles/docker-compose.yaml down
+	docker compose \
+		--project-directory docker-compose/monolithic-mode/profiles \
+		--file docker-compose/monolithic-mode/profiles/docker-compose.yaml \
+		down
 
 .PHONY: up-monolithic-mode-all-in-one
 up-monolithic-mode-all-in-one: ## Run monolithic-mode all-in-one
 	$(info ******************** run monolithic-mode all-in-one ********************)
-	docker compose --project-directory docker-compose/monolithic-mode/all-in-one --file docker-compose/monolithic-mode/all-in-one/docker-compose.yaml up -d --remove-orphans
+	docker compose \
+		--project-directory docker-compose/monolithic-mode/all-in-one \
+		--file docker-compose/monolithic-mode/all-in-one/docker-compose.yaml \
+		--env-file docker-compose/common/config/.env \
+		up -d --remove-orphans
 	@$(call echo_info, "Go to http://localhost:3000/explore for the metrics.")
 down-monolithic-mode-all-in-one:
-	docker compose --project-directory docker-compose/monolithic-mode/all-in-one --file docker-compose/monolithic-mode/all-in-one/docker-compose.yaml down
+	docker compose \
+		--project-directory docker-compose/monolithic-mode/all-in-one \
+		--file docker-compose/monolithic-mode/all-in-one/docker-compose.yaml \
+		down
 
 
 .PHONY: up-read-write-mode-metrics
 up-read-write-mode-metrics: ## Run read-write-mode metrics
 	$(info ******************** run read-write-mode metrics ********************)
-	docker compose --project-directory docker-compose/read-write-mode/metrics --file docker-compose/read-write-mode/metrics/docker-compose.yaml up -d --remove-orphans
+	docker compose \
+		--project-directory docker-compose/read-write-mode/metrics \
+		--file docker-compose/read-write-mode/metrics/docker-compose.yaml \
+		--env-file docker-compose/common/config/.env \
+		up -d --remove-orphans
 	@$(call echo_info, "Go to http://localhost:3000/explore for the metrics.")
 down-read-write-mode-metrics:
-	docker compose --project-directory docker-compose/read-write-mode/metrics --file docker-compose/read-write-mode/metrics/docker-compose.yaml down
+	docker compose \
+		--project-directory docker-compose/read-write-mode/metrics \
+		--file docker-compose/read-write-mode/metrics/docker-compose.yaml \
+		down
 
 .PHONY: up-read-write-mode-logs
 up-read-write-mode-logs: ## Run read-write-mode logs
 	$(info ******************** run read-write-mode logs ********************)
-	docker compose --project-directory docker-compose/read-write-mode/logs --file docker-compose/read-write-mode/logs/docker-compose.yaml up -d --remove-orphans
+	docker compose \
+		--project-directory docker-compose/read-write-mode/logs \
+		--file docker-compose/read-write-mode/logs/docker-compose.yaml \
+		--env-file docker-compose/common/config/.env \
+		up -d --remove-orphans
 	@$(call echo_info, "Go to http://localhost:3000/explore for the logs.")
 down-read-write-mode-logs:
-	docker compose --project-directory docker-compose/read-write-mode/logs --file docker-compose/read-write-mode/logs/docker-compose.yaml down
+	docker compose \
+		--project-directory docker-compose/read-write-mode/logs \
+		--file docker-compose/read-write-mode/logs/docker-compose.yaml \
+		down
 
 
 .PHONY: up-microservices-mode-metrics
 up-microservices-mode-metrics: ## Run microservices-mode metrics
 	$(info ******************** run microservices-mode metrics ********************)
-	docker compose --project-directory docker-compose/microservices-mode/metrics --file docker-compose/microservices-mode/metrics/docker-compose.yaml up -d --remove-orphans
+	docker compose \
+		--project-directory docker-compose/microservices-mode/metrics \
+		--file docker-compose/microservices-mode/metrics/docker-compose.yaml \
+		--env-file docker-compose/common/config/.env \
+		up -d --remove-orphans
 	@$(call echo_info, "Go to http://localhost:3000/explore for the metrics.")
 down-microservices-mode-metrics:
-	docker compose --project-directory docker-compose/microservices-mode/metrics --file docker-compose/microservices-mode/metrics/docker-compose.yaml down
+	docker compose \
+		--project-directory docker-compose/microservices-mode/metrics \
+		--file docker-compose/microservices-mode/metrics/docker-compose.yaml \
+		down
 
 .PHONY: up-microservices-mode-logs
 up-microservices-mode-logs: ## Run microservices-mode logs
 	$(info ******************** run microservices-mode logs ********************)
-	docker compose --project-directory docker-compose/microservices-mode/logs --file docker-compose/microservices-mode/logs/docker-compose.yaml up -d --remove-orphans
+	docker compose \
+		--project-directory docker-compose/microservices-mode/logs \
+		--file docker-compose/microservices-mode/logs/docker-compose.yaml \
+		--env-file docker-compose/common/config/.env \
+		up -d --remove-orphans
 	@$(call echo_info, "Go to http://localhost:3000/explore for the logs.")
 down-microservices-mode-logs:
-	docker compose --project-directory docker-compose/microservices-mode/logs --file docker-compose/microservices-mode/logs/docker-compose.yaml down
+	docker compose \
+		--project-directory docker-compose/microservices-mode/logs \
+		--file docker-compose/microservices-mode/logs/docker-compose.yaml \
+		down
 
 .PHONY: up-microservices-mode-traces
 up-microservices-mode-traces: ## Run microservices-mode traces
 	$(info ******************** run microservices-mode traces ********************)
-	docker compose --project-directory docker-compose/microservices-mode/traces --file docker-compose/microservices-mode/traces/docker-compose.yaml up -d --remove-orphans
+	docker compose \
+		--project-directory docker-compose/microservices-mode/traces \
+		--file docker-compose/microservices-mode/traces/docker-compose.yaml \
+		--env-file docker-compose/common/config/.env \
+		up -d --remove-orphans
 	@$(call echo_info, "Go to http://localhost:3000/explore for the traces.")
 down-microservices-mode-traces:
-	docker compose --project-directory docker-compose/microservices-mode/traces --file docker-compose/microservices-mode/traces/docker-compose.yaml down
+	docker compose \
+		--project-directory docker-compose/microservices-mode/traces \
+		--file docker-compose/microservices-mode/traces/docker-compose.yaml \
+		down
 
 .PHONY: up-microservices-mode-profiles
 up-microservices-mode-profiles: ## Run microservices-mode profiles
 	$(info ******************** run microservices-mode profiles ********************)
-	docker compose --project-directory docker-compose/microservices-mode/profiles --file docker-compose/microservices-mode/profiles/docker-compose.yaml up -d --remove-orphans
+	docker compose \
+		--project-directory docker-compose/microservices-mode/profiles \
+		--file docker-compose/microservices-mode/profiles/docker-compose.yaml \
+		--env-file docker-compose/common/config/.env \
+		up -d --remove-orphans
 	@$(call echo_info, "Go to http://localhost:3000/explore for the profiles.")
 down-microservices-mode-profiles:
-	docker compose --project-directory docker-compose/microservices-mode/profiles --file docker-compose/microservices-mode/profiles/docker-compose.yaml down
+	docker compose \
+		--project-directory docker-compose/microservices-mode/profiles \
+		--file docker-compose/microservices-mode/profiles/docker-compose.yaml \
+		down
 
 
 ##@ Kubernetes

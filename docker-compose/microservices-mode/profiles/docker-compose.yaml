@@ -15,7 +15,7 @@ services:
     depends_on:
       distributor:
         condition: service_healthy
-    image: nginxinc/nginx-unprivileged:1.25-alpine
+    image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:latest}
     restart: always
     volumes:
       - ../../common/config/nginx:/etc/nginx/templates
@@ -36,7 +36,7 @@ services:
     depends_on:
       ingester:
         condition: service_started
-    image: &pyroscopeImage grafana/pyroscope:1.4.0
+    image: &pyroscopeImage ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:latest}
     volumes:
       - ../../common/config/pyroscope/microservices-mode-profiles.yaml:/etc/config.yaml # Note: profiles use microservices-mode-profiles.yaml
     command:
@@ -173,7 +173,7 @@ services:
           - pyroscope-memberlist
 
   grafana:
-    image: grafana/grafana:10.4.0
+    image: ${GRAFANA_IMAGE:-docker.io/grafana/grafana:latest}
     command:
       - --config=/etc/grafana-config/grafana.ini
     volumes:

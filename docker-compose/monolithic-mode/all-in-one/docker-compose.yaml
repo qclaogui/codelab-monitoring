@@ -20,7 +20,7 @@ services:
         condition: service_healthy
       loki:
         condition: service_healthy
-    image: grafana/agent:v0.40.2
+    image: ${AGENT_IMAGE:-docker.io/grafana/agent:latest}
     volumes:
       - ../../common/config/agent-flow:/etc/agent-config
       - /var/run/docker.sock:/var/run/docker.sock
@@ -43,7 +43,7 @@ services:
     depends_on:
       minio:
         condition: service_healthy
-    image: grafana/mimir:2.11.0
+    image: ${MIMIR_IMAGE:-docker.io/grafana/mimir:latest}
     volumes:
       - ../../common/config/mimir/monolithic-mode-metrics.yaml:/etc/config.yaml
     command:
@@ -66,7 +66,7 @@ services:
     depends_on:
       mimir:
         condition: service_healthy
-    image: grafana/mimirtool:2.11.0
+    image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:latest}
     volumes:
       - ../../../monitoring-mixins/mimir-mixin/deploy/rules.yaml:/mimir-mixin/rules.yaml
       - ../../../monitoring-mixins/mimir-mixin/deploy/alerts.yaml:/mimir-mixin/alerts.yaml
@@ -86,7 +86,7 @@ services:
     depends_on:
       minio:
         condition: service_healthy
-    image: grafana/loki:2.9.5
+    image: ${LOKI_IMAGE:-docker.io/grafana/loki:latest}
     volumes:
       - ../../common/config/loki/monolithic-mode-logs.yaml:/etc/config.yaml
     command:
@@ -113,7 +113,7 @@ services:
         condition: service_healthy
       mimir:
         condition: service_healthy
-    image: grafana/tempo:2.4.0
+    image: ${TEMPO_IMAGE:-docker.io/grafana/tempo:latest}
     volumes:
       - ../../common/config/tempo/monolithic-mode-traces.yaml:/etc/config.yaml
     command:
@@ -138,7 +138,7 @@ services:
     depends_on:
       minio:
         condition: service_healthy
-    image: grafana/pyroscope:1.4.0
+    image: ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:latest}
     container_name: pyroscope
     volumes:
       - ../../common/config/pyroscope/monolithic-mode-profiles.yaml:/etc/config.yaml
@@ -149,7 +149,7 @@ services:
   grafana:
     labels:
       - logs.agent.grafana.com/log-format=logfmt
-    image: grafana/grafana:10.4.0
+    image: ${GRAFANA_IMAGE:-docker.io/grafana/grafana:latest}
     command:
       - --config=/etc/grafana-config/grafana.ini
     volumes:
