@@ -31,17 +31,16 @@ check: build fmt ## Build, fmt and check the mixin files
 ##@ Dashboards & k8s
 
 .PHONY: manifests
-manifests: $(KUSTOMIZE) ## Generates dashboards for k8s
+manifests: $(KUSTOMIZE) build ## Generates dashboards for k8s
 	$(KUSTOMIZE) build deploy > deploy/manifests/k8s-all-in-one.yaml
 
-.PHONY: rules_load
+
 rules_load: ## Load rules and alerts to monitoring system
 	mimirtool rules load --id=anonymous --address=http://localhost:9009 deploy/rules.yaml
 	mimirtool rules load --id=anonymous --address=http://localhost:9009 deploy/alerts.yaml
-	# am
-	#mimirtool alertmanager --id=anonymous --address=http://localhost:9009 load deploy/alertmanager.yaml deploy/default.tmpl
-	#mimirtool alertmanager --id=anonymous --address=http://localhost:9009 get
-	#mimirtool alertmanager --id=anonymous --address=http://localhost:9009 delete
+	mimirtool alertmanager --id=anonymous --address=http://localhost:9009 load deploy/alertmanager.yaml deploy/default.tmpl
+	mimirtool alertmanager --id=anonymous --address=http://localhost:9009 get
+	mimirtool alertmanager --id=anonymous --address=http://localhost:9009 delete
 
 ##@ General
 

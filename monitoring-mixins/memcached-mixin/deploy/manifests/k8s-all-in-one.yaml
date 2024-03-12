@@ -7,7 +7,7 @@ data:
        },
        "editable": true,
        "gnetId": null,
-       "graphTooltip": 0,
+       "graphTooltip": 1,
        "hideControls": false,
        "links": [ ],
        "refresh": "10s",
@@ -1155,7 +1155,7 @@ data:
                    "value": "default"
                 },
                 "hide": 0,
-                "label": "Data Source",
+                "label": "Data source",
                 "name": "datasource",
                 "options": [ ],
                 "query": "prometheus",
@@ -1164,7 +1164,7 @@ data:
                 "type": "datasource"
              },
              {
-                "allValue": ".+",
+                "allValue": ".*",
                 "current": {
                    "selected": true,
                    "text": "All",
@@ -1279,3 +1279,43 @@ metadata:
     grafana_dashboard: "1"
   name: memcached-overview.json
   namespace: monitoring-system
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: memcached-mixin-alerts
+  namespace: monitoring-system
+spec:
+  groups:
+  - name: memcached
+    rules:
+    - alert: MemcachedDown
+      annotations:
+        description: Memcached instance {{ $labels.job }} / {{ $labels.instance }}
+          is down for more than 15 minutes.
+        summary: Memcached instance is down.
+      expr: |
+        memcached_up == 0
+      for: 15m
+      labels:
+        severity: critical
+    - alert: MemcachedConnectionLimitApproaching
+      annotations:
+        description: Memcached instance {{ $labels.job }} / {{ $labels.instance }}
+          connection usage is at {{ printf "%0.0f" $value }}% for at least 15 minutes.
+        summary: Memcached max connection limit is approaching.
+      expr: |
+        (memcached_current_connections / memcached_max_connections * 100) > 80
+      for: 15m
+      labels:
+        severity: warning
+    - alert: MemcachedConnectionLimitApproaching
+      annotations:
+        description: Memcached instance {{ $labels.job }} / {{ $labels.instance }}
+          connection usage is at {{ printf "%0.0f" $value }}% for at least 15 minutes.
+        summary: Memcached connections at critical level.
+      expr: |
+        (memcached_current_connections / memcached_max_connections * 100) > 95
+      for: 15m
+      labels:
+        severity: critical

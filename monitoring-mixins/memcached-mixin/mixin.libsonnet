@@ -1,6 +1,4 @@
-local mixin = import 'memcached-mixin/mixin.libsonnet';
-
-mixin {
+(import 'memcached-mixin/mixin.libsonnet') + {
   _config+:: {
     clusterLabel: 'cluster',
   },

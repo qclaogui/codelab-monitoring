@@ -14,7 +14,7 @@ fmt: ## Format the mixin files
 .PHONY: build
 build: ## Generates the mixin files
 	@mkdir -p "$(MIXIN_OUT_PATH)"; \
-	find "$(MIXIN_OUT_PATH)" ! -name "kustomization.yaml" -type f -delete; \
+	find "$(MIXIN_OUT_PATH)" ! -name "kustomization.yaml" ! -name "prometheus-alerts.yaml" ! -name "prometheus-rules.yaml" -type f -delete; \
 	$(MIXTOOL) generate all --output-alerts "$(MIXIN_OUT_PATH)/alerts.yaml" --output-rules "$(MIXIN_OUT_PATH)/rules.yaml" --directory "$(MIXIN_OUT_PATH)/dashboards_out" "mixin.libsonnet"; \
 	#../../tools/check-rules.sh "$(MIXIN_OUT_PATH)/rules.yaml" 20 ; \
 
@@ -27,17 +27,14 @@ check: build fmt manifests## Build, fmt and check the mixin files
 ##@ Dashboards & k8s
 
 .PHONY: manifests
-manifests: $(KUSTOMIZE) ## Generates dashboards for k8s
+manifests: $(KUSTOMIZE) build ## Generates dashboards for k8s
 	$(KUSTOMIZE) build deploy > deploy/manifests/k8s-all-in-one.yaml
 
-.PHONY: rules_load
 rules_load: ## Load rules and alerts to monitoring system
 	mimirtool rules load --id=anonymous --address=http://localhost:9009 deploy/rules.yaml
 	mimirtool rules load --id=anonymous --address=http://localhost:9009 deploy/alerts.yaml
-	# am
-	#mimirtool alertmanager --id=anonymous --address=http://localhost:9009 load deploy/alertmanager.yaml deploy/default.tmpl
-	#mimirtool alertmanager --id=anonymous --address=http://localhost:9009 get
-	#mimirtool alertmanager --id=anonymous --address=http://localhost:9009 delete
+	mimirtool alertmanager --id=anonymous --address=http://localhost:9009 load deploy/alertmanager.yaml deploy/default.tmpl
+	mimirtool alertmanager --id=anonymous --address=http://localhost:9009 get
 
 ##@ General
 

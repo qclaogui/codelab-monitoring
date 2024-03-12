@@ -319,21 +319,21 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "histogram_quantile(0.99, sum by (le) (rate(agent_component_evaluation_seconds_bucket{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval])))",
+                  "expr": "histogram_quantile(0.99, sum(rate(agent_component_evaluation_seconds{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval])))\nor\nhistogram_quantile(0.99, sum by (le) (rate(agent_component_evaluation_seconds_bucket{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval])))\n",
                   "instant": false,
                   "legendFormat": "99th percentile",
                   "range": true
                },
                {
                   "datasource": "${datasource}",
-                  "expr": "histogram_quantile(0.50, sum by (le) (rate(agent_component_evaluation_seconds_bucket{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval])))",
+                  "expr": "histogram_quantile(0.50, sum(rate(agent_component_evaluation_seconds{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval])))\nor\nhistogram_quantile(0.50, sum by (le) (rate(agent_component_evaluation_seconds_bucket{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval])))\n",
                   "instant": false,
                   "legendFormat": "50th percentile",
                   "range": true
                },
                {
                   "datasource": "${datasource}",
-                  "expr": "sum(rate(agent_component_evaluation_seconds_sum{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval])) /\nsum(rate(agent_component_evaluation_seconds_count{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval]))\n",
+                  "expr": "(\n  histogram_sum(sum(rate(agent_component_evaluation_seconds{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval]))) /\n  histogram_count(sum(rate(agent_component_evaluation_seconds{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval])))\n)\nor\n(\n  sum(rate(agent_component_evaluation_seconds_sum{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval])) /\n  sum(rate(agent_component_evaluation_seconds_count{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval]))\n)\n",
                   "instant": false,
                   "legendFormat": "Average",
                   "range": true
@@ -380,19 +380,15 @@
             "maxDataPoints": 30,
             "options": {
                "calculate": false,
+               "cellGap": 0,
                "color": {
-                  "exponent": 0.5,
-                  "fill": "dark-orange",
-                  "mode": "scheme",
-                  "scale": "exponential",
-                  "scheme": "Oranges",
-                  "steps": 65
+                  "scheme": "Spectral"
                },
                "exemplars": {
                   "color": "rgba(255,0,255,0.7)"
                },
                "filterValues": {
-                  "le": 1.0000000000000001e-09
+                  "le": 0.10000000000000001
                },
                "tooltip": {
                   "show": true,
@@ -406,7 +402,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "sum by (le) (increase(agent_component_evaluation_seconds_bucket{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]))",
+                  "expr": "sum(increase(agent_component_evaluation_seconds{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]))\nor ignoring (le)\nsum by (le) (increase(agent_component_evaluation_seconds_bucket{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]))\n",
                   "format": "heatmap",
                   "instant": false,
                   "legendFormat": "{{le}}",
@@ -428,19 +424,15 @@
             "maxDataPoints": 30,
             "options": {
                "calculate": false,
+               "cellGap": 0,
                "color": {
-                  "exponent": 0.5,
-                  "fill": "dark-orange",
-                  "mode": "scheme",
-                  "scale": "exponential",
-                  "scheme": "Oranges",
-                  "steps": 65
+                  "scheme": "Spectral"
                },
                "exemplars": {
                   "color": "rgba(255,0,255,0.7)"
                },
                "filterValues": {
-                  "le": 1.0000000000000001e-09
+                  "le": 0.10000000000000001
                },
                "tooltip": {
                   "show": true,
@@ -454,7 +446,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "sum by (le) (increase(agent_component_dependencies_wait_seconds_bucket{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]))",
+                  "expr": "sum(increase(agent_component_dependencies_wait_seconds{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]))\nor ignoring (le)\nsum by (le) (increase(agent_component_dependencies_wait_seconds_bucket{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]))\n",
                   "format": "heatmap",
                   "instant": false,
                   "legendFormat": "{{le}}",

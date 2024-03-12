@@ -31,7 +31,7 @@ check: $(MIXTOOL) build fmt ## Build, fmt and check the mixin files
 ##@ Dashboards & k8s
 
 .PHONY: manifests
-manifests: $(KUSTOMIZE) dashboards_out ## Generates dashboards for k8s
+manifests: $(KUSTOMIZE) build ## Generates dashboards for k8s
 	$(KUSTOMIZE) build deploy > deploy/manifests/k8s-all-in-one.yaml
 
 prom_alerts.yaml:
@@ -39,10 +39,6 @@ prom_alerts.yaml:
 
 prom_rules.yaml:
 	jsonnet -J vendor -S -e 'std.manifestYamlDoc((import "mixin.libsonnet").prometheusRules)'  > deploy/$@
-
-dashboards_out:
-	@mkdir -p deploy/dashboards_out deploy/manifests
-	jsonnet -J vendor -e '(import "mixin.libsonnet").grafanaDashboards' -m deploy/dashboards_out
 
 ##@ General
 
