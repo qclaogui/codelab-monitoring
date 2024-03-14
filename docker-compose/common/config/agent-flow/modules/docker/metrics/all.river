@@ -1,0 +1,67 @@
+/*
+Module: metrics-all
+Description: Wrapper module to include all Docker containers metric modules
+*/
+argument "forward_to" {
+	comment = "Must be a list(MetricssReceiver) where collected metrics should be forwarded to"
+}
+
+argument "tenant" {
+	comment  = "The tenant to filter logs to.  This does not have to be the tenantId, this is the value to look for in the logs.agent.grafana.com/tenant annotation, and this can be a regex."
+	optional = true
+}
+
+argument "clustering" {
+	// Docs: https://grafana.com/docs/agent/latest/flow/concepts/clustering/
+	comment = "Whether or not clustering should be enabled (default: true)"
+}
+
+module.file "mf_metrics_auto_scrape" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/docker/metrics/metrics-auto-scrape.river"
+
+	arguments {
+		forward_to = argument.forward_to.value
+		tenant     = coalesce(argument.tenant.value, ".*")
+		clustering = coalesce(argument.clustering.value, "true")
+	}
+}
+
+prometheus.exporter.unix "peu_containers" {
+	set_collectors     = ["cpu"]
+	disable_collectors = ["diskstats", "mdadm", "textfile", "hwmon"]
+}
+
+prometheus.scrape "pc_integrations" {
+	targets = concat(
+		prometheus.exporter.unix.peu_containers.targets,
+	)
+
+	enable_protobuf_negotiation = true
+	scrape_classic_histograms   = true
+
+	scrape_interval = "15s"
+
+	clustering {
+		enabled = true
+	}
+
+	forward_to = [prometheus.relabel.pr_integrations.receiver]
+}
+
+prometheus.relabel "pr_integrations" {
+	rule {
+		source_labels = ["job"]
+		regex         = "integrations/(.*)"
+		target_label  = "pod"
+		replacement   = "${2}"
+	}
+
+	rule {
+		source_labels = ["job"]
+		regex         = "integrations/(.*)"
+		target_label  = "container"
+		replacement   = "${2}"
+	}
+
+	forward_to = argument.forward_to.value
+}

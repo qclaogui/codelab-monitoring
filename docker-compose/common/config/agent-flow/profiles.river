@@ -1,12 +1,16 @@
 // https://github.com/grafana/agent-configurator
 
 logging {
-	level  = "warn"
+	level  = coalesce(env("AGENT_LOG_LEVEL"), "info")
 	format = "logfmt"
 }
 
+/********************************************
+ * LGTMP Receiver provider
+ ********************************************/
+
 module.file "docker_compose" {
-	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker_compose.river"
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/docker_compose.river"
 
 	arguments {
 		profiles_endpoint = "http://gateway:4040"

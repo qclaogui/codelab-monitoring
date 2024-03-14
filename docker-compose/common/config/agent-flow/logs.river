@@ -1,7 +1,7 @@
 // https://github.com/grafana/agent-configurator
 
 logging {
-	level  = "info"
+	level  = coalesce(env("AGENT_LOG_LEVEL"), "info")
 	format = "logfmt"
 }
 
@@ -10,7 +10,7 @@ logging {
  ********************************************/
 
 module.file "docker_compose" {
-	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker_compose.river"
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/docker_compose.river"
 
 	arguments {
 		logs_endpoint = "http://gateway:3100"
