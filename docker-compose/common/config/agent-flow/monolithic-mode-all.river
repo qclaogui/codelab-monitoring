@@ -1,7 +1,7 @@
 // https://github.com/grafana/agent-configurator
 
 logging {
-	level  = "info"
+	level  = coalesce(env("AGENT_LOG_LEVEL"), "info")
 	format = "logfmt"
 }
 
@@ -15,84 +15,20 @@ tracing {
  ********************************************/
 
 module.file "docker_compose" {
-	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker_compose.river"
-}
-
-discovery.relabel "containers" {
-	targets = module.file.docker_compose.exports.relabelings_common.output
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/docker_compose.river"
 }
 
 /********************************************
  * Metrics
  ********************************************/
 
-prometheus.exporter.unix "containers" {
-	set_collectors     = ["cpu"]
-	disable_collectors = ["diskstats", "mdadm", "textfile", "hwmon"]
-}
+module.file "metrics_primary" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/docker/metrics/all.river"
 
-prometheus.scrape "integrations" {
-	targets = concat(
-		prometheus.exporter.unix.containers.targets,
-	)
-	scrape_interval = "15s"
-
-	enable_protobuf_negotiation = true
-	scrape_classic_histograms   = true
-
-	clustering {
-		enabled = true
+	arguments {
+		forward_to = [module.file.docker_compose.exports.metrics_receiver]
+		clustering = true
 	}
-
-	forward_to = [prometheus.relabel.integrations.receiver]
-}
-
-prometheus.scrape "containers" {
-	targets         = discovery.relabel.containers.output
-	scrape_interval = "15s"
-
-	enable_protobuf_negotiation = true
-	scrape_classic_histograms   = true
-
-	clustering {
-		enabled = true
-	}
-
-	forward_to = [module.file.docker_compose.exports.metrics_receiver]
-}
-
-prometheus.scrape "minio" {
-	targets = [{"__address__" = "minio:9000", "job" = "minio-job"}]
-
-	enable_protobuf_negotiation = true
-	scrape_classic_histograms   = true
-
-	clustering {
-		enabled = true
-	}
-
-	scrape_interval = "15s"
-	metrics_path    = "/minio/v2/metrics/cluster"
-
-	forward_to = [prometheus.relabel.integrations.receiver]
-}
-
-prometheus.relabel "integrations" {
-	rule {
-		source_labels = ["job"]
-		regex         = "(integrations|monitoring-system)/(.*)"
-		target_label  = "pod"
-		replacement   = "${2}"
-	}
-
-	rule {
-		source_labels = ["job"]
-		regex         = "(integrations|monitoring-system)/(.*)"
-		target_label  = "container"
-		replacement   = "${2}"
-	}
-
-	forward_to = [module.file.docker_compose.exports.metrics_receiver]
 }
 
 /********************************************
@@ -100,7 +36,7 @@ prometheus.relabel "integrations" {
  ********************************************/
 
 module.file "logs_primary" {
-	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker/logs/all.river"
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/docker/logs/all.river"
 
 	arguments {
 		forward_to = [module.file.docker_compose.exports.logs_receiver]
