@@ -1,43 +1,38 @@
+/*
+Module: Docker Compose
+Description: LGTMP Receiver Provider
+*/
+
 /********************************************
  * ARGUMENTS
  ********************************************/
-argument "cluster" {
-	optional = true
-	default  = "docker-compose"
-}
-
-argument "namespace" {
-	optional = true
-	default  = "monitoring-system"
-}
-
 argument "tenant" {
 	optional = true
 	default  = "anonymous"
 }
 
 argument "metrics_endpoint" {
+	comment  = "Where to send collected metrics."
 	optional = true
 	default  = "http://mimir:8080"
-	//comment = "Where to send collected metrics."
 }
 
 argument "logs_endpoint" {
+	comment  = "Where to send collected logs."
 	optional = true
 	default  = "http://loki:3100"
-	//comment = "Where to send collected logs."
 }
 
 argument "traces_endpoint" {
+	comment  = "Where to send collected traces."
 	optional = true
 	default  = "tempo:4317"
-	//comment = "Where to send collected traces."
 }
 
 argument "profiles_endpoint" {
+	comment  = "Where to send collected profiles."
 	optional = true
 	default  = "http://pyroscope:4040"
-	//comment  = "Where to send collected profiles."
 }
 
 /********************************************
@@ -58,10 +53,6 @@ export "traces_receiver" {
 
 export "profiles_receiver" {
 	value = pyroscope.write.docker_compose.receiver
-}
-
-export "relabelings_common" {
-	value = discovery.relabel.common
 }
 
 /********************************************
@@ -112,80 +103,7 @@ pyroscope.write "docker_compose" {
 
 	external_labels = {
 		"scraped_by" = "grafana-agent",
-		"cluster"    = argument.cluster.value,
-		"namespace"  = argument.namespace.value,
-	}
-}
-
-discovery.docker "containers" {
-	host = "unix:///var/run/docker.sock"
-
-	filter {
-		name   = "status"
-		values = ["running"]
-	}
-}
-
-discovery.relabel "common" {
-	targets = discovery.docker.containers.targets
-
-	// filter by service name
-	rule {
-		action        = "keep"
-		source_labels = [
-			"__meta_docker_container_label_com_docker_compose_service",
-		]
-		regex = "(agent|mimir|mimir-.*|grafana|loki|loki-.*|tempo|tempo-.*|pyroscope|distributor|ingester|query-frontend|querier|query-scheduler|ruler|compactor|store-gateway|alertmanager|overrides-exporter|index-gateway|gateway)"
-	}
-
-	// set the cluster label
-	rule {
-		action       = "replace"
-		replacement  = argument.cluster.value
-		target_label = "cluster"
-	}
-
-	// set the namespace label
-	rule {
-		action       = "replace"
-		replacement  = argument.namespace.value
-		target_label = "namespace"
-	}
-
-	rule {
-		action        = "replace"
-		source_labels = [
-			"__meta_docker_container_label_com_docker_compose_service",
-		]
-		regex        = "^(?:;*)?([^;]+).*$"
-		replacement  = argument.namespace.value + "/$1"
-		target_label = "job"
-	}
-
-	rule {
-		action        = "replace"
-		source_labels = [
-			"__meta_docker_container_label_com_docker_compose_service",
-		]
-		regex        = "^(?:;*)?([^;]+).*$"
-		replacement  = "$1"
-		target_label = "pod"
-	}
-
-	rule {
-		action        = "replace"
-		source_labels = [
-			"__meta_docker_container_label_com_docker_compose_service",
-			"__meta_docker_container_label_app",
-		]
-		regex        = "^(?:;*)?([^;]+).*$"
-		replacement  = "$1"
-		target_label = "app"
-	}
-
-	rule {
-		source_labels = ["__meta_docker_container_name"]
-		regex         = "/(.*)"
-		target_label  = "container"
+		"cluster"    = "docker-compose",
+		"namespace"  = "monitoring-system",
 	}
 }
