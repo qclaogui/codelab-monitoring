@@ -24,7 +24,7 @@ CONFIG_FILES_IN_DOCKER = $(subst ./, /data/, $(CONFIG_FILES))
 fmt: ## Uses Grafana Agent to fmt the river config
 	@for c in $(CONFIG_FILES_IN_DOCKER); do \
 		echo "$$c"; \
-		docker run -e AGENT_MODE=flow --rm --volume "$(shell pwd):/data" -u $(shell id -u) grafana/agent:v0.40.2 fmt -w $$c ; \
+		docker run -e AGENT_MODE=flow --rm --volume "$(shell pwd):/data" -u $(shell id -u) grafana/agent:v0.40.3 fmt -w $$c ; \
 	done
 
 
@@ -209,6 +209,7 @@ cluster: ## Create k3s cluster
 clean: ## Clean cluster
 	k3d cluster delete k3s-codelab
 	@rm -rf bin dist .lgtmp .lgtmp.tar
+	@rm -rf kubernetes/common/*/charts/
 
 .PHONY: manifests
 manifests: ## Generates k8s manifests

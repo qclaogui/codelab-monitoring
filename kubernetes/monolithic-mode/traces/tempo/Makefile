@@ -6,7 +6,7 @@ all: update build
 update: $(KUSTOMIZE)
 	@rm -rf charts/
 	$(KUSTOMIZE) build --enable-helm . > k8s-all-in-one.yaml
-	@cp -rf charts/tempo/values.yaml .
+	@cp -rf charts/*/values.yaml . >/dev/null 2>&1 || (cp -rf charts/*/*/values.yaml . && true)
 
 .PHONY: build
 build: $(KUSTOMIZE)
