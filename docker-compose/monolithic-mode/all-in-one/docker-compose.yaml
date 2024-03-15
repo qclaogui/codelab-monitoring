@@ -50,6 +50,7 @@ services:
       - -config.file=/etc/config.yaml
       - -target=all
       - -config.expand-env=true
+      - -ruler.max-rules-per-rule-group=50
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
       interval: 10s
@@ -68,17 +69,20 @@ services:
         condition: service_healthy
     image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:latest}
     volumes:
-      - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-rules.yaml:/mimir-mixin-rules.yaml
-      - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-alerts.yaml:/mimir-mixin-alerts.yaml
+      - ../../../monitoring-mixins/agent-flow-mixin/deploy/agent-flow-mixin-alerts.yaml:/agent-flow-mixin-alerts.yaml
       - ../../../monitoring-mixins/loki-mixin/deploy/loki-mixin-rules.yaml:/loki-mixin-rules.yaml
       - ../../../monitoring-mixins/loki-mixin/deploy/loki-mixin-alerts.yaml:/loki-mixin-alerts.yaml
+      - ../../../monitoring-mixins/memcached-mixin/deploy/memcached-mixin-alerts.yaml:/memcached-mixin-alerts.yaml
+      - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-rules.yaml:/mimir-mixin-rules.yaml
+      - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-alerts.yaml:/mimir-mixin-alerts.yaml
+      - ../../../monitoring-mixins/pyroscope-mixin/deploy/pyroscope-mixin-rules.yaml:/pyroscope-mixin-rules.yaml
       # - ../../../monitoring-mixins/tempo-mixin/deploy/tempo-mixin-rules.yaml:/tempo-mixin-rules.yaml
       # - ../../../monitoring-mixins/tempo-mixin/deploy/tempo-mixin-alerts.yaml:/tempo-mixin-alerts.yaml
     environment:
       - MIMIR_ADDRESS=http://mimir:8080
       - MIMIR_TENANT_ID=anonymous
     command: >-
-      rules load /mimir-mixin-rules.yaml /mimir-mixin-alerts.yaml /loki-mixin-rules.yaml /loki-mixin-alerts.yaml
+      rules load agent-flow-mixin-alerts.yaml /loki-mixin-rules.yaml /loki-mixin-alerts.yaml /memcached-mixin-alerts.yaml /mimir-mixin-rules.yaml /mimir-mixin-alerts.yaml /pyroscope-mixin-rules.yaml
 
   loki:
     labels:
@@ -167,11 +171,12 @@ services:
       - ../../common/config/grafana/dashboards:/var/lib/grafana/dashboards
       - ../../common/config/grafana/provisioning:/etc/grafana/provisioning
       - ./config/grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
-      - ../../../monitoring-mixins/mimir-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/mimir-mixin
-      - ../../../monitoring-mixins/loki-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/loki-mixin
-      # - ../../../monitoring-mixins/tempo-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/tempo-mixin
       - ../../../monitoring-mixins/agent-flow-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/agent-flow-mixin
       - ../../../monitoring-mixins/go-runtime-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/go-runtime-mixin
+      - ../../../monitoring-mixins/loki-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/loki-mixin
+      - ../../../monitoring-mixins/mimir-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/mimir-mixin
+      - ../../../monitoring-mixins/pyroscope-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/pyroscope-mixin
+      # - ../../../monitoring-mixins/tempo-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/tempo-mixin
     environment:
       - GF_LOG_LEVEL=warn
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin_password}
