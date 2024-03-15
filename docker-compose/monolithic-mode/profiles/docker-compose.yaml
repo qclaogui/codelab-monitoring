@@ -54,6 +54,14 @@ services:
       retries: 5
 
   grafana:
+    # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
+    labels:
+      - logs.agent.grafana.com/log-format=logfmt
+      - profiles.agent.grafana.com/cpu.scrape=true
+      - profiles.agent.grafana.com/memory.scrape=true
+      - profiles.agent.grafana.com/goroutine.scrape=true
+      - profiles.agent.grafana.com/service_name=grafana
+      - profiles.agent.grafana.com/port=6060
     image: ${GRAFANA_IMAGE:-docker.io/grafana/grafana:latest}
     hostname: grafana
     command:
