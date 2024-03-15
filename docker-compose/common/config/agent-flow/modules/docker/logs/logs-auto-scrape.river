@@ -42,12 +42,23 @@ argument "clustering" {
 
 // get the available containers.
 discovery.docker "dd_logs" {
-	host = "unix:///var/run/docker.sock"
+	host             = "unix:///var/run/docker.sock"
+	refresh_interval = "15s"
 
 	filter {
 		name   = "status"
 		values = ["running"]
 	}
+}
+
+// get logs from discovery relabel dr_docker_logs below
+loki.source.docker "lsd_docker_logs" {
+	forward_to = argument.forward_to.value
+
+	host             = "unix:///var/run/docker.sock"
+	targets          = discovery.relabel.dr_docker_logs.output
+	relabel_rules    = discovery.relabel.dr_docker_logs.rules
+	refresh_interval = "15s"
 }
 
 discovery.relabel "dr_docker_logs" {
@@ -151,11 +162,4 @@ discovery.relabel "dr_docker_logs" {
 		replacement  = "$1"
 		target_label = "app"
 	}
-}
-
-loki.source.docker "lsd_docker_logs" {
-	host          = "unix:///var/run/docker.sock"
-	targets       = discovery.relabel.dr_docker_logs.output
-	relabel_rules = discovery.relabel.dr_docker_logs.rules
-	forward_to    = argument.forward_to.value
 }

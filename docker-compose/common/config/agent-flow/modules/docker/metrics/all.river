@@ -32,6 +32,8 @@ prometheus.exporter.unix "peu_containers" {
 }
 
 prometheus.scrape "pc_integrations" {
+	forward_to = [prometheus.relabel.pr_integrations.receiver]
+
 	targets = concat(
 		prometheus.exporter.unix.peu_containers.targets,
 	)
@@ -42,13 +44,13 @@ prometheus.scrape "pc_integrations" {
 	scrape_interval = "15s"
 
 	clustering {
-		enabled = true
+		enabled = coalesce(argument.clustering.value, "true")
 	}
-
-	forward_to = [prometheus.relabel.pr_integrations.receiver]
 }
 
 prometheus.relabel "pr_integrations" {
+	forward_to = argument.forward_to.value
+
 	rule {
 		source_labels = ["job"]
 		regex         = "integrations/(.*)"
@@ -62,6 +64,4 @@ prometheus.relabel "pr_integrations" {
 		target_label  = "container"
 		replacement   = "${2}"
 	}
-
-	forward_to = argument.forward_to.value
 }

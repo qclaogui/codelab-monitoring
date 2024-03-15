@@ -98,7 +98,8 @@ argument "clustering" {
 
 // get the available containers.
 discovery.docker "dd_metrics" {
-	host = "unix:///var/run/docker.sock"
+	host             = "unix:///var/run/docker.sock"
+	refresh_interval = "15s"
 
 	filter {
 		name   = "status"
@@ -346,6 +347,8 @@ discovery.relabel "dr_keep_http_targets" {
 
 // scrape http only targtets
 prometheus.scrape "pc_docker_metrics" {
+	forward_to = [prometheus.relabel.pr_docker_metrics.receiver]
+
 	job_name        = "label-metrics-http"
 	targets         = discovery.relabel.dr_keep_http_targets.output
 	scheme          = "http"
@@ -358,8 +361,6 @@ prometheus.scrape "pc_docker_metrics" {
 	clustering {
 		enabled = coalesce(argument.clustering.value, false)
 	}
-
-	forward_to = [prometheus.relabel.pr_docker_metrics.receiver]
 }
 
 // perform generic relabeling using keep_metrics and drop_metrics
