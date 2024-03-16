@@ -1,0 +1,27 @@
+/*
+Module: profiles-all
+Description: Wrapper module to include all Docker containers metric modules
+*/
+argument "forward_to" {
+	comment = "Must be a list(profilessReceiver) where collected profiles should be forwarded to"
+}
+
+argument "tenant" {
+	comment  = "The tenant to filter logs to.  This does not have to be the tenantId, this is the value to look for in the logs.agent.grafana.com/tenant annotation, and this can be a regex."
+	optional = true
+}
+
+argument "clustering" {
+	// Docs: https://grafana.com/docs/agent/latest/flow/concepts/clustering/
+	comment = "Whether or not clustering should be enabled (default: true)"
+}
+
+module.file "mf_profiles_auto_scrape" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/docker/profiles/profiles-auto-scrape.river"
+
+	arguments {
+		forward_to = argument.forward_to.value
+		tenant     = coalesce(argument.tenant.value, ".*")
+		clustering = coalesce(argument.clustering.value, "true")
+	}
+}

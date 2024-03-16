@@ -245,40 +245,11 @@ loki.process "autologging" {
  * Profiles
  ********************************************/
 
-pyroscope.scrape "containers" {
-	targets = [
-		// {"__address__" = "agent:12345", "service_name" = "agent"},
-		{"__address__" = "loki:3100", "service_name" = "loki"},
-		// {"__address__" = "grafana:6060", "service_name" = "grafana"},
-		// {"__address__" = "mimir:8080", "service_name" = "mimir"},
-		{"__address__" = "tempo:3200", "service_name" = "tempo"},
-	]
+module.file "profiles_primary" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/docker/profiles/all.river"
 
-	clustering {
-		enabled = true
+	arguments {
+		forward_to = [module.file.docker_compose.exports.profiles_receiver]
+		clustering = true
 	}
-
-	profiling_config {
-		profile.block {
-			enabled = true
-		}
-
-		profile.mutex {
-			enabled = true
-		}
-
-		profile.memory {
-			enabled = true
-		}
-
-		profile.goroutine {
-			enabled = true
-		}
-
-		profile.process_cpu {
-			enabled = true
-		}
-	}
-
-	forward_to = [module.file.docker_compose.exports.profiles_receiver]
 }

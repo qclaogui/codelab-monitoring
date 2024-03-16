@@ -85,8 +85,13 @@ services:
       rules load agent-flow-mixin-alerts.yaml /loki-mixin-rules.yaml /loki-mixin-alerts.yaml /memcached-mixin-alerts.yaml /mimir-mixin-rules.yaml /mimir-mixin-alerts.yaml /pyroscope-mixin-rules.yaml
 
   loki:
+    # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
     labels:
       - logs.agent.grafana.com/log-format=json
+      - profiles.agent.grafana.com/cpu.scrape=true
+      - profiles.agent.grafana.com/memory.scrape=true
+      - profiles.agent.grafana.com/goroutine.scrape=true
+      - profiles.agent.grafana.com/service_name=loki
     depends_on:
       minio:
         condition: service_healthy
@@ -116,8 +121,13 @@ services:
           - loki-memberlist
 
   tempo:
+    # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
     labels:
       - logs.agent.grafana.com/log-format=logfmt
+      - profiles.agent.grafana.com/cpu.scrape=true
+      - profiles.agent.grafana.com/memory.scrape=true
+      - profiles.agent.grafana.com/goroutine.scrape=true
+      - profiles.agent.grafana.com/service_name=tempo
     depends_on:
       minio:
         condition: service_healthy

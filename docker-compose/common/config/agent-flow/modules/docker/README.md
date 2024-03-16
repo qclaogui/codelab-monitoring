@@ -39,3 +39,22 @@ The following service labels are supported for gathering of metrics for docker c
 | `metrics.agent.grafana.com/job` <br>or<br> `prometheus.io/job` | The job label value to use when collecting their metrics.  However, it is common to use an integration or community project where rules / dashboards are provided for you.  Oftentimes, this provided assets use hard-coded values for a job label i.e. `...{job="integrations/kubernetes/cadvisor"...}` or `...{job="minio-job"...}` setting this annotation to that value will allow the provided asset to work out of the box. |
 | `metrics.agent.grafana.com/interval` <br>or<br> `prometheus.io/interval` | The default interval to scrape is `15s`, this can be override. |
 | `metrics.agent.grafana.com/timeout` <br>or<br> `prometheus.io/timeout` | The default timeout for scraping is `10s`, this can be override. |
+
+---
+
+## Profiles
+
+The following service labels are supported for docker compose services:
+
+> The full list of profile types supported by labels is `cpu`, `memory`, `goroutine`, `block`, `mutex` and `fgprof`:
+
+| Label            | Description |
+| :--------------- | :-----------|
+| `profiles.agent.grafana.com/service_name` <br>or<br> `profiles.grafana.com/service_name` <br>or<br> `pyroscope.io/service_name` | The special label `service_name` is required and must always be present. If it is not specified, will attempt to infer it from either of the following sources. in this order: <ul><li>1. `__meta_docker_container_label_profiles_agent_grafana_com_service_name` which is a `profiles.agent.grafana.com/service_name` service label<li>2. `__meta_docker_container_label_profiles_grafana_com_service_name` which is a `profiles.grafana.com/service_name` service label<li>3. `__meta_docker_container_label_pyroscope_io_service_name` which is a `pyroscope.io/service_name` service label<li>4. `__meta_docker_container_name`</ul>|
+| `profiles.agent.grafana.com/<profile-type>.scrape` <br>or<br> `profiles.grafana.com/<profile-type>.scrape` | Boolean whether or not to scrape. (default is `false`).|
+| `profiles.agent.grafana.com/<profile-type>.path` <br>or<br> `profiles.grafana.com/<profile-type>.path` | The path to the profile type on the target. |
+| `profiles.agent.grafana.com/tenant` <br>or<br> `profiles.grafana.com/tenant` | The `tenant` to write profile to. default: (.*) |
+| `profiles.agent.grafana.com/scheme` <br>or<br> `profiles.grafana.com/scheme` | The default scraping scheme is `http`. |
+| `profiles.agent.grafana.com/port` <br>or<br> `profiles.grafana.com/port` | the default `port` to scrape is the target port, this can be specified as a single value which would override the scrape port being used for all ports attached to the target, note that even if an target had multiple targets, the relabel_config targets are deduped before scraping   |
+| `profiles.agent.grafana.com/interval` <br>or<br> `profiles.grafana.com/interval`| The default `interval` to scrape is `30s`, this can be override. |
+| `profiles.agent.grafana.com/timeout` <br>or<br> `profiles.grafana.com/timeout` | The default `timeout` for scraping is `15s`, this can be override. |
