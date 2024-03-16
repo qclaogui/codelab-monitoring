@@ -1,6 +1,6 @@
 /*
 Module: Docker Compose
-Description: LGTMP Receiver Provider
+Description: Grafana LGTMP Stack Receiver Provider
 */
 
 /********************************************
@@ -65,10 +65,6 @@ prometheus.remote_write "docker_compose" {
 		url                    = argument.metrics_endpoint.value + "/api/v1/push"
 		send_native_histograms = true
 	}
-
-	external_labels = {
-		"scraped_by" = "grafana-agent",
-	}
 }
 
 // Logs
@@ -76,10 +72,6 @@ loki.write "docker_compose" {
 	endpoint {
 		url       = argument.logs_endpoint.value + "/loki/api/v1/push"
 		tenant_id = argument.tenant.value
-	}
-
-	external_labels = {
-		"scraped_by" = "grafana-agent",
 	}
 }
 
@@ -99,11 +91,5 @@ otelcol.exporter.otlp "docker_compose" {
 pyroscope.write "docker_compose" {
 	endpoint {
 		url = argument.profiles_endpoint.value
-	}
-
-	external_labels = {
-		"scraped_by" = "grafana-agent",
-		"cluster"    = "docker-compose",
-		"namespace"  = "monitoring-system",
 	}
 }

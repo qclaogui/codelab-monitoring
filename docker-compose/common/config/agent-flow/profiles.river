@@ -6,10 +6,10 @@ logging {
 }
 
 /********************************************
- * LGTMP Receiver provider
+ * Grafana LGTMP Stack Receiver Provider
  ********************************************/
 
-module.file "docker_compose" {
+module.file "local" {
 	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/docker_compose.river"
 
 	arguments {
@@ -25,7 +25,7 @@ module.file "profiles_primary" {
 	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/docker/profiles/all.river"
 
 	arguments {
-		forward_to = [module.file.docker_compose.exports.profiles_receiver]
+		forward_to = [module.file.local.exports.profiles_receiver]
 		clustering = true
 	}
 }

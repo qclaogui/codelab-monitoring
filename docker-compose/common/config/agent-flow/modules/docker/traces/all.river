@@ -1,0 +1,234 @@
+/*
+Module(traces): Otelcol for Metrics Logs Traces
+Description: Otelcol for Metrics Logs Traces
+*/
+
+/********************************************
+ * ARGUMENTS
+ ********************************************/
+argument "traces_forward_to" {
+	comment = "Must be a list(TracesReceiver) where collected traces should be forwarded to"
+}
+
+argument "logs_forward_to" {
+	comment = "Must be a list(LogsReceiver) where collected logs should be forwarded to"
+}
+
+argument "metrics_forward_to" {
+	comment = "Must be a list(MetricsReceiver) where collected metrics should be forwarded to"
+}
+
+/********************************************
+ * EXPORTS
+ ********************************************/
+export "agent_traces_input" {
+	value = otelcol.processor.resourcedetection.default.input
+}
+
+/********************************************
+ * Jaeger for Metrics Logs Traces
+ ********************************************/
+
+otelcol.receiver.jaeger "default" {
+	protocols {
+		grpc {
+			endpoint = "0.0.0.0:14250"
+		}
+
+		thrift_http {
+			endpoint = "0.0.0.0:14268"
+		}
+
+		thrift_binary {
+			endpoint = "0.0.0.0:6832"
+		}
+
+		thrift_compact {
+			endpoint = "0.0.0.0:6831"
+		}
+	}
+
+	output {
+		metrics = [otelcol.processor.batch.default.input]
+		logs    = [otelcol.processor.resourcedetection.default.input]
+		traces  = [otelcol.processor.resourcedetection.default.input]
+	}
+}
+
+/********************************************
+ * Otelcol for Metrics Logs Traces
+ ********************************************/
+
+otelcol.receiver.otlp "default" {
+	grpc {
+		endpoint = "0.0.0.0:4317"
+	}
+
+	http {
+		endpoint = "0.0.0.0:4318"
+	}
+
+	output {
+		metrics = [otelcol.processor.batch.default.input]
+		logs    = [otelcol.processor.resourcedetection.default.input]
+		traces  = [
+			otelcol.processor.resourcedetection.default.input,
+			otelcol.connector.spanlogs.autologging.input,
+		]
+	}
+}
+
+otelcol.processor.resourcedetection "default" {
+	detectors = ["env"]
+
+	output {
+		logs   = [otelcol.processor.attributes.default.input]
+		traces = [otelcol.processor.attributes.default.input]
+	}
+}
+
+otelcol.processor.attributes "default" {
+	// Inserts a new attribute "cluster" to spans where the key doesn't exist.
+	action {
+		key    = "cluster"
+		value  = "docker-compose"
+		action = "insert"
+	}
+
+	action {
+		key    = "namespace"
+		value  = "monitoring-system"
+		action = "insert"
+	}
+
+	output {
+		metrics = [otelcol.processor.transform.add_resource_attributes.input]
+		traces  = [otelcol.processor.transform.add_resource_attributes.input]
+	}
+}
+
+otelcol.processor.transform "add_resource_attributes" {
+	error_mode = "ignore"
+
+	log_statements {
+		context    = "resource"
+		statements = [
+			`set(attributes["cluster"], attributes["cluster"]) where attributes["cluster"] == nil`,
+			`set(attributes["namespace"], attributes["namespace"]) where attributes["namespace"] == nil`,
+		]
+	}
+
+	trace_statements {
+		context    = "resource"
+		statements = [
+			`set(attributes["cluster"], "docker-compose") where attributes["cluster"] == nil`,
+			`set(attributes["namespace"], "monitoring-system") where attributes["namespace"] == nil`,
+			`set(attributes["app"], attributes["service.name"]) where attributes["app"] == nil`,
+		]
+	}
+
+	output {
+		logs   = [otelcol.processor.filter.default.input]
+		traces = [otelcol.processor.filter.default.input]
+	}
+}
+
+otelcol.processor.filter "default" {
+	error_mode = "ignore"
+
+	output {
+		logs   = [otelcol.processor.batch.default.input]
+		traces = [otelcol.processor.batch.default.input]
+	}
+}
+
+otelcol.processor.batch "default" {
+	send_batch_size     = 16384
+	send_batch_max_size = 0
+	timeout             = "5s"
+
+	output {
+		metrics = [otelcol.processor.memory_limiter.default.input]
+		logs    = [otelcol.processor.memory_limiter.default.input]
+		traces  = [otelcol.processor.memory_limiter.default.input]
+	}
+}
+
+otelcol.processor.memory_limiter "default" {
+	check_interval         = "1s"
+	limit_percentage       = 50
+	spike_limit_percentage = 30
+
+	output {
+		metrics = [otelcol.exporter.prometheus.tracesmetrics.input]
+		logs    = [otelcol.exporter.loki.traceslogs.input]
+		traces  = argument.traces_forward_to.value
+	}
+}
+
+otelcol.exporter.prometheus "tracesmetrics" {
+	forward_to = argument.metrics_forward_to.value
+}
+
+otelcol.exporter.loki "traceslogs" {
+	forward_to = [loki.process.traceslogs.receiver]
+}
+
+// The OpenTelemetry spanlog connector processes incoming trace spans and extracts data from them ready
+// for logging.
+otelcol.connector.spanlogs "autologging" {
+	// We only want to output a line for each root span (ie. every single trace), and not for every
+	// process or span (outputting a line for every span would be extremely verbose).
+	spans     = false
+	roots     = true
+	processes = false
+
+	// We want to ensure that the following three span attributes are included in the log line, if present.
+	span_attributes = [
+		"http.method",
+		"http.target",
+		"http.status_code",
+	]
+
+	// Overrides the default key in the log line to be `traceId`, which is then used by Grafana to
+	// identify the trace ID for correlation with the Tempo datasource.
+	overrides {
+		trace_id_key = "traceId"
+	}
+
+	// Send to the OpenTelemetry Loki exporter.
+	output {
+		logs = [otelcol.exporter.loki.autologging.input]
+	}
+}
+
+// Simply forwards the incoming OpenTelemetry log format out as a Loki log.
+// We need this stage to ensure we can then process the logline as a Loki object.
+otelcol.exporter.loki "autologging" {
+	forward_to = [loki.process.autologging.receiver]
+}
+
+// The Loki processor allows us to accept a correctly formatted Loki log and mutate it into
+// a set of fields for output.
+loki.process "autologging" {
+	// The JSON stage simply extracts the `body` (the actual logline) from the Loki log, ignoring
+	// all other fields.
+	stage.json {
+		expressions = {"body" = ""}
+	}
+	// The output stage takes the body (the main logline) and uses this as the source for the output
+	// logline. In this case, it essentially turns it into logfmt.
+	stage.output {
+		source = "body"
+	}
+
+	forward_to = [loki.process.traceslogs.receiver]
+}
+
+loki.process "traceslogs" {
+	stage.tenant {
+		value = "anonymous"
+	}
+
+	forward_to = argument.logs_forward_to.value
+}

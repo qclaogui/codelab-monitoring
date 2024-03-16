@@ -156,6 +156,15 @@ discovery.relabel "dr_docker_logs" {
 		action        = "replace"
 		source_labels = [
 			"__meta_docker_container_label_com_docker_compose_service",
+		]
+		regex        = "^(?:;*)?([^;]+).*$"
+		replacement  = "$1"
+		target_label = "app"
+	}
+
+	rule {
+		action        = "replace"
+		source_labels = [
 			"__meta_docker_container_label_app",
 		]
 		regex        = "^(?:;*)?([^;]+).*$"

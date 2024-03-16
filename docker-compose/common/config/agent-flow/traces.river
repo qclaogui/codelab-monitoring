@@ -5,16 +5,11 @@ logging {
 	format = "logfmt"
 }
 
-tracing {
-	sampling_fraction = 0.8
-	write_to          = [otelcol.processor.batch.containers.input]
-}
-
 /********************************************
- * LGTMP Receiver provider
+ * Grafana LGTMP Stack Receiver Provider
  ********************************************/
 
-module.file "docker_compose" {
+module.file "local" {
 	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/docker_compose.river"
 
 	arguments {
@@ -31,136 +26,25 @@ module.file "metrics_primary" {
 	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/docker/metrics/all.river"
 
 	arguments {
-		forward_to = [module.file.docker_compose.exports.metrics_receiver]
+		forward_to = [module.file.local.exports.metrics_receiver]
 		clustering = true
 	}
 }
 
 /********************************************
- * Jaeger for Traces Metrics
+ * Traces
  ********************************************/
+module.file "traces_primary" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/docker/traces/all.river"
 
-otelcol.receiver.jaeger "containers" {
-	protocols {
-		grpc {
-			endpoint = "0.0.0.0:14250"
-		}
-
-		thrift_http {
-			endpoint = "0.0.0.0:14268"
-		}
-
-		thrift_binary {
-			endpoint = "0.0.0.0:6832"
-		}
-
-		thrift_compact {
-			endpoint = "0.0.0.0:6831"
-		}
-	}
-
-	output {
-		metrics = [otelcol.processor.batch.containers.input]
-		traces  = [otelcol.processor.resourcedetection.containers.input]
+	arguments {
+		metrics_forward_to = [module.file.local.exports.metrics_receiver]
+		logs_forward_to    = [module.file.local.exports.logs_receiver]
+		traces_forward_to  = [module.file.local.exports.traces_receiver]
 	}
 }
 
-/********************************************
- * Otelcol for Traces Metrics
- ********************************************/
-
-otelcol.receiver.otlp "containers" {
-	grpc {
-		endpoint = "0.0.0.0:4317"
-	}
-
-	http {
-		endpoint = "0.0.0.0:4318"
-	}
-
-	output {
-		metrics = [otelcol.processor.batch.containers.input]
-		traces  = [otelcol.processor.resourcedetection.containers.input]
-	}
-}
-
-otelcol.processor.resourcedetection "containers" {
-	detectors = ["env"]
-
-	output {
-		metrics = [otelcol.processor.attributes.containers.input]
-		traces  = [otelcol.processor.attributes.containers.input]
-	}
-}
-
-otelcol.processor.attributes "containers" {
-	// Inserts a new attribute "cluster" to spans where the key doesn't exist.
-	action {
-		key    = "cluster"
-		value  = "docker-compose"
-		action = "insert"
-	}
-
-	output {
-		metrics = [otelcol.processor.transform.add_resource_attributes.input]
-		traces  = [otelcol.processor.transform.add_resource_attributes.input]
-	}
-}
-
-otelcol.processor.transform "add_resource_attributes" {
-	error_mode = "ignore"
-
-	metric_statements {
-		context    = "resource"
-		statements = [
-			`set(attributes["cluster"], "docker-compose") where attributes["cluster"] == nil`,
-		]
-	}
-
-	trace_statements {
-		context    = "resource"
-		statements = [
-			`set(attributes["cluster"], "docker-compose") where attributes["cluster"] == nil`,
-		]
-	}
-
-	output {
-		metrics = [otelcol.processor.filter.containers.input]
-		traces  = [otelcol.processor.filter.containers.input]
-	}
-}
-
-otelcol.processor.filter "containers" {
-	error_mode = "ignore"
-
-	output {
-		metrics = [otelcol.processor.batch.containers.input]
-		traces  = [otelcol.processor.batch.containers.input]
-	}
-}
-
-otelcol.processor.batch "containers" {
-	send_batch_size     = 16384
-	send_batch_max_size = 0
-	timeout             = "5s"
-
-	output {
-		metrics = [otelcol.processor.memory_limiter.containers.input]
-		traces  = [otelcol.processor.memory_limiter.containers.input]
-	}
-}
-
-otelcol.processor.memory_limiter "containers" {
-	check_interval         = "1s"
-	limit_percentage       = 50
-	spike_limit_percentage = 30
-
-	output {
-		metrics = [otelcol.exporter.prometheus.containers.input]
-		traces  = [module.file.docker_compose.exports.traces_receiver]
-	}
-}
-
-otelcol.exporter.prometheus "containers" {
-	forward_to = [module.file.docker_compose.exports.metrics_receiver]
+tracing {
+	sampling_fraction = 0.8
+	write_to          = [module.file.traces_primary.exports.agent_traces_input]
 }

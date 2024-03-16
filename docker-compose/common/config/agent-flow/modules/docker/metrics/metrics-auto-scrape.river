@@ -54,7 +54,7 @@ or
   prometheus.io/job: integrations/kubernetes/kube-state-metrics
 */
 argument "forward_to" {
-	comment = "Must be a list(MetricsReceiver) where collected logs should be forwarded to"
+	comment = "Must be a list(MetricsReceiver) where collected metrics should be forwarded to"
 }
 
 argument "cluster" {
@@ -326,6 +326,15 @@ discovery.relabel "dr_docker_metrics" {
 		action        = "replace"
 		source_labels = [
 			"__meta_docker_container_label_com_docker_compose_service",
+		]
+		regex        = "^(?:;*)?([^;]+).*$"
+		replacement  = "$1"
+		target_label = "app"
+	}
+
+	rule {
+		action        = "replace"
+		source_labels = [
 			"__meta_docker_container_label_app",
 		]
 		regex        = "^(?:;*)?([^;]+).*$"
