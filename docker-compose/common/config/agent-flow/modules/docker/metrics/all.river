@@ -26,6 +26,15 @@ module.file "mf_metrics_auto_scrape" {
 	}
 }
 
+module.file "mf_job_minio_scrape" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/docker/metrics/jobs/minio.river"
+
+	arguments {
+		forward_to      = argument.forward_to.value
+		scrape_interval = "15s"
+	}
+}
+
 prometheus.exporter.unix "peu_containers" {
 	set_collectors     = ["cpu"]
 	disable_collectors = ["diskstats", "mdadm", "textfile", "hwmon"]
