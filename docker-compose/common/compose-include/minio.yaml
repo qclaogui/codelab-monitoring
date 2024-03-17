@@ -30,13 +30,11 @@ services:
       # - MINIO_PROMETHEUS_JOB_ID="minio-job"
     volumes:
       - data-minio:/data:delegated
-    # Fix health check https://github.com/minio/minio/issues/18373#issuecomment-1790003599
     healthcheck:
-      test: timeout 5s bash -c ':> /dev/tcp/127.0.0.1/9000' || exit 1
+      test: ["CMD-SHELL", "mc ready local"]
       interval: 5s
-      retries: 1
-      start_period: 5s
       timeout: 5s
+      retries: 5
     ports:
       - "9001:9001"
 
