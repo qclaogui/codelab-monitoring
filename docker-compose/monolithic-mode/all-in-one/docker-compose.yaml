@@ -9,6 +9,12 @@ version: '3.9'
 include:
   - path: ../../common/compose-include/minio.yaml
 
+x-environment: &jaeger-environment
+  JAEGER_AGENT_HOST: agent
+  JAEGER_AGENT_PORT: 6831
+  JAEGER_SAMPLER_TYPE: const
+  JAEGER_SAMPLER_PARAM: 1
+
 services:
   agent:
     labels:
@@ -35,6 +41,7 @@ services:
     environment:
       - AGENT_MODE=flow
       - AGENT_CONFIG_FOLDER=/etc/agent-config
+    # expose 12345 port so we can directly access grafana-agent inside container
     ports:
       - "12345:12345"
 
@@ -52,11 +59,15 @@ services:
       - -target=all
       - -config.expand-env=true
       - -ruler.max-rules-per-rule-group=50
+    environment:
+      <<: *jaeger-environment
+      JAEGER_TAGS: app=mimir
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5
+    # expose 38080 port so we can directly access mimir inside container
     ports:
       - "38080:8080"
     networks:
@@ -104,16 +115,14 @@ services:
       - -target=all
       - -config.expand-env=true
     environment:
-      - JAEGER_AGENT_HOST=agent
-      - JAEGER_AGENT_PORT=6831
-      - JAEGER_TAGS=app=loki
-      - JAEGER_SAMPLER_TYPE=const
-      - JAEGER_SAMPLER_PARAM=1
+      <<: *jaeger-environment
+      JAEGER_TAGS: app=loki
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5
+    # expose 33100 port so we can directly access loki inside container
     ports:
       - "33100:3100"
     networks:
@@ -142,16 +151,14 @@ services:
       - -target=all
       - -config.expand-env=true
     environment:
-      - JAEGER_AGENT_HOST=agent
-      - JAEGER_AGENT_PORT=6831
-      - JAEGER_TAGS=app=tempo
-      - JAEGER_SAMPLER_TYPE=const
-      - JAEGER_SAMPLER_PARAM=1
+      <<: *jaeger-environment
+      JAEGER_TAGS: app=tempo
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ready || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5
+    # expose 33200 port so we can directly access tempo inside container
     ports:
       - "33200:3200"
 
@@ -168,6 +175,7 @@ services:
     command:
       - -config.file=/etc/config.yaml
       - -config.expand-env=true
+    # expose 34040 port so we can directly access pyroscope inside container
     ports:
       - "34040:4040"
 

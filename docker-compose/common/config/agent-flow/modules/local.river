@@ -1,5 +1,5 @@
 /*
-Module: Docker Compose
+Module: Local
 Description: Grafana LGTMP Stack Receiver Provider
 */
 
@@ -40,19 +40,19 @@ argument "profiles_endpoint" {
  ********************************************/
 
 export "metrics_receiver" {
-	value = prometheus.remote_write.docker_compose.receiver
+	value = prometheus.remote_write.local.receiver
 }
 
 export "logs_receiver" {
-	value = loki.write.docker_compose.receiver
+	value = loki.write.local.receiver
 }
 
 export "traces_receiver" {
-	value = otelcol.exporter.otlp.docker_compose.input
+	value = otelcol.exporter.otlp.local.input
 }
 
 export "profiles_receiver" {
-	value = pyroscope.write.docker_compose.receiver
+	value = pyroscope.write.local.receiver
 }
 
 /********************************************
@@ -60,7 +60,7 @@ export "profiles_receiver" {
  ********************************************/
 
 // Metrics
-prometheus.remote_write "docker_compose" {
+prometheus.remote_write "local" {
 	endpoint {
 		url                    = argument.metrics_endpoint.value + "/api/v1/push"
 		send_native_histograms = true
@@ -68,7 +68,7 @@ prometheus.remote_write "docker_compose" {
 }
 
 // Logs
-loki.write "docker_compose" {
+loki.write "local" {
 	endpoint {
 		url       = argument.logs_endpoint.value + "/loki/api/v1/push"
 		tenant_id = argument.tenant.value
@@ -76,7 +76,7 @@ loki.write "docker_compose" {
 }
 
 // Traces
-otelcol.exporter.otlp "docker_compose" {
+otelcol.exporter.otlp "local" {
 	client {
 		endpoint = argument.traces_endpoint.value
 
@@ -88,7 +88,7 @@ otelcol.exporter.otlp "docker_compose" {
 }
 
 // Profiles
-pyroscope.write "docker_compose" {
+pyroscope.write "local" {
 	endpoint {
 		url = argument.profiles_endpoint.value
 	}
