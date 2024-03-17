@@ -21,6 +21,10 @@ argument "forward_to" {
 	comment = "Must be a list(LogsReceiver) where collected logs should be forwarded to"
 }
 
+argument "targets" {
+	comment = "The running containers."
+}
+
 argument "cluster" {
 	optional = true
 }
@@ -34,23 +38,6 @@ argument "tenant" {
 	optional = true
 }
 
-argument "clustering" {
-	// Docs: https://grafana.com/docs/agent/latest/flow/concepts/clustering/
-	comment  = "Whether or not clustering should be enabled (default: false)"
-	optional = true
-}
-
-// get the available containers.
-discovery.docker "dd_logs" {
-	host             = "unix:///var/run/docker.sock"
-	refresh_interval = "15s"
-
-	filter {
-		name   = "status"
-		values = ["running"]
-	}
-}
-
 // get logs from discovery relabel dr_docker_logs below
 loki.source.docker "lsd_docker_logs" {
 	forward_to = argument.forward_to.value
@@ -62,7 +49,7 @@ loki.source.docker "lsd_docker_logs" {
 }
 
 discovery.relabel "dr_docker_logs" {
-	targets = discovery.docker.dd_logs.targets
+	targets = argument.targets.value
 
 	/****************************************************************************************************************
 	* Handle Discovers From Docker Engine Containers Targets to Keep or Drop

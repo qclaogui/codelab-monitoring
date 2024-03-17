@@ -35,10 +35,22 @@ argument "keep_labels" {
 	]
 }
 
+// get the all available containers.
+discovery.docker "dd_logs" {
+	host             = "unix:///var/run/docker.sock"
+	refresh_interval = "15s"
+
+	filter {
+		name   = "status"
+		values = ["running"]
+	}
+}
+
 module.file "mf_logs_auto_scrape" {
 	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker/logs/logs-auto-scrape.river"
 
 	arguments {
+		targets    = discovery.docker.dd_logs.targets
 		forward_to = [module.file.mf_log_formats_all.exports.process.receiver]
 		tenant     = argument.tenant.value
 	}

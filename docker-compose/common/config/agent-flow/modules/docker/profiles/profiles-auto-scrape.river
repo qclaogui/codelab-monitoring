@@ -59,12 +59,6 @@ argument "scrape_timeout" {
 	optional = true
 }
 
-argument "clustering" {
-	// Docs: https://grafana.com/docs/agent/latest/flow/concepts/clustering/
-	comment  = "Whether or not clustering should be enabled (default: false)"
-	optional = true
-}
-
 // get the available containers.
 discovery.docker "dd_profiles" {
 	host             = "unix:///var/run/docker.sock"
@@ -296,7 +290,7 @@ pyroscope.scrape "ps_profile_cpu" {
 	targets  = discovery.relabel.dr_keep_cpu_targets.output
 
 	clustering {
-		enabled = coalesce(argument.clustering.value, true)
+		enabled = true
 	}
 
 	profiling_config {
@@ -361,7 +355,7 @@ pyroscope.scrape "ps_profile_memory" {
 	targets  = discovery.relabel.dr_keep_memory_targets.output
 
 	clustering {
-		enabled = coalesce(argument.clustering.value, true)
+		enabled = true
 	}
 
 	profiling_config {
@@ -426,7 +420,7 @@ pyroscope.scrape "ps_profile_goroutine" {
 	targets  = discovery.relabel.dr_keep_goroutine_targets.output
 
 	clustering {
-		enabled = coalesce(argument.clustering.value, true)
+		enabled = true
 	}
 
 	profiling_config {
@@ -491,7 +485,7 @@ pyroscope.scrape "ps_profile_block" {
 	targets  = discovery.relabel.dr_keep_block_targets.output
 
 	clustering {
-		enabled = coalesce(argument.clustering.value, true)
+		enabled = true
 	}
 
 	profiling_config {
@@ -556,7 +550,7 @@ pyroscope.scrape "ps_profile_mutex" {
 	targets  = discovery.relabel.dr_keep_mutex_targets.output
 
 	clustering {
-		enabled = coalesce(argument.clustering.value, true)
+		enabled = true
 	}
 
 	profiling_config {
@@ -621,7 +615,7 @@ pyroscope.scrape "ps_profile_fgprof" {
 	targets  = discovery.relabel.dr_keep_fgprof_targets.output
 
 	clustering {
-		enabled = coalesce(argument.clustering.value, true)
+		enabled = true
 	}
 
 	profiling_config {

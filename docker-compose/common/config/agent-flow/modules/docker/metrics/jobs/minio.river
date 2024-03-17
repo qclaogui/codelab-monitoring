@@ -50,11 +50,15 @@ These present metrics about the whole MinIO cluster.
 
 */
 argument "forward_to" {
-	comment = "Must be a list(MetricsReceiver) where collected logs should be forwarded to"
+	comment = "Must be a list(MetricsReceiver) where collected metrics should be forwarded to"
+}
+
+argument "targets" {
+	comment = "The running containers."
 }
 
 argument "enabled" {
-	comment  = "Whether or not the minio-job should be enabled (default: true)"
+	comment  = "Whether or not the job should be enabled (default: true)"
 	optional = true
 }
 
@@ -83,21 +87,11 @@ argument "scrape_timeout" {
 	optional = true
 }
 
-// minio service discovery for all of the containers in docker.
-discovery.docker "dd_minio" {
-	host = "unix:///var/run/docker.sock"
-
-	filter {
-		name   = "status"
-		values = ["running"]
-	}
-}
-
 /********************************************
- * Minio Relabelings (pre-scrape)
+ * Discovery Relabelings (pre-scrape)
  ********************************************/
 discovery.relabel "dr_minio" {
-	targets = discovery.docker.dd_minio.targets
+	targets = argument.targets.value
 
 	// drop all targets if enabled is false
 	rule {
@@ -261,7 +255,7 @@ discovery.relabel "dr_metrics_v3_cluster_erasure_set" {
 }
 
 /********************************************
- * Minio Scrape Jobs
+ * Prometheus Scrape Jobs Targets
  ********************************************/
 prometheus.scrape "ps_minio" {
 	targets = concat(
@@ -292,7 +286,7 @@ prometheus.scrape "ps_minio" {
 }
 
 /********************************************
- * Minio Metric Relabelings (pre-scrape)
+ * Prometheus Metric Relabelings (post-scrape)
  ********************************************/
 prometheus.relabel "pr_minio" {
 	forward_to = argument.forward_to.value

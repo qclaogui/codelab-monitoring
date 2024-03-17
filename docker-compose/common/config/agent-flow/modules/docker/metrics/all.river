@@ -11,18 +11,25 @@ argument "tenant" {
 	optional = true
 }
 
-argument "clustering" {
-	// Docs: https://grafana.com/docs/agent/latest/flow/concepts/clustering/
-	comment = "Whether or not clustering should be enabled (default: true)"
+// get the all available containers.
+discovery.docker "dd_metrics" {
+	host             = "unix:///var/run/docker.sock"
+	refresh_interval = "15s"
+
+	filter {
+		name   = "status"
+		values = ["running"]
+	}
 }
 
-module.file "mf_metrics_auto_scrape" {
-	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/docker/metrics/metrics-auto-scrape.river"
+module.file "mf_label_auto_scrape" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/docker/metrics/label-auto-scrape.river"
 
 	arguments {
-		forward_to = argument.forward_to.value
-		tenant     = coalesce(argument.tenant.value, ".*")
-		clustering = coalesce(argument.clustering.value, "true")
+		targets         = discovery.docker.dd_metrics.targets
+		forward_to      = argument.forward_to.value
+		tenant          = coalesce(argument.tenant.value, ".*")
+		scrape_interval = "15s"
 	}
 }
 
@@ -30,47 +37,17 @@ module.file "mf_job_minio_scrape" {
 	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/docker/metrics/jobs/minio.river"
 
 	arguments {
+		targets         = discovery.docker.dd_metrics.targets
 		forward_to      = argument.forward_to.value
 		scrape_interval = "15s"
 	}
 }
 
-prometheus.exporter.unix "peu_containers" {
-	set_collectors     = ["cpu"]
-	disable_collectors = ["diskstats", "mdadm", "textfile", "hwmon"]
-}
+module.file "mf_job_integration_scrape" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/docker/metrics/jobs/integrations.river"
 
-prometheus.scrape "pc_integrations" {
-	forward_to = [prometheus.relabel.pr_integrations.receiver]
-
-	targets = concat(
-		prometheus.exporter.unix.peu_containers.targets,
-	)
-
-	enable_protobuf_negotiation = true
-	scrape_classic_histograms   = true
-
-	scrape_interval = "15s"
-
-	clustering {
-		enabled = coalesce(argument.clustering.value, "true")
-	}
-}
-
-prometheus.relabel "pr_integrations" {
-	forward_to = argument.forward_to.value
-
-	rule {
-		source_labels = ["job"]
-		regex         = "integrations/(.*)"
-		target_label  = "pod"
-		replacement   = "${2}"
-	}
-
-	rule {
-		source_labels = ["job"]
-		regex         = "integrations/(.*)"
-		target_label  = "container"
-		replacement   = "${2}"
+	arguments {
+		forward_to      = argument.forward_to.value
+		scrape_interval = "15s"
 	}
 }

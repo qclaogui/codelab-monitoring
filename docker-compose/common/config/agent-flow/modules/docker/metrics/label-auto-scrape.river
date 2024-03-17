@@ -57,6 +57,10 @@ argument "forward_to" {
 	comment = "Must be a list(MetricsReceiver) where collected metrics should be forwarded to"
 }
 
+argument "targets" {
+	comment = "The running containers."
+}
+
 argument "cluster" {
 	optional = true
 }
@@ -81,7 +85,7 @@ argument "drop_metrics" {
 }
 
 argument "scrape_interval" {
-	comment  = "How often to scrape metrics from the targets (default: 15s)"
+	comment  = "How often to scrape metrics from the targets (default: 60s)"
 	optional = true
 }
 
@@ -90,25 +94,11 @@ argument "scrape_timeout" {
 	optional = true
 }
 
-argument "clustering" {
-	// Docs: https://grafana.com/docs/agent/latest/flow/concepts/clustering/
-	comment  = "Whether or not clustering should be enabled (default: false)"
-	optional = true
-}
-
-// get the available containers.
-discovery.docker "dd_metrics" {
-	host             = "unix:///var/run/docker.sock"
-	refresh_interval = "15s"
-
-	filter {
-		name   = "status"
-		values = ["running"]
-	}
-}
-
-discovery.relabel "dr_docker_metrics" {
-	targets = discovery.docker.dd_metrics.targets
+/********************************************
+ * Discovery Relabelings (pre-scrape)
+ ********************************************/
+discovery.relabel "dr_label_metrics" {
+	targets = argument.targets.value
 
 	/****************************************************************************************************************
 	* Handle Discovers From Docker Engine Containers Targets to Keep or Drop
@@ -224,7 +214,7 @@ discovery.relabel "dr_docker_metrics" {
 	//   metrics.agent.grafana.com/interval: 15s
 	rule {
 		action       = "replace"
-		replacement  = coalesce(argument.scrape_interval.value, "15s")
+		replacement  = coalesce(argument.scrape_interval.value, "60s")
 		target_label = "__scrape_interval__"
 	}
 
@@ -345,7 +335,7 @@ discovery.relabel "dr_docker_metrics" {
 
 // only keep http targets
 discovery.relabel "dr_keep_http_targets" {
-	targets = discovery.relabel.dr_docker_metrics.output
+	targets = discovery.relabel.dr_label_metrics.output
 
 	rule {
 		action        = "keep"
@@ -354,24 +344,31 @@ discovery.relabel "dr_keep_http_targets" {
 	}
 }
 
-// scrape http only targtets
+/********************************************
+ * Prometheus Scrape Labels Targets
+ ********************************************/
 prometheus.scrape "pc_docker_metrics" {
-	forward_to = [prometheus.relabel.pr_docker_metrics.receiver]
+	targets = concat(
+		discovery.relabel.dr_keep_http_targets.output,
+	)
 
-	job_name        = "label-metrics-http"
-	targets         = discovery.relabel.dr_keep_http_targets.output
-	scheme          = "http"
-	scrape_interval = coalesce(argument.scrape_interval.value, "1m")
+	job_name        = "label-metrics"
+	scrape_interval = coalesce(argument.scrape_interval.value, "60s")
 	scrape_timeout  = coalesce(argument.scrape_timeout.value, "10s")
 
 	enable_protobuf_negotiation = true
 	scrape_classic_histograms   = true
 
 	clustering {
-		enabled = coalesce(argument.clustering.value, false)
+		enabled = true
 	}
+
+	forward_to = [prometheus.relabel.pr_docker_metrics.receiver]
 }
 
+/********************************************
+ * Prometheus Metric Relabelings (post-scrape)
+ ********************************************/
 // perform generic relabeling using keep_metrics and drop_metrics
 prometheus.relabel "pr_docker_metrics" {
 	forward_to = argument.forward_to.value

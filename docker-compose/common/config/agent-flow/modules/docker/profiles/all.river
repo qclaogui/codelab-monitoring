@@ -11,17 +11,11 @@ argument "tenant" {
 	optional = true
 }
 
-argument "clustering" {
-	// Docs: https://grafana.com/docs/agent/latest/flow/concepts/clustering/
-	comment = "Whether or not clustering should be enabled (default: true)"
-}
-
 module.file "mf_profiles_auto_scrape" {
 	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/docker/profiles/profiles-auto-scrape.river"
 
 	arguments {
 		forward_to = argument.forward_to.value
 		tenant     = coalesce(argument.tenant.value, ".*")
-		clustering = coalesce(argument.clustering.value, "true")
 	}
 }
