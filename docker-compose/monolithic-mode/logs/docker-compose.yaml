@@ -9,6 +9,7 @@ version: '3.9'
 include:
   - path: ../../common/compose-include/minio.yaml
   - path: ../../common/compose-include/agent-collect-logs.yaml
+  - path: ../../common/compose-include/memcached.yaml
 
 services:
   gateway:
@@ -45,12 +46,12 @@ services:
       minio:
         condition: service_healthy
     image: ${LOKI_IMAGE:-docker.io/grafana/loki:latest}
+    volumes:
+      - ../../common/config/loki:/etc/loki
     command:
-      - -config.file=/etc/loki.yaml
+      - -config.file=/etc/loki/monolithic-mode-logs.yaml
       - -target=all
       - -config.expand-env=true
-    volumes:
-      - ../../common/config/loki/monolithic-mode-logs.yaml:/etc/loki.yaml
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1" ]
       interval: 10s

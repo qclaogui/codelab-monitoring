@@ -9,6 +9,7 @@ version: '3.9'
 include:
   - path: ../../common/compose-include/minio.yaml
   - path: ../../common/compose-include/agent-collect-logs.yaml
+  - path: ../../common/compose-include/memcached.yaml
 
 x-labels: &loki-labels
   - logs.agent.grafana.com/log-format=json
@@ -48,9 +49,9 @@ services:
         condition: service_started
     image: &lokiImage ${LOKI_IMAGE:-docker.io/grafana/loki:latest}
     volumes:
-      - ../../common/config/loki/microservices-mode-logs.yaml:/etc/loki.yaml # Note: Loki use microservices-mode-logs.yaml
+      - ../../common/config/loki:/etc/loki
     command:
-      - -config.file=/etc/loki.yaml
+      - -config.file=/etc/loki/microservices-mode-logs.yaml
       - -target=distributor
       - -config.expand-env=true
     healthcheck:
@@ -72,9 +73,9 @@ services:
         condition: service_healthy
     image: *lokiImage
     volumes:
-      - ../../common/config/loki/microservices-mode-logs.yaml:/etc/loki.yaml # Note: Loki use microservices-mode-logs.yaml
+      - ../../common/config/loki:/etc/loki
     command:
-      - -config.file=/etc/loki.yaml
+      - -config.file=/etc/loki/microservices-mode-logs.yaml
       - -target=ingester
       - -config.expand-env=true
     deploy:
@@ -91,9 +92,9 @@ services:
         condition: service_started
     image: *lokiImage
     volumes:
-      - ../../common/config/loki/microservices-mode-logs.yaml:/etc/loki.yaml # Note: Loki use microservices-mode-logs.yaml
+      - ../../common/config/loki:/etc/loki
     command:
-      - -config.file=/etc/loki.yaml
+      - -config.file=/etc/loki/microservices-mode-logs.yaml
       - -target=query-frontend
       - -config.expand-env=true
 
@@ -101,9 +102,9 @@ services:
     labels: *loki-labels
     image: *lokiImage
     volumes:
-      - ../../common/config/loki/microservices-mode-logs.yaml:/etc/loki.yaml # Note: Loki use microservices-mode-logs.yaml
+      - ../../common/config/loki:/etc/loki
     command:
-      - -config.file=/etc/loki.yaml
+      - -config.file=/etc/loki/microservices-mode-logs.yaml
       - -target=query-scheduler
       - -config.expand-env=true
     deploy:
@@ -120,9 +121,9 @@ services:
         condition: service_started
     image: *lokiImage
     volumes:
-      - ../../common/config/loki/microservices-mode-logs.yaml:/etc/loki.yaml # Note: Loki use microservices-mode-logs.yaml
+      - ../../common/config/loki:/etc/loki
     command:
-      - -config.file=/etc/loki.yaml
+      - -config.file=/etc/loki/microservices-mode-logs.yaml
       - -target=querier
       - -config.expand-env=true
 
@@ -133,11 +134,11 @@ services:
         condition: service_healthy
     image: *lokiImage
     volumes:
-    - ../../common/config/loki/microservices-mode-logs.yaml:/etc/loki.yaml # Note: Loki use microservices-mode-logs.yaml
+      - ../../common/config/loki:/etc/loki
     command:
-    - -config.file=/etc/loki.yaml
-    - -target=ruler
-    - -config.expand-env=true
+      - -config.file=/etc/loki/microservices-mode-logs.yaml
+      - -target=ruler
+      - -config.expand-env=true
     networks:
       default:
         aliases:
@@ -147,9 +148,9 @@ services:
     labels: *loki-labels
     image: *lokiImage
     volumes:
-      - ../../common/config/loki/microservices-mode-logs.yaml:/etc/loki.yaml # Note: Loki use microservices-mode-logs.yaml
+      - ../../common/config/loki:/etc/loki
     command:
-      - -config.file=/etc/loki.yaml
+      - -config.file=/etc/loki/microservices-mode-logs.yaml
       - -target=compactor
       - -config.expand-env=true
     networks:
