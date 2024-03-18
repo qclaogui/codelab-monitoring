@@ -11,6 +11,7 @@ include:
   - path: ../../common/compose-include/agent-collect-traces.yaml
   - path: ../../common/compose-include/load-mimir-rule.yaml
   - path: ../../common/compose-include/load-tempo-rule.yaml
+  - path: ../../common/compose-include/memcached.yaml
 
 x-environment: &jaeger-environment
   JAEGER_AGENT_HOST: agent
@@ -143,9 +144,10 @@ services:
         condition: service_started
     image: ${MIMIR_IMAGE:-docker.io/grafana/mimir:latest}
     volumes:
-      - ../../common/config/mimir/monolithic-mode-metrics.yaml:/etc/config.yaml
+      - ../../common/config/mimir:/etc/mimir
     command:
-      - -config.file=/etc/config.yaml
+      # - -config.file=/etc/mimir/monolithic-mode-metrics.yaml
+      - -config.file=/etc/mimir/monolithic-mode-metrics-with-cache.yaml
       - -target=all
       - -config.expand-env=true
     environment:
@@ -179,6 +181,7 @@ services:
       # - ../../../monitoring-mixins/tempo-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/tempo-mixin
       - ../../../monitoring-mixins/agent-flow-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/agent-flow-mixin
       - ../../../monitoring-mixins/go-runtime-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/go-runtime-mixin
+      - ../../../monitoring-mixins/memcached-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/memcached-mixin
     environment:
       - GF_LOG_LEVEL=warn
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin_password}
