@@ -70,6 +70,9 @@ spec:
                 - continueOnFailure
                 - stopOnFailure
                 type: string
+              mcImage:
+                default: minio/mc:latest
+                type: string
               serviceAccountName:
                 type: string
               tenant:
@@ -102,11 +105,10 @@ spec:
                   - result
                   type: object
                 type: array
+              message:
+                type: string
               phase:
                 type: string
-            required:
-            - commands
-            - phase
             type: object
         type: object
     served: true
@@ -2237,6 +2239,67 @@ spec:
                         type: string
                     required:
                     - name
+                    type: object
+                  containerSecurityContext:
+                    properties:
+                      allowPrivilegeEscalation:
+                        type: boolean
+                      capabilities:
+                        properties:
+                          add:
+                            items:
+                              type: string
+                            type: array
+                          drop:
+                            items:
+                              type: string
+                            type: array
+                        type: object
+                      privileged:
+                        type: boolean
+                      procMount:
+                        type: string
+                      readOnlyRootFilesystem:
+                        type: boolean
+                      runAsGroup:
+                        format: int64
+                        type: integer
+                      runAsNonRoot:
+                        type: boolean
+                      runAsUser:
+                        format: int64
+                        type: integer
+                      seLinuxOptions:
+                        properties:
+                          level:
+                            type: string
+                          role:
+                            type: string
+                          type:
+                            type: string
+                          user:
+                            type: string
+                        type: object
+                      seccompProfile:
+                        properties:
+                          localhostProfile:
+                            type: string
+                          type:
+                            type: string
+                        required:
+                        - type
+                        type: object
+                      windowsOptions:
+                        properties:
+                          gmsaCredentialSpec:
+                            type: string
+                          gmsaCredentialSpecName:
+                            type: string
+                          hostProcess:
+                            type: boolean
+                          runAsUserName:
+                            type: string
+                        type: object
                     type: object
                   env:
                     items:
@@ -5401,8 +5464,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v5.0.13
-    helm.sh/chart: operator-5.0.13
+    app.kubernetes.io/version: v5.0.14
+    helm.sh/chart: operator-5.0.14
   name: minio-operator
   namespace: minio-system
 ---
@@ -5650,16 +5713,6 @@ metadata:
   name: minio-operator-role
 rules:
 - apiGroups:
-  - job.min.io
-  resources:
-  - miniojobs
-  verbs:
-  - list
-  - get
-  - update
-  - delete
-  - watch
-- apiGroups:
   - apiextensions.k8s.io
   resources:
   - customresourcedefinitions
@@ -5797,6 +5850,7 @@ rules:
 - apiGroups:
   - minio.min.io
   - sts.min.io
+  - job.min.io
   resources:
   - '*'
   verbs:
@@ -5885,8 +5939,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v5.0.13
-    helm.sh/chart: operator-5.0.13
+    app.kubernetes.io/version: v5.0.14
+    helm.sh/chart: operator-5.0.14
   name: console
   namespace: minio-system
 spec:
@@ -5906,8 +5960,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v5.0.13
-    helm.sh/chart: operator-5.0.13
+    app.kubernetes.io/version: v5.0.14
+    helm.sh/chart: operator-5.0.14
   name: operator
   namespace: minio-system
 spec:
@@ -5927,8 +5981,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v5.0.13
-    helm.sh/chart: operator-5.0.13
+    app.kubernetes.io/version: v5.0.14
+    helm.sh/chart: operator-5.0.14
   name: sts
   namespace: minio-system
 spec:
@@ -5947,8 +6001,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v5.0.13
-    helm.sh/chart: operator-5.0.13
+    app.kubernetes.io/version: v5.0.14
+    helm.sh/chart: operator-5.0.14
   name: console
   namespace: minio-system
 spec:
@@ -5977,7 +6031,7 @@ spec:
       - args:
         - ui
         - --certs-dir=/tmp/certs
-        image: quay.io/minio/operator:v5.0.13
+        image: quay.io/minio/operator:v5.0.14
         imagePullPolicy: IfNotPresent
         name: operator
         ports:
@@ -6014,8 +6068,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v5.0.13
-    helm.sh/chart: operator-5.0.13
+    app.kubernetes.io/version: v5.0.14
+    helm.sh/chart: operator-5.0.14
   name: minio-operator
   namespace: minio-system
 spec:
@@ -6046,7 +6100,7 @@ spec:
         env:
         - name: OPERATOR_STS_ENABLED
           value: "on"
-        image: quay.io/minio/operator:v5.0.13
+        image: quay.io/minio/operator:v5.0.14
         imagePullPolicy: IfNotPresent
         name: operator
         resources:
