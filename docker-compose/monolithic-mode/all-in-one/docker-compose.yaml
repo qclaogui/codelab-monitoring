@@ -8,6 +8,7 @@ version: '3.9'
 # include is available in Docker Compose version 2.20 and later, and Docker Desktop version 4.22 and later.
 include:
   - path: ../../common/compose-include/minio.yaml
+  - path: ../../common/compose-include/memcached.yaml
 
 x-environment: &jaeger-environment
   JAEGER_AGENT_HOST: agent
@@ -53,9 +54,10 @@ services:
         condition: service_healthy
     image: ${MIMIR_IMAGE:-docker.io/grafana/mimir:latest}
     volumes:
-      - ../../common/config/mimir/monolithic-mode-metrics.yaml:/etc/config.yaml
+      - ../../common/config/mimir:/etc/mimir
     command:
-      - -config.file=/etc/config.yaml
+      # - -config.file=/etc/mimir/monolithic-mode-metrics.yaml
+      - -config.file=/etc/mimir/monolithic-mode-metrics-with-cache.yaml
       - -target=all
       - -config.expand-env=true
       - -ruler.max-rules-per-rule-group=50
@@ -195,6 +197,7 @@ services:
       - ../../../monitoring-mixins/loki-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/loki-mixin
       - ../../../monitoring-mixins/mimir-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/mimir-mixin
       - ../../../monitoring-mixins/pyroscope-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/pyroscope-mixin
+      - ../../../monitoring-mixins/memcached-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/memcached-mixin
       # - ../../../monitoring-mixins/tempo-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/tempo-mixin
     environment:
       - GF_LOG_LEVEL=warn

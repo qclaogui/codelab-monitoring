@@ -1,0 +1,17 @@
+
+services:
+  memcached:
+    labels:
+      - metrics.agent.grafana.com/scrape=false
+    image: ${MEMCACHED_IMAGE:-memcached:1.6.24-alpine}
+
+  memcached-exporter:
+    labels:
+      - metrics.agent.grafana.com/scrape=true
+      # - metrics.agent.grafana.com/job=memcached
+      - metrics.agent.grafana.com/port=9150
+      - metrics.agent.grafana.com/interval=15s
+    image: ${MEMCACHED_EXPORTER_IMAGE:-prom/memcached-exporter:v0.14.2}
+    command:
+      - --memcached.address=memcached:11211
+      - --web.listen-address=0.0.0.0:9150

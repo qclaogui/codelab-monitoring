@@ -26,10 +26,13 @@ alertmanager:
   data_dir: /data/alertmanager
   enable_api: true
   fallback_config_file: /etc/mimir/alertmanager-fallback-config.yaml
-  external_url: http://localhost:8080/alertmanager
+  external_url: /alertmanager
 alertmanager_storage:
   s3:
     bucket_name: mimir-alertmanager
+
+memberlist:
+  join_members: [ mimir-memberlist:7946 ]
 
 blocks_storage:
   s3:
@@ -37,23 +40,32 @@ blocks_storage:
   tsdb:
     dir: /data/ingester
 
-memberlist:
-  join_members: [ mimir-memberlist:7946 ]
-
 ruler:
   rule_path: /data/rules
   enable_api: true
+  # Each ruler is configured to route alerts to the Alertmanager running within the same component.
   alertmanager_url: http://localhost:8080/alertmanager
 ruler_storage:
   s3:
     bucket_name: mimir-ruler
 
-runtime_config:
-  file: /etc/mimir/runtime.yaml
-
 query_scheduler:
-  max_outstanding_requests_per_tenant: 800
+  service_discovery_mode: "ring"
+
+compactor:
+  compaction_interval: 30s
+  data_dir: /tmp/mimir-compactor
+  cleanup_interval: 1m
+  tenant_cleanup_delay: 1m
 
 limits:
   native_histograms_ingestion_enabled: true
+
+overrides_exporter:
+  ring:
+    enabled: true
+    wait_stability_min_duration: 30s
+
+runtime_config:
+  file: /etc/mimir/runtime.yaml
 

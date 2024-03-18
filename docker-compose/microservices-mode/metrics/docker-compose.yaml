@@ -10,6 +10,7 @@ include:
   - path: ../../common/compose-include/minio.yaml
   - path: ../../common/compose-include/agent-collect-metrics.yaml
   - path: ../../common/compose-include/load-mimir-rule.yaml
+  - path: ../../common/compose-include/memcached.yaml
 
 services:
   gateway:
@@ -46,10 +47,10 @@ services:
         condition: service_started
     image: &mimirImage ${MIMIR_IMAGE:-docker.io/grafana/mimir:latest}
     volumes:
-      - ../../common/config/mimir/microservices-mode-metrics.yaml:/etc/mimir.yaml # Note: Mimir use microservices-mode-metrics.yaml
-      - ./config/mimir:/etc/mimir
+      - ../../common/config/mimir:/etc/mimir
     command:
-      - -config.file=/etc/mimir.yaml
+      # - -config.file=/etc/mimir/microservices-mode-metrics.yaml
+      - -config.file=/etc/mimir/microservices-mode-metrics-with-cache.yaml
       - -target=distributor
       - -config.expand-env=true
     healthcheck:
@@ -67,10 +68,10 @@ services:
   overrides-exporter:
     image: *mimirImage
     volumes:
-      - ../../common/config/mimir/microservices-mode-metrics.yaml:/etc/mimir.yaml # Note: Mimir use microservices-mode-metrics.yaml
-      - ./config/mimir:/etc/mimir
+      - ../../common/config/mimir:/etc/mimir
     command:
-      - -config.file=/etc/mimir.yaml
+      # - -config.file=/etc/mimir/microservices-mode-metrics.yaml
+      - -config.file=/etc/mimir/microservices-mode-metrics-with-cache.yaml
       - -target=overrides-exporter
       - -config.expand-env=true
 
@@ -80,10 +81,10 @@ services:
         condition: service_healthy
     image: *mimirImage
     volumes:
-      - ../../common/config/mimir/microservices-mode-metrics.yaml:/etc/mimir.yaml # Note: Mimir use microservices-mode-metrics.yaml
-      - ./config/mimir:/etc/mimir
+      - ../../common/config/mimir:/etc/mimir
     command:
-      - -config.file=/etc/mimir.yaml
+      # - -config.file=/etc/mimir/microservices-mode-metrics.yaml
+      - -config.file=/etc/mimir/microservices-mode-metrics-with-cache.yaml
       - -target=querier
       - -config.expand-env=true
     deploy:
@@ -99,20 +100,20 @@ services:
         condition: service_healthy
     image: *mimirImage
     volumes:
-      - ../../common/config/mimir/microservices-mode-metrics.yaml:/etc/mimir.yaml # Note: Mimir use microservices-mode-metrics.yaml
-      - ./config/mimir:/etc/mimir
+      - ../../common/config/mimir:/etc/mimir
     command:
-      - -config.file=/etc/mimir.yaml
+      # - -config.file=/etc/mimir/microservices-mode-metrics.yaml
+      - -config.file=/etc/mimir/microservices-mode-metrics-with-cache.yaml
       - -target=query-frontend
       - -config.expand-env=true
 
   query-scheduler:
     image: *mimirImage
     volumes:
-      - ../../common/config/mimir/microservices-mode-metrics.yaml:/etc/mimir.yaml # Note: Mimir use microservices-mode-metrics.yaml
-      - ./config/mimir:/etc/mimir
+      - ../../common/config/mimir:/etc/mimir
     command:
-      - -config.file=/etc/mimir.yaml
+      # - -config.file=/etc/mimir/microservices-mode-metrics.yaml
+      - -config.file=/etc/mimir/microservices-mode-metrics-with-cache.yaml
       - -config.expand-env=true
       - -target=query-scheduler
     healthcheck:
@@ -129,10 +130,10 @@ services:
         condition: service_healthy
     image: *mimirImage
     volumes:
-      - ../../common/config/mimir/microservices-mode-metrics.yaml:/etc/mimir.yaml # Note: Mimir use microservices-mode-metrics.yaml
-      - ./config/mimir:/etc/mimir
+      - ../../common/config/mimir:/etc/mimir
     command:
-      - -config.file=/etc/mimir.yaml
+      # - -config.file=/etc/mimir/microservices-mode-metrics.yaml
+      - -config.file=/etc/mimir/microservices-mode-metrics-with-cache.yaml
       - -config.expand-env=true
       - -target=ruler
     healthcheck:
@@ -151,10 +152,10 @@ services:
         condition: service_healthy
     image: *mimirImage
     volumes:
-      - ../../common/config/mimir/microservices-mode-metrics.yaml:/etc/mimir.yaml # Note: Mimir use microservices-mode-metrics.yaml
-      - ./config/mimir:/etc/mimir
+      - ../../common/config/mimir:/etc/mimir
     command:
-      - -config.file=/etc/mimir.yaml
+      # - -config.file=/etc/mimir/microservices-mode-metrics.yaml
+      - -config.file=/etc/mimir/microservices-mode-metrics-with-cache.yaml
       - -config.expand-env=true
       - -target=alertmanager
     networks:
@@ -168,10 +169,10 @@ services:
         condition: service_healthy
     image: *mimirImage
     volumes:
-      - ../../common/config/mimir/microservices-mode-metrics.yaml:/etc/mimir.yaml # Note: Mimir use microservices-mode-metrics.yaml
-      - ./config/mimir:/etc/mimir
+      - ../../common/config/mimir:/etc/mimir
     command:
-      - -config.file=/etc/mimir.yaml
+      # - -config.file=/etc/mimir/microservices-mode-metrics.yaml
+      - -config.file=/etc/mimir/microservices-mode-metrics-with-cache.yaml
       - -config.expand-env=true
       - -target=compactor
     networks:
@@ -185,10 +186,10 @@ services:
         condition: service_healthy
     image: *mimirImage
     volumes:
-      - ../../common/config/mimir/microservices-mode-metrics.yaml:/etc/mimir.yaml # Note: Mimir use microservices-mode-metrics.yaml
-      - ./config/mimir:/etc/mimir
+      - ../../common/config/mimir:/etc/mimir
     command:
-      - -config.file=/etc/mimir.yaml
+      # - -config.file=/etc/mimir/microservices-mode-metrics.yaml
+      - -config.file=/etc/mimir/microservices-mode-metrics-with-cache.yaml
       - -config.expand-env=true
       - -target=ingester
     deploy:
@@ -204,10 +205,10 @@ services:
         condition: service_healthy
     image: *mimirImage
     volumes:
-      - ../../common/config/mimir/microservices-mode-metrics.yaml:/etc/mimir.yaml # Note: Mimir use microservices-mode-metrics.yaml
-      - ./config/mimir:/etc/mimir
+      - ../../common/config/mimir:/etc/mimir
     command:
-      - -config.file=/etc/mimir.yaml
+      # - -config.file=/etc/mimir/microservices-mode-metrics.yaml
+      - -config.file=/etc/mimir/microservices-mode-metrics-with-cache.yaml
       - -config.expand-env=true
       - -target=store-gateway
     networks:
@@ -227,6 +228,7 @@ services:
       - ../../../monitoring-mixins/mimir-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/mimir-mixin
       - ../../../monitoring-mixins/agent-flow-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/agent-flow-mixin
       - ../../../monitoring-mixins/go-runtime-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/go-runtime-mixin
+      - ../../../monitoring-mixins/memcached-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/memcached-mixin
     environment:
       - GF_LOG_LEVEL=warn
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin_password}

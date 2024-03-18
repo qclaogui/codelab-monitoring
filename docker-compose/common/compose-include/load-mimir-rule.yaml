@@ -5,11 +5,13 @@ services:
         condition: service_started
     image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:latest}
     volumes:
-      - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-alerts.yaml:/mimir-mixin-rules.yaml
+      - ../../../monitoring-mixins/agent-flow-mixin/deploy/agent-flow-mixin-alerts.yaml:/agent-flow-mixin-alerts.yaml
+      - ../../../monitoring-mixins/memcached-mixin/deploy/memcached-mixin-alerts.yaml:/memcached-mixin-alerts.yaml
+      - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-rules.yaml:/mimir-mixin-rules.yaml
       - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-alerts.yaml:/mimir-mixin-alerts.yaml
     environment:
       - MIMIR_ADDRESS=http://gateway:8080
       - MIMIR_TENANT_ID=anonymous
     command: >-
-      rules load /mimir-mixin-rules.yaml /mimir-mixin-alerts.yaml
+      rules load /agent-flow-mixin-alerts.yaml /memcached-mixin-alerts.yaml /mimir-mixin-rules.yaml /mimir-mixin-alerts.yaml
   
