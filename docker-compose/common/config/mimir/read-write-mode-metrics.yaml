@@ -39,6 +39,25 @@ blocks_storage:
     bucket_name: mimir-blocks
   tsdb:
     dir: /data/ingester
+    ship_interval: 1m
+    block_ranges_period: [ 2h ]
+    retention_period: 3h
+  bucket_store:
+    index_cache:
+      backend: memcached
+      memcached:
+        addresses: dns+memcached:11211
+
+    chunks_cache:
+      backend: memcached
+      memcached:
+        addresses: dns+memcached:11211
+
+    metadata_cache:
+      backend: memcached
+      memcached:
+        addresses: dns+memcached:11211
+
 
 ruler:
   rule_path: /data/rules
@@ -48,6 +67,10 @@ ruler:
 ruler_storage:
   s3:
     bucket_name: mimir-ruler
+  cache:
+    backend: memcached
+    memcached:
+      addresses: dns+memcached:11211
 
 query_scheduler:
   service_discovery_mode: "ring"
@@ -68,4 +91,3 @@ overrides_exporter:
 
 runtime_config:
   file: /etc/mimir/runtime.yaml
-
