@@ -25,8 +25,8 @@ common:
 alertmanager:
   data_dir: /data/alertmanager
   enable_api: true
-  external_url: /alertmanager
   fallback_config_file: /etc/mimir/alertmanager-fallback-config.yaml
+  external_url: /alertmanager
 alertmanager_storage:
   s3:
     bucket_name: mimir-alertmanager
@@ -42,23 +42,35 @@ blocks_storage:
     ship_interval: 1m
     block_ranges_period: [ 2h ]
     retention_period: 3h
+  bucket_store:
+    index_cache:
+      backend: memcached
+      memcached:
+        addresses: dns+memcached:11211
 
-frontend:
-  parallelize_shardable_queries: true
-  scheduler_address: query-scheduler:9095
-frontend_worker:
-  grpc_client_config:
-    max_send_msg_size: 419430400
-  scheduler_address: query-scheduler:9095
+    chunks_cache:
+      backend: memcached
+      memcached:
+        addresses: dns+memcached:11211
+
+    metadata_cache:
+      backend: memcached
+      memcached:
+        addresses: dns+memcached:11211
 
 
 ruler:
   rule_path: /data/rules
   enable_api: true
-  alertmanager_url: http://alertmanager:8080/alertmanager
+  # Each ruler is configured to route alerts to the Alertmanager running within the same component.
+  alertmanager_url: http://localhost:8080/alertmanager
 ruler_storage:
   s3:
     bucket_name: mimir-ruler
+  cache:
+    backend: memcached
+    memcached:
+      addresses: dns+memcached:11211
 
 query_scheduler:
   service_discovery_mode: "ring"
@@ -71,7 +83,6 @@ compactor:
 
 limits:
   native_histograms_ingestion_enabled: true
-
 
 overrides_exporter:
   ring:

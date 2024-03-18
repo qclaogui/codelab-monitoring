@@ -34,6 +34,14 @@ alertmanager_storage:
 memberlist:
   join_members: [ mimir-memberlist:7946 ]
 
+ingester:
+  ring:
+    replication_factor: 1
+
+store_gateway:
+  sharding_ring:
+    replication_factor: 1
+
 blocks_storage:
   s3:
     bucket_name: mimir-blocks
@@ -42,26 +50,33 @@ blocks_storage:
     ship_interval: 1m
     block_ranges_period: [ 2h ]
     retention_period: 3h
+  bucket_store:
+    index_cache:
+      backend: memcached
+      memcached:
+        addresses: dns+memcached:11211
 
-frontend:
-  parallelize_shardable_queries: true
-  scheduler_address: query-scheduler:9095
-frontend_worker:
-  grpc_client_config:
-    max_send_msg_size: 419430400
-  scheduler_address: query-scheduler:9095
+    chunks_cache:
+      backend: memcached
+      memcached:
+        addresses: dns+memcached:11211
 
+    metadata_cache:
+      backend: memcached
+      memcached:
+        addresses: dns+memcached:11211
 
 ruler:
   rule_path: /data/rules
   enable_api: true
-  alertmanager_url: http://alertmanager:8080/alertmanager
+  alertmanager_url: http://localhost:8080/alertmanager
 ruler_storage:
   s3:
     bucket_name: mimir-ruler
-
-query_scheduler:
-  service_discovery_mode: "ring"
+  cache:
+    backend: memcached
+    memcached:
+      addresses: dns+memcached:11211
 
 compactor:
   compaction_interval: 30s
@@ -71,7 +86,6 @@ compactor:
 
 limits:
   native_histograms_ingestion_enabled: true
-
 
 overrides_exporter:
   ring:
