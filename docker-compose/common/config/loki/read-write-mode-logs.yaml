@@ -35,35 +35,37 @@ memberlist:
 
 query_range:
   align_queries_with_step: true
+
   cache_results: true
   results_cache:
     cache:
-      embedded_cache:
-        enabled: true
+      memcached_client:
+        consistent_hash: true
+        addresses: "dns+memcached:11211"
+
+  cache_index_stats_results: true
+  index_stats_results_cache:
+    cache:
+      memcached_client:
+        consistent_hash: true
+        addresses: "dns+memcached:11211"
 
 limits_config:
+  max_cache_freshness_per_query: 10m
   enforce_metric_name: false
   reject_old_samples: true
   reject_old_samples_max_age: 30m
   split_queries_by_interval: 15m
 
-ingester:
-  lifecycler:
-    join_after: 10s
-    observe_period: 5s
-    ring:
-      replication_factor: 2
-  chunk_idle_period: 1m
-  max_chunk_age: 1m
-  chunk_retain_period: 30s
-  chunk_encoding: snappy
-  flush_op_timeout: 10s
-
 ruler:
   storage:
+    type: s3
     s3:
       bucketnames: loki-ruler
-    type: s3
+
+
+runtime_config:
+  file: /etc/loki/runtime.yaml
 
 schema_config:
   configs:
@@ -77,11 +79,17 @@ schema_config:
 
 chunk_store_config:
   chunk_cache_config:
-    embedded_cache:
-      enabled: true
+    memcached_client:
+      addresses: "dns+memcached:11211"
 
-frontend:
-  compress_responses: true
-
-query_scheduler:
-  max_outstanding_requests_per_tenant: 1024
+ingester:
+  lifecycler:
+    join_after: 10s
+    observe_period: 5s
+    ring:
+      replication_factor: 2
+  chunk_idle_period: 1m
+  max_chunk_age: 1m
+  chunk_retain_period: 30s
+  chunk_encoding: snappy
+  flush_op_timeout: 10s
