@@ -64,7 +64,7 @@ metrics_generator:
         X-Scope-OrgID: "anonymous"
 
 server:
-  http_listen_port: 3100
+  http_listen_port: 3200
   grpc_listen_port: 9095
   log_level: info
 
@@ -82,8 +82,24 @@ storage:
       insecure: ${TEMPO_S3_INSECURE:-true}
       tls_insecure_skip_verify: true
 
+# https://github.com/grafana/tempo/blob/main/docs/sources/tempo/configuration/_index.md#cache
+cache:
+  background:
+    writeback_goroutines: 5
+  caches:
+  - roles:
+    - bloom
+    - parquet-footer
+    - parquet-page
+    - frontend-search
+    - parquet-column-idx
+    - parquet-offset-idx
+    memcached:
+      addresses: "dns+memcached:11211"
+
 # Global override configuration.
 overrides:
+  per_tenant_override_config: /etc/tempo/overrides.yaml
   defaults:
     metrics_generator:
       processors:

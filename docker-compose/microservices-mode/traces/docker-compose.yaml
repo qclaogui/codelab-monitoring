@@ -56,16 +56,16 @@ services:
         condition: service_started
     image: &tempoImage ${TEMPO_IMAGE:-docker.io/grafana/tempo:latest}
     volumes:
-      - ../../common/config/tempo/microservices-mode-traces.yaml:/etc/tempo.yaml # Note: Tempo use microservices-mode-traces.yaml
+      - ../../common/config/tempo:/etc/tempo
     command:
-      - -config.file=/etc/tempo.yaml
+      - -config.file=/etc/tempo/microservices-mode-traces.yaml
       - -target=distributor
       - -config.expand-env=true
     environment:
       <<: *jaeger-environment
       JAEGER_TAGS: app=distributor
     healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1" ]
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ready || exit 1" ]
       interval: 15s
       timeout: 10s
       retries: 5
@@ -77,9 +77,9 @@ services:
         condition: service_healthy
     image: *tempoImage
     volumes:
-      - ../../common/config/tempo/microservices-mode-traces.yaml:/etc/tempo.yaml # Note: Tempo use microservices-mode-traces.yaml
+      - ../../common/config/tempo:/etc/tempo
     command:
-      - -config.file=/etc/tempo.yaml
+      - -config.file=/etc/tempo/microservices-mode-traces.yaml
       - -target=ingester
       - -config.expand-env=true
     environment:
@@ -98,9 +98,9 @@ services:
         condition: service_healthy
     image: *tempoImage
     volumes:
-      - ../../common/config/tempo/microservices-mode-traces.yaml:/etc/tempo.yaml # Note: Tempo use microservices-mode-traces.yaml
+      - ../../common/config/tempo:/etc/tempo
     command:
-      - -config.file=/etc/tempo.yaml
+      - -config.file=/etc/tempo/microservices-mode-traces.yaml
       - -target=query-frontend
       - -config.expand-env=true
     environment:
@@ -115,9 +115,9 @@ services:
         condition: service_started
     image: *tempoImage
     volumes:
-      - ../../common/config/tempo/microservices-mode-traces.yaml:/etc/tempo.yaml # Note: Tempo use microservices-mode-traces.yaml
+      - ../../common/config/tempo:/etc/tempo
     command:
-      - -config.file=/etc/tempo.yaml
+      - -config.file=/etc/tempo/microservices-mode-traces.yaml
       - -target=querier
       - -config.expand-env=true
     environment:
@@ -130,10 +130,11 @@ services:
         condition: service_healthy
     image: *tempoImage
     volumes:
-      - ../../common/config/tempo/microservices-mode-traces.yaml:/etc/tempo.yaml # Note: Tempo use microservices-mode-traces.yaml
+      - ../../common/config/tempo:/etc/tempo
     command:
-      - -config.file=/etc/tempo.yaml
+      - -config.file=/etc/tempo/microservices-mode-traces.yaml
       - -target=compactor
+      - -config.expand-env=true
     environment:
       <<: *jaeger-environment
       JAEGER_TAGS: app=compactor
@@ -146,13 +147,9 @@ services:
     volumes:
       - ../../common/config/mimir:/etc/mimir
     command:
-      # - -config.file=/etc/mimir/monolithic-mode.yaml
       - -config.file=/etc/mimir/monolithic-mode-metrics.yaml
       - -target=all
       - -config.expand-env=true
-    environment:
-      <<: *jaeger-environment
-      JAEGER_TAGS: app=mimir
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
       interval: 10s

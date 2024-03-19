@@ -13,6 +13,12 @@ include:
   - path: ../../common/compose-include/load-tempo-rule.yaml
   - path: ../../common/compose-include/memcached.yaml
 
+x-environment: &jaeger-environment
+  JAEGER_AGENT_HOST: agent
+  JAEGER_AGENT_PORT: 6831
+  JAEGER_SAMPLER_TYPE: const
+  JAEGER_SAMPLER_PARAM: 1
+
 services:
   gateway:
     depends_on:
@@ -51,30 +57,19 @@ services:
     image: &tempoImage ${TEMPO_IMAGE:-docker.io/grafana/tempo:latest}
     restart: always
     volumes:
-      - ./config/tempo/scalable-single-binary.yaml:/etc/tempo.yaml # Note: Tempo use scalable-single-binary.yaml
+      - ../../common/config/tempo:/etc/tempo
     command:
-      - -config.file=/etc/tempo.yaml
-      - -target=scalable-single-binary
+      - -config.file=/etc/tempo/monolithic-mode-traces.yaml
+      - -target=all
       - -config.expand-env=true
     environment:
-      - JAEGER_AGENT_HOST=agent
-      - JAEGER_AGENT_PORT=6831
-      - JAEGER_TAGS=app=tempo
-      - JAEGER_SAMPLER_TYPE=const
-      - JAEGER_SAMPLER_PARAM=1
+      <<: *jaeger-environment
+      JAEGER_TAGS: app=tempo
     healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1" ]
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ready || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 10
-    # Horizontally scale up support(Monolithic mode)
-    # https://grafana.com/docs/tempo/latest/setup/deployment/#scaling-monolithic-mode
-    deploy:
-      replicas: 1
-    networks:
-      default:
-        aliases:
-          - tempo-memberlist
 
   mimir:
     depends_on:
@@ -84,7 +79,6 @@ services:
     volumes:
       - ../../common/config/mimir:/etc/mimir
     command:
-      # - -config.file=/etc/mimir/monolithic-mode.yaml
       - -config.file=/etc/mimir/monolithic-mode-metrics.yaml
       - -target=all
       - -config.expand-env=true
