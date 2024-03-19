@@ -16,6 +16,15 @@ include:
   # - https://github.com/qclaogui/codelab-monitoring.git#main:docker-compose/common/compose-include/minio.yaml
   # - https://github.com/qclaogui/codelab-monitoring.git#main:docker-compose/common/compose-include/agent-collect-profiles.yaml
 
+# https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
+x-labels: &profiles-labels
+  profiles.agent.grafana.com/cpu.scrape: true
+  profiles.agent.grafana.com/memory.scrape: true
+  profiles.agent.grafana.com/goroutine.scrape: true
+  profiles.agent.grafana.com/block.scrape: true
+  profiles.agent.grafana.com/mutex.scrape: true
+  profiles.agent.grafana.com/fgprof.scrape: true
+
 services:
   gateway:
     depends_on:
@@ -38,15 +47,18 @@ services:
       - "34040:4040"
 
   pyroscope:
+    depends_on:
+      minio:
+        condition: service_healthy
     image: ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:latest}
     container_name: pyroscope
     volumes:
-      - ../../common/config/pyroscope/monolithic-mode-profiles.yaml:/etc/config.yaml
+      - ../../common/config/pyroscope:/etc/pyroscope
     command:
-      - -config.file=/etc/config.yaml
+      - -config.file=/etc/pyroscope/monolithic-mode-profiles.yaml
       - -target=all
-      # - -log.level=info
       - -config.expand-env=true
+      # - -runtime-config.file=/etc/pyroscope/overrides.yaml
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:4040/ready || exit 1" ]
       interval: 15s
@@ -56,12 +68,10 @@ services:
   grafana:
     # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
     labels:
-      - logs.agent.grafana.com/log-format=logfmt
-      - profiles.agent.grafana.com/cpu.scrape=true
-      - profiles.agent.grafana.com/memory.scrape=true
-      - profiles.agent.grafana.com/goroutine.scrape=true
-      - profiles.agent.grafana.com/service_name=grafana
-      - profiles.agent.grafana.com/port=6060
+      <<: *profiles-labels
+      profiles.agent.grafana.com/service_name: grafana
+      profiles.agent.grafana.com/port: 6060
+      logs.agent.grafana.com/log-format: logfmt
     image: ${GRAFANA_IMAGE:-docker.io/grafana/grafana:latest}
     hostname: grafana
     command:

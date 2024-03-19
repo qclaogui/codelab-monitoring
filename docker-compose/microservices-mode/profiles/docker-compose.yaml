@@ -10,6 +10,12 @@ include:
   - path: ../../common/compose-include/minio.yaml
   - path: ../../common/compose-include/agent-collect-profiles.yaml
 
+# https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
+x-labels: &profiles-labels
+  profiles.agent.grafana.com/cpu.scrape: true
+  profiles.agent.grafana.com/memory.scrape: true
+  profiles.agent.grafana.com/goroutine.scrape: true
+
 services:
   gateway:
     depends_on:
@@ -33,19 +39,22 @@ services:
       - "34040:4040"
 
   distributor:
+    labels:
+      <<: *profiles-labels
+      profiles.agent.grafana.com/service_name: pyroscope-distributor
     depends_on:
       ingester:
         condition: service_started
     image: &pyroscopeImage ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:latest}
     volumes:
-      - ../../common/config/pyroscope/microservices-mode-profiles.yaml:/etc/config.yaml # Note: profiles use microservices-mode-profiles.yaml
+      - ../../common/config/pyroscope:/etc/pyroscope
     command:
-      - -config.file=/etc/config.yaml
+      - -config.file=/etc/pyroscope/microservices-mode-profiles.yaml
       - -target=distributor
       - -config.expand-env=true
       - -memberlist.cluster-label=profiles-system
       - -memberlist.join=pyroscope-memberlist:7946
-      # - -runtime-config.file=/etc/overrides/overrides.yaml
+      # - -runtime-config.file=/etc/pyroscope/overrides.yaml
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:4040/ready || exit 1" ]
       interval: 15s
@@ -57,14 +66,17 @@ services:
           - pyroscope-memberlist
 
   ingester:
+    labels:
+      <<: *profiles-labels
+      profiles.agent.grafana.com/service_name: pyroscope-ingester
     depends_on:
       minio:
         condition: service_healthy
     image: *pyroscopeImage
     volumes:
-      - ../../common/config/pyroscope/microservices-mode-profiles.yaml:/etc/config.yaml # Note: profiles use microservices-mode-profiles.yaml
+      - ../../common/config/pyroscope:/etc/pyroscope
     command:
-      - -config.file=/etc/config.yaml
+      - -config.file=/etc/pyroscope/microservices-mode-profiles.yaml
       - -target=ingester
       - -config.expand-env=true
       - -memberlist.cluster-label=profiles-system
@@ -77,14 +89,17 @@ services:
           - pyroscope-memberlist
 
   compactor:
+    labels:
+      <<: *profiles-labels
+      profiles.agent.grafana.com/service_name: pyroscope-compactor
     depends_on:
       minio:
         condition: service_healthy
     image: *pyroscopeImage
     volumes:
-      - ../../common/config/pyroscope/microservices-mode-profiles.yaml:/etc/config.yaml # Note: profiles use microservices-mode-profiles.yaml
+      - ../../common/config/pyroscope:/etc/pyroscope
     command:
-      - -config.file=/etc/config.yaml
+      - -config.file=/etc/pyroscope/microservices-mode-profiles.yaml
       - -target=compactor
       - -config.expand-env=true
       - -memberlist.cluster-label=profiles-system
@@ -97,14 +112,17 @@ services:
           - pyroscope-memberlist
 
   query-frontend:
+    labels:
+      <<: *profiles-labels
+      profiles.agent.grafana.com/service_name: pyroscope-query-frontend
     depends_on:
       minio:
         condition: service_healthy
     image: *pyroscopeImage
     volumes:
-      - ../../common/config/pyroscope/microservices-mode-profiles.yaml:/etc/config.yaml # Note: profiles use microservices-mode-profiles.yaml
+      - ../../common/config/pyroscope:/etc/pyroscope
     command:
-      - -config.file=/etc/config.yaml
+      - -config.file=/etc/pyroscope/microservices-mode-profiles.yaml
       - -target=query-frontend
       - -config.expand-env=true
       - -memberlist.cluster-label=profiles-system
@@ -115,6 +133,9 @@ services:
           - pyroscope-memberlist
 
   querier:
+    labels:
+      <<: *profiles-labels
+      profiles.agent.grafana.com/service_name: pyroscope-querier
     depends_on:
       minio:
         condition: service_healthy
@@ -122,9 +143,9 @@ services:
         condition: service_started
     image: *pyroscopeImage
     volumes:
-      - ../../common/config/pyroscope/microservices-mode-profiles.yaml:/etc/config.yaml # Note: profiles use microservices-mode-profiles.yaml
+      - ../../common/config/pyroscope:/etc/pyroscope
     command:
-      - -config.file=/etc/config.yaml
+      - -config.file=/etc/pyroscope/microservices-mode-profiles.yaml
       - -target=querier
       - -config.expand-env=true
       - -memberlist.cluster-label=profiles-system
@@ -136,14 +157,17 @@ services:
           - pyroscope-memberlist
   
   query-scheduler:
+    labels:
+      <<: *profiles-labels
+      profiles.agent.grafana.com/service_name: pyroscope-query-scheduler
     depends_on:
       minio:
         condition: service_healthy
     image: *pyroscopeImage
     volumes:
-      - ../../common/config/pyroscope/microservices-mode-profiles.yaml:/etc/config.yaml # Note: profiles use microservices-mode-profiles.yaml
+      - ../../common/config/pyroscope:/etc/pyroscope
     command:
-      - -config.file=/etc/config.yaml
+      - -config.file=/etc/pyroscope/microservices-mode-profiles.yaml
       - -target=query-scheduler
       - -config.expand-env=true
       - -memberlist.cluster-label=profiles-system
@@ -154,14 +178,17 @@ services:
           - pyroscope-memberlist
 
   store-gateway:
+    labels:
+      <<: *profiles-labels
+      profiles.agent.grafana.com/service_name: pyroscope-store-gateway
     depends_on:
       minio:
         condition: service_healthy
     image: *pyroscopeImage
     volumes:
-      - ../../common/config/pyroscope/microservices-mode-profiles.yaml:/etc/config.yaml # Note: profiles use microservices-mode-profiles.yaml
+      - ../../common/config/pyroscope:/etc/pyroscope
     command:
-      - -config.file=/etc/config.yaml
+      - -config.file=/etc/pyroscope/microservices-mode-profiles.yaml
       - -target=store-gateway
       - -config.expand-env=true
       - -memberlist.cluster-label=profiles-system
@@ -173,6 +200,10 @@ services:
           - pyroscope-memberlist
 
   grafana:
+    labels:
+      <<: *profiles-labels
+      profiles.agent.grafana.com/port: 6060
+      profiles.agent.grafana.com/service_name: grafana
     image: ${GRAFANA_IMAGE:-docker.io/grafana/grafana:latest}
     command:
       - --config=/etc/grafana-config/grafana.ini
@@ -180,7 +211,7 @@ services:
       - ../../common/config/grafana/grafana.ini:/etc/grafana-config/grafana.ini
       - ../../common/config/grafana/dashboards:/var/lib/grafana/dashboards
       - ../../common/config/grafana/provisioning:/etc/grafana/provisioning
-      - ../../common/config/pyroscope/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml # load datasources
+      - ../../common/config/pyroscope/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
     environment:
       - GF_LOG_LEVEL=warn
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin_password}
