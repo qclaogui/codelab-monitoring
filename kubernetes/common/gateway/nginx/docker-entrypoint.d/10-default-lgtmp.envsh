@@ -1,0 +1,36 @@
+#!/usr/bin/env sh
+set -eu
+
+# As of version 1.19, the official Nginx Docker image supports templates with
+# variable substitution. But that uses `envsubst`, which does not allow for
+# defaults for missing variables. Here, first use the regular command shell
+# to set the defaults:
+
+# Default value is Mimir in monolithic mode
+export MIMIR_DISTRIBUTOR_HOST=${MIMIR_DISTRIBUTOR_HOST:-mimir.monitoring-system.svc.cluster.local}
+export MIMIR_QUERY_FRONTEND_HOST=${MIMIR_QUERY_FRONTEND_HOST:-mimir.monitoring-system.svc.cluster.local}
+export MIMIR_ALERT_MANAGER_HOST=${MIMIR_ALERT_MANAGER_HOST:-mimir.monitoring-system.svc.cluster.local}
+export MIMIR_RULER_HOST=${MIMIR_RULER_HOST:-mimir.monitoring-system.svc.cluster.local}
+export MIMIR_COMPACTOR_HOST=${MIMIR_COMPACTOR_HOST:-mimir.monitoring-system.svc.cluster.local}
+
+# Default value is Loki in monolithic mode
+export LOKI_DISTRIBUTOR_HOST=${LOKI_DISTRIBUTOR_HOST:-loki.logging-system.svc.cluster.local}
+export LOKI_INGESTER_HOST=${LOKI_INGESTER_HOST:-loki.logging-system.svc.cluster.local}
+export LOKI_RULER_HOST=${LOKI_RULER_HOST:-loki.logging-system.svc.cluster.local}
+export LOKI_COMPACTOR_HOST=${LOKI_COMPACTOR_HOST:-loki.logging-system.svc.cluster.local}
+export LOKI_QUERIER_HOST=${LOKI_QUERIER_HOST:-loki.logging-system.svc.cluster.local}
+export LOKI_QUERY_FRONTEND_HOST=${LOKI_QUERY_FRONTEND_HOST:-loki.logging-system.svc.cluster.local}
+
+# Default value is pyroscope in monolithic mode
+export PYROSCOPE_DISTRIBUTOR_HOST=${PYROSCOPE_DISTRIBUTOR_HOST:-pyroscope.profiles-system.svc.cluster.local}
+export PYROSCOPE_QUERY_FRONTEND_HOST=${PYROSCOPE_QUERY_FRONTEND_HOST:-pyroscope.profiles-system.svc.cluster.local}
+
+# Default value is tempo in monolithic mode
+export TEMPO_DISTRIBUTOR_HOST=${TEMPO_DISTRIBUTOR_HOST:-tempo.tracing-system.svc.cluster.local}
+export TEMPO_INGESTER_HOST=${TEMPO_INGESTER_HOST:-tempo.tracing-system.svc.cluster.local}
+export TEMPO_QUERY_FRONTEND_HOST=${TEMPO_QUERY_FRONTEND_HOST:-tempo.tracing-system.svc.cluster.local}
+export TEMPO_COMPACTOR_HOST=${TEMPO_COMPACTOR_HOST:-tempo.tracing-system.svc.cluster.local}
+
+export NGINX_ENVSUBST_OUTPUT_DIR=${NGINX_ENVSUBST_OUTPUT_DIR:-/etc/nginx}
+
+env

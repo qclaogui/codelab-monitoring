@@ -72,35 +72,6 @@ metadata:
 ---
 apiVersion: v1
 data:
-  gateway_pyroscope.conf.template: |-
-    server {
-        listen 4040;
-        listen [::]:4040;
-
-        location = / {
-          return 200 'OK';
-          auth_basic off;
-          access_log off;
-        }
-
-        proxy_set_header X-Scope-OrgID $ensured_x_scope_orgid;
-
-        # Distributor endpoints
-        location /push.v1.PusherService {
-          proxy_pass      http://${PYROSCOPE_DISTRIBUTOR_HOST}:4040$request_uri;
-        }
-
-        location /querier.v1.QuerierService {
-          proxy_pass      http://${PYROSCOPE_QUERY_FRONTEND_HOST}:4040$request_uri;
-        }
-    }
-kind: ConfigMap
-metadata:
-  name: nginx-templates
-  namespace: gateway
----
-apiVersion: v1
-data:
   config.river: "/*\nThe following example shows using the default all logs processing
     module, for\na single tenant and specifying the destination url/credentials via
     environment\nvariables.\n*/\nlogging {\n\tlevel  = coalesce(env(\"AGENT_LOG_LEVEL\"),
