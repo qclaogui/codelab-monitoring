@@ -24,10 +24,10 @@ services:
     image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:latest}
     restart: always
     volumes:
-      - ../../common/config/nginx:/etc/nginx/templates
-      - ../../common/config/pyroscope/gateway_pyroscope.conf.template:/etc/nginx/templates/gateway_pyroscope.conf.template
+      - ../../common/config/nginx/10-default-lgtmp.envsh:/docker-entrypoint.d/10-default-lgtmp.envsh
+      - ../../common/config/nginx/nginx.conf:/etc/nginx/templates/nginx.conf.template
+      - ../../common/config/pyroscope/gateway_pyroscope.conf:/etc/nginx/templates/gateway_pyroscope.conf.template
     environment:
-      - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
       - PYROSCOPE_DISTRIBUTOR_HOST=distributor
       - PYROSCOPE_QUERY_FRONTEND_HOST=query-frontend
     healthcheck:

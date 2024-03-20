@@ -22,26 +22,14 @@ services:
         condition: service_healthy
     image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:latest}
     volumes:
-      - ../../common/config/nginx:/etc/nginx/templates
-      - ../../common/config/mimir/gateway_mimir.conf.template:/etc/nginx/templates/gateway_mimir.conf.template
-    environment:
-      - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
-      # nginx envsubst does not support default values like Docker Compose do when using ${MY_VAR:-My Default}.
-      # so need a full setup of all variables.
-      # https://github.com/nginxinc/docker-nginx/issues/592
-      # https://stackoverflow.com/a/65529290
-      - MIMIR_DISTRIBUTOR_HOST=mimir
-      - MIMIR_ALERT_MANAGER_HOST=mimir
-      - MIMIR_RULER_HOST=mimir
-      - MIMIR_QUERY_FRONTEND_HOST=mimir
-      - MIMIR_COMPACTOR_HOST=mimir
+      - ../../common/config/nginx/10-default-lgtmp.envsh:/docker-entrypoint.d/10-default-lgtmp.envsh
+      - ../../common/config/nginx/nginx.conf:/etc/nginx/templates/nginx.conf.template
+      - ../../common/config/mimir/gateway_mimir.conf:/etc/nginx/templates/gateway_mimir.conf.template
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5
-    ports:
-      - "38080:8080"
 
   mimir:
     depends_on:
@@ -59,10 +47,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    # Horizontally scale up support(Monolithic mode)
-    # https://grafana.com/docs/mimir/latest/references/architecture/deployment-modes/#monolithic-mode
-    deploy:
-      replicas: 1
+    # expose 38080 port so we can directly access mimir inside container
+    ports:
+      - "38080:8080"
     networks:
       default:
         aliases:

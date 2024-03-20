@@ -24,10 +24,10 @@ services:
         condition: service_healthy
     image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:latest}
     volumes:
-      - ../../common/config/nginx:/etc/nginx/templates
-      - ../../common/config/loki/gateway_loki.conf.template:/etc/nginx/templates/gateway_loki.conf.template
+      - ../../common/config/nginx/10-default-lgtmp.envsh:/docker-entrypoint.d/10-default-lgtmp.envsh
+      - ../../common/config/nginx/nginx.conf:/etc/nginx/templates/nginx.conf.template
+      - ../../common/config/loki/gateway_loki.conf:/etc/nginx/templates/gateway_loki.conf.template
     environment:
-      - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
       - LOKI_DISTRIBUTOR_HOST=distributor
       - LOKI_INGESTER_HOST=ingester
       - LOKI_RULER_HOST=ruler

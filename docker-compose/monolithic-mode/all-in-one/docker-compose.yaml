@@ -28,11 +28,7 @@ services:
       - logs.agent.grafana.com/log-format=logfmt
       - app=grafana-agent
     depends_on:
-      tempo:
-        condition: service_started
-      mimir:
-        condition: service_healthy
-      loki:
+      gateway:
         condition: service_healthy
     image: ${AGENT_IMAGE:-docker.io/grafana/agent:latest}
     volumes:
@@ -51,6 +47,33 @@ services:
     # expose 12345 port so we can directly access grafana-agent inside container
     ports:
       - "12345:12345"
+
+  gateway:
+    labels:
+      metrics.agent.grafana.com/scrape: false
+    depends_on:
+      loki:
+        condition: service_healthy
+      tempo:
+        condition: service_started
+      mimir:
+        condition: service_healthy
+      pyroscope:
+        condition: service_healthy
+    image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:latest}
+    restart: always
+    volumes:
+      - ../../common/config/nginx/10-default-lgtmp.envsh:/docker-entrypoint.d/10-default-lgtmp.envsh
+      - ../../common/config/nginx/nginx.conf:/etc/nginx/templates/nginx.conf.template
+      - ../../common/config/loki/gateway_loki.conf:/etc/nginx/templates/gateway_loki.conf.template
+      - ../../common/config/tempo/gateway_tempo.conf:/etc/nginx/templates/gateway_tempo.conf.template
+      - ../../common/config/mimir/gateway_mimir.conf:/etc/nginx/templates/gateway_mimir.conf.template
+      - ../../common/config/pyroscope/gateway_pyroscope.conf:/etc/nginx/templates/gateway_pyroscope.conf.template
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   mimir:
     labels:
@@ -183,6 +206,11 @@ services:
     environment:
       <<: *jaeger-environment
       JAEGER_TAGS: app=pyroscope
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:4040/ready || exit 1" ]
+      interval: 15s
+      timeout: 10s
+      retries: 5
     # expose 34040 port so we can directly access pyroscope inside container
     ports:
       - "34040:4040"

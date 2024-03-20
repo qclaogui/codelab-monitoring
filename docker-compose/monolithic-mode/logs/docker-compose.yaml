@@ -21,23 +21,14 @@ services:
         condition: service_healthy
     image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:latest}
     volumes:
-      - ../../common/config/nginx:/etc/nginx/templates
-      - ../../common/config/loki/gateway_loki.conf.template:/etc/nginx/templates/gateway_loki.conf.template
-    environment:
-      - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
-      - LOKI_DISTRIBUTOR_HOST=loki
-      - LOKI_INGESTER_HOST=loki
-      - LOKI_RULER_HOST=loki
-      - LOKI_QUERY_FRONTEND_HOST=loki
-      - LOKI_QUERIER_HOST=loki
-      - LOKI_COMPACTOR_HOST=loki
+      - ../../common/config/nginx/10-default-lgtmp.envsh:/docker-entrypoint.d/10-default-lgtmp.envsh
+      - ../../common/config/nginx/nginx.conf:/etc/nginx/templates/nginx.conf.template
+      - ../../common/config/loki/gateway_loki.conf:/etc/nginx/templates/gateway_loki.conf.template
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5
-    ports:
-      - "33100:3100"
 
   loki:
     labels:
@@ -57,10 +48,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    # Horizontally scale up support(Monolithic mode)
-    # https://grafana.com/docs/loki/latest/fundamentals/architecture/deployment-modes/#simple-scalable-deployment-mode
-    deploy:
-      replicas: 1
+    # expose 33100 port so we can directly access loki inside container
+    ports:
+      - "33100:3100"
     networks:
       default:
         aliases:
