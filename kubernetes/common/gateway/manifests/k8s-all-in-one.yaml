@@ -55,7 +55,6 @@ data:
 
       include /etc/nginx/gateway_*.conf;
     }
-immutable: true
 kind: ConfigMap
 metadata:
   name: nginx-conf-d76dbg78td
@@ -63,22 +62,395 @@ metadata:
 ---
 apiVersion: v1
 data:
-  LOKI_COMPACTOR_HOST: loki.logging-system.svc.cluster.local
-  LOKI_DISTRIBUTOR_HOST: loki.logging-system.svc.cluster.local
-  LOKI_INGESTER_HOST: loki.logging-system.svc.cluster.local
-  LOKI_QUERIER_HOST: loki.logging-system.svc.cluster.local
-  LOKI_QUERY_FRONTEND_HOST: loki.logging-system.svc.cluster.local
-  LOKI_RULER_HOST: loki.logging-system.svc.cluster.local
-  MIMIR_ALERT_MANAGER_HOST: mimir.monitoring-system.svc.cluster.local
-  MIMIR_COMPACTOR_HOST: mimir.monitoring-system.svc.cluster.local
-  MIMIR_DISTRIBUTOR_HOST: mimir.monitoring-system.svc.cluster.local
-  MIMIR_QUERY_FRONTEND_HOST: mimir.monitoring-system.svc.cluster.local
-  MIMIR_RULER_HOST: mimir.monitoring-system.svc.cluster.local
-  PYROSCOPE_DISTRIBUTOR_HOST: pyroscope.profiles-system.svc.cluster.local
-  PYROSCOPE_QUERY_FRONTEND_HOST: pyroscope.profiles-system.svc.cluster.local
+  10-default-lgtmp.envsh: |-
+    #!/usr/bin/env sh
+    set -eu
+
+    # As of version 1.19, the official Nginx Docker image supports templates with
+    # variable substitution. But that uses `envsubst`, which does not allow for
+    # defaults for missing variables. Here, first use the regular command shell
+    # to set the defaults:
+
+    # Default value is Mimir in monolithic mode
+    export MIMIR_DISTRIBUTOR_HOST=${MIMIR_DISTRIBUTOR_HOST:-mimir.monitoring-system.svc.cluster.local}
+    export MIMIR_QUERY_FRONTEND_HOST=${MIMIR_QUERY_FRONTEND_HOST:-mimir.monitoring-system.svc.cluster.local}
+    export MIMIR_ALERT_MANAGER_HOST=${MIMIR_ALERT_MANAGER_HOST:-mimir.monitoring-system.svc.cluster.local}
+    export MIMIR_RULER_HOST=${MIMIR_RULER_HOST:-mimir.monitoring-system.svc.cluster.local}
+    export MIMIR_COMPACTOR_HOST=${MIMIR_COMPACTOR_HOST:-mimir.monitoring-system.svc.cluster.local}
+
+    # Default value is Loki in monolithic mode
+    export LOKI_DISTRIBUTOR_HOST=${LOKI_DISTRIBUTOR_HOST:-loki.logging-system.svc.cluster.local}
+    export LOKI_INGESTER_HOST=${LOKI_INGESTER_HOST:-loki.logging-system.svc.cluster.local}
+    export LOKI_RULER_HOST=${LOKI_RULER_HOST:-loki.logging-system.svc.cluster.local}
+    export LOKI_COMPACTOR_HOST=${LOKI_COMPACTOR_HOST:-loki.logging-system.svc.cluster.local}
+    export LOKI_QUERIER_HOST=${LOKI_QUERIER_HOST:-loki.logging-system.svc.cluster.local}
+    export LOKI_QUERY_FRONTEND_HOST=${LOKI_QUERY_FRONTEND_HOST:-loki.logging-system.svc.cluster.local}
+
+    # Default value is pyroscope in monolithic mode
+    export PYROSCOPE_DISTRIBUTOR_HOST=${PYROSCOPE_DISTRIBUTOR_HOST:-pyroscope.profiles-system.svc.cluster.local}
+    export PYROSCOPE_QUERY_FRONTEND_HOST=${PYROSCOPE_QUERY_FRONTEND_HOST:-pyroscope.profiles-system.svc.cluster.local}
+
+    # Default value is tempo in monolithic mode
+    export TEMPO_DISTRIBUTOR_HOST=${TEMPO_DISTRIBUTOR_HOST:-tempo.tracing-system.svc.cluster.local}
+    export TEMPO_INGESTER_HOST=${TEMPO_INGESTER_HOST:-tempo.tracing-system.svc.cluster.local}
+    export TEMPO_QUERY_FRONTEND_HOST=${TEMPO_QUERY_FRONTEND_HOST:-tempo.tracing-system.svc.cluster.local}
+    export TEMPO_COMPACTOR_HOST=${TEMPO_COMPACTOR_HOST:-tempo.tracing-system.svc.cluster.local}
+
+    export NGINX_ENVSUBST_OUTPUT_DIR=${NGINX_ENVSUBST_OUTPUT_DIR:-/etc/nginx}
+
+    env
+  10-listen-on-ipv6-by-default.sh: |
+    #!/bin/sh
+    # vim:sw=4:ts=4:et
+
+    set -e
+
+    entrypoint_log() {
+        if [ -z "${NGINX_ENTRYPOINT_QUIET_LOGS:-}" ]; then
+            echo "$@"
+        fi
+    }
+
+    ME=$(basename "$0")
+    DEFAULT_CONF_FILE="etc/nginx/conf.d/default.conf"
+
+    # check if we have ipv6 available
+    if [ ! -f "/proc/net/if_inet6" ]; then
+        entrypoint_log "$ME: info: ipv6 not available"
+        exit 0
+    fi
+
+    if [ ! -f "/$DEFAULT_CONF_FILE" ]; then
+        entrypoint_log "$ME: info: /$DEFAULT_CONF_FILE is not a file or does not exist"
+        exit 0
+    fi
+
+    # check if the file can be modified, e.g. not on a r/o filesystem
+    touch /$DEFAULT_CONF_FILE 2>/dev/null || { entrypoint_log "$ME: info: can not modify /$DEFAULT_CONF_FILE (read-only file system?)"; exit 0; }
+
+    # check if the file is already modified, e.g. on a container restart
+    grep -q "listen  \[::]\:80;" /$DEFAULT_CONF_FILE && { entrypoint_log "$ME: info: IPv6 listen already enabled"; exit 0; }
+
+    if [ -f "/etc/os-release" ]; then
+        . /etc/os-release
+    else
+        entrypoint_log "$ME: info: can not guess the operating system"
+        exit 0
+    fi
+
+    entrypoint_log "$ME: info: Getting the checksum of /$DEFAULT_CONF_FILE"
+
+    case "$ID" in
+        "debian")
+            CHECKSUM=$(dpkg-query --show --showformat='${Conffiles}\n' nginx | grep $DEFAULT_CONF_FILE | cut -d' ' -f 3)
+            echo "$CHECKSUM  /$DEFAULT_CONF_FILE" | md5sum -c - >/dev/null 2>&1 || {
+                entrypoint_log "$ME: info: /$DEFAULT_CONF_FILE differs from the packaged version"
+                exit 0
+            }
+            ;;
+        "alpine")
+            CHECKSUM=$(apk manifest nginx 2>/dev/null| grep $DEFAULT_CONF_FILE | cut -d' ' -f 1 | cut -d ':' -f 2)
+            echo "$CHECKSUM  /$DEFAULT_CONF_FILE" | sha1sum -c - >/dev/null 2>&1 || {
+                entrypoint_log "$ME: info: /$DEFAULT_CONF_FILE differs from the packaged version"
+                exit 0
+            }
+            ;;
+        *)
+            entrypoint_log "$ME: info: Unsupported distribution"
+            exit 0
+            ;;
+    esac
+
+    # enable ipv6 on default.conf listen sockets
+    sed -i -E 's,listen       80;,listen       80;\n    listen  [::]:80;,' /$DEFAULT_CONF_FILE
+
+    entrypoint_log "$ME: info: Enabled listen on IPv6 in /$DEFAULT_CONF_FILE"
+
+    exit 0
+  15-local-resolvers.envsh: |
+    #!/bin/sh
+    # vim:sw=2:ts=2:sts=2:et
+
+    set -eu
+
+    LC_ALL=C
+    PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+    [ "${NGINX_ENTRYPOINT_LOCAL_RESOLVERS:-}" ] || return 0
+
+    NGINX_LOCAL_RESOLVERS=$(awk 'BEGIN{ORS=" "} $1=="nameserver" {if ($2 ~ ":") {print "["$2"]"} else {print $2}}' /etc/resolv.conf)
+    export NGINX_LOCAL_RESOLVERS
+  20-envsubst-on-templates.sh: |
+    #!/bin/sh
+
+    set -e
+
+    ME=$(basename "$0")
+
+    entrypoint_log() {
+        if [ -z "${NGINX_ENTRYPOINT_QUIET_LOGS:-}" ]; then
+            echo "$@"
+        fi
+    }
+
+    add_stream_block() {
+      local conffile="/etc/nginx/nginx.conf"
+
+      if grep -q -E "\s*stream\s*\{" "$conffile"; then
+        entrypoint_log "$ME: $conffile contains a stream block; include $stream_output_dir/*.conf to enable stream templates"
+      else
+        # check if the file can be modified, e.g. not on a r/o filesystem
+        touch "$conffile" 2>/dev/null || { entrypoint_log "$ME: info: can not modify $conffile (read-only file system?)"; exit 0; }
+        entrypoint_log "$ME: Appending stream block to $conffile to include $stream_output_dir/*.conf"
+        cat << END >> "$conffile"
+    # added by "$ME" on "$(date)"
+    stream {
+      include $stream_output_dir/*.conf;
+    }
+    END
+      fi
+    }
+
+    auto_envsubst() {
+      local template_dir="${NGINX_ENVSUBST_TEMPLATE_DIR:-/etc/nginx/templates}"
+      local suffix="${NGINX_ENVSUBST_TEMPLATE_SUFFIX:-.template}"
+      local output_dir="${NGINX_ENVSUBST_OUTPUT_DIR:-/etc/nginx/conf.d}"
+      local stream_suffix="${NGINX_ENVSUBST_STREAM_TEMPLATE_SUFFIX:-.stream-template}"
+      local stream_output_dir="${NGINX_ENVSUBST_STREAM_OUTPUT_DIR:-/etc/nginx/stream-conf.d}"
+      local filter="${NGINX_ENVSUBST_FILTER:-}"
+
+      local template defined_envs relative_path output_path subdir
+      defined_envs=$(printf '${%s} ' $(awk "END { for (name in ENVIRON) { print ( name ~ /${filter}/ ) ? name : \"\" } }" < /dev/null ))
+      [ -d "$template_dir" ] || return 0
+      if [ ! -w "$output_dir" ]; then
+        entrypoint_log "$ME: ERROR: $template_dir exists, but $output_dir is not writable"
+        return 0
+      fi
+      find "$template_dir" -follow -type f -name "*$suffix" -print | while read -r template; do
+        relative_path="${template#"$template_dir/"}"
+        output_path="$output_dir/${relative_path%"$suffix"}"
+        subdir=$(dirname "$relative_path")
+        # create a subdirectory where the template file exists
+        mkdir -p "$output_dir/$subdir"
+        entrypoint_log "$ME: Running envsubst on $template to $output_path"
+        envsubst "$defined_envs" < "$template" > "$output_path"
+      done
+
+      # Print the first file with the stream suffix, this will be false if there are none
+      if test -n "$(find "$template_dir" -name "*$stream_suffix" -print -quit)"; then
+        mkdir -p "$stream_output_dir"
+        if [ ! -w "$stream_output_dir" ]; then
+          entrypoint_log "$ME: ERROR: $template_dir exists, but $stream_output_dir is not writable"
+          return 0
+        fi
+        add_stream_block
+        find "$template_dir" -follow -type f -name "*$stream_suffix" -print | while read -r template; do
+          relative_path="${template#"$template_dir/"}"
+          output_path="$stream_output_dir/${relative_path%"$stream_suffix"}"
+          subdir=$(dirname "$relative_path")
+          # create a subdirectory where the template file exists
+          mkdir -p "$stream_output_dir/$subdir"
+          entrypoint_log "$ME: Running envsubst on $template to $output_path"
+          envsubst "$defined_envs" < "$template" > "$output_path"
+        done
+      fi
+    }
+
+    auto_envsubst
+
+    exit 0
+  30-tune-worker-processes.sh: |
+    #!/bin/sh
+    # vim:sw=2:ts=2:sts=2:et
+
+    set -eu
+
+    LC_ALL=C
+    ME=$(basename "$0")
+    PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+    [ "${NGINX_ENTRYPOINT_WORKER_PROCESSES_AUTOTUNE:-}" ] || exit 0
+
+    touch /etc/nginx/nginx.conf 2>/dev/null || { echo >&2 "$ME: error: can not modify /etc/nginx/nginx.conf (read-only file system?)"; exit 0; }
+
+    ceildiv() {
+      num=$1
+      div=$2
+      echo $(( (num + div - 1) / div ))
+    }
+
+    get_cpuset() {
+      cpusetroot=$1
+      cpusetfile=$2
+      ncpu=0
+      [ -f "$cpusetroot/$cpusetfile" ] || return 1
+      for token in $( tr ',' ' ' < "$cpusetroot/$cpusetfile" ); do
+        case "$token" in
+          *-*)
+            count=$( seq $(echo "$token" | tr '-' ' ') | wc -l )
+            ncpu=$(( ncpu+count ))
+            ;;
+          *)
+            ncpu=$(( ncpu+1 ))
+            ;;
+        esac
+      done
+      echo "$ncpu"
+    }
+
+    get_quota() {
+      cpuroot=$1
+      ncpu=0
+      [ -f "$cpuroot/cpu.cfs_quota_us" ] || return 1
+      [ -f "$cpuroot/cpu.cfs_period_us" ] || return 1
+      cfs_quota=$( cat "$cpuroot/cpu.cfs_quota_us" )
+      cfs_period=$( cat "$cpuroot/cpu.cfs_period_us" )
+      [ "$cfs_quota" = "-1" ] && return 1
+      [ "$cfs_period" = "0" ] && return 1
+      ncpu=$( ceildiv "$cfs_quota" "$cfs_period" )
+      [ "$ncpu" -gt 0 ] || return 1
+      echo "$ncpu"
+    }
+
+    get_quota_v2() {
+      cpuroot=$1
+      ncpu=0
+      [ -f "$cpuroot/cpu.max" ] || return 1
+      cfs_quota=$( cut -d' ' -f 1 < "$cpuroot/cpu.max" )
+      cfs_period=$( cut -d' ' -f 2 < "$cpuroot/cpu.max" )
+      [ "$cfs_quota" = "max" ] && return 1
+      [ "$cfs_period" = "0" ] && return 1
+      ncpu=$( ceildiv "$cfs_quota" "$cfs_period" )
+      [ "$ncpu" -gt 0 ] || return 1
+      echo "$ncpu"
+    }
+
+    get_cgroup_v1_path() {
+      needle=$1
+      found=
+      foundroot=
+      mountpoint=
+
+      [ -r "/proc/self/mountinfo" ] || return 1
+      [ -r "/proc/self/cgroup" ] || return 1
+
+      while IFS= read -r line; do
+        case "$needle" in
+          "cpuset")
+            case "$line" in
+              *cpuset*)
+                found=$( echo "$line" | cut -d ' ' -f 4,5 )
+                break
+                ;;
+            esac
+            ;;
+          "cpu")
+            case "$line" in
+              *cpuset*)
+                ;;
+              *cpu,cpuacct*|*cpuacct,cpu|*cpuacct*|*cpu*)
+                found=$( echo "$line" | cut -d ' ' -f 4,5 )
+                break
+                ;;
+            esac
+        esac
+      done << __EOF__
+    $( grep -F -- '- cgroup ' /proc/self/mountinfo )
+    __EOF__
+
+      while IFS= read -r line; do
+        controller=$( echo "$line" | cut -d: -f 2 )
+        case "$needle" in
+          "cpuset")
+            case "$controller" in
+              cpuset)
+                mountpoint=$( echo "$line" | cut -d: -f 3 )
+                break
+                ;;
+            esac
+            ;;
+          "cpu")
+            case "$controller" in
+              cpu,cpuacct|cpuacct,cpu|cpuacct|cpu)
+                mountpoint=$( echo "$line" | cut -d: -f 3 )
+                break
+                ;;
+            esac
+            ;;
+        esac
+    done << __EOF__
+    $( grep -F -- 'cpu' /proc/self/cgroup )
+    __EOF__
+
+      case "${found%% *}" in
+        "/")
+          foundroot="${found##* }$mountpoint"
+          ;;
+        "$mountpoint")
+          foundroot="${found##* }"
+          ;;
+      esac
+      echo "$foundroot"
+    }
+
+    get_cgroup_v2_path() {
+      found=
+      foundroot=
+      mountpoint=
+
+      [ -r "/proc/self/mountinfo" ] || return 1
+      [ -r "/proc/self/cgroup" ] || return 1
+
+      while IFS= read -r line; do
+        found=$( echo "$line" | cut -d ' ' -f 4,5 )
+      done << __EOF__
+    $( grep -F -- '- cgroup2 ' /proc/self/mountinfo )
+    __EOF__
+
+      while IFS= read -r line; do
+        mountpoint=$( echo "$line" | cut -d: -f 3 )
+    done << __EOF__
+    $( grep -F -- '0::' /proc/self/cgroup )
+    __EOF__
+
+      case "${found%% *}" in
+        "")
+          return 1
+          ;;
+        "/")
+          foundroot="${found##* }$mountpoint"
+          ;;
+        "$mountpoint" | /../*)
+          foundroot="${found##* }"
+          ;;
+      esac
+      echo "$foundroot"
+    }
+
+    ncpu_online=$( getconf _NPROCESSORS_ONLN )
+    ncpu_cpuset=
+    ncpu_quota=
+    ncpu_cpuset_v2=
+    ncpu_quota_v2=
+
+    cpuset=$( get_cgroup_v1_path "cpuset" ) && ncpu_cpuset=$( get_cpuset "$cpuset" "cpuset.effective_cpus" ) || ncpu_cpuset=$ncpu_online
+    cpu=$( get_cgroup_v1_path "cpu" ) && ncpu_quota=$( get_quota "$cpu" ) || ncpu_quota=$ncpu_online
+    cgroup_v2=$( get_cgroup_v2_path ) && ncpu_cpuset_v2=$( get_cpuset "$cgroup_v2" "cpuset.cpus.effective" ) || ncpu_cpuset_v2=$ncpu_online
+    cgroup_v2=$( get_cgroup_v2_path ) && ncpu_quota_v2=$( get_quota_v2 "$cgroup_v2" ) || ncpu_quota_v2=$ncpu_online
+
+    ncpu=$( printf "%s\n%s\n%s\n%s\n%s\n" \
+                   "$ncpu_online" \
+                   "$ncpu_cpuset" \
+                   "$ncpu_quota" \
+                   "$ncpu_cpuset_v2" \
+                   "$ncpu_quota_v2" \
+                   | sort -n \
+                   | head -n 1 )
+
+    sed -i.bak -r 's/^(worker_processes)(.*)$/# Commented out by '"$ME"' on '"$(date)"'\n#\1\2\n\1 '"$ncpu"';/' /etc/nginx/nginx.conf
 kind: ConfigMap
 metadata:
-  name: nginx-env
+  name: nginx-entrypoint-scripts-kkf5b925m6
   namespace: gateway
 ---
 apiVersion: v1
@@ -282,12 +654,10 @@ spec:
         app: nginx
     spec:
       containers:
-      - env:
-        - name: NGINX_ENVSUBST_OUTPUT_DIR
-          value: /etc/nginx
-        envFrom:
+      - envFrom:
         - configMapRef:
             name: nginx-env
+            optional: true
         image: nginxinc/nginx-unprivileged:1.25-alpine
         imagePullPolicy: IfNotPresent
         name: nginx
@@ -314,6 +684,20 @@ spec:
         volumeMounts:
         - mountPath: /etc/nginx/templates
           name: templates
+        - mountPath: /docker-entrypoint.d
+          name: entrypoint-scripts
+      initContainers:
+      - command:
+        - sh
+        - -c
+        - cp /configmap/* /docker-entrypoint.d/
+        image: registry.k8s.io/busybox
+        name: fix-perms
+        volumeMounts:
+        - mountPath: /configmap
+          name: configmap-scripts
+        - mountPath: /docker-entrypoint.d
+          name: entrypoint-scripts
       terminationGracePeriodSeconds: 30
       volumes:
       - name: templates
@@ -323,3 +707,9 @@ spec:
               name: nginx-conf-d76dbg78td
           - configMap:
               name: nginx-templates
+      - emptyDir: {}
+        name: entrypoint-scripts
+      - configMap:
+          defaultMode: 511
+          name: nginx-entrypoint-scripts-kkf5b925m6
+        name: configmap-scripts

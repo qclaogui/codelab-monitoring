@@ -40,19 +40,11 @@ configMapGenerator:
   files:
   - config.yaml=configs/pyroscope.yaml
 
-# replace nginx-templates and nginx-env configMap
-- name: nginx-templates
-  namespace: gateway
-  options:
-    disableNameSuffixHash: true
-  files:
-  - configs/gateway_pyroscope.conf.template
+# Update Pyroscope Microservices Mode endpoint in gateway
 - name: nginx-env
   namespace: gateway
   options:
     disableNameSuffixHash: true
-  # We need to fully set all variables because nginx envsubst does not support default values.
-  # https://github.com/nginxinc/docker-nginx/issues/592
   literals:
   - PYROSCOPE_DISTRIBUTOR_HOST=pyroscope-distributor.profiles-system.svc.cluster.local
   - PYROSCOPE_QUERY_FRONTEND_HOST=pyroscope-query-frontend.profiles-system.svc.cluster.local

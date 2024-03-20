@@ -16,6 +16,17 @@ spec:
       labels:
         app: nginx
     spec:
+      # Since kubernetes version 1.9 and forth, volumeMounts behavior on secret, configMap, downwardAPI and projected have changed to Read-Only by default.
+      # A workaround to the problem is to create an emtpyDir volume and copy the contents into it and execute
+      initContainers:
+      - name: fix-perms
+        image: registry.k8s.io/busybox
+        command: ['sh', '-c', "cp /configmap/* /docker-entrypoint.d/"]
+        volumeMounts:
+        - name: configmap-scripts
+          mountPath: /configmap
+        - name: entrypoint-scripts
+          mountPath: /docker-entrypoint.d
       containers:
       - name: nginx
         image: nginx
@@ -27,12 +38,10 @@ spec:
             cpu: 999m
             memory: 1Gi
         imagePullPolicy: IfNotPresent
-        env:
-        - name: NGINX_ENVSUBST_OUTPUT_DIR
-          value: /etc/nginx
         envFrom:
         - configMapRef:
             name: nginx-env
+            optional: true
         ports:
         - name: http-mimir
           containerPort: 8080
@@ -49,6 +58,8 @@ spec:
         volumeMounts:
         - name: templates
           mountPath: /etc/nginx/templates
+        - name: entrypoint-scripts
+          mountPath: /docker-entrypoint.d
       terminationGracePeriodSeconds: 30
       volumes:
       - name: templates
@@ -58,3 +69,11 @@ spec:
               name: nginx-conf
           - configMap:
               name: nginx-templates
+      - name: entrypoint-scripts
+        emptyDir: {}
+      - name: configmap-scripts
+        # https://kubernetes.io/docs/concepts/storage/volumes/#configmap
+        # A ConfigMap is always mounted as readOnly
+        configMap:
+          name: nginx-entrypoint-scripts
+          defaultMode: 0777

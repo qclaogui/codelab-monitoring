@@ -66,27 +66,20 @@ configMapGenerator:
   files:
   - runtime.yaml=configs/mimir-runtime.yaml
 
-# replace nginx-templates and nginx-env configMap
+# Update Tempo Microservices Mode endpoint in gateway
 - name: nginx-templates
   namespace: gateway
   options:
     disableNameSuffixHash: true
   files:
-  - configs/gateway_tempo.conf.template
-  - configs/gateway_mimir.conf.template
+  - gateway_tempo.conf.template=configs/gateway_tempo.conf
+  - gateway_mimir.conf.template=configs/gateway_mimir.conf
 - name: nginx-env
   namespace: gateway
   options:
     disableNameSuffixHash: true
-  # We need to fully set all variables because nginx envsubst does not support default values.
-  # https://github.com/nginxinc/docker-nginx/issues/592
   literals:
   - TEMPO_DISTRIBUTOR_HOST=tempo-distributed-distributor.tracing-system.svc.cluster.local
   - TEMPO_INGESTER_HOST=tempo-distributed-ingester.tracing-system.svc.cluster.local
   - TEMPO_QUERY_FRONTEND_HOST=tempo-distributed-query-frontend.tracing-system.svc.cluster.local
   - TEMPO_COMPACTOR_HOST=tempo-distributed-compactor.tracing-system.svc.cluster.local
-  - MIMIR_DISTRIBUTOR_HOST=mimir.monitoring-system.svc.cluster.local
-  - MIMIR_QUERY_FRONTEND_HOST=mimir.monitoring-system.svc.cluster.local
-  - MIMIR_ALERT_MANAGER_HOST=mimir.monitoring-system.svc.cluster.local
-  - MIMIR_RULER_HOST=mimir.monitoring-system.svc.cluster.local
-  - MIMIR_COMPACTOR_HOST=mimir.monitoring-system.svc.cluster.local

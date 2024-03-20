@@ -20,24 +20,22 @@ images:
 configMapGenerator:
 - name: nginx-conf
   namespace: gateway
-  options:
-    immutable: true
   files:
-  - nginx/nginx.conf.template
+  - nginx.conf.template=nginx/nginx.conf
+- name: nginx-entrypoint-scripts
+  namespace: gateway
+  files:
+  - nginx/docker-entrypoint.d/10-default-lgtmp.envsh
+  - nginx/docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+  - nginx/docker-entrypoint.d/15-local-resolvers.envsh
+  - nginx/docker-entrypoint.d/20-envsubst-on-templates.sh
+  - nginx/docker-entrypoint.d/30-tune-worker-processes.sh
 
 - name: nginx-templates
   namespace: gateway
   options:
     disableNameSuffixHash: true
   files:
-  - nginx/gateway_loki.conf.template
-  - nginx/gateway_mimir.conf.template
-  - nginx/gateway_pyroscope.conf.template
-- name: nginx-env
-  namespace: gateway
-  options:
-    disableNameSuffixHash: true
-  # We need to fully set all variables because nginx envsubst does not support default values.
-  # https://github.com/nginxinc/docker-nginx/issues/592
-  envs:
-  - default.env
+  - gateway_loki.conf.template=nginx/gateway_loki.conf
+  - gateway_mimir.conf.template=nginx/gateway_mimir.conf
+  - gateway_pyroscope.conf.template=nginx/gateway_pyroscope.conf

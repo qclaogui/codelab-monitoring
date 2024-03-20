@@ -51,19 +51,11 @@ configMapGenerator:
   files:
   - alertmanager_fallback_config.yaml=configs/alertmanager-fallback-config.yaml
 
-# replace nginx-templates and nginx-env configMap
-- name: nginx-templates
-  namespace: gateway
-  options:
-    disableNameSuffixHash: true
-  files:
-  - configs/gateway_mimir.conf.template
+# Update Mimir Microservices Mode endpoint in gateway
 - name: nginx-env
   namespace: gateway
   options:
     disableNameSuffixHash: true
-  # We need to fully set all variables because nginx envsubst does not support default values.
-  # https://github.com/nginxinc/docker-nginx/issues/592
   literals:
   - MIMIR_DISTRIBUTOR_HOST=mimir-distributed-distributor-headless.monitoring-system.svc.cluster.local
   - MIMIR_QUERY_FRONTEND_HOST=mimir-distributed-query-frontend.monitoring-system.svc.cluster.local

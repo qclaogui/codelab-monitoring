@@ -30,28 +30,15 @@ services:
     image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:latest}
     restart: always
     volumes:
-      - ../../common/config/nginx:/etc/nginx/templates
-      - ../../common/config/tempo/gateway_tempo.conf.template:/etc/nginx/templates/gateway_tempo.conf.template
-      - ../../common/config/mimir/gateway_mimir.conf.template:/etc/nginx/templates/gateway_mimir.conf.template
-    environment:
-      - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
-      - TEMPO_DISTRIBUTOR_HOST=tempo
-      - TEMPO_INGESTER_HOST=tempo
-      - TEMPO_QUERY_FRONTEND_HOST=tempo
-      - TEMPO_COMPACTOR_HOST=tempo
-      - MIMIR_DISTRIBUTOR_HOST=mimir
-      - MIMIR_ALERT_MANAGER_HOST=mimir
-      - MIMIR_RULER_HOST=mimir
-      - MIMIR_QUERY_FRONTEND_HOST=mimir
-      - MIMIR_COMPACTOR_HOST=mimir
+      - ../../common/config/nginx/10-default-lgtmp.envsh:/docker-entrypoint.d/10-default-lgtmp.envsh
+      - ../../common/config/nginx/nginx.conf:/etc/nginx/templates/nginx.conf.template
+      - ../../common/config/tempo/gateway_tempo.conf:/etc/nginx/templates/gateway_tempo.conf.template
+      - ../../common/config/mimir/gateway_mimir.conf:/etc/nginx/templates/gateway_mimir.conf.template
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ || exit 1" ]
       interval: 10s
       timeout: 5s
-      retries: 5
-    ports:
-      - "33200:3200"
-      - "38080:8080"
+      retries: 10
 
   tempo:
     depends_on:
@@ -73,6 +60,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+    # expose 33200 port so we can directly access tempo inside container
+    ports:
+      - "33200:3200"
 
   mimir:
     depends_on:
@@ -90,6 +80,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    # expose 38080 port so we can directly access mimir inside container
+    ports:
+      - "38080:8080"
     networks:
       default:
         aliases:

@@ -38,19 +38,11 @@ configMapGenerator:
   files:
   - config.yaml=configs/loki.yaml
 
-# replace nginx-templates and nginx-env configMap
-- name: nginx-templates
-  namespace: gateway
-  options:
-    disableNameSuffixHash: true
-  files:
-  - configs/gateway_loki.conf.template
+# Update Loki Read-Write Mode endpoint in gateway
 - name: nginx-env
   namespace: gateway
   options:
     disableNameSuffixHash: true
-  # We need to fully set all variables because nginx envsubst does not support default values.
-  # https://github.com/nginxinc/docker-nginx/issues/592
   literals:
   - LOKI_DISTRIBUTOR_HOST=loki-write.logging-system.svc.cluster.local
   - LOKI_INGESTER_HOST=loki-write.logging-system.svc.cluster.local
