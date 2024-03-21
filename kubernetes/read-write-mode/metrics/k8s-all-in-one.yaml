@@ -10202,6 +10202,14 @@ metadata:
 ---
 apiVersion: v1
 data:
+  alertmanager_fallback_config.yaml: |
+    route:
+      group_wait: 0s
+      receiver: empty-receiver
+
+    receivers:
+      # In this example we're not going to send any notification out of Alertmanager.
+      - name: 'empty-receiver'
   mimir.yaml: |
     # Do not use this configuration in production.
     # It is for demonstration purposes only.
@@ -10227,14 +10235,18 @@ data:
           http:
             insecure_skip_verify: true
 
-    compactor:
-      compaction_interval: 30s
-      data_dir: /tmp/mimir-compactor
-      cleanup_interval:    1m
-      tenant_cleanup_delay: 1m
+    alertmanager:
+      data_dir: /data/alertmanager
+      enable_api: true
+      external_url: /alertmanager
+      fallback_config_file: /etc/mimir/alertmanager_fallback_config.yaml
+    alertmanager_storage:
+      s3:
+        bucket_name: mimir-alertmanager
 
     memberlist:
       join_members: [ mimir-memberlist:7946 ]
+
 
     ingester:
       ring:
@@ -10244,28 +10256,85 @@ data:
       sharding_ring:
         replication_factor: 1
 
-    alertmanager_storage:
-      s3:
-        bucket_name: mimir-alertmanager
-
     blocks_storage:
       s3:
         bucket_name: mimir-blocks
       tsdb:
         dir: /data/ingester
+        ship_interval: 1m
+        block_ranges_period: [ 2h ]
+        retention_period: 3h
+      bucket_store:
+        index_cache:
+          backend: memcached
+          memcached:
+            addresses: dns+memcached.memcached-system.svc:11211
 
+        chunks_cache:
+          backend: memcached
+          memcached:
+            addresses: dns+memcached.memcached-system.svc:11211
+
+        metadata_cache:
+          backend: memcached
+          memcached:
+            addresses: dns+memcached.memcached-system.svc:11211
+
+    ruler:
+      rule_path: /data/rules
+      enable_api: true
+      # Each ruler is configured to route alerts to the Alertmanager running within the same component.
+      alertmanager_url: http://localhost:8080/alertmanager
     ruler_storage:
       s3:
         bucket_name: mimir-ruler
+      cache:
+        backend: memcached
+        memcached:
+          addresses: dns+memcached.memcached-system.svc:11211
 
-    runtime_config:
-      file: /var/mimir/runtime.yaml
+    query_scheduler:
+      service_discovery_mode: "ring"
+
+    compactor:
+      compaction_interval: 30s
+      data_dir: /data/mimir-compactor
+      cleanup_interval:    1m
+      tenant_cleanup_delay: 1m
 
     limits:
       native_histograms_ingestion_enabled: true
+
+    overrides_exporter:
+      ring:
+        enabled: true
+        wait_stability_min_duration: 30s
+
+    runtime_config:
+      file: /etc/mimir/runtime.yaml
+  runtime.yaml: |-
+    # This file can be used to set overrides or other runtime config.
+    ingester_limits: # limits that each ingester replica enforces
+      max_ingestion_rate: 20000
+      max_series: 1500000
+      max_tenants: 1000
+      max_inflight_push_requests: 30000
+
+    distributor_limits: # limits that each distributor replica enforces
+      max_ingestion_rate: 20000
+      max_inflight_push_requests: 30000
+      max_inflight_push_requests_bytes: 50000000
+
+    overrides:
+      anonymous: # limits for anonymous that the whole cluster enforces
+        # ingestion_tenant_shard_size: 9
+        max_global_series_per_user: 1500000
+        max_fetched_series_per_query: 100000
+        native_histograms_ingestion_enabled: true
+        ruler_max_rules_per_rule_group: 50
 kind: ConfigMap
 metadata:
-  name: mimir-config-5d8db6m2k8
+  name: mimir-config-8778cmk25b
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -43439,34 +43508,6 @@ metadata:
 ---
 apiVersion: v1
 data:
-  runtime.yaml: |-
-    # https://grafana.com/docs/mimir/latest/configure/about-runtime-configuration/
-    ingester_limits: # limits that each ingester replica enforces
-      max_ingestion_rate: 20000
-      max_series: 1500000
-      max_tenants: 1000
-      max_inflight_push_requests: 30000
-
-    distributor_limits: # limits that each distributor replica enforces
-      max_ingestion_rate: 20000
-      max_inflight_push_requests: 30000
-      max_inflight_push_requests_bytes: 50000000
-
-    overrides:
-      anonymous: # limits for anonymous that the whole cluster enforces
-        # ingestion_tenant_shard_size: 9
-        max_global_series_per_user: 1500000
-        max_global_series_per_metric: 50000
-        max_fetched_series_per_query: 100000
-        ruler_max_rules_per_rule_group: 100
-        ruler_max_rule_groups_per_tenant: 100
-kind: ConfigMap
-metadata:
-  name: runtime-config-88gg5gk88d
-  namespace: monitoring-system
----
-apiVersion: v1
-data:
   MIMIR_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:
@@ -43627,17 +43668,16 @@ spec:
             memory: 55Mi
         volumeMounts:
         - mountPath: /etc/mimir
-          name: mimir-config
-        - mountPath: /var/mimir
-          name: runtime-config
+          name: config
+        - mountPath: /data
+          name: storage
       terminationGracePeriodSeconds: 60
       volumes:
       - configMap:
-          name: mimir-config-5d8db6m2k8
-        name: mimir-config
-      - configMap:
-          name: runtime-config-88gg5gk88d
-        name: runtime-config
+          name: mimir-config-8778cmk25b
+        name: config
+      - emptyDir: {}
+        name: storage
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -43701,17 +43741,16 @@ spec:
             memory: 55Mi
         volumeMounts:
         - mountPath: /etc/mimir
-          name: mimir-config
-        - mountPath: /var/mimir
-          name: runtime-config
+          name: config
+        - mountPath: /data
+          name: storage
       terminationGracePeriodSeconds: 60
       volumes:
       - configMap:
-          name: mimir-config-5d8db6m2k8
-        name: mimir-config
-      - configMap:
-          name: runtime-config-88gg5gk88d
-        name: runtime-config
+          name: mimir-config-8778cmk25b
+        name: config
+      - emptyDir: {}
+        name: storage
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -43778,17 +43817,16 @@ spec:
             memory: 55Mi
         volumeMounts:
         - mountPath: /etc/mimir
-          name: mimir-config
-        - mountPath: /var/mimir
-          name: runtime-config
+          name: config
+        - mountPath: /data
+          name: storage
       terminationGracePeriodSeconds: 60
       volumes:
       - configMap:
-          name: mimir-config-5d8db6m2k8
-        name: mimir-config
-      - configMap:
-          name: runtime-config-88gg5gk88d
-        name: runtime-config
+          name: mimir-config-8778cmk25b
+        name: config
+      - emptyDir: {}
+        name: storage
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule

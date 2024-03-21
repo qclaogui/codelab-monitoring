@@ -10539,14 +10539,30 @@ data:
 
     blocks_storage:
       backend: s3
-      bucket_store:
-        sync_dir: /data/tsdb-sync
       s3:
         bucket_name: mimir-blocks
       tsdb:
         dir: /data/tsdb
-        head_compaction_interval: 15m
-        wal_replay_concurrency: 3
+        ship_interval: 1m
+        block_ranges_period: [ 2h ]
+        retention_period: 3h
+      bucket_store:
+        sync_dir: /data/tsdb-sync
+        index_cache:
+          backend: memcached
+          memcached:
+            addresses: dns+memcached.memcached-system.svc:11211
+
+        chunks_cache:
+          backend: memcached
+          memcached:
+            addresses: dns+memcached.memcached-system.svc:11211
+
+        metadata_cache:
+          backend: memcached
+          memcached:
+            addresses: dns+memcached.memcached-system.svc:11211
+
 
     common:
       storage:
@@ -10573,6 +10589,13 @@ data:
     frontend:
       parallelize_shardable_queries: true
       scheduler_address: mimir-distributed-query-scheduler-headless.monitoring-system.svc:9095
+      query_sharding_target_series_per_shard: 2500
+      cache_results: true
+      results_cache:
+        backend: memcached
+        memcached:
+          addresses: dns+memcached.memcached-system.svc:11211
+
     frontend_worker:
       grpc_client_config:
         max_send_msg_size: 419430400
@@ -10596,6 +10619,8 @@ data:
       native_histograms_ingestion_enabled: true
 
     memberlist:
+      abort_if_cluster_join_fails: false
+      compression_enabled: false
       join_members:
       - dns+mimir-distributed-gossip-ring.monitoring-system.svc.cluster.local:7946
 
@@ -10615,6 +10640,10 @@ data:
       backend: s3
       s3:
         bucket_name: mimir-ruler
+      cache:
+        backend: memcached
+        memcached:
+          addresses: dns+memcached.memcached-system.svc:11211
 
     runtime_config:
       file: /var/mimir/runtime.yaml
@@ -10651,7 +10680,7 @@ metadata:
 apiVersion: v1
 data:
   runtime.yaml: |-
-    # https://grafana.com/docs/mimir/latest/configure/about-runtime-configuration/
+    # This file can be used to set overrides or other runtime config.
     ingester_limits: # limits that each ingester replica enforces
       max_ingestion_rate: 20000
       max_series: 1500000
@@ -10667,10 +10696,9 @@ data:
       anonymous: # limits for anonymous that the whole cluster enforces
         # ingestion_tenant_shard_size: 9
         max_global_series_per_user: 1500000
-        max_global_series_per_metric: 50000
         max_fetched_series_per_query: 100000
-        ruler_max_rules_per_rule_group: 100
-        ruler_max_rule_groups_per_tenant: 100
+        native_histograms_ingestion_enabled: true
+        ruler_max_rules_per_rule_group: 50
 kind: ConfigMap
 metadata:
   labels:

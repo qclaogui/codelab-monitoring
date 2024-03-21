@@ -339,9 +339,10 @@ data:
      reporting_enabled: false
 
     server:
-      grpc_listen_port: 9095
       http_listen_port: 3100
-      log_level: warn
+      grpc_listen_port: 9095
+      log_level: info
+      log_format: json
 
     # https://grafana.com/docs/loki/latest/configure/#use-environment-variables-in-the-configuration
     common:
@@ -367,13 +368,21 @@ data:
       join_members:
       - loki-memberlist:7946
 
+    # https://github.com/grafana/loki/blob/main/docs/sources/configure/_index.md#query_range
     query_range:
       align_queries_with_step: true
+
       cache_results: true
       results_cache:
         cache:
-          embedded_cache:
-            enabled: true
+          memcached_client:
+            addresses: "dns+memcached.memcached-system.svc:11211"
+
+      cache_index_stats_results: true
+      index_stats_results_cache:
+        cache:
+          memcached_client:
+            addresses: "dns+memcached.memcached-system.svc:11211"
 
     limits_config:
       max_cache_freshness_per_query: 10m
@@ -400,11 +409,10 @@ data:
         schema: v12
         store: tsdb
 
-    storage_config:
-      hedging:
-        at: 250ms
-        max_per_second: 20
-        up_to: 3
+    chunk_store_config:
+      chunk_cache_config:
+        memcached_client:
+          addresses: "dns+memcached.memcached-system.svc:11211"
 kind: ConfigMap
 metadata:
   labels:
@@ -29575,6 +29583,21 @@ data:
         ship_interval: 1m
         block_ranges_period: [ 2h ]
         retention_period: 3h
+      bucket_store:
+        index_cache:
+          backend: memcached
+          memcached:
+            addresses: dns+memcached.memcached-system.svc:11211
+
+        chunks_cache:
+          backend: memcached
+          memcached:
+            addresses: dns+memcached.memcached-system.svc:11211
+
+        metadata_cache:
+          backend: memcached
+          memcached:
+            addresses: dns+memcached.memcached-system.svc:11211
 
     ruler:
       rule_path: /data/rules
@@ -29583,6 +29606,10 @@ data:
     ruler_storage:
       s3:
         bucket_name: mimir-ruler
+      cache:
+        backend: memcached
+        memcached:
+          addresses: dns+memcached.memcached-system.svc:11211
 
     compactor:
       compaction_interval: 30s
@@ -29628,7 +29655,7 @@ metadata:
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: mimir
     app.kubernetes.io/version: 2.11.0
-  name: mimir-config-b7gtbt67bf
+  name: mimir-config-958c4gm5k9
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -62850,13 +62877,25 @@ metadata:
 ---
 apiVersion: v1
 data:
-  overrides.yaml: |-
+  overrides.yaml: |
     overrides:
-      "*":
-        block_retention: 7d
-        ingestion_burst_size_bytes: 20000000
-        ingestion_rate_limit_bytes: 15000000
-  tempo.yaml: |+
+      "anonymous":
+        ingestion:
+          rate_strategy: local
+          rate_limit_bytes: 15000000
+          burst_size_bytes: 20000000
+          max_traces_per_user: 10000
+        read:
+          max_bytes_per_tag_values_query: 5000000
+        # global:
+        #   max_bytes_per_trace: 1500000
+        # metrics_generator:
+        #   processors:
+        #   - service-graphs
+        #   - span-metrics
+        #   remote_write_headers:
+        #     X-Scope-OrgID: "anonymous"
+  tempo.yaml: |
     # For more information on this configuration, see the complete reference guide at
     # https://grafana.com/docs/tempo/latest/configuration/
 
@@ -62932,14 +62971,32 @@ data:
           insecure: ${TEMPO_S3_INSECURE:-false}
           tls_insecure_skip_verify: true
 
+    # https://github.com/grafana/tempo/blob/main/docs/sources/tempo/configuration/_index.md#cache
+    cache:
+      background:
+        writeback_goroutines: 5
+      caches:
+      - roles:
+        - bloom
+        - parquet-footer
+        - parquet-page
+        - frontend-search
+        - parquet-column-idx
+        - parquet-offset-idx
+        memcached:
+          addresses: "dns+memcached.memcached-system.svc:11211"
+
     overrides:
       per_tenant_override_config: /conf/overrides.yaml
       defaults:
+        global:
+          max_bytes_per_trace: 1500000
         metrics_generator:
           processors:
           - service-graphs
           - span-metrics
-
+          remote_write_headers:
+            X-Scope-OrgID: "anonymous"
 kind: ConfigMap
 metadata:
   labels:
@@ -63340,7 +63397,7 @@ spec:
       terminationGracePeriodSeconds: 60
       volumes:
       - configMap:
-          name: mimir-config-b7gtbt67bf
+          name: mimir-config-958c4gm5k9
         name: config
       - emptyDir: {}
         name: storage
@@ -63614,7 +63671,7 @@ spec:
         envFrom:
         - secretRef:
             name: tempo-env-gk54k88t7g
-        image: grafana/tempo:2.4.0
+        image: grafana/tempo:2.4.1
         imagePullPolicy: IfNotPresent
         name: tempo
         ports:

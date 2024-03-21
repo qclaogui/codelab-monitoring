@@ -81,9 +81,10 @@ data:
      reporting_enabled: false
 
     server:
-      grpc_listen_port: 9095
       http_listen_port: 3100
-      log_level: warn
+      grpc_listen_port: 9095
+      log_level: info
+      log_format: json
 
     # https://grafana.com/docs/loki/latest/configure/#use-environment-variables-in-the-configuration
     common:
@@ -119,11 +120,18 @@ data:
 
     query_range:
       align_queries_with_step: true
+
       cache_results: true
       results_cache:
         cache:
-          embedded_cache:
-            enabled: true
+          memcached_client:
+            addresses: "dns+memcached.memcached-system.svc:11211"
+
+      cache_index_stats_results: true
+      index_stats_results_cache:
+        cache:
+          memcached_client:
+            addresses: "dns+memcached.memcached-system.svc:11211"
 
     limits_config:
       enforce_metric_name: false
@@ -151,11 +159,10 @@ data:
         schema: v12
         store: boltdb-shipper
 
-    storage_config:
-      hedging:
-        at: 250ms
-        max_per_second: 20
-        up_to: 3
+    chunk_store_config:
+      chunk_cache_config:
+        memcached_client:
+          addresses: "dns+memcached.memcached-system.svc:11211"
 kind: ConfigMap
 metadata:
   labels:
