@@ -19,32 +19,6 @@ resources:
 - ../../../monitoring-mixins/mimir-mixin/deploy
 # - ../../../monitoring-mixins/tempo-mixin/deploy
 
-secretGenerator:
-- name: loki-env
-  namespace: logging-system
-  literals:
-  - LOKI_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
-
-- name: tempo-env
-  namespace: tracing-system
-  literals:
-  - TEMPO_S3_SECRET_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
-  - JAEGER_AGENT_HOST=grafana-agent.monitoring-system.svc.cluster.local
-  - JAEGER_AGENT_PORT=6831
-  - JAEGER_TAGS=app=tempo
-  - JAEGER_SAMPLER_TYPE=const
-  - JAEGER_SAMPLER_PARAM=1
-
-- name: mimir-env
-  namespace: monitoring-system
-  literals:
-  - MIMIR_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
-
-- name: pyroscope-env
-  namespace: profiles-system
-  literals:
-  - PYROSCOPE_STORAGE_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
-
 configMapGenerator:
 - name: agent-config
   namespace: monitoring-system
@@ -60,34 +34,6 @@ configMapGenerator:
       grafana_datasource: "1"
   files:
   - datasources.yaml=configs/grafana-datasources-all-in-one.yaml
-
-- name: loki-config
-  namespace: logging-system
-  behavior: replace
-  files:
-  - config.yaml=configs/loki.yaml
-
-- name: tempo
-  namespace: tracing-system
-  behavior: replace
-  files:
-  - configs/tempo.yaml
-  - overrides.yaml=configs/tempo-overrides.yaml
-
-- name: mimir-config
-  namespace: monitoring-system
-  files:
-  - configs/mimir.yaml
-- name: runtime-config
-  namespace: monitoring-system
-  files:
-  - runtime.yaml=configs/mimir-runtime.yaml
-
-- name: pyroscope-config
-  namespace: profiles-system
-  behavior: replace
-  files:
-  - config.yaml=configs/pyroscope.yaml
 
 # Update LGTMP endpoint in gateway
 - name: nginx-templates

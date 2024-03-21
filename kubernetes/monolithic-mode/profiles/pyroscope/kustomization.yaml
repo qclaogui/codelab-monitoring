@@ -15,3 +15,30 @@ helmCharts:
 
 resources:
 - namespace.yaml
+
+secretGenerator:
+- name: pyroscope-env
+  namespace: profiles-system
+  literals:
+  - PYROSCOPE_STORAGE_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
+
+# # Use kustomize build --enable-helm configMapGenerator not work well:
+# # https://github.com/kubernetes-sigs/kustomize/issues/4799#issuecomment-1260408886
+# configMapGenerator:
+# - name: pyroscope-config
+#   files:
+#   - config.yaml=configs/pyroscope.yaml
+
+# Solution:
+#   Move the configMapGenerator, as a plugin, under generators because kustomize runs plugins after built-in fields
+generators:
+# - configmap-generator.yaml
+- |-
+  apiVersion: builtin
+  kind: ConfigMapGenerator
+  metadata:
+    name: pyroscope-config
+    namespace: profiles-system
+  behavior: replace
+  files:
+  - config.yaml=configs/pyroscope.yaml

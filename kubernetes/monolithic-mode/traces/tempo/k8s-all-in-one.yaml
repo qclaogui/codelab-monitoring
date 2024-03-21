@@ -18,60 +18,96 @@ metadata:
 ---
 apiVersion: v1
 data:
-  overrides.yaml: |
+  overrides.yaml: |-
     overrides:
-      {}
-  tempo.yaml: |
+      "*":
+        block_retention: 7d
+        ingestion_burst_size_bytes: 20000000
+        ingestion_rate_limit_bytes: 15000000
+  tempo.yaml: |+
+    # For more information on this configuration, see the complete reference guide at
+    # https://grafana.com/docs/tempo/latest/configuration/
+
+    stream_over_http_enabled: true
+
     multitenancy_enabled: false
     usage_report:
       reporting_enabled: false
+
     compactor:
       compaction:
         block_retention: 1h
+
     distributor:
       receivers:
-            jaeger:
-              protocols:
-                grpc:
-                  endpoint: 0.0.0.0:14250
-                thrift_binary:
-                  endpoint: 0.0.0.0:6832
-                thrift_compact:
-                  endpoint: 0.0.0.0:6831
-                thrift_http:
-                  endpoint: 0.0.0.0:14268
-            otlp:
-              protocols:
-                grpc:
-                  endpoint: 0.0.0.0:4317
-                http:
-                  endpoint: 0.0.0.0:4318
+        otlp:
+          protocols:
+            grpc:
+              endpoint: 0.0.0.0:4317
+            http:
+              endpoint: 0.0.0.0:4318
+
     ingester:
-          max_block_duration: 5m
-    server:
-          grpc_listen_port: 9095
-          http_listen_port: 3100
-    storage:
-          trace:
-            backend: local
-            local:
-              path: /var/tempo/traces
-            wal:
-              path: /var/tempo/wal
+      trace_idle_period: 10s
+      max_block_bytes: 1_000_000
+      max_block_duration: 5m
+
     querier:
-          {}
-    query_frontend:
-          {}
-    overrides:
-          per_tenant_override_config: /conf/overrides.yaml
-          metrics_generator_processors:
-          - 'service-graphs'
-          - 'span-metrics'
+      frontend_worker:
+        frontend_address: tempo:9095
+
     metrics_generator:
-          storage:
-            path: "/tmp/tempo"
-            remote_write:
-              - url: http://nginx.gateway.svc.cluster.local:8080/api/v1/push
+      processor:
+        span_metrics:
+          # Configure extra dimensions to add as metric labels.
+          dimensions:
+          - http.method
+          - http.target
+          - http.status_code
+          - service.version
+        # Service graph metrics create node and edge metrics for determinng service interactions.
+        service_graphs:
+          # Configure extra dimensions to add as metric labels.
+          dimensions:
+          - http.method
+          - http.target
+          - http.status_code
+          - service.version
+      storage:
+        path: /tmp/tempo/generator/wal
+        remote_write_add_org_id_header: true
+        remote_write:
+        - url: http://nginx.gateway.svc.cluster.local:8080/api/v1/push
+          send_exemplars: true
+          send_native_histograms: true
+          headers:
+            X-Scope-OrgID: "anonymous"
+
+    server:
+      http_listen_port: 3100
+      grpc_listen_port: 9095
+
+    storage:
+      trace:
+        backend: s3
+        wal:
+          path: /tmp/tempo/wal
+        s3:
+          bucket: tempo-data
+          endpoint: ${TEMPO_S3_ENDPOINT:-minio.minio-system.svc:443}
+          access_key: ${TEMPO_S3_ACCESS_KEY:-lgtmp}
+          secret_key: ${TEMPO_S3_SECRET_KEY:-supersecret}
+          insecure: ${TEMPO_S3_INSECURE:-false}
+          tls_insecure_skip_verify: true
+
+    overrides:
+      per_tenant_override_config: /conf/overrides.yaml
+      defaults:
+        metrics_generator:
+          processors:
+          - service-graphs
+          - span-metrics
+
 kind: ConfigMap
 metadata:
   labels:
@@ -82,6 +118,20 @@ metadata:
     helm.sh/chart: tempo-1.7.2
   name: tempo
   namespace: tracing-system
+---
+apiVersion: v1
+data:
+  JAEGER_AGENT_HOST: Z3JhZmFuYS1hZ2VudC5tb25pdG9yaW5nLXN5c3RlbS5zdmMuY2x1c3Rlci5sb2NhbA==
+  JAEGER_AGENT_PORT: NjgzMQ==
+  JAEGER_SAMPLER_PARAM: MQ==
+  JAEGER_SAMPLER_TYPE: Y29uc3Q=
+  JAEGER_TAGS: YXBwPXRlbXBv
+  TEMPO_S3_SECRET_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
+kind: Secret
+metadata:
+  name: tempo-env-gk54k88t7g
+  namespace: tracing-system
+type: Opaque
 ---
 apiVersion: v1
 kind: Service
@@ -190,7 +240,7 @@ spec:
         - -config.expand-env=true
         envFrom:
         - secretRef:
-            name: tempo-env
+            name: tempo-env-gk54k88t7g
         image: grafana/tempo:2.4.0
         imagePullPolicy: IfNotPresent
         name: tempo
