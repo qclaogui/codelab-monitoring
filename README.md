@@ -24,6 +24,41 @@ This project uses [bingo](https://github.com/bwplotka/bingo) (located in [.bingo
 
 Run `make install-build-deps` to install dependencies tools.
 
+## Command line
+
+Take Grafana LGTMP Stack to the command line([#32](https://github.com/qclaogui/codelab-monitoring/pull/32))
+
+```shell
+❯ lgtmp --help
+Grafana LGTMP Stack from the command line
+L -> Loki       Like Prometheus, but for logs
+G -> Grafana    The open and composable observability and data visualization platform
+T -> Tempo      A high volume, minimal dependency distributed tracing backend
+M -> Mimir      The most scalable Prometheus backend
+P -> Pyroscope  Continuous Profiling Platform. Debug performance issues down to a single line of code
+
+Usage:
+  lgtmp [command]
+
+Examples:
+$ lgtmp up metrics
+
+
+Available Commands:
+  completion  Generate the autocompletion script for the specified shell
+  delete      Clean up Grafana LGTMP stack from Kubernetes
+  deploy      Provisioning Grafana LGTMP stack by Kubernetes
+  down        Clean up Grafana LGTMP stack from Docker Compose
+  help        Help about any command
+  up          Provisioning Grafana LGTMP stack by Docker Compose
+  version     Output the version of lgtmp
+
+Flags:
+  -h, --help   Show help for command
+
+Use "lgtmp [command] --help" for more information about a command.
+```
+
 ## Docker Compose
 
 These instructions will get you through the deploying samples with Docker Compose.
