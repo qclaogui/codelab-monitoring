@@ -284,7 +284,7 @@ endef
 
 
 .PHONY: deploy-monolithic-mode-metrics
-deploy-monolithic-mode-metrics: deploy-grafana ## Deploy monolithic-mode metrics
+deploy-monolithic-mode-metrics: deploy-memcached ## Deploy monolithic-mode metrics
 	$(info ******************** deploy monolithic-mode metrics manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/metrics | kubectl apply -f -
 	kubectl rollout status -n monitoring-system deployment/mimir --watch --timeout=600s
@@ -294,7 +294,7 @@ delete-monolithic-mode-metrics: delete-minio
 
 
 .PHONY: deploy-monolithic-mode-logs
-deploy-monolithic-mode-logs: deploy-grafana ## Deploy monolithic-mode logs
+deploy-monolithic-mode-logs: deploy-memcached ## Deploy monolithic-mode logs
 	$(info ******************** deploy monolithic-mode logs manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/logs | kubectl apply -f -
 	kubectl rollout status -n logging-system statefulset/loki --watch --timeout=600s
@@ -304,7 +304,7 @@ delete-monolithic-mode-logs: delete-minio
 
 
 .PHONY: deploy-monolithic-mode-profiles
-deploy-monolithic-mode-profiles: deploy-grafana ## Deploy monolithic-mode profiles
+deploy-monolithic-mode-profiles: deploy-memcached ## Deploy monolithic-mode profiles
 	$(info ******************** deploy monolithic-mode profiles manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/profiles | kubectl apply -f -
 	kubectl rollout status -n profiles-system statefulset/pyroscope --watch --timeout=600s
@@ -314,7 +314,7 @@ delete-monolithic-mode-profiles: delete-minio
 
 
 .PHONY: deploy-monolithic-mode-traces
-deploy-monolithic-mode-traces: deploy-grafana ## Deploy monolithic-mode traces
+deploy-monolithic-mode-traces: deploy-memcached ## Deploy monolithic-mode traces
 	$(info ******************** deploy monolithic-mode traces manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/traces | kubectl apply -f -
 	kubectl rollout status -n tracing-system statefulset/tempo --watch --timeout=600s
@@ -324,7 +324,7 @@ delete-monolithic-mode-traces: delete-minio
 
 
 .PHONY: deploy-monolithic-mode-all-in-one
-deploy-monolithic-mode-all-in-one: deploy-grafana ## Deploy monolithic-mode all-in-one
+deploy-monolithic-mode-all-in-one: deploy-memcached ## Deploy monolithic-mode all-in-one
 	$(info ******************** deploy monolithic-mode all-in-one manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/all-in-one | kubectl apply -f -
 	kubectl rollout status -n monitoring-system deployment/mimir --watch --timeout=600s
@@ -335,7 +335,7 @@ delete-monolithic-mode-all-in-one: delete-minio
 
 
 .PHONY: deploy-read-write-mode-metrics
-deploy-read-write-mode-metrics: deploy-grafana ## Deploy read-write-mode metrics
+deploy-read-write-mode-metrics: deploy-memcached ## Deploy read-write-mode metrics
 	$(info ******************** deploy read-write-mode metrics manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/read-write-mode/metrics | kubectl apply -f -
 	kubectl rollout status -n monitoring-system deployment/mimir-write --watch --timeout=600s
@@ -345,7 +345,7 @@ delete-read-write-mode-metrics: delete-minio
 
 
 .PHONY: deploy-read-write-mode-logs
-deploy-read-write-mode-logs: deploy-grafana ## Deploy read-write-mode logs
+deploy-read-write-mode-logs: deploy-memcached ## Deploy read-write-mode logs
 	$(info ******************** deploy read-write-mode logs manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/read-write-mode/logs | kubectl apply -f -
 	kubectl rollout status -n logging-system statefulset/loki-write --watch --timeout=600s
@@ -356,7 +356,7 @@ delete-read-write-mode-logs: delete-minio
 
 
 .PHONY: deploy-microservices-mode-logs
-deploy-microservices-mode-logs: deploy-grafana ## Deploy microservices-mode logs
+deploy-microservices-mode-logs: deploy-memcached ## Deploy microservices-mode logs
 	$(info ******************** deploy microservices-mode logs manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/logs | kubectl apply -f -
 	kubectl rollout status -n logging-system statefulset/loki-distributed-ingester --watch --timeout=600s
@@ -366,7 +366,7 @@ delete-microservices-mode-logs: delete-minio
 
 
 .PHONY: deploy-microservices-mode-metrics
-deploy-microservices-mode-metrics: deploy-grafana ## Deploy microservices-mode metrics
+deploy-microservices-mode-metrics: deploy-memcached ## Deploy microservices-mode metrics
 	$(info ******************** deploy microservices-mode metrics manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/metrics | kubectl apply -f -
 	kubectl rollout status -n monitoring-system statefulset/mimir-distributed-ingester --watch --timeout=600s
@@ -376,7 +376,7 @@ delete-microservices-mode-metrics: delete-minio
 
 
 .PHONY: deploy-microservices-mode-profiles
-deploy-microservices-mode-profiles: deploy-grafana ## Deploy microservices-mode profiles
+deploy-microservices-mode-profiles: deploy-memcached ## Deploy microservices-mode profiles
 	$(info ******************** deploy microservices-mode profiles manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/profiles | kubectl apply -f -
 	@$(call config_changes_trigger_pod_restart, "Go to http://localhost:8080/explore for the profiles.")
@@ -385,7 +385,7 @@ delete-microservices-mode-profiles: delete-minio
 
 
 .PHONY: deploy-microservices-mode-traces
-deploy-microservices-mode-traces: deploy-grafana ## Deploy microservices-mode traces
+deploy-microservices-mode-traces: deploy-memcached ## Deploy microservices-mode traces
 	$(info ******************** deploy microservices-mode traces manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/traces | kubectl apply -f -
 	kubectl rollout status -n tracing-system statefulset/tempo-distributed-ingester --watch --timeout=600s
@@ -397,7 +397,7 @@ delete-microservices-mode-traces: delete-minio
 ##@ Grafana Agent Integrations
 
 .PHONY: deploy-memcached
-deploy-memcached: ## Deploy integration memcached manifests
+deploy-memcached: deploy-grafana ## Deploy integration memcached manifests
 	$(info ******************** deploy integration memcached manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/memcached | kubectl apply -f -
 delete-memcached:
