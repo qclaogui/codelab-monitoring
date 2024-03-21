@@ -1,0 +1,31 @@
+
+# Note: 
+# include is available in Docker Compose version 2.20 and later, and Docker Desktop version 4.22 and later.
+include:
+  - path: agent-collect-metrics.yaml
+  - path: load-rules-to-mimir.yaml
+
+services:
+  mimir:
+    depends_on:
+      minio:
+        condition: service_healthy
+    image: ${MIMIR_IMAGE:-docker.io/grafana/mimir:latest}
+    volumes:
+      - ../config/mimir:/etc/mimir
+    command:
+      - -config.file=/etc/mimir/monolithic-mode-metrics.yaml
+      - -target=all
+      - -config.expand-env=true
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # expose 38080 port so we can directly access mimir inside container
+    ports:
+      - "38080:8080"
+    networks:
+      default:
+        aliases:
+          - mimir-memberlist

@@ -8,14 +8,17 @@ version: '3.9'
 # include is available in Docker Compose version 2.20 and later, and Docker Desktop version 4.22 and later.
 include:
   - path: ../../common/compose-include/minio.yaml
-  - path: ../../common/compose-include/agent-collect-logs.yaml
   - path: ../../common/compose-include/memcached.yaml
+  - path: ../../common/compose-include/agent-collect-logs.yaml
+  # optional
+  - path: ../../common/compose-include/option-to-collect-metrics.yaml
 
 services:
   gateway:
+    # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
     labels:
-      # - logs.agent.grafana.com/scrape=false
-      - logs.agent.grafana.com/log-format=nginx
+      metrics.agent.grafana.com/scrape: false
+      logs.agent.grafana.com/log-format: nginx
     depends_on:
       loki:
         condition: service_healthy
@@ -24,6 +27,7 @@ services:
       - ../../common/config/nginx/10-default-lgtmp.envsh:/docker-entrypoint.d/10-default-lgtmp.envsh
       - ../../common/config/nginx/nginx.conf:/etc/nginx/templates/nginx.conf.template
       - ../../common/config/loki/gateway_loki.conf:/etc/nginx/templates/gateway_loki.conf.template
+      - ../../common/config/mimir/gateway_mimir.conf:/etc/nginx/templates/gateway_mimir.conf.template
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ || exit 1" ]
       interval: 10s
@@ -66,7 +70,11 @@ services:
       - ../../common/config/grafana/grafana.ini:/etc/grafana-config/grafana.ini
       - ../../common/config/grafana/dashboards:/var/lib/grafana/dashboards
       - ../../common/config/grafana/provisioning:/etc/grafana/provisioning
-      - ../../common/config/loki/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+      - ../../../monitoring-mixins/agent-flow-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/agent-flow-mixin
+      - ../../../monitoring-mixins/go-runtime-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/go-runtime-mixin
+      - ../../../monitoring-mixins/loki-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/loki-mixin
+      - ../../../monitoring-mixins/mimir-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/mimir-mixin
+      - ../../../monitoring-mixins/memcached-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/memcached-mixin
     environment:
       - GF_LOG_LEVEL=warn
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin_password}
