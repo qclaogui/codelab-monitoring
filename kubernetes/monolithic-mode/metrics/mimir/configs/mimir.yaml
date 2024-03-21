@@ -9,7 +9,7 @@ usage_stats:
 server:
   http_listen_port: 8080
   grpc_listen_port: 9095
-  log_level: warn
+  log_level: info
 
 # https://grafana.com/docs/mimir/latest/references/configuration-parameters/#use-environment-variables-in-the-configuration
 common:
@@ -23,11 +23,15 @@ common:
       http:
         insecure_skip_verify: true
 
-compactor:
-  compaction_interval: 30s
-  data_dir: /tmp/mimir-compactor
-  cleanup_interval:    1m
-  tenant_cleanup_delay: 1m
+alertmanager:
+  data_dir: /data/alertmanager
+  enable_api: true
+  external_url: /alertmanager
+  fallback_config_file: /etc/mimir/alertmanager_fallback_config.yaml
+alertmanager_storage:
+  s3:
+    bucket_name: mimir-alertmanager
+
 
 memberlist:
   join_members: [ mimir-memberlist:7946 ]
@@ -40,22 +44,37 @@ store_gateway:
   sharding_ring:
     replication_factor: 1
 
-alertmanager_storage:
-  s3:
-    bucket_name: mimir-alertmanager
 
 blocks_storage:
   s3:
     bucket_name: mimir-blocks
   tsdb:
     dir: /data/ingester
+    ship_interval: 1m
+    block_ranges_period: [ 2h ]
+    retention_period: 3h
 
+ruler:
+  rule_path: /data/rules
+  enable_api: true
+  alertmanager_url: http://localhost:8080/alertmanager
 ruler_storage:
   s3:
     bucket_name: mimir-ruler
 
-runtime_config:
-  file: /var/mimir/runtime.yaml
+compactor:
+  compaction_interval: 30s
+  data_dir: /data/mimir-compactor
+  cleanup_interval:    1m
+  tenant_cleanup_delay: 1m
 
 limits:
   native_histograms_ingestion_enabled: true
+
+overrides_exporter:
+  ring:
+    enabled: true
+    wait_stability_min_duration: 30s
+
+runtime_config:
+  file: /etc/mimir/runtime.yaml
