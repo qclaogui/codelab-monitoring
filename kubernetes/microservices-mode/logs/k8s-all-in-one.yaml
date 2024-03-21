@@ -38,10 +38,12 @@ data:
     analytics:
      reporting_enabled: false
 
-    chunk_store_config:
-      chunk_cache_config:
-        memcached_client:
-          addresses: "dns+memcached.memcached-system.svc:11211"
+    server:
+      http_listen_port: 3100
+      grpc_listen_port: 9095
+      log_level: info
+      log_format: json
+
 
     # https://grafana.com/docs/loki/latest/configure/#use-environment-variables-in-the-configuration
     common:
@@ -130,21 +132,20 @@ data:
           prefix: loki_index_
         object_store: s3
         schema: v12
-        store: boltdb-shipper
-
-    server:
-      http_listen_port: 3100
-      grpc_listen_port: 9095
-      log_level: info
-      log_format: json
+        store: tsdb
 
     storage_config:
-      boltdb_shipper:
+      tsdb_shipper:
         active_index_directory: /var/loki/index
         cache_location: /var/loki/cache
         index_gateway_client:
           server_address: dns:///loki-distributed-index-gateway:9095
         shared_store: s3
+
+    chunk_store_config:
+      chunk_cache_config:
+        memcached_client:
+          addresses: "dns+memcached.memcached-system.svc:11211"
 
     table_manager:
       retention_deletes_enabled: false
