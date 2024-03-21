@@ -8,13 +8,13 @@ version: '3.9'
 # include is available in Docker Compose version 2.20 and later, and Docker Desktop version 4.22 and later.
 include:
   - path: ../../common/compose-include/minio.yaml
-  - path: ../../common/compose-include/agent-collect-traces.yaml
-  - path: ../../common/compose-include/load-mimir-rule.yaml
-  - path: ../../common/compose-include/load-tempo-rule.yaml
   - path: ../../common/compose-include/memcached.yaml
+  - path: ../../common/compose-include/agent-collect-traces.yaml
+  # optional
+  - path: ../../common/compose-include/option-to-collect-metrics.yaml
 
 x-environment: &jaeger-environment
-  JAEGER_AGENT_HOST: agent
+  JAEGER_AGENT_HOST: agent-traces
   JAEGER_AGENT_PORT: 6831
   JAEGER_SAMPLER_TYPE: const
   JAEGER_SAMPLER_PARAM: 1
@@ -135,34 +135,7 @@ services:
       <<: *jaeger-environment
       JAEGER_TAGS: app=compactor
 
-  mimir:
-    depends_on:
-      minio:
-        condition: service_started
-    image: ${MIMIR_IMAGE:-docker.io/grafana/mimir:latest}
-    volumes:
-      - ../../common/config/mimir:/etc/mimir
-    command:
-      - -config.file=/etc/mimir/monolithic-mode-metrics.yaml
-      - -target=all
-      - -config.expand-env=true
-    healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    # expose 38080 port so we can directly access mimir inside container
-    ports:
-      - "38080:8080"
-    networks:
-      default:
-        aliases:
-          - mimir-memberlist
-
   grafana:
-    depends_on:
-      agent:
-        condition: service_started
     image: ${GRAFANA_IMAGE:-docker.io/grafana/grafana:latest}
     command:
       - --config=/etc/grafana-config/grafana.ini
@@ -170,7 +143,6 @@ services:
       - ../../common/config/grafana/grafana.ini:/etc/grafana-config/grafana.ini
       - ../../common/config/grafana/dashboards:/var/lib/grafana/dashboards
       - ../../common/config/grafana/provisioning:/etc/grafana/provisioning
-      - ../../common/config/tempo/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml # load datasources
       - ../../../monitoring-mixins/mimir-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/mimir-mixin
       # - ../../../monitoring-mixins/tempo-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/tempo-mixin
       - ../../../monitoring-mixins/agent-flow-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/agent-flow-mixin
@@ -179,6 +151,6 @@ services:
     environment:
       - GF_LOG_LEVEL=warn
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin_password}
-      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor tracesEmbeddedFlameGraph traceqlSearch correlations metricsSummary traceToMetrics traceToProfiles
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor traceqlSearch correlations metricsSummary traceToMetrics
     ports:
       - "3000:3000"

@@ -8,8 +8,9 @@ version: '3.9'
 # include is available in Docker Compose version 2.20 and later, and Docker Desktop version 4.22 and later.
 include:
   - path: ../../common/compose-include/minio.yaml
-  - path: ../../common/compose-include/agent-collect-all.yaml
   - path: ../../common/compose-include/memcached.yaml
+  - path: ../../common/compose-include/agent-collect-all.yaml
+  - path: ../../common/compose-include/load-rules-to-mimir.yaml
 
 # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
 x-labels: &profiles-labels
@@ -50,59 +51,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-
-  mimir:
-    labels:
-      <<: *profiles-labels
-      profiles.agent.grafana.com/service_name: mimir
-      logs.agent.grafana.com/log-format: logfmt
-    depends_on:
-      minio:
-        condition: service_healthy
-    image: ${MIMIR_IMAGE:-docker.io/grafana/mimir:latest}
-    volumes:
-      - ../../common/config/mimir:/etc/mimir
-    command:
-      - -config.file=/etc/mimir/monolithic-mode-metrics.yaml
-      - -target=all
-      - -config.expand-env=true
-      - -ruler.max-rules-per-rule-group=50
-    environment:
-      <<: *jaeger-environment
-      JAEGER_TAGS: app=mimir
-    healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    # expose 38080 port so we can directly access mimir inside container
-    ports:
-      - "38080:8080"
-    networks:
-      default:
-        aliases:
-          - mimir-memberlist
-
-  load-rules-to-mimir:
-    depends_on:
-      mimir:
-        condition: service_healthy
-    image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:latest}
-    volumes:
-      - ../../../monitoring-mixins/agent-flow-mixin/deploy/agent-flow-mixin-alerts.yaml:/agent-flow-mixin-alerts.yaml
-      - ../../../monitoring-mixins/loki-mixin/deploy/loki-mixin-rules.yaml:/loki-mixin-rules.yaml
-      - ../../../monitoring-mixins/loki-mixin/deploy/loki-mixin-alerts.yaml:/loki-mixin-alerts.yaml
-      - ../../../monitoring-mixins/memcached-mixin/deploy/memcached-mixin-alerts.yaml:/memcached-mixin-alerts.yaml
-      - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-rules.yaml:/mimir-mixin-rules.yaml
-      - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-alerts.yaml:/mimir-mixin-alerts.yaml
-      - ../../../monitoring-mixins/pyroscope-mixin/deploy/pyroscope-mixin-rules.yaml:/pyroscope-mixin-rules.yaml
-      # - ../../../monitoring-mixins/tempo-mixin/deploy/tempo-mixin-rules.yaml:/tempo-mixin-rules.yaml
-      # - ../../../monitoring-mixins/tempo-mixin/deploy/tempo-mixin-alerts.yaml:/tempo-mixin-alerts.yaml
-    environment:
-      - MIMIR_ADDRESS=http://mimir:8080
-      - MIMIR_TENANT_ID=anonymous
-    command: >-
-      rules load agent-flow-mixin-alerts.yaml /loki-mixin-rules.yaml /loki-mixin-alerts.yaml /memcached-mixin-alerts.yaml /mimir-mixin-rules.yaml /mimir-mixin-alerts.yaml /pyroscope-mixin-rules.yaml
 
   loki:
     # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
@@ -166,6 +114,38 @@ services:
     ports:
       - "33200:3200"
 
+  mimir:
+    labels:
+      <<: *profiles-labels
+      profiles.agent.grafana.com/service_name: mimir
+      logs.agent.grafana.com/log-format: logfmt
+    depends_on:
+      minio:
+        condition: service_healthy
+    image: ${MIMIR_IMAGE:-docker.io/grafana/mimir:latest}
+    volumes:
+      - ../../common/config/mimir:/etc/mimir
+    command:
+      - -config.file=/etc/mimir/monolithic-mode-metrics.yaml
+      - -target=all
+      - -config.expand-env=true
+      - -ruler.max-rules-per-rule-group=50
+    environment:
+      <<: *jaeger-environment
+      JAEGER_TAGS: app=mimir
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # expose 38080 port so we can directly access mimir inside container
+    ports:
+      - "38080:8080"
+    networks:
+      default:
+        aliases:
+          - mimir-memberlist
+
   pyroscope:
     labels:
       - logs.agent.grafana.com/log-format=logfmt
@@ -204,7 +184,6 @@ services:
       - ../../common/config/grafana/grafana.ini:/etc/grafana-config/grafana.ini
       - ../../common/config/grafana/dashboards:/var/lib/grafana/dashboards
       - ../../common/config/grafana/provisioning:/etc/grafana/provisioning
-      - ./config/grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
       - ../../../monitoring-mixins/agent-flow-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/agent-flow-mixin
       - ../../../monitoring-mixins/go-runtime-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/go-runtime-mixin
       - ../../../monitoring-mixins/loki-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/loki-mixin

@@ -8,9 +8,9 @@ version: '3.9'
 # include is available in Docker Compose version 2.20 and later, and Docker Desktop version 4.22 and later.
 include:
   - path: ../../common/compose-include/minio.yaml
-  - path: ../../common/compose-include/agent-collect-metrics.yaml
-  - path: ../../common/compose-include/load-mimir-rule.yaml
   - path: ../../common/compose-include/memcached.yaml
+  - path: ../../common/compose-include/agent-collect-metrics.yaml
+  - path: ../../common/compose-include/load-rules-to-mimir.yaml
 
 services:
   gateway:
@@ -214,7 +214,6 @@ services:
       - ../../common/config/grafana/grafana.ini:/etc/grafana-config/grafana.ini
       - ../../common/config/grafana/dashboards:/var/lib/grafana/dashboards
       - ../../common/config/grafana/provisioning:/etc/grafana/provisioning
-      - ../../common/config/mimir/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
       - ../../../monitoring-mixins/mimir-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/mimir-mixin
       - ../../../monitoring-mixins/agent-flow-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/agent-flow-mixin
       - ../../../monitoring-mixins/go-runtime-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/go-runtime-mixin
