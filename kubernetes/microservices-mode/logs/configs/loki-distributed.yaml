@@ -5,7 +5,9 @@ analytics:
  reporting_enabled: false
 
 chunk_store_config:
-  max_look_back_period: 0s
+  chunk_cache_config:
+    memcached_client:
+      addresses: "dns+memcached.memcached-system.svc:11211"
 
 # https://grafana.com/docs/loki/latest/configure/#use-environment-variables-in-the-configuration
 common:
@@ -64,12 +66,15 @@ memberlist:
 query_range:
   align_queries_with_step: true
   cache_results: true
-  max_retries: 5
   results_cache:
     cache:
-      embedded_cache:
-        enabled: true
-        ttl: 1h
+      memcached_client:
+        addresses: "dns+memcached.memcached-system.svc:11211"
+  cache_index_stats_results: true
+  index_stats_results_cache:
+    cache:
+      memcached_client:
+        addresses: "dns+memcached.memcached-system.svc:11211"
 
 ruler:
   ring:
@@ -94,9 +99,10 @@ schema_config:
     store: boltdb-shipper
 
 server:
-  grpc_listen_port: 9095
   http_listen_port: 3100
-  log_level: warn
+  grpc_listen_port: 9095
+  log_level: info
+  log_format: json
 
 storage_config:
   boltdb_shipper:

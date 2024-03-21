@@ -76,6 +76,21 @@ data:
         ship_interval: 1m
         block_ranges_period: [ 2h ]
         retention_period: 3h
+      bucket_store:
+        index_cache:
+          backend: memcached
+          memcached:
+            addresses: dns+memcached.memcached-system.svc:11211
+
+        chunks_cache:
+          backend: memcached
+          memcached:
+            addresses: dns+memcached.memcached-system.svc:11211
+
+        metadata_cache:
+          backend: memcached
+          memcached:
+            addresses: dns+memcached.memcached-system.svc:11211
 
     ruler:
       rule_path: /data/rules
@@ -84,6 +99,10 @@ data:
     ruler_storage:
       s3:
         bucket_name: mimir-ruler
+      cache:
+        backend: memcached
+        memcached:
+          addresses: dns+memcached.memcached-system.svc:11211
 
     compactor:
       compaction_interval: 30s
@@ -129,7 +148,7 @@ metadata:
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: mimir
     app.kubernetes.io/version: 2.11.0
-  name: mimir-config-b7gtbt67bf
+  name: mimir-config-958c4gm5k9
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -277,7 +296,7 @@ spec:
       terminationGracePeriodSeconds: 60
       volumes:
       - configMap:
-          name: mimir-config-b7gtbt67bf
+          name: mimir-config-958c4gm5k9
         name: config
       - emptyDir: {}
         name: storage

@@ -18,13 +18,25 @@ metadata:
 ---
 apiVersion: v1
 data:
-  overrides.yaml: |-
+  overrides.yaml: |
     overrides:
-      "*":
-        block_retention: 7d
-        ingestion_burst_size_bytes: 20000000
-        ingestion_rate_limit_bytes: 15000000
-  tempo.yaml: |+
+      "anonymous":
+        ingestion:
+          rate_strategy: local
+          rate_limit_bytes: 15000000
+          burst_size_bytes: 20000000
+          max_traces_per_user: 10000
+        read:
+          max_bytes_per_tag_values_query: 5000000
+        # global:
+        #   max_bytes_per_trace: 1500000
+        # metrics_generator:
+        #   processors:
+        #   - service-graphs
+        #   - span-metrics
+        #   remote_write_headers:
+        #     X-Scope-OrgID: "anonymous"
+  tempo.yaml: |
     # For more information on this configuration, see the complete reference guide at
     # https://grafana.com/docs/tempo/latest/configuration/
 
@@ -100,14 +112,32 @@ data:
           insecure: ${TEMPO_S3_INSECURE:-false}
           tls_insecure_skip_verify: true
 
+    # https://github.com/grafana/tempo/blob/main/docs/sources/tempo/configuration/_index.md#cache
+    cache:
+      background:
+        writeback_goroutines: 5
+      caches:
+      - roles:
+        - bloom
+        - parquet-footer
+        - parquet-page
+        - frontend-search
+        - parquet-column-idx
+        - parquet-offset-idx
+        memcached:
+          addresses: "dns+memcached.memcached-system.svc:11211"
+
     overrides:
       per_tenant_override_config: /conf/overrides.yaml
       defaults:
+        global:
+          max_bytes_per_trace: 1500000
         metrics_generator:
           processors:
           - service-graphs
           - span-metrics
-
+          remote_write_headers:
+            X-Scope-OrgID: "anonymous"
 kind: ConfigMap
 metadata:
   labels:
@@ -241,7 +271,7 @@ spec:
         envFrom:
         - secretRef:
             name: tempo-env-gk54k88t7g
-        image: grafana/tempo:2.4.0
+        image: grafana/tempo:2.4.1
         imagePullPolicy: IfNotPresent
         name: tempo
         ports:

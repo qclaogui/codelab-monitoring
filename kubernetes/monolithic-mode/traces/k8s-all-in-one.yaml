@@ -949,7 +949,11 @@ data:
     * Metrics\n ********************************************/\nmodule.file \"metrics_primary\"
     {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent-modules\")
     + \"/metrics.river\"\n\n\targuments {\n\t\tforward_to = [module.file.lgtmp.exports.metrics_receiver]\n\t\tclustering
-    = true\n\t}\n}\n"
+    = true\n\t}\n}\n\n/********************************************\n * Agent Integrations\n
+    ********************************************/\nmodule.file \"agent_integrations\"
+    {\n\tfilename = coalesce(env(\"AGENT_CONFIG_FOLDER\"), \"/etc/agent-modules\")
+    + \"/integrations.river\"\n\n\targuments {\n\t\tname       = \"agent-integrations\"\n\t\tnamespace
+    \ = \"monitoring-system\"\n\t\tforward_to = [module.file.lgtmp.exports.metrics_receiver]\n\t}\n}\n"
 kind: ConfigMap
 metadata:
   name: agent-config
@@ -10379,6 +10383,21 @@ data:
         ship_interval: 1m
         block_ranges_period: [ 2h ]
         retention_period: 3h
+      bucket_store:
+        index_cache:
+          backend: memcached
+          memcached:
+            addresses: dns+memcached.memcached-system.svc:11211
+
+        chunks_cache:
+          backend: memcached
+          memcached:
+            addresses: dns+memcached.memcached-system.svc:11211
+
+        metadata_cache:
+          backend: memcached
+          memcached:
+            addresses: dns+memcached.memcached-system.svc:11211
 
     ruler:
       rule_path: /data/rules
@@ -10387,6 +10406,10 @@ data:
     ruler_storage:
       s3:
         bucket_name: mimir-ruler
+      cache:
+        backend: memcached
+        memcached:
+          addresses: dns+memcached.memcached-system.svc:11211
 
     compactor:
       compaction_interval: 30s
@@ -10432,7 +10455,7 @@ metadata:
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: mimir
     app.kubernetes.io/version: 2.11.0
-  name: mimir-config-b7gtbt67bf
+  name: mimir-config-958c4gm5k9
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -43606,13 +43629,25 @@ metadata:
 ---
 apiVersion: v1
 data:
-  overrides.yaml: |-
+  overrides.yaml: |
     overrides:
-      "*":
-        block_retention: 7d
-        ingestion_burst_size_bytes: 20000000
-        ingestion_rate_limit_bytes: 15000000
-  tempo.yaml: |+
+      "anonymous":
+        ingestion:
+          rate_strategy: local
+          rate_limit_bytes: 15000000
+          burst_size_bytes: 20000000
+          max_traces_per_user: 10000
+        read:
+          max_bytes_per_tag_values_query: 5000000
+        # global:
+        #   max_bytes_per_trace: 1500000
+        # metrics_generator:
+        #   processors:
+        #   - service-graphs
+        #   - span-metrics
+        #   remote_write_headers:
+        #     X-Scope-OrgID: "anonymous"
+  tempo.yaml: |
     # For more information on this configuration, see the complete reference guide at
     # https://grafana.com/docs/tempo/latest/configuration/
 
@@ -43688,14 +43723,32 @@ data:
           insecure: ${TEMPO_S3_INSECURE:-false}
           tls_insecure_skip_verify: true
 
+    # https://github.com/grafana/tempo/blob/main/docs/sources/tempo/configuration/_index.md#cache
+    cache:
+      background:
+        writeback_goroutines: 5
+      caches:
+      - roles:
+        - bloom
+        - parquet-footer
+        - parquet-page
+        - frontend-search
+        - parquet-column-idx
+        - parquet-offset-idx
+        memcached:
+          addresses: "dns+memcached.memcached-system.svc:11211"
+
     overrides:
       per_tenant_override_config: /conf/overrides.yaml
       defaults:
+        global:
+          max_bytes_per_trace: 1500000
         metrics_generator:
           processors:
           - service-graphs
           - span-metrics
-
+          remote_write_headers:
+            X-Scope-OrgID: "anonymous"
 kind: ConfigMap
 metadata:
   labels:
@@ -43930,7 +43983,7 @@ spec:
       terminationGracePeriodSeconds: 60
       volumes:
       - configMap:
-          name: mimir-config-b7gtbt67bf
+          name: mimir-config-958c4gm5k9
         name: config
       - emptyDir: {}
         name: storage
@@ -43979,7 +44032,7 @@ spec:
         envFrom:
         - secretRef:
             name: tempo-env-gk54k88t7g
-        image: grafana/tempo:2.4.0
+        image: grafana/tempo:2.4.1
         imagePullPolicy: IfNotPresent
         name: tempo
         ports:
