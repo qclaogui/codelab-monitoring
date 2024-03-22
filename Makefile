@@ -32,7 +32,7 @@ fmt: ## Uses Grafana Agent to fmt the river config
 
 
 .PHONY: up-monolithic-mode-metrics
-up-monolithic-mode-metrics: ## Run monolithic-mode metrics
+up-monolithic-mode-metrics: ## Run monolithic-mode Mimir for metrics
 	$(info ******************** run monolithic-mode metrics ********************)
 	docker compose \
 		--project-name monolithic-metrics \
@@ -45,7 +45,7 @@ down-monolithic-mode-metrics:
 	docker compose --project-name monolithic-metrics down
 
 .PHONY: up-monolithic-mode-logs
-up-monolithic-mode-logs: ## Run monolithic-mode logs
+up-monolithic-mode-logs: ## Run monolithic-mode Loki for logs
 	$(info ******************** run monolithic-mode logs ********************)
 	docker compose \
 		--project-name monolithic-logs \
@@ -58,7 +58,7 @@ down-monolithic-mode-logs:
 	docker compose --project-name monolithic-logs down
 
 .PHONY: up-monolithic-mode-traces
-up-monolithic-mode-traces: ## Run monolithic-mode traces
+up-monolithic-mode-traces: ## Run monolithic-mode Tempo for traces
 	$(info ******************** run monolithic-mode traces ********************)
 	docker compose \
 		--project-name monolithic-traces \
@@ -71,7 +71,7 @@ down-monolithic-mode-traces:
 	docker compose --project-name monolithic-traces down
 
 .PHONY: up-monolithic-mode-profiles
-up-monolithic-mode-profiles: ## Run monolithic-mode profiles
+up-monolithic-mode-profiles: ## Run monolithic-mode Pyroscope for profiles
 	$(info ******************** run monolithic-mode profiles ********************)
 	docker compose \
 		--project-name monolithic-profiles \
@@ -98,7 +98,7 @@ down-monolithic-mode-all-in-one:
 
 
 .PHONY: up-read-write-mode-metrics
-up-read-write-mode-metrics: ## Run read-write-mode metrics
+up-read-write-mode-metrics: ## Run read-write-mode Mimir for metrics
 	$(info ******************** run read-write-mode metrics ********************)
 	docker compose \
 		--project-name read-write-metrics \
@@ -111,7 +111,7 @@ down-read-write-mode-metrics:
 	docker compose --project-name read-write-metrics down
 
 .PHONY: up-read-write-mode-logs
-up-read-write-mode-logs: ## Run read-write-mode logs
+up-read-write-mode-logs: ## Run read-write-mode Loki for logs
 	$(info ******************** run read-write-mode logs ********************)
 	docker compose \
 		--project-name read-write-logs \
@@ -125,7 +125,7 @@ down-read-write-mode-logs:
 
 
 .PHONY: up-microservices-mode-metrics
-up-microservices-mode-metrics: ## Run microservices-mode metrics
+up-microservices-mode-metrics: ## Run microservices-mode Mimir for metrics
 	$(info ******************** run microservices-mode metrics ********************)
 	docker compose \
 		--project-name microservices-metrics \
@@ -138,7 +138,7 @@ down-microservices-mode-metrics:
 	docker compose --project-name microservices-metrics down
 
 .PHONY: up-microservices-mode-logs
-up-microservices-mode-logs: ## Run microservices-mode logs
+up-microservices-mode-logs: ## Run microservices-mode Loki for logs
 	$(info ******************** run microservices-mode logs ********************)
 	docker compose \
 		--project-name microservices-logs \
@@ -151,7 +151,7 @@ down-microservices-mode-logs:
 	docker compose --project-name microservices-logs down
 
 .PHONY: up-microservices-mode-traces
-up-microservices-mode-traces: ## Run microservices-mode traces
+up-microservices-mode-traces: ## Run microservices-mode Tempo for traces
 	$(info ******************** run microservices-mode traces ********************)
 	docker compose \
 		--project-name microservices-traces \
@@ -164,7 +164,7 @@ down-microservices-mode-traces:
 	docker compose --project-name microservices-traces down
 
 .PHONY: up-microservices-mode-profiles
-up-microservices-mode-profiles: ## Run microservices-mode profiles
+up-microservices-mode-profiles: ## Run microservices-mode Pyroscope for profiles
 	$(info ******************** run microservices-mode profiles ********************)
 	docker compose \
 		--project-name microservices-profiles \
@@ -286,7 +286,7 @@ endef
 
 
 .PHONY: deploy-monolithic-mode-metrics
-deploy-monolithic-mode-metrics: deploy-memcached ## Deploy monolithic-mode metrics
+deploy-monolithic-mode-metrics: deploy-memcached ## Deploy monolithic-mode Mimir for metrics
 	$(info ******************** deploy monolithic-mode metrics manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/metrics | kubectl apply -f -
 	kubectl rollout status -n monitoring-system deployment/mimir --watch --timeout=600s
@@ -296,7 +296,7 @@ delete-monolithic-mode-metrics: delete-memcached
 
 
 .PHONY: deploy-monolithic-mode-logs
-deploy-monolithic-mode-logs: deploy-memcached ## Deploy monolithic-mode logs
+deploy-monolithic-mode-logs: deploy-memcached ## Deploy monolithic-mode Loki for logs
 	$(info ******************** deploy monolithic-mode logs manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/logs | kubectl apply -f -
 	kubectl rollout status -n logging-system statefulset/loki --watch --timeout=600s
@@ -306,7 +306,7 @@ delete-monolithic-mode-logs: delete-memcached
 
 
 .PHONY: deploy-monolithic-mode-profiles
-deploy-monolithic-mode-profiles: deploy-memcached ## Deploy monolithic-mode profiles
+deploy-monolithic-mode-profiles: deploy-memcached ## Deploy monolithic-mode Pyroscope for profiles
 	$(info ******************** deploy monolithic-mode profiles manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/profiles | kubectl apply -f -
 	kubectl rollout status -n profiles-system statefulset/pyroscope --watch --timeout=600s
@@ -316,7 +316,7 @@ delete-monolithic-mode-profiles: delete-memcached
 
 
 .PHONY: deploy-monolithic-mode-traces
-deploy-monolithic-mode-traces: deploy-memcached ## Deploy monolithic-mode traces
+deploy-monolithic-mode-traces: deploy-memcached ## Deploy monolithic-mode Tempo for traces
 	$(info ******************** deploy monolithic-mode traces manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/traces | kubectl apply -f -
 	kubectl rollout status -n tracing-system statefulset/tempo --watch --timeout=600s
@@ -337,7 +337,7 @@ delete-monolithic-mode-all-in-one: delete-memcached
 
 
 .PHONY: deploy-read-write-mode-metrics
-deploy-read-write-mode-metrics: deploy-memcached ## Deploy read-write-mode metrics
+deploy-read-write-mode-metrics: deploy-memcached ## Deploy read-write-mode Mimir for metrics
 	$(info ******************** deploy read-write-mode metrics manifests ********************)
 	@$(KUSTOMIZE) build kubernetes/read-write-mode/metrics | kubectl apply -f -
 	kubectl rollout status -n monitoring-system deployment/mimir-write --watch --timeout=600s
@@ -347,7 +347,7 @@ delete-read-write-mode-metrics: delete-memcached
 
 
 .PHONY: deploy-read-write-mode-logs
-deploy-read-write-mode-logs: deploy-memcached ## Deploy read-write-mode logs
+deploy-read-write-mode-logs: deploy-memcached ## Deploy read-write-mode Loki for logs
 	$(info ******************** deploy read-write-mode logs manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/read-write-mode/logs | kubectl apply -f -
 	kubectl rollout status -n logging-system statefulset/loki-write --watch --timeout=600s
@@ -358,7 +358,7 @@ delete-read-write-mode-logs: delete-memcached
 
 
 .PHONY: deploy-microservices-mode-logs
-deploy-microservices-mode-logs: deploy-memcached ## Deploy microservices-mode logs
+deploy-microservices-mode-logs: deploy-memcached ## Deploy microservices-mode Loki for logs
 	$(info ******************** deploy microservices-mode logs manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/logs | kubectl apply -f -
 	kubectl rollout status -n logging-system statefulset/loki-distributed-ingester --watch --timeout=600s
@@ -368,7 +368,7 @@ delete-microservices-mode-logs: delete-memcached
 
 
 .PHONY: deploy-microservices-mode-metrics
-deploy-microservices-mode-metrics: deploy-memcached ## Deploy microservices-mode metrics
+deploy-microservices-mode-metrics: deploy-memcached ## Deploy microservices-mode Mimir for metrics
 	$(info ******************** deploy microservices-mode metrics manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/metrics | kubectl apply -f -
 	kubectl rollout status -n monitoring-system statefulset/mimir-distributed-ingester --watch --timeout=600s
@@ -378,7 +378,7 @@ delete-microservices-mode-metrics: delete-memcached
 
 
 .PHONY: deploy-microservices-mode-profiles
-deploy-microservices-mode-profiles: deploy-memcached ## Deploy microservices-mode profiles
+deploy-microservices-mode-profiles: deploy-memcached ## Deploy microservices-mode Pyroscope for profiles
 	$(info ******************** deploy microservices-mode profiles manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/profiles | kubectl apply -f -
 	@$(call config_changes_trigger_pod_restart, "Go to http://localhost:8080/explore for the profiles.")
@@ -387,7 +387,7 @@ delete-microservices-mode-profiles: delete-memcached
 
 
 .PHONY: deploy-microservices-mode-traces
-deploy-microservices-mode-traces: deploy-memcached ## Deploy microservices-mode traces
+deploy-microservices-mode-traces: deploy-memcached ## Deploy microservices-mode Tempo for traces
 	$(info ******************** deploy microservices-mode traces manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/traces | kubectl apply -f -
 	kubectl rollout status -n tracing-system statefulset/tempo-distributed-ingester --watch --timeout=600s
