@@ -291,7 +291,7 @@ deploy-monolithic-mode-metrics: deploy-memcached ## Deploy monolithic-mode metri
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/metrics | kubectl apply -f -
 	kubectl rollout status -n monitoring-system deployment/mimir --watch --timeout=600s
 	@$(call config_changes_trigger_pod_restart, "Go to http://localhost:8080/explore for the metrics.")
-delete-monolithic-mode-metrics: delete-minio
+delete-monolithic-mode-metrics: delete-memcached
 	@$(KUSTOMIZE) build kubernetes/monolithic-mode/metrics | kubectl delete -f -
 
 
@@ -301,7 +301,7 @@ deploy-monolithic-mode-logs: deploy-memcached ## Deploy monolithic-mode logs
 	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/logs | kubectl apply -f -
 	kubectl rollout status -n logging-system statefulset/loki --watch --timeout=600s
 	@$(call config_changes_trigger_pod_restart, "Go to http://localhost:8080/explore for the logs.")
-delete-monolithic-mode-logs: delete-minio
+delete-monolithic-mode-logs: delete-memcached
 	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/logs | kubectl delete -f -
 
 
@@ -311,7 +311,7 @@ deploy-monolithic-mode-profiles: deploy-memcached ## Deploy monolithic-mode prof
 	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/profiles | kubectl apply -f -
 	kubectl rollout status -n profiles-system statefulset/pyroscope --watch --timeout=600s
 	@$(call config_changes_trigger_pod_restart,"Go to http://localhost:8080/explore for the profiles.")
-delete-monolithic-mode-profiles: delete-minio
+delete-monolithic-mode-profiles: delete-memcached
 	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/profiles | kubectl delete -f -
 
 
@@ -321,7 +321,7 @@ deploy-monolithic-mode-traces: deploy-memcached ## Deploy monolithic-mode traces
 	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/traces | kubectl apply -f -
 	kubectl rollout status -n tracing-system statefulset/tempo --watch --timeout=600s
 	@$(call config_changes_trigger_pod_restart, "Go to http://localhost:8080/explore for the traces.")
-delete-monolithic-mode-traces: delete-minio
+delete-monolithic-mode-traces: delete-memcached
 	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/traces | kubectl delete -f -
 
 
@@ -331,7 +331,7 @@ deploy-monolithic-mode-all-in-one: deploy-memcached ## Deploy monolithic-mode al
 	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/all-in-one | kubectl apply -f -
 	kubectl rollout status -n monitoring-system deployment/mimir --watch --timeout=600s
 	@$(call config_changes_trigger_pod_restart, "Go to http://localhost:8080/explore for the all-in-one.")
-delete-monolithic-mode-all-in-one: delete-minio
+delete-monolithic-mode-all-in-one: delete-memcached
 	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/all-in-one | kubectl delete -f -
 
 
@@ -342,7 +342,7 @@ deploy-read-write-mode-metrics: deploy-memcached ## Deploy read-write-mode metri
 	@$(KUSTOMIZE) build kubernetes/read-write-mode/metrics | kubectl apply -f -
 	kubectl rollout status -n monitoring-system deployment/mimir-write --watch --timeout=600s
 	@$(call config_changes_trigger_pod_restart, "Go to http://localhost:8080/explore for the metrics.")
-delete-read-write-mode-metrics: delete-minio
+delete-read-write-mode-metrics: delete-memcached
 	@$(KUSTOMIZE) build kubernetes/read-write-mode/metrics | kubectl delete -f -
 
 
@@ -352,7 +352,7 @@ deploy-read-write-mode-logs: deploy-memcached ## Deploy read-write-mode logs
 	@$(KUSTOMIZE) build --enable-helm kubernetes/read-write-mode/logs | kubectl apply -f -
 	kubectl rollout status -n logging-system statefulset/loki-write --watch --timeout=600s
 	@$(call config_changes_trigger_pod_restart, "Go to http://localhost:8080/explore for the logs.")
-delete-read-write-mode-logs: delete-minio
+delete-read-write-mode-logs: delete-memcached
 	@$(KUSTOMIZE) build --enable-helm kubernetes/read-write-mode/logs | kubectl delete -f -
 
 
@@ -363,7 +363,7 @@ deploy-microservices-mode-logs: deploy-memcached ## Deploy microservices-mode lo
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/logs | kubectl apply -f -
 	kubectl rollout status -n logging-system statefulset/loki-distributed-ingester --watch --timeout=600s
 	@$(call config_changes_trigger_pod_restart, "Go to http://localhost:8080/explore for the logs.")
-delete-microservices-mode-logs: delete-minio
+delete-microservices-mode-logs: delete-memcached
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/logs | kubectl delete -f -
 
 
@@ -373,7 +373,7 @@ deploy-microservices-mode-metrics: deploy-memcached ## Deploy microservices-mode
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/metrics | kubectl apply -f -
 	kubectl rollout status -n monitoring-system statefulset/mimir-distributed-ingester --watch --timeout=600s
 	@$(call config_changes_trigger_pod_restart, "Go to http://localhost:8080/explore for the metrics.")
-delete-microservices-mode-metrics: delete-minio
+delete-microservices-mode-metrics: delete-memcached
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/metrics | kubectl delete -f -
 
 
@@ -382,7 +382,7 @@ deploy-microservices-mode-profiles: deploy-memcached ## Deploy microservices-mod
 	$(info ******************** deploy microservices-mode profiles manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/profiles | kubectl apply -f -
 	@$(call config_changes_trigger_pod_restart, "Go to http://localhost:8080/explore for the profiles.")
-delete-microservices-mode-profiles: delete-minio
+delete-microservices-mode-profiles: delete-memcached
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/profiles | kubectl delete -f -
 
 
@@ -392,7 +392,7 @@ deploy-microservices-mode-traces: deploy-memcached ## Deploy microservices-mode 
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/traces | kubectl apply -f -
 	kubectl rollout status -n tracing-system statefulset/tempo-distributed-ingester --watch --timeout=600s
 	@$(call config_changes_trigger_pod_restart, "Go to http://localhost:8080/explore for the traces.")
-delete-microservices-mode-traces: delete-minio
+delete-microservices-mode-traces: delete-memcached
 	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/traces | kubectl delete -f -
 
 
@@ -402,7 +402,7 @@ delete-microservices-mode-traces: delete-minio
 deploy-memcached: deploy-grafana ## Deploy integration memcached manifests
 	$(info ******************** deploy integration memcached manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/memcached | kubectl apply -f -
-delete-memcached:
+delete-memcached: delete-minio
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/memcached | kubectl delete --ignore-not-found -f -
 
 .PHONY: deploy-mysql
