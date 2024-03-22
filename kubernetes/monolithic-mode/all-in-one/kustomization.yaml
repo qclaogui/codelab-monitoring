@@ -9,31 +9,18 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-- ../metrics/mimir
+- ../../common/grafana-agent
 - ../logs/loki
-- ../profiles/pyroscope
 - ../traces/tempo
-- ../../../monitoring-mixins/agent-flow-mixin/deploy
-- ../../../monitoring-mixins/go-runtime-mixin/deploy
-- ../../../monitoring-mixins/loki-mixin/deploy
-- ../../../monitoring-mixins/mimir-mixin/deploy
-# - ../../../monitoring-mixins/tempo-mixin/deploy
+- ../metrics/mimir
+- ../profiles/pyroscope
 
 configMapGenerator:
 - name: agent-config
   namespace: monitoring-system
-  options:
-    disableNameSuffixHash: true
+  behavior: replace
   files:
   - configs/config.river
-
-- name: grafana-datasources
-  namespace: monitoring-system
-  options:
-    labels:
-      grafana_datasource: "1"
-  files:
-  - datasources.yaml=configs/grafana-datasources-all-in-one.yaml
 
 # Update LGTMP endpoint in gateway
 - name: nginx-templates

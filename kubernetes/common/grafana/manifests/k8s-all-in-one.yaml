@@ -182,41 +182,99 @@ data:
       type: prometheus
       uid: metrics
       access: proxy
-      url: http://nginx.gateway.svc.cluster.local:8080/prometheus
+      orgId: 1
+      url: http://nginx.gateway.svc.cluster.local.:8080/prometheus
       basicAuth: false
-      isDefault: false
+      isDefault: true
       version: 1
-      editable: true
+      editable: false
+      jsonData:
+        prometheusType: Mimir
+        exemplarTraceIdDestinations:
+          - name: traceID
+            datasourceUid: traces
+
 
     # Loki for logs
     - name: Logs
       type: loki
-      uid: logs
       access: proxy
-      url: http://nginx.gateway.svc.cluster.local:3100
+      orgId: 1
+      uid: logs
+      url: http://nginx.gateway.svc.cluster.local.:3100
       basicAuth: false
       isDefault: false
       version: 1
       editable: true
+      jsonData:
+        derivedFields:
+          - datasourceUid: traces
+            matcherRegex: "[tT]race_?[iI][dD]\"?[:=]\"?(\\w+)"
+            name: traceID
+            url: $${__value.raw}
 
+    # https://grafana.com/docs/grafana/latest/datasources/tempo/configure-tempo-data-source/#provision-the-data-source
     # Tempo for traces
     - name: Traces
       type: tempo
       access: proxy
+      orgId: 1
       uid: traces
-      url: http://nginx.gateway.svc.cluster.local:3200
+      url: http://nginx.gateway.svc.cluster.local.:3200
       basicAuth: false
       isDefault: false
       version: 1
       editable: true
       apiVersion: 1
+      jsonData:
+        search:
+          hide: false
+        lokiSearch:
+          datasourceUid: logs
+        nodeGraph:
+          enabled: true
+        serviceMap:
+          datasourceUid: metrics
+        traceQuery:
+          timeShiftEnabled: true
+          spanStartTimeShift: '-30m'
+          spanEndTimeShift: '30m'
+        spanBar:
+          type: 'Tag'
+          tag: 'http.path'
+        tracesToMetrics:
+          datasourceUid: metrics
+          spanStartTimeShift: '-30m'
+          spanEndTimeShift: '30m'
+          tags: [{ key: 'service.name', value: 'service' }]
+          queries:
+          - name: '(R) Rate'
+            query: 'sum(rate(traces_spanmetrics_calls_total{$$__tags}[$$__rate_interval]))'
+          - name: '(E) Error Rate'
+            query: 'sum(rate(traces_spanmetrics_calls_total{$$__tags, status_code="STATUS_CODE_ERROR"}[$$__rate_interval]))'
+          - name: '(D) Duration'
+            query: 'histogram_quantile(0.9, sum(rate(traces_spanmetrics_latency_bucket{$$__tags}[$$__rate_interval])) by (le))'
+        tracesToLogsV2:
+          datasourceUid: logs
+          spanStartTimeShift: '-30m'
+          spanEndTimeShift: '30m'
+          tags: [{ key: 'app', value: 'app' }]
+          filterByTraceID: false
+          filterBySpanID: false
+        tracesToProfiles:
+          customQuery: false
+          datasourceUid: "profiles"
+          profileTypeId: "process_cpu:cpu:nanoseconds:cpu:nanoseconds"
+          tags: [{ key: 'app', value: 'service_name' }]
+
 
     # Pyroscope for profiles
     - name: Profiles
       type: grafana-pyroscope-datasource
-      uid: profiles
       access: proxy
-      url: http://nginx.gateway.svc.cluster.local:4040
+      orgId: 1
+      uid: profiles
+      url: http://nginx.gateway.svc.cluster.local.:4040
       basicAuth: false
       isDefault: false
       version: 1
@@ -226,7 +284,7 @@ kind: ConfigMap
 metadata:
   labels:
     grafana_datasource: "1"
-  name: grafana-datasources-gcc7kf6bh4
+  name: grafana-datasources-22t6t9c8f8
   namespace: monitoring-system
 ---
 apiVersion: v1

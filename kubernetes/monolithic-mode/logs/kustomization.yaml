@@ -8,7 +8,11 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
+- ../../common/grafana-agent
 - loki
+
+# optional
+- ../metrics/mimir
 
 # Horizontally scale up support(Monolithic mode)
 # https://grafana.com/docs/loki/latest/get-started/deployment-modes/#monolithic-mode
@@ -19,15 +23,7 @@ replicas:
 configMapGenerator:
 - name: agent-config
   namespace: monitoring-system
-  options:
-    disableNameSuffixHash: true
+  behavior: replace
   files:
   - configs/config.river
 
-- name: grafana-datasources
-  namespace: monitoring-system
-  options:
-    labels:
-      grafana_datasource: "1"
-  files:
-  - datasources.yaml=configs/grafana-datasources-loki.yaml

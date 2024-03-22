@@ -210,7 +210,7 @@ manifests-common: $(KUSTOMIZE)
 manifests-monolithic-mode: $(KUSTOMIZE)
 	$(info ******************** generates monolithic-mode manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/logs > kubernetes/monolithic-mode/logs/k8s-all-in-one.yaml
-	@$(KUSTOMIZE) build kubernetes/monolithic-mode/metrics > kubernetes/monolithic-mode/metrics/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/metrics > kubernetes/monolithic-mode/metrics/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/profiles > kubernetes/monolithic-mode/profiles/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/traces > kubernetes/monolithic-mode/traces/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/all-in-one > kubernetes/monolithic-mode/all-in-one/k8s-all-in-one.yaml
@@ -218,7 +218,7 @@ manifests-monolithic-mode: $(KUSTOMIZE)
 manifests-read-write-mode: $(KUSTOMIZE)
 	$(info ******************** generates read-write-mode manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/read-write-mode/logs > kubernetes/read-write-mode/logs/k8s-all-in-one.yaml
-	@$(KUSTOMIZE) build kubernetes/read-write-mode/metrics > kubernetes/read-write-mode/metrics/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build --enable-helm kubernetes/read-write-mode/metrics > kubernetes/read-write-mode/metrics/k8s-all-in-one.yaml
 
 manifests-microservices-mode: $(KUSTOMIZE)
 	$(info ******************** generates microservices-mode manifests ********************)
@@ -248,6 +248,9 @@ deploy-minio:
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/minio-operator | kubectl apply -f -
 	kubectl rollout status -n minio-system deployment/minio-operator --watch --timeout=600s
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/minio-tenant | kubectl apply -f -
+	@echo "Waiting for Minio to be ready..."
+	@sleep 20
+	kubectl rollout status -n minio-system statefulset/codelab-pool-10gb --watch --timeout=600s || true
 delete-minio:
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/minio-tenant | kubectl delete --ignore-not-found -f -
 	
@@ -261,9 +264,7 @@ deploy-gateway:
 deploy-grafana: deploy-prometheus-operator-crds deploy-minio deploy-gateway
 	$(info ******************** deploy grafana manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana | kubectl apply -f -
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana-agent | kubectl apply -f -
 delete-grafana:
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana-agent | kubectl delete --ignore-not-found -f -
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana | kubectl delete --ignore-not-found -f -
 
 define echo_info
@@ -277,7 +278,8 @@ define config_changes_trigger_pod_restart
 	$(eval $@_MSG = $(1))
 	@kubectl rollout restart deployment -n gateway nginx
 	kubectl rollout status -n gateway deployment/nginx --watch --timeout=600s
-	@kubectl rollout restart daemonset -n monitoring-system grafana-agent
+	@echo "Provisioning Grafana dashboards Prometheus rules and alerts..."
+	@$(KUSTOMIZE) build monitoring-mixins | kubectl apply -f -
 	kubectl rollout status -n monitoring-system daemonset/grafana-agent --watch --timeout=600s
 	@$(call echo_info, ${$@_MSG})
 endef

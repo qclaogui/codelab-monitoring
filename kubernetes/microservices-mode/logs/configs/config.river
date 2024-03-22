@@ -8,6 +8,9 @@ logging {
 	format = "logfmt"
 }
 
+/********************************************
+ * Grafana LGTMP Stack Receiver Provider
+ ********************************************/
 module.file "lgtmp" {
 	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-modules") + "/lgtmp.river"
 
@@ -31,6 +34,18 @@ module.file "logs_primary" {
 		git_repo      = "https://github.com/qclaogui/agent-modules.git"
 		git_rev       = "main"
 		git_pull_freq = "0s"
+	}
+}
+
+/********************************************
+ * Metrics
+ ********************************************/
+module.file "metrics_primary" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-modules") + "/metrics.river"
+
+	arguments {
+		forward_to = [module.file.lgtmp.exports.metrics_receiver]
+		clustering = true
 	}
 }
 
