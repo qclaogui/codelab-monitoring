@@ -1,22 +1,20 @@
 # ============================================================================ #
-#                  Monolithic Mode - Profiles
+#                  Monitoring Mixins
 # ============================================================================ #
+# Provisioning Grafana dashboards Prometheus rules and alerts
 
 # ----------------------------------------------------
 # apiVersion and kind of Kustomization
+---
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-- ../../common/grafana-agent
-- pyroscope
-
-# optional
-- ../metrics/mimir
-
-configMapGenerator:
-- name: agent-config
-  namespace: monitoring-system
-  behavior: replace
-  files:
-  - configs/config.river
+- agent-flow-mixin/deploy
+- go-runtime-mixin/deploy
+# - kubernetes-mixin/deploy
+- loki-mixin/deploy
+- memcached-mixin/deploy
+- mimir-mixin/deploy
+- pyroscope-mixin/deploy
+# - tempo-mixin/deploy

@@ -1,5 +1,7 @@
 # Monitoring Mixins
 
+> Provisioning Grafana `dashboards` Prometheus `rules` and `alerts`
+
 Mixins are written in [jsonnet](https://jsonnet.org/), and are typically installed and updated with [jsonnet-bundler](https://github.com/jsonnet-bundler/jsonnet-bundler).
 
 For more advanced uses of mixins, see

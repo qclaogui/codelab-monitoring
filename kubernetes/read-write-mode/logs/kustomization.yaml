@@ -8,7 +8,12 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
+- ../../common/grafana-agent
 - loki
+
+# optional
+- ../../monolithic-mode/metrics/mimir
+
 
 secretGenerator:
 - name: loki-env
@@ -19,18 +24,9 @@ secretGenerator:
 configMapGenerator:
 - name: agent-config
   namespace: monitoring-system
-  options:
-    disableNameSuffixHash: true
+  behavior: replace
   files:
   - configs/config.river
-
-- name: grafana-datasources
-  namespace: monitoring-system
-  options:
-    labels:
-      grafana_datasource: "1"
-  files:
-  - datasources.yaml=configs/grafana-datasources-loki.yaml
 
 - name: loki-config
   namespace: logging-system

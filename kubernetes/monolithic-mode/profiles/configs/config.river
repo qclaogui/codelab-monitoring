@@ -8,6 +8,9 @@ logging {
 	format = "logfmt"
 }
 
+/********************************************
+ * Grafana LGTMP Stack Receiver Provider
+ ********************************************/
 module.file "lgtmp" {
 	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-modules") + "/lgtmp.river"
 
@@ -29,5 +32,30 @@ module.file "profiles_primary" {
 	arguments {
 		forward_to = [module.file.lgtmp.exports.profiles_receiver]
 		clustering = true
+	}
+}
+
+/********************************************
+ * Metrics
+ ********************************************/
+module.file "metrics_primary" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-modules") + "/metrics.river"
+
+	arguments {
+		forward_to = [module.file.lgtmp.exports.metrics_receiver]
+		clustering = true
+	}
+}
+
+/********************************************
+ * Agent Integrations
+ ********************************************/
+module.file "agent_integrations" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-modules") + "/integrations.river"
+
+	arguments {
+		name       = "agent-integrations"
+		namespace  = "monitoring-system"
+		forward_to = [module.file.lgtmp.exports.metrics_receiver]
 	}
 }
