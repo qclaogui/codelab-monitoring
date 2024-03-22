@@ -4,4 +4,4 @@ all: build
 
 .PHONY: build
 build: $(KUSTOMIZE)
-	@$(KUSTOMIZE) build --enable-helm . > k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build --enable-helm . > /dev/null
