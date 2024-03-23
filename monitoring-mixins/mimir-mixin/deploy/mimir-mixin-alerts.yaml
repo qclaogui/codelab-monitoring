@@ -117,7 +117,7 @@ groups:
           expr: |
             (
               sum by(cluster, namespace, pod) (
-                increase(kube_pod_container_status_restarts_total{container=~"(ingester|mimir-write)"}[30m])
+                increase(kube_pod_container_status_restarts_total{container=~"((mimir|ingester|mimir-write)|(mimir|mimir-write|distributor|ingester))"}[30m])
               )
               >= 2
             )
@@ -148,7 +148,7 @@ groups:
             message: '{{ $labels.job }}/{{ $labels.pod }} has a number of mmap-ed areas close to the limit.'
             runbook_url: https://grafana.com/docs/mimir/latest/operators-guide/mimir-runbooks/#mimirmemorymapareastoohigh
           expr: |
-            process_memory_map_areas{job=~".*/(ingester.*|cortex|mimir|mimir-write.*|store-gateway.*|cortex|mimir|mimir-backend.*)"} / process_memory_map_areas_limit{job=~".*/(ingester.*|cortex|mimir|mimir-write.*|store-gateway.*|cortex|mimir|mimir-backend.*)"} > 0.8
+            process_memory_map_areas{job=~".*/(mimir|ingester.*|cortex|mimir-write.*|mimir|store-gateway.*|cortex|mimir-backend.*)"} / process_memory_map_areas_limit{job=~".*/(mimir|ingester.*|cortex|mimir-write.*|mimir|store-gateway.*|cortex|mimir-backend.*)"} > 0.8
           for: 5m
           labels:
             severity: critical
@@ -174,7 +174,7 @@ groups:
             runbook_url: https://grafana.com/docs/mimir/latest/operators-guide/mimir-runbooks/#mimirrulerinstancehasnorulegroups
           expr: |
             # Alert on ruler instances in microservices mode that have no rule groups assigned,
-            min by(cluster, namespace, pod) (cortex_ruler_managers_total{pod=~"(.*mimir-)?ruler.*"}) == 0
+            min by(cluster, namespace, pod) (cortex_ruler_managers_total{pod=~"(.*mimir-)?(mimir|ruler|mimir-backend).*"}) == 0
             # but only if other ruler instances of the same cell do have rule groups assigned
             and on (cluster, namespace)
             (max by(cluster, namespace) (cortex_ruler_managers_total) > 0)
@@ -213,8 +213,8 @@ groups:
             runbook_url: https://grafana.com/docs/mimir/latest/operators-guide/mimir-runbooks/#mimirringmembersmismatch
           expr: |
             (
-              avg by(cluster, namespace) (sum by(cluster, namespace, pod) (cortex_ring_members{name="ingester",job=~".*/(ingester.*|cortex|mimir|mimir-write.*)"}))
-              != sum by(cluster, namespace) (up{job=~".*/(ingester.*|cortex|mimir|mimir-write.*)"})
+              avg by(cluster, namespace) (sum by(cluster, namespace, pod) (cortex_ring_members{name="ingester",job=~".*/(mimir|ingester.*|cortex|mimir-write.*)"}))
+              != sum by(cluster, namespace) (up{job=~".*/(mimir|ingester.*|cortex|mimir-write.*)"})
             )
             and
             (
@@ -378,9 +378,9 @@ groups:
             (
               # We use RSS instead of working set memory because of the ingester's extensive usage of mmap.
               # See: https://github.com/grafana/mimir/issues/2466
-              container_memory_rss{container=~"(ingester|mimir-write|mimir-backend)"}
+              container_memory_rss{container=~"((mimir|ingester|mimir-write)|(mimir|mimir-write|distributor|ingester)|(mimir|mimir-backend|query-scheduler|ruler-query-scheduler|ruler|store-gateway|compactor|alertmanager|overrides-exporter))"}
                 /
-              ( container_spec_memory_limit_bytes{container=~"(ingester|mimir-write|mimir-backend)"} > 0 )
+              ( container_spec_memory_limit_bytes{container=~"((mimir|ingester|mimir-write)|(mimir|mimir-write|distributor|ingester)|(mimir|mimir-backend|query-scheduler|ruler-query-scheduler|ruler|store-gateway|compactor|alertmanager|overrides-exporter))"} > 0 )
             )
             # Match only Mimir namespaces.
             * on(cluster, namespace) group_left max by(cluster, namespace) (cortex_build_info)
@@ -397,9 +397,9 @@ groups:
             (
               # We use RSS instead of working set memory because of the ingester's extensive usage of mmap.
               # See: https://github.com/grafana/mimir/issues/2466
-              container_memory_rss{container=~"(ingester|mimir-write|mimir-backend)"}
+              container_memory_rss{container=~"((mimir|ingester|mimir-write)|(mimir|mimir-write|distributor|ingester)|(mimir|mimir-backend|query-scheduler|ruler-query-scheduler|ruler|store-gateway|compactor|alertmanager|overrides-exporter))"}
                 /
-              ( container_spec_memory_limit_bytes{container=~"(ingester|mimir-write|mimir-backend)"} > 0 )
+              ( container_spec_memory_limit_bytes{container=~"((mimir|ingester|mimir-write)|(mimir|mimir-write|distributor|ingester)|(mimir|mimir-backend|query-scheduler|ruler-query-scheduler|ruler|store-gateway|compactor|alertmanager|overrides-exporter))"} > 0 )
             )
             # Match only Mimir namespaces.
             * on(cluster, namespace) group_left max by(cluster, namespace) (cortex_build_info)
@@ -469,9 +469,9 @@ groups:
             runbook_url: https://grafana.com/docs/mimir/latest/operators-guide/mimir-runbooks/#mimirrulerremoteevaluationfailing
           expr: |
             100 * (
-            sum by (cluster, namespace) (rate(cortex_request_duration_seconds_count{route="/httpgrpc.HTTP/Handle", status_code=~"5..", job=~".*/(ruler-query-frontend.*)"}[5m]))
+            sum by (cluster, namespace) (rate(cortex_request_duration_seconds_count{route="/httpgrpc.HTTP/Handle", status_code=~"5..", job=~".*/(mimir|ruler-query-frontend.*)"}[5m]))
               /
-            sum by (cluster, namespace) (rate(cortex_request_duration_seconds_count{route="/httpgrpc.HTTP/Handle", job=~".*/(ruler-query-frontend.*)"}[5m]))
+            sum by (cluster, namespace) (rate(cortex_request_duration_seconds_count{route="/httpgrpc.HTTP/Handle", job=~".*/(mimir|ruler-query-frontend.*)"}[5m]))
             ) > 1
           for: 5m
           labels:
@@ -485,7 +485,7 @@ groups:
           expr: |
             max by (cluster, namespace) (memberlist_client_cluster_members_count)
             >
-            (sum by (cluster, namespace) (up{job=~".+/(admin-api|alertmanager|compactor.*|distributor.*|ingester.*|querier.*|ruler|ruler-querier.*|store-gateway.*|cortex|mimir|mimir-write.*|mimir-read.*|mimir-backend.*)"}) + 10)
+            (sum by (cluster, namespace) (up{job=~".+/(mimir|admin-api|alertmanager|compactor.*|distributor.*|ingester.*|querier.*|ruler|ruler-querier.*|store-gateway.*|cortex|mimir-write.*|mimir-read.*|mimir-backend.*)"}) + 10)
           for: 20m
           labels:
             severity: warning
@@ -496,7 +496,7 @@ groups:
           expr: |
             min by (cluster, namespace) (memberlist_client_cluster_members_count)
             <
-            (sum by (cluster, namespace) (up{job=~".+/(admin-api|alertmanager|compactor.*|distributor.*|ingester.*|querier.*|ruler|ruler-querier.*|store-gateway.*|cortex|mimir|mimir-write.*|mimir-read.*|mimir-backend.*)"}) * 0.5)
+            (sum by (cluster, namespace) (up{job=~".+/(mimir|admin-api|alertmanager|compactor.*|distributor.*|ingester.*|querier.*|ruler|ruler-querier.*|store-gateway.*|cortex|mimir-write.*|mimir-read.*|mimir-backend.*)"}) * 0.5)
           for: 20m
           labels:
             severity: warning
@@ -621,7 +621,7 @@ groups:
             runbook_url: https://grafana.com/docs/mimir/latest/operators-guide/mimir-runbooks/#mimiralertmanagerinstancehasnotenants
           expr: |
             # Alert on alertmanager instances in microservices mode that own no tenants,
-            min by(cluster, namespace, pod) (cortex_alertmanager_tenants_owned{pod=~"(.*mimir-)?alertmanager.*"}) == 0
+            min by(cluster, namespace, pod) (cortex_alertmanager_tenants_owned{pod=~"(.*mimir-)?(mimir|alertmanager|mimir-backend).*"}) == 0
             # but only if other instances of the same cell do have tenants assigned.
             and on (cluster, namespace)
             max by(cluster, namespace) (cortex_alertmanager_tenants_owned) > 0

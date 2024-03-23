@@ -43,8 +43,17 @@ module.file "mf_job_minio_scrape" {
 	}
 }
 
-module.file "mf_job_integration_scrape" {
-	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/docker/metrics/jobs/integrations.river"
+module.file "mf_job_integration_cadvisor" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/docker/metrics/jobs/integration_cadvisor.river"
+
+	arguments {
+		forward_to      = argument.forward_to.value
+		scrape_interval = "15s"
+	}
+}
+
+module.file "mf_job_integration_node_exporter" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/docker/metrics/jobs/integration_node_exporter.river"
 
 	arguments {
 		forward_to      = argument.forward_to.value
