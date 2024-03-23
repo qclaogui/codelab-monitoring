@@ -9,8 +9,6 @@ version: '3.9'
 include:
   - path: ../../common/compose-include/minio.yaml
   - path: ../../common/compose-include/memcached.yaml
-  - path: ../../common/compose-include/agent-collect-all.yaml
-  - path: ../../common/compose-include/load-rules-to-mimir.yaml
 
 # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
 x-labels: &profiles-labels
@@ -25,6 +23,33 @@ x-environment: &jaeger-environment
   JAEGER_SAMPLER_PARAM: 1
 
 services:
+  grafana-agent:
+    labels:
+      logs.agent.grafana.com/log-format: logfmt
+    depends_on:
+      gateway:
+        condition: service_healthy
+    image: ${AGENT_IMAGE:-docker.io/grafana/agent:v0.40.3}
+    volumes:
+      - ../../common/config/agent-flow:/etc/agent-config
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /:/rootfs:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+    entrypoint:
+      - /bin/grafana-agent
+      - run
+      - /etc/agent-config/monolithic-mode-all.river
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --cluster.enabled=true
+      - --disable-reporting=true
+    environment:
+      - AGENT_MODE=flow
+      - AGENT_CONFIG_FOLDER=/etc/agent-config
+    # expose 12345 port so we can directly access grafana-agent inside container
+    ports:
+      - "12345:12345"
+
   gateway:
     labels:
       metrics.agent.grafana.com/scrape: false
@@ -37,7 +62,7 @@ services:
         condition: service_healthy
       pyroscope:
         condition: service_healthy
-    image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:latest}
+    image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.25-alpine}
     restart: always
     volumes:
       - ../../common/config/nginx/10-default-lgtmp.envsh:/docker-entrypoint.d/10-default-lgtmp.envsh
@@ -53,7 +78,6 @@ services:
       retries: 10
 
   loki:
-    # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
     labels:
       <<: *profiles-labels
       profiles.agent.grafana.com/service_name: loki
@@ -61,7 +85,7 @@ services:
     depends_on:
       minio:
         condition: service_healthy
-    image: ${LOKI_IMAGE:-docker.io/grafana/loki:latest}
+    image: ${LOKI_IMAGE:-docker.io/grafana/loki:2.9.6}
     volumes:
       - ../../common/config/loki:/etc/loki
     command:
@@ -95,7 +119,7 @@ services:
         condition: service_healthy
       mimir:
         condition: service_healthy
-    image: ${TEMPO_IMAGE:-docker.io/grafana/tempo:latest}
+    image: ${TEMPO_IMAGE:-docker.io/grafana/tempo:2.4.1}
     volumes:
       - ../../common/config/tempo:/etc/tempo
     command:
@@ -122,7 +146,7 @@ services:
     depends_on:
       minio:
         condition: service_healthy
-    image: ${MIMIR_IMAGE:-docker.io/grafana/mimir:latest}
+    image: ${MIMIR_IMAGE:-docker.io/grafana/mimir:2.11.0}
     volumes:
       - ../../common/config/mimir:/etc/mimir
     command:
@@ -146,13 +170,35 @@ services:
         aliases:
           - mimir-memberlist
 
+  load-rules-to-mimir:
+    depends_on:
+      gateway:
+        condition: service_healthy
+    image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:2.11.0}
+    volumes:
+      - ../../../monitoring-mixins/agent-flow-mixin/deploy/agent-flow-mixin-alerts.yaml:/agent-flow-mixin-alerts.yaml
+      - ../../../monitoring-mixins/loki-mixin/deploy/loki-mixin-rules.yaml:/loki-mixin-rules.yaml
+      - ../../../monitoring-mixins/loki-mixin/deploy/loki-mixin-alerts.yaml:/loki-mixin-alerts.yaml
+      - ../../../monitoring-mixins/memcached-mixin/deploy/memcached-mixin-alerts.yaml:/memcached-mixin-alerts.yaml
+      - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-rules.yaml:/mimir-mixin-rules.yaml
+      - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-alerts.yaml:/mimir-mixin-alerts.yaml
+      - ../../../monitoring-mixins/pyroscope-mixin/deploy/pyroscope-mixin-rules.yaml:/pyroscope-mixin-rules.yaml
+      # - ../../../monitoring-mixins/tempo-mixin/deploy/tempo-mixin-rules.yaml:/tempo-mixin-rules.yaml
+      # - ../../../monitoring-mixins/tempo-mixin/deploy/tempo-mixin-alerts.yaml:/tempo-mixin-alerts.yaml
+    environment:
+      - MIMIR_ADDRESS=http://gateway:8080
+      - MIMIR_TENANT_ID=anonymous
+    command: >-
+      rules load agent-flow-mixin-alerts.yaml /loki-mixin-rules.yaml /loki-mixin-alerts.yaml /memcached-mixin-alerts.yaml /mimir-mixin-rules.yaml /mimir-mixin-alerts.yaml /pyroscope-mixin-rules.yaml
+
+
   pyroscope:
     labels:
       - logs.agent.grafana.com/log-format=logfmt
     depends_on:
       minio:
         condition: service_healthy
-    image: ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:latest}
+    image: ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:1.5.0}
     container_name: pyroscope
     volumes:
       - ../../common/config/pyroscope/monolithic-mode-profiles.yaml:/etc/config.yaml
@@ -177,7 +223,7 @@ services:
       profiles.agent.grafana.com/service_name: grafana
       profiles.agent.grafana.com/port: 6060
       logs.agent.grafana.com/log-format: logfmt
-    image: ${GRAFANA_IMAGE:-docker.io/grafana/grafana:latest}
+    image: ${GRAFANA_IMAGE:-docker.io/grafana/grafana:10.4.1}
     command:
       - --config=/etc/grafana-config/grafana.ini
     volumes:
