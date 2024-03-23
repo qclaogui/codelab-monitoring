@@ -37,7 +37,7 @@ up-monolithic-mode-metrics: ## Run monolithic-mode Mimir for metrics
 	docker compose \
 		--project-name monolithic-metrics \
 		--project-directory docker-compose/monolithic-mode/metrics \
-		--file docker-compose/monolithic-mode/metrics/docker-compose.yaml \
+		--file docker-compose/monolithic-mode/metrics/compose.yaml \
 		--env-file docker-compose/common/config/.env \
 		up -d --remove-orphans
 	@$(call echo_info, "Go to http://localhost:3000/explore for the metrics.")
@@ -50,7 +50,7 @@ up-monolithic-mode-logs: ## Run monolithic-mode Loki for logs
 	docker compose \
 		--project-name monolithic-logs \
 		--project-directory docker-compose/monolithic-mode/logs \
-		--file docker-compose/monolithic-mode/logs/docker-compose.yaml \
+		--file docker-compose/monolithic-mode/logs/compose.yaml \
 		--env-file docker-compose/common/config/.env \
 		up -d --remove-orphans
 	@$(call echo_info, "Go to http://localhost:3000/explore for the logs.")
@@ -63,7 +63,7 @@ up-monolithic-mode-traces: ## Run monolithic-mode Tempo for traces
 	docker compose \
 		--project-name monolithic-traces \
 		--project-directory docker-compose/monolithic-mode/traces \
-		--file docker-compose/monolithic-mode/traces/docker-compose.yaml \
+		--file docker-compose/monolithic-mode/traces/compose.yaml \
 		--env-file docker-compose/common/config/.env \
 		up -d --remove-orphans
 	@$(call echo_info, "Go to http://localhost:3000/explore for the traces.")
@@ -76,7 +76,7 @@ up-monolithic-mode-profiles: ## Run monolithic-mode Pyroscope for profiles
 	docker compose \
 		--project-name monolithic-profiles \
 		--project-directory docker-compose/monolithic-mode/profiles \
-		--file docker-compose/monolithic-mode/profiles/docker-compose.yaml \
+		--file docker-compose/monolithic-mode/profiles/compose.yaml \
 		--env-file docker-compose/common/config/.env \
 		up -d --remove-orphans
 	@$(call echo_info, "Go to http://localhost:3000/explore for the profiles.")
@@ -89,7 +89,7 @@ up-monolithic-mode-all-in-one: ## Run monolithic-mode all-in-one
 	docker compose \
 		--project-name all-in-one \
 		--project-directory docker-compose/monolithic-mode/all-in-one \
-		--file docker-compose/monolithic-mode/all-in-one/docker-compose.yaml \
+		--file docker-compose/monolithic-mode/all-in-one/compose.yaml \
 		--env-file docker-compose/common/config/.env \
 		up -d --remove-orphans
 	@$(call echo_info, "Go to http://localhost:3000/explore for the metrics.")
@@ -103,7 +103,7 @@ up-read-write-mode-metrics: ## Run read-write-mode Mimir for metrics
 	docker compose \
 		--project-name read-write-metrics \
 		--project-directory docker-compose/read-write-mode/metrics \
-		--file docker-compose/read-write-mode/metrics/docker-compose.yaml \
+		--file docker-compose/read-write-mode/metrics/compose.yaml \
 		--env-file docker-compose/common/config/.env \
 		up -d --remove-orphans
 	@$(call echo_info, "Go to http://localhost:3000/explore for the metrics.")
@@ -116,7 +116,7 @@ up-read-write-mode-logs: ## Run read-write-mode Loki for logs
 	docker compose \
 		--project-name read-write-logs \
 		--project-directory docker-compose/read-write-mode/logs \
-		--file docker-compose/read-write-mode/logs/docker-compose.yaml \
+		--file docker-compose/read-write-mode/logs/compose.yaml \
 		--env-file docker-compose/common/config/.env \
 		up -d --remove-orphans
 	@$(call echo_info, "Go to http://localhost:3000/explore for the logs.")
@@ -130,7 +130,7 @@ up-microservices-mode-metrics: ## Run microservices-mode Mimir for metrics
 	docker compose \
 		--project-name microservices-metrics \
 		--project-directory docker-compose/microservices-mode/metrics \
-		--file docker-compose/microservices-mode/metrics/docker-compose.yaml \
+		--file docker-compose/microservices-mode/metrics/compose.yaml \
 		--env-file docker-compose/common/config/.env \
 		up -d --remove-orphans
 	@$(call echo_info, "Go to http://localhost:3000/explore for the metrics.")
@@ -143,7 +143,7 @@ up-microservices-mode-logs: ## Run microservices-mode Loki for logs
 	docker compose \
 		--project-name microservices-logs \
 		--project-directory docker-compose/microservices-mode/logs \
-		--file docker-compose/microservices-mode/logs/docker-compose.yaml \
+		--file docker-compose/microservices-mode/logs/compose.yaml \
 		--env-file docker-compose/common/config/.env \
 		up -d --remove-orphans
 	@$(call echo_info, "Go to http://localhost:3000/explore for the logs.")
@@ -156,7 +156,7 @@ up-microservices-mode-traces: ## Run microservices-mode Tempo for traces
 	docker compose \
 		--project-name microservices-traces \
 		--project-directory docker-compose/microservices-mode/traces \
-		--file docker-compose/microservices-mode/traces/docker-compose.yaml \
+		--file docker-compose/microservices-mode/traces/compose.yaml \
 		--env-file docker-compose/common/config/.env \
 		up -d --remove-orphans
 	@$(call echo_info, "Go to http://localhost:3000/explore for the traces.")
@@ -169,7 +169,7 @@ up-microservices-mode-profiles: ## Run microservices-mode Pyroscope for profiles
 	docker compose \
 		--project-name microservices-profiles \
 		--project-directory docker-compose/microservices-mode/profiles \
-		--file docker-compose/microservices-mode/profiles/docker-compose.yaml \
+		--file docker-compose/microservices-mode/profiles/compose.yaml \
 		--env-file docker-compose/common/config/.env \
 		up -d --remove-orphans
 	@$(call echo_info, "Go to http://localhost:3000/explore for the profiles.")

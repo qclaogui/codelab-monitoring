@@ -1,7 +1,7 @@
 version: '3.9'
 
 # ============================================================================ #
-#                  Monolithic Mode - Traces
+#                  Monolithic Mode - Logs
 # ============================================================================ #
 
 # Note: 
@@ -9,65 +9,60 @@ version: '3.9'
 include:
   - path: ../../common/compose-include/minio.yaml
   - path: ../../common/compose-include/memcached.yaml
-  - path: ../../common/compose-include/agent-collect-traces.yaml
+  - path: ../../common/compose-include/agent-collect-logs.yaml
   # optional
-  - path: ../../common/compose-include/option-to-collect-metrics.yaml
-
-x-environment: &jaeger-environment
-  JAEGER_AGENT_HOST: grafana-agent
-  JAEGER_AGENT_PORT: 6831
-  JAEGER_SAMPLER_TYPE: const
-  JAEGER_SAMPLER_PARAM: 1
+  - path: ../../common/compose-include/mimir.yaml
 
 services:
   gateway:
     # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
     labels:
       metrics.agent.grafana.com/scrape: false
+      logs.agent.grafana.com/log-format: nginx
     depends_on:
-      tempo:
+      loki:
         condition: service_healthy
     image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:latest}
-    restart: always
     volumes:
       - ../../common/config/nginx/10-default-lgtmp.envsh:/docker-entrypoint.d/10-default-lgtmp.envsh
       - ../../common/config/nginx/nginx.conf:/etc/nginx/templates/nginx.conf.template
-      - ../../common/config/tempo/gateway_tempo.conf:/etc/nginx/templates/gateway_tempo.conf.template
+      - ../../common/config/loki/gateway_loki.conf:/etc/nginx/templates/gateway_loki.conf.template
       - ../../common/config/mimir/gateway_mimir.conf:/etc/nginx/templates/gateway_mimir.conf.template
     healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ || exit 1" ]
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ || exit 1" ]
       interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 5
 
-  tempo:
+  loki:
+    labels:
+      - logs.agent.grafana.com/log-format=json
     depends_on:
       minio:
-        condition: service_started
-    image: &tempoImage ${TEMPO_IMAGE:-docker.io/grafana/tempo:latest}
-    restart: always
+        condition: service_healthy
+    image: ${LOKI_IMAGE:-docker.io/grafana/loki:latest}
     volumes:
-      - ../../common/config/tempo:/etc/tempo
+      - ../../common/config/loki:/etc/loki
     command:
-      - -config.file=/etc/tempo/monolithic-mode-traces.yaml
+      - -config.file=/etc/loki/monolithic-mode-logs.yaml
       - -target=all
       - -config.expand-env=true
-    environment:
-      <<: *jaeger-environment
-      JAEGER_TAGS: app=tempo
     healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ready || exit 1" ]
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1" ]
       interval: 10s
       timeout: 5s
-      retries: 10
-    # expose 33200 port so we can directly access tempo inside container
+      retries: 5
+    # expose 33100 port so we can directly access loki inside container
     ports:
-      - "33200:3200"
+      - "33100:3100"
+    networks:
+      default:
+        aliases:
+          - loki-memberlist
 
   grafana:
-    depends_on:
-      minio:
-        condition: service_started
+    labels:
+      - logs.agent.grafana.com/log-format=logfmt
     image: ${GRAFANA_IMAGE:-docker.io/grafana/grafana:latest}
     command:
       - --config=/etc/grafana-config/grafana.ini
@@ -75,14 +70,13 @@ services:
       - ../../common/config/grafana/grafana.ini:/etc/grafana-config/grafana.ini
       - ../../common/config/grafana/dashboards:/var/lib/grafana/dashboards
       - ../../common/config/grafana/provisioning:/etc/grafana/provisioning
-      - ../../../monitoring-mixins/mimir-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/mimir-mixin
-      # - ../../../monitoring-mixins/tempo-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/tempo-mixin
       - ../../../monitoring-mixins/agent-flow-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/agent-flow-mixin
       - ../../../monitoring-mixins/go-runtime-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/go-runtime-mixin
+      - ../../../monitoring-mixins/loki-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/loki-mixin
+      - ../../../monitoring-mixins/mimir-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/mimir-mixin
       - ../../../monitoring-mixins/memcached-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/memcached-mixin
     environment:
       - GF_LOG_LEVEL=warn
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin_password}
-      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor traceqlSearch correlations metricsSummary traceToMetrics
     ports:
       - "3000:3000"
