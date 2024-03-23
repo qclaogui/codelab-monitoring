@@ -9,7 +9,10 @@ services:
     image: ${AGENT_IMAGE:-docker.io/grafana/agent:latest}
     volumes:
       - ../config/agent-flow:/etc/agent-config
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /:/rootfs:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
     entrypoint:
       - /bin/grafana-agent
       - run
@@ -27,7 +30,7 @@ services:
       timeout: 5s
       retries: 10
     ports:
-      - "12345"
+      - "12345:12345"
     # scale up support
     deploy:
       replicas: 1

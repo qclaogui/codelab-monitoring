@@ -6,6 +6,18 @@ argument "forward_to" {
 	comment = "Must be a list(MetricssReceiver) where collected metrics should be forwarded to"
 }
 
+argument "cluster" {
+	optional = true
+}
+
+argument "namespace" {
+	optional = true
+}
+
+argument "keep_metrics" {
+	optional = true
+}
+
 argument "scrape_interval" {
 	comment  = "How often to scrape metrics from the targets (default: 60s)"
 	optional = true
@@ -19,15 +31,12 @@ argument "scrape_timeout" {
 /********************************************
  * Integrations Node Exporter
  ********************************************/
-prometheus.exporter.unix "peu_unix" {
-	set_collectors     = ["cpu"]
-	disable_collectors = ["diskstats", "mdadm", "textfile", "hwmon"]
-}
+prometheus.exporter.unix "peu_unix" { }
 
 /********************************************
  * Prometheus Scrape Integrations Targets
  ********************************************/
-prometheus.scrape "ps_integrations" {
+prometheus.scrape "ps_node_exporter" {
 	targets = concat(
 		prometheus.exporter.unix.peu_unix.targets,
 	)
@@ -42,26 +51,41 @@ prometheus.scrape "ps_integrations" {
 		enabled = true
 	}
 
-	forward_to = [prometheus.relabel.pr_integrations.receiver]
+	forward_to = [prometheus.relabel.pr_node_exporter.receiver]
 }
 
 /********************************************
  * Prometheus Metric Relabelings (post-scrape)
  ********************************************/
-prometheus.relabel "pr_integrations" {
+prometheus.relabel "pr_node_exporter" {
 	forward_to = argument.forward_to.value
 
+	// keep only metrics that match the keep_metrics regex
 	rule {
-		source_labels = ["job"]
-		regex         = "integrations/(.*)"
-		target_label  = "pod"
-		replacement   = "${1}"
+		source_labels = ["__name__"]
+		regex         = coalesce(argument.keep_metrics.value, "(up|node_exporter_build_info|node_cpu.*|node_memory.*|node_disk.*|node_filesystem.*|process_cpu_seconds_total|process_resident_memory_bytes)")
+		action        = "keep"
 	}
 
+	// Drop metrics for certain file systems
 	rule {
-		source_labels = ["job"]
-		regex         = "integrations/(.*)"
-		target_label  = "container"
-		replacement   = "${1}"
+		source_labels = ["__name__", "fstype"]
+		separator     = "@"
+		regex         = "node_filesystem.*@(tempfs)"
+		action        = "drop"
+	}
+
+	// set the cluster label
+	rule {
+		action       = "replace"
+		replacement  = coalesce(argument.cluster.value, "docker-compose")
+		target_label = "cluster"
+	}
+
+	// set the namespace label
+	rule {
+		action       = "replace"
+		replacement  = coalesce(argument.namespace.value, "monitoring-system")
+		target_label = "namespace"
 	}
 }

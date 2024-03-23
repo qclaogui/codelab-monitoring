@@ -307,9 +307,19 @@ discovery.relabel "dr_label_metrics" {
 	}
 
 	rule {
+		action        = "replace"
+		source_labels = [
+			"__meta_docker_container_label_com_docker_compose_service",
+		]
+		regex        = "^(?:;*)?([^;]+).*$"
+		replacement  = "$1"
+		target_label = "container"
+	}
+
+	rule {
 		source_labels = ["__meta_docker_container_name"]
 		regex         = "/(.*)"
-		target_label  = "container"
+		target_label  = "container_name"
 	}
 
 	rule {
