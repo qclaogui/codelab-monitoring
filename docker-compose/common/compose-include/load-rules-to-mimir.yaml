@@ -1,21 +1,19 @@
 services:
   load-rules-to-mimir:
-    depends_on:
-      gateway:
-        condition: service_healthy
     image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:latest}
     volumes:
-      - ../../../monitoring-mixins/agent-flow-mixin/deploy/agent-flow-mixin-alerts.yaml:/agent-flow-mixin-alerts.yaml
-      - ../../../monitoring-mixins/loki-mixin/deploy/loki-mixin-rules.yaml:/loki-mixin-rules.yaml
-      - ../../../monitoring-mixins/loki-mixin/deploy/loki-mixin-alerts.yaml:/loki-mixin-alerts.yaml
-      - ../../../monitoring-mixins/memcached-mixin/deploy/memcached-mixin-alerts.yaml:/memcached-mixin-alerts.yaml
-      - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-rules.yaml:/mimir-mixin-rules.yaml
-      - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-alerts.yaml:/mimir-mixin-alerts.yaml
-      - ../../../monitoring-mixins/pyroscope-mixin/deploy/pyroscope-mixin-rules.yaml:/pyroscope-mixin-rules.yaml
-      # - ../../../monitoring-mixins/tempo-mixin/deploy/tempo-mixin-rules.yaml:/tempo-mixin-rules.yaml
-      # - ../../../monitoring-mixins/tempo-mixin/deploy/tempo-mixin-alerts.yaml:/tempo-mixin-alerts.yaml
+      - ../../../monitoring-mixins/crontab:/etc/crontabs/root
+      - ../../../monitoring-mixins/agent-flow-mixin/deploy/agent-flow-mixin-alerts.yaml:/rules/agent-flow-mixin-alerts.yaml
+      - ../../../monitoring-mixins/loki-mixin/deploy/loki-mixin-rules.yaml:/rules/loki-mixin-rules.yaml
+      - ../../../monitoring-mixins/loki-mixin/deploy/loki-mixin-alerts.yaml:/rules/loki-mixin-alerts.yaml
+      - ../../../monitoring-mixins/memcached-mixin/deploy/memcached-mixin-alerts.yaml:/rules/memcached-mixin-alerts.yaml
+      - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-rules.yaml:/rules/mimir-mixin-rules.yaml
+      - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-alerts.yaml:/rules/mimir-mixin-alerts.yaml
+      - ../../../monitoring-mixins/pyroscope-mixin/deploy/pyroscope-mixin-rules.yaml:/rules/pyroscope-mixin-rules.yaml
+      # - ../../../monitoring-mixins/tempo-mixin/deploy/tempo-mixin-rules.yaml:/rules/tempo-mixin-rules.yaml
+      # - ../../../monitoring-mixins/tempo-mixin/deploy/tempo-mixin-alerts.yaml:/rules/tempo-mixin-alerts.yaml
     environment:
       - MIMIR_ADDRESS=http://gateway:8080
       - MIMIR_TENANT_ID=anonymous
-    command: >-
-      rules load agent-flow-mixin-alerts.yaml /loki-mixin-rules.yaml /loki-mixin-alerts.yaml /memcached-mixin-alerts.yaml /mimir-mixin-rules.yaml /mimir-mixin-alerts.yaml /pyroscope-mixin-rules.yaml
+    entrypoint: crond -f
+    restart: always
