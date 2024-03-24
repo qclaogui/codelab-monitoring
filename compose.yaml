@@ -7,8 +7,8 @@ version: '3.9'
 # Note: 
 # include is available in Docker Compose version 2.20 and later, and Docker Desktop version 4.22 and later.
 include:
-  - path: ../../common/compose-include/minio.yaml
-  - path: ../../common/compose-include/memcached.yaml
+  - path: ./docker-compose/common/compose-include/minio.yaml
+  - path: ./docker-compose/common/compose-include/memcached.yaml
 
 # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
 x-labels: &profiles-labels
@@ -31,7 +31,7 @@ services:
         condition: service_healthy
     image: ${AGENT_IMAGE:-docker.io/grafana/agent:v0.40.3}
     volumes:
-      - ../../common/config/agent-flow:/etc/agent-config
+      - ./docker-compose/common/config/agent-flow:/etc/agent-config
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /:/rootfs:ro
       - /sys:/sys:ro
@@ -65,12 +65,12 @@ services:
     image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.25-alpine}
     restart: always
     volumes:
-      - ../../common/config/nginx/10-default-lgtmp.envsh:/docker-entrypoint.d/10-default-lgtmp.envsh
-      - ../../common/config/nginx/nginx.conf:/etc/nginx/templates/nginx.conf.template
-      - ../../common/config/loki/gateway_loki.conf:/etc/nginx/templates/gateway_loki.conf.template
-      - ../../common/config/tempo/gateway_tempo.conf:/etc/nginx/templates/gateway_tempo.conf.template
-      - ../../common/config/mimir/gateway_mimir.conf:/etc/nginx/templates/gateway_mimir.conf.template
-      - ../../common/config/pyroscope/gateway_pyroscope.conf:/etc/nginx/templates/gateway_pyroscope.conf.template
+      - ./docker-compose/common/config/nginx/10-default-lgtmp.envsh:/docker-entrypoint.d/10-default-lgtmp.envsh
+      - ./docker-compose/common/config/nginx/nginx.conf:/etc/nginx/templates/nginx.conf.template
+      - ./docker-compose/common/config/loki/gateway_loki.conf:/etc/nginx/templates/gateway_loki.conf.template
+      - ./docker-compose/common/config/tempo/gateway_tempo.conf:/etc/nginx/templates/gateway_tempo.conf.template
+      - ./docker-compose/common/config/mimir/gateway_mimir.conf:/etc/nginx/templates/gateway_mimir.conf.template
+      - ./docker-compose/common/config/pyroscope/gateway_pyroscope.conf:/etc/nginx/templates/gateway_pyroscope.conf.template
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ || exit 1" ]
       interval: 10s
@@ -87,7 +87,7 @@ services:
         condition: service_healthy
     image: ${LOKI_IMAGE:-docker.io/grafana/loki:2.9.6}
     volumes:
-      - ../../common/config/loki:/etc/loki
+      - ./docker-compose/common/config/loki:/etc/loki
     command:
       - -config.file=/etc/loki/monolithic-mode-logs.yaml
       - -target=all
@@ -109,7 +109,6 @@ services:
           - loki-memberlist
 
   tempo:
-    # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
     labels:
       <<: *profiles-labels
       profiles.agent.grafana.com/service_name: tempo
@@ -121,7 +120,7 @@ services:
         condition: service_healthy
     image: ${TEMPO_IMAGE:-docker.io/grafana/tempo:2.4.1}
     volumes:
-      - ../../common/config/tempo:/etc/tempo
+      - ./docker-compose/common/config/tempo:/etc/tempo
     command:
       - -config.file=/etc/tempo/monolithic-mode-traces.yaml
       - -target=all
@@ -148,7 +147,7 @@ services:
         condition: service_healthy
     image: ${MIMIR_IMAGE:-docker.io/grafana/mimir:2.11.0}
     volumes:
-      - ../../common/config/mimir:/etc/mimir
+      - ./docker-compose/common/config/mimir:/etc/mimir
     command:
       - -config.file=/etc/mimir/monolithic-mode-metrics.yaml
       - -target=all
@@ -176,20 +175,21 @@ services:
         condition: service_healthy
     image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:2.11.0}
     volumes:
-      - ../../../monitoring-mixins/agent-flow-mixin/deploy/agent-flow-mixin-alerts.yaml:/agent-flow-mixin-alerts.yaml
-      - ../../../monitoring-mixins/loki-mixin/deploy/loki-mixin-rules.yaml:/loki-mixin-rules.yaml
-      - ../../../monitoring-mixins/loki-mixin/deploy/loki-mixin-alerts.yaml:/loki-mixin-alerts.yaml
-      - ../../../monitoring-mixins/memcached-mixin/deploy/memcached-mixin-alerts.yaml:/memcached-mixin-alerts.yaml
-      - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-rules.yaml:/mimir-mixin-rules.yaml
-      - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-alerts.yaml:/mimir-mixin-alerts.yaml
-      - ../../../monitoring-mixins/pyroscope-mixin/deploy/pyroscope-mixin-rules.yaml:/pyroscope-mixin-rules.yaml
-      # - ../../../monitoring-mixins/tempo-mixin/deploy/tempo-mixin-rules.yaml:/tempo-mixin-rules.yaml
-      # - ../../../monitoring-mixins/tempo-mixin/deploy/tempo-mixin-alerts.yaml:/tempo-mixin-alerts.yaml
+      - ./monitoring-mixins/crontab:/etc/crontabs/root
+      - ./monitoring-mixins/agent-flow-mixin/deploy/agent-flow-mixin-alerts.yaml:/rules/agent-flow-mixin-alerts.yaml
+      - ./monitoring-mixins/loki-mixin/deploy/loki-mixin-rules.yaml:/rules/loki-mixin-rules.yaml
+      - ./monitoring-mixins/loki-mixin/deploy/loki-mixin-alerts.yaml:/rules/loki-mixin-alerts.yaml
+      - ./monitoring-mixins/memcached-mixin/deploy/memcached-mixin-alerts.yaml:/rules/memcached-mixin-alerts.yaml
+      - ./monitoring-mixins/mimir-mixin/deploy/mimir-mixin-rules.yaml:/rules/mimir-mixin-rules.yaml
+      - ./monitoring-mixins/mimir-mixin/deploy/mimir-mixin-alerts.yaml:/rules/mimir-mixin-alerts.yaml
+      - ./monitoring-mixins/pyroscope-mixin/deploy/pyroscope-mixin-rules.yaml:/rules/pyroscope-mixin-rules.yaml
+      # - ./monitoring-mixins/tempo-mixin/deploy/tempo-mixin-rules.yaml:/rules/tempo-mixin-rules.yaml
+      # - ./monitoring-mixins/tempo-mixin/deploy/tempo-mixin-alerts.yaml:/rules/tempo-mixin-alerts.yaml
     environment:
       - MIMIR_ADDRESS=http://gateway:8080
       - MIMIR_TENANT_ID=anonymous
-    command: >-
-      rules load agent-flow-mixin-alerts.yaml /loki-mixin-rules.yaml /loki-mixin-alerts.yaml /memcached-mixin-alerts.yaml /mimir-mixin-rules.yaml /mimir-mixin-alerts.yaml /pyroscope-mixin-rules.yaml
+    entrypoint: crond -f
+    restart: always
 
 
   pyroscope:
@@ -201,7 +201,7 @@ services:
     image: ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:1.5.0}
     container_name: pyroscope
     volumes:
-      - ../../common/config/pyroscope/monolithic-mode-profiles.yaml:/etc/config.yaml
+      - ./docker-compose/common/config/pyroscope/monolithic-mode-profiles.yaml:/etc/config.yaml
     command:
       - -config.file=/etc/config.yaml
       - -config.expand-env=true
@@ -227,16 +227,16 @@ services:
     command:
       - --config=/etc/grafana-config/grafana.ini
     volumes:
-      - ../../common/config/grafana/grafana.ini:/etc/grafana-config/grafana.ini
-      - ../../common/config/grafana/dashboards:/var/lib/grafana/dashboards
-      - ../../common/config/grafana/provisioning:/etc/grafana/provisioning
-      - ../../../monitoring-mixins/agent-flow-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/agent-flow-mixin
-      - ../../../monitoring-mixins/go-runtime-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/go-runtime-mixin
-      - ../../../monitoring-mixins/loki-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/loki-mixin
-      - ../../../monitoring-mixins/mimir-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/mimir-mixin
-      - ../../../monitoring-mixins/pyroscope-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/pyroscope-mixin
-      - ../../../monitoring-mixins/memcached-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/memcached-mixin
-      # - ../../../monitoring-mixins/tempo-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/tempo-mixin
+      - ./docker-compose/common/config/grafana/grafana.ini:/etc/grafana-config/grafana.ini
+      - ./docker-compose/common/config/grafana/dashboards:/var/lib/grafana/dashboards
+      - ./docker-compose/common/config/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring-mixins/agent-flow-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/agent-flow-mixin
+      - ./monitoring-mixins/go-runtime-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/go-runtime-mixin
+      - ./monitoring-mixins/loki-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/loki-mixin
+      - ./monitoring-mixins/mimir-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/mimir-mixin
+      - ./monitoring-mixins/pyroscope-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/pyroscope-mixin
+      - ./monitoring-mixins/memcached-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/memcached-mixin
+      # - ./monitoring-mixins/tempo-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/tempo-mixin
     environment:
       - GF_LOG_LEVEL=warn
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin_password}
