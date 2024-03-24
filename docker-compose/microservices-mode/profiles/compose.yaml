@@ -27,7 +27,7 @@ services:
     depends_on:
       distributor:
         condition: service_healthy
-    image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:latest}
+    image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.25-alpine}
     restart: always
     volumes:
       - ../../common/config/nginx/10-default-lgtmp.envsh:/docker-entrypoint.d/10-default-lgtmp.envsh
@@ -52,7 +52,7 @@ services:
     depends_on:
       ingester:
         condition: service_started
-    image: &pyroscopeImage ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:latest}
+    image: &pyroscopeImage ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:1.5.0}
     volumes:
       - ../../common/config/pyroscope:/etc/pyroscope
     command:
@@ -211,7 +211,7 @@ services:
       <<: *profiles-labels
       profiles.agent.grafana.com/port: 6060
       profiles.agent.grafana.com/service_name: grafana
-    image: ${GRAFANA_IMAGE:-docker.io/grafana/grafana:latest}
+    image: ${GRAFANA_IMAGE:-docker.io/grafana/grafana:10.4.1}
     command:
       - --config=/etc/grafana-config/grafana.ini
     volumes:

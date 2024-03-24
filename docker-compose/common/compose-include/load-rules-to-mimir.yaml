@@ -1,6 +1,9 @@
 services:
   load-rules-to-mimir:
-    image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:latest}
+    # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
+    labels:
+      metrics.agent.grafana.com/scrape: false
+    image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:2.11.0}
     volumes:
       - ../../../monitoring-mixins/crontab:/etc/crontabs/root
       - ../../../monitoring-mixins/agent-flow-mixin/deploy/agent-flow-mixin-alerts.yaml:/rules/agent-flow-mixin-alerts.yaml

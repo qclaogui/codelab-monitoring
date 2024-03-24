@@ -9,6 +9,7 @@ version: '3.9'
 include:
   - path: ./docker-compose/common/compose-include/minio.yaml
   - path: ./docker-compose/common/compose-include/memcached.yaml
+  - path: ./docker-compose/common/compose-include/load-rules-to-mimir.yaml
 
 # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
 x-labels: &profiles-labels
@@ -168,29 +169,6 @@ services:
       default:
         aliases:
           - mimir-memberlist
-
-  load-rules-to-mimir:
-    depends_on:
-      gateway:
-        condition: service_healthy
-    image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:2.11.0}
-    volumes:
-      - ./monitoring-mixins/crontab:/etc/crontabs/root
-      - ./monitoring-mixins/agent-flow-mixin/deploy/agent-flow-mixin-alerts.yaml:/rules/agent-flow-mixin-alerts.yaml
-      - ./monitoring-mixins/loki-mixin/deploy/loki-mixin-rules.yaml:/rules/loki-mixin-rules.yaml
-      - ./monitoring-mixins/loki-mixin/deploy/loki-mixin-alerts.yaml:/rules/loki-mixin-alerts.yaml
-      - ./monitoring-mixins/memcached-mixin/deploy/memcached-mixin-alerts.yaml:/rules/memcached-mixin-alerts.yaml
-      - ./monitoring-mixins/mimir-mixin/deploy/mimir-mixin-rules.yaml:/rules/mimir-mixin-rules.yaml
-      - ./monitoring-mixins/mimir-mixin/deploy/mimir-mixin-alerts.yaml:/rules/mimir-mixin-alerts.yaml
-      - ./monitoring-mixins/pyroscope-mixin/deploy/pyroscope-mixin-rules.yaml:/rules/pyroscope-mixin-rules.yaml
-      # - ./monitoring-mixins/tempo-mixin/deploy/tempo-mixin-rules.yaml:/rules/tempo-mixin-rules.yaml
-      # - ./monitoring-mixins/tempo-mixin/deploy/tempo-mixin-alerts.yaml:/rules/tempo-mixin-alerts.yaml
-    environment:
-      - MIMIR_ADDRESS=http://gateway:8080
-      - MIMIR_TENANT_ID=anonymous
-    entrypoint: crond -f
-    restart: always
-
 
   pyroscope:
     labels:

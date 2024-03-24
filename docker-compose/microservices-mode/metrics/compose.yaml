@@ -22,7 +22,7 @@ services:
         condition: service_healthy
       ruler:
         condition: service_healthy
-    image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:latest}
+    image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.25-alpine}
     volumes:
       - ../../common/config/nginx/10-default-lgtmp.envsh:/docker-entrypoint.d/10-default-lgtmp.envsh
       - ../../common/config/nginx/nginx.conf:/etc/nginx/templates/nginx.conf.template
@@ -45,7 +45,7 @@ services:
     depends_on:
       ingester:
         condition: service_started
-    image: &mimirImage ${MIMIR_IMAGE:-docker.io/grafana/mimir:latest}
+    image: &mimirImage ${MIMIR_IMAGE:-docker.io/grafana/mimir:2.11.0}
     volumes:
       - ../../common/config/mimir:/etc/mimir
     command:
@@ -207,7 +207,7 @@ services:
           - mimir-memberlist
 
   grafana:
-    image: ${GRAFANA_IMAGE:-docker.io/grafana/grafana:latest}
+    image: ${GRAFANA_IMAGE:-docker.io/grafana/grafana:10.4.1}
     command:
       - --config=/etc/grafana-config/grafana.ini
     volumes:

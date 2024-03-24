@@ -25,7 +25,7 @@ services:
     depends_on:
       loki-write:
         condition: service_healthy
-    image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:latest}
+    image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.25-alpine}
     volumes:
       - ../../common/config/nginx/10-default-lgtmp.envsh:/docker-entrypoint.d/10-default-lgtmp.envsh
       - ../../common/config/nginx/nginx.conf:/etc/nginx/templates/nginx.conf.template
@@ -51,7 +51,7 @@ services:
     depends_on:
       minio:
         condition: service_healthy
-    image: &lokiImage ${LOKI_IMAGE:-docker.io/grafana/loki:latest}
+    image: &lokiImage ${LOKI_IMAGE:-docker.io/grafana/loki:2.9.6}
     volumes:
       - ../../common/config/loki:/etc/loki
     command:
@@ -119,7 +119,7 @@ services:
   grafana:
     labels:
       logs.agent.grafana.com/log-format: logfmt
-    image: ${GRAFANA_IMAGE:-docker.io/grafana/grafana:latest}
+    image: ${GRAFANA_IMAGE:-docker.io/grafana/grafana:10.4.1}
     command:
       - --config=/etc/grafana-config/grafana.ini
     volumes:
