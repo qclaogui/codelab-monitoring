@@ -9,12 +9,47 @@ version: '3.9'
 include:
   - path: ../../common/compose-include/minio.yaml
   - path: ../../common/compose-include/memcached.yaml
-  - path: ../../common/compose-include/agent-collect-metrics.yaml
   - path: ../../common/compose-include/load-rules-to-mimir.yaml
 
 services:
-  gateway:
+  grafana-agent:
     # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
+    labels:
+      logs.agent.grafana.com/log-format: logfmt
+    depends_on:
+      gateway:
+        condition: service_healthy
+    image: ${AGENT_IMAGE:-docker.io/grafana/agent:latest}
+    volumes:
+      - ../../common/config/agent-flow:/etc/agent-config
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /:/rootfs:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+    entrypoint:
+      - /bin/grafana-agent
+      - run
+      - /etc/agent-config/metrics.river
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --cluster.enabled=true
+      - --cluster.join-addresses=grafana-agent-cluster:12345
+      - --disable-reporting=true
+    environment:
+      - AGENT_MODE=flow
+      - AGENT_CONFIG_FOLDER=/etc/agent-config
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:12345/ready || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "12345:12345"
+    networks:
+      default:
+        aliases:
+          - grafana-agent-cluster
+
+  gateway:
     labels:
       - metrics.agent.grafana.com/scrape=false
     depends_on:
