@@ -1,0 +1,23 @@
+# ============================================================================ #
+#                           Github Exporter                                   
+# ============================================================================ #
+
+# Usage:
+#   COMPOSE_EXPERIMENTAL_GIT_REMOTE=true docker compose up -d --remove-orphans
+#   COMPOSE_EXPERIMENTAL_GIT_REMOTE=true docker compose down
+
+# Note:
+# include is available in Docker Compose version 2.20 and later, and Docker Desktop version 4.22 and later.
+include:
+# - path: https://github.com/qclaogui/codelab-monitoring.git # All in one(Logs Traces Metrics Profiles)
+# - path: https://github.com/qclaogui/codelab-monitoring.git#main:docker-compose/monolithic-mode/metrics/compose.yaml   # Metrics
+- path: https://github.com/qclaogui/codelab-monitoring.git#main:docker-compose/monolithic-mode/logs/compose.yaml      # Metrics and Logs
+# - path: https://github.com/qclaogui/codelab-monitoring.git#main:docker-compose/monolithic-mode/traces/compose.yaml    # Metrics and Traces
+# - path: https://github.com/qclaogui/codelab-monitoring.git#main:docker-compose/monolithic-mode/profiles/compose.yaml  # Metrics and Profiles
+
+# https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
+services:
+  github-exporter:
+    image: githubexporter/github-exporter:latest
+    environment:
+    - REPOS=qclaogui/codelab-monitoring,grafana/agent

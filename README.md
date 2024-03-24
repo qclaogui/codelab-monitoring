@@ -12,9 +12,39 @@
   </a>
 </p>
 
-## Grafana LGTMP Stack (Loki Grafana Tempo Mimir Pyroscope)
+## Quick Start
 
-Based on `flow` model [Grafana Agent](https://github.com/grafana/agent).
+This quick start guide will show you how to getting started. An simple use case `compose.yaml` like so:
+
+Open a new terminal window create the `compose.yaml`:
+
+```yaml
+# include is available in Docker Compose version 2.20 and later, and Docker Desktop version 4.22 and later.
+include:
+# - path: https://github.com/qclaogui/codelab-monitoring.git # All in one(Logs Traces Metrics Profiles)
+- path: https://github.com/qclaogui/codelab-monitoring.git#main:docker-compose/monolithic-mode/logs/compose.yaml # Just Metrics and Logs
+
+# https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
+services:
+  github-exporter:
+    image: githubexporter/github-exporter:latest
+    environment:
+    - REPOS=qclaogui/codelab-monitoring,grafana/agent
+```
+
+and run:
+
+```shell
+COMPOSE_EXPERIMENTAL_GIT_REMOTE=true docker compose up -d --remove-orphans
+```
+
+Once all containers are up and running you can search for metrics(from Mimir) logs(from Loki) traces(from Tempo) and profiles(Pyroscope) in Grafana. Navigate to [http://localhost:3000](http://localhost:3000)
+
+> In this case you can find `github-exporter` metrics and logs.
+
+More [examples](./examples/)
+
+---
 
 <details>
 
@@ -37,16 +67,16 @@ Docker compose
   up-monolithic-mode-profiles               Run monolithic-mode Pyroscope for profiles
   up-monolithic-mode-all-in-one             Run monolithic-mode all-in-one
   up-read-write-mode-metrics                Run read-write-mode Mimir for metrics
-  up-read-write-mode-logs                   Run read-write-mode Loki for logs
-  up-microservices-mode-metrics             Run microservices-mode Mimir for metrics
-  up-microservices-mode-logs                Run microservices-mode Loki for logs
-  up-microservices-mode-traces              Run microservices-mode Tempo for traces
-  up-microservices-mode-profiles            Run microservices-mode Pyroscope for profiles
 ```
 
 </summary>
 
 ```shell
+  up-read-write-mode-logs                   Run read-write-mode Loki for logs
+  up-microservices-mode-metrics             Run microservices-mode Mimir for metrics
+  up-microservices-mode-logs                Run microservices-mode Loki for logs
+  up-microservices-mode-traces              Run microservices-mode Tempo for traces
+  up-microservices-mode-profiles            Run microservices-mode Pyroscope for profiles
 Kubernetes
   cluster                                   Create k3s cluster
   clean                                     Clean cluster
