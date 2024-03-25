@@ -47,6 +47,12 @@ $(KUSTOMIZE): $(BINGO_DIR)/kustomize.mod
 	@echo "(re)installing $(GOBIN)/kustomize-v5.3.0"
 	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=kustomize.mod -o=$(GOBIN)/kustomize-v5.3.0 "sigs.k8s.io/kustomize/kustomize/v5"
 
+LABCTL := $(GOBIN)/labctl-v0.0.5
+$(LABCTL): $(BINGO_DIR)/labctl.mod
+	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
+	@echo "(re)installing $(GOBIN)/labctl-v0.0.5"
+	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=labctl.mod -o=$(GOBIN)/labctl-v0.0.5 "github.com/iximiuz/labctl"
+
 MIXTOOL := $(GOBIN)/mixtool-v0.0.0-20240303152532-707cd675dd6e
 $(MIXTOOL): $(BINGO_DIR)/mixtool.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
