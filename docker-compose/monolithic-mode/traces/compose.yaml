@@ -9,9 +9,8 @@ version: '3.9'
 include:
   - path: ../../common/compose-include/minio.yaml
   - path: ../../common/compose-include/memcached.yaml
-  - path: ../../common/compose-include/agent-collect-traces.yaml
-  # optional
   - path: ../../common/compose-include/mimir.yaml
+  - path: ../../common/compose-include/grafana.yaml
 
 x-environment: &jaeger-environment
   JAEGER_AGENT_HOST: grafana-agent
@@ -20,8 +19,47 @@ x-environment: &jaeger-environment
   JAEGER_SAMPLER_PARAM: 1
 
 services:
-  gateway:
+  grafana-agent:
     # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
+    labels:
+      logs.agent.grafana.com/log-format: logfmt
+    depends_on:
+      gateway:
+        condition: service_healthy
+    image: ${AGENT_IMAGE:-docker.io/grafana/agent:v0.40.3}
+    volumes:
+      - ../../common/config/agent-flow:/etc/agent-config
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /:/rootfs:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+    entrypoint:
+      - /bin/grafana-agent
+      - run
+      - /etc/agent-config/traces.river
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --cluster.enabled=true
+      - --cluster.join-addresses=grafana-agent-cluster:12345
+      - --disable-reporting=true
+    environment:
+      - AGENT_MODE=flow
+      - AGENT_CONFIG_FOLDER=/etc/agent-config
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:12345/ready || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "12345:12345"
+    # scale up support
+    deploy:
+      replicas: 1
+    networks:
+      default:
+        aliases:
+          - grafana-agent-cluster
+
+  gateway:
     labels:
       metrics.agent.grafana.com/scrape: false
     depends_on:
@@ -43,8 +81,8 @@ services:
   tempo:
     depends_on:
       minio:
-        condition: service_started
-    image: &tempoImage ${TEMPO_IMAGE:-docker.io/grafana/tempo:2.4.1}
+        condition: service_healthy
+    image: ${TEMPO_IMAGE:-docker.io/grafana/tempo:2.4.1}
     restart: always
     volumes:
       - ../../common/config/tempo:/etc/tempo
@@ -63,26 +101,3 @@ services:
     # expose 33200 port so we can directly access tempo inside container
     ports:
       - "33200:3200"
-
-  grafana:
-    depends_on:
-      minio:
-        condition: service_started
-    image: ${GRAFANA_IMAGE:-docker.io/grafana/grafana:10.4.1}
-    command:
-      - --config=/etc/grafana-config/grafana.ini
-    volumes:
-      - ../../common/config/grafana/grafana.ini:/etc/grafana-config/grafana.ini
-      - ../../common/config/grafana/dashboards:/var/lib/grafana/dashboards
-      - ../../common/config/grafana/provisioning:/etc/grafana/provisioning
-      - ../../../monitoring-mixins/mimir-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/mimir-mixin
-      # - ../../../monitoring-mixins/tempo-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/tempo-mixin
-      - ../../../monitoring-mixins/agent-flow-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/agent-flow-mixin
-      - ../../../monitoring-mixins/go-runtime-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/go-runtime-mixin
-      - ../../../monitoring-mixins/memcached-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/memcached-mixin
-    environment:
-      - GF_LOG_LEVEL=warn
-      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin_password}
-      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor traceqlSearch correlations metricsSummary traceToMetrics
-    ports:
-      - "3000:3000"

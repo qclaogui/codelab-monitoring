@@ -1,0 +1,12 @@
+
+services:
+  # override included service grafana-agent entrypoint
+  grafana-agent:
+    entrypoint:
+      - /bin/grafana-agent
+      - run
+      - /etc/agent-config/traces.river # Note: Agent use traces.river
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --cluster.enabled=true
+      - --cluster.join-addresses=grafana-agent-cluster:12345
+      - --disable-reporting=true
