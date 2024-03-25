@@ -14,7 +14,15 @@
 
 ## Quick Start
 
-This quick start guide will show you how to getting started. An simple use case `compose.yaml` like so:
+This quick start guide will show you how to getting started.
+
+Open a new terminal window to create `compose.yaml` or get it from [examples/](./examples/) by running:
+
+```shell
+wget https://raw.githubusercontent.com/qclaogui/codelab-monitoring/main/examples/github-exporter/compose.yaml
+```
+
+An simple use case `compose.yaml` like so:
 
 ```yaml
 # include is available in Docker Compose version 2.20 and later, and Docker Desktop version 4.22 and later.
@@ -30,13 +38,11 @@ services:
     - REPOS=qclaogui/codelab-monitoring
 ```
 
-Open a new terminal window create the `compose.yaml` and run:
-
 ```shell
 COMPOSE_EXPERIMENTAL_GIT_REMOTE=true docker compose up -d --remove-orphans
 ```
 
-Once all containers are up and running you can search for metrics(from Mimir) logs(from Loki) traces(from Tempo) and profiles(Pyroscope) in Grafana. Navigate to [http://localhost:3000](http://localhost:3000)
+Once all containers are up and running you can search for metrics in Grafana. Navigate to [http://localhost:3000](http://localhost:3000)
 
 > In this case you can find `github-exporter` metrics and logs.
 
