@@ -16,8 +16,6 @@
 
 This quick start guide will show you how to getting started. An simple use case `compose.yaml` like so:
 
-Open a new terminal window create the `compose.yaml`:
-
 ```yaml
 # include is available in Docker Compose version 2.20 and later, and Docker Desktop version 4.22 and later.
 include:
@@ -29,10 +27,10 @@ services:
   github-exporter:
     image: githubexporter/github-exporter:latest
     environment:
-    - REPOS=qclaogui/codelab-monitoring,grafana/agent
+    - REPOS=qclaogui/codelab-monitoring
 ```
 
-and run:
+Open a new terminal window create the `compose.yaml` and run:
 
 ```shell
 COMPOSE_EXPERIMENTAL_GIT_REMOTE=true docker compose up -d --remove-orphans
@@ -42,7 +40,7 @@ Once all containers are up and running you can search for metrics(from Mimir) lo
 
 > In this case you can find `github-exporter` metrics and logs.
 
-More [examples](./examples/)
+For more examples, See: [examples/](./examples/)
 
 ---
 
