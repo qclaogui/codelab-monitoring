@@ -402,8 +402,7 @@ delete-microservices-mode-traces: delete-memcached
 
 ##@ Grafana Agent Integrations
 
-.PHONY: deploy-memcached
-deploy-memcached: deploy-grafana ## Deploy integration memcached manifests
+deploy-memcached: deploy-grafana
 	$(info ******************** deploy integration memcached manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/memcached | kubectl apply -f -
 delete-memcached: delete-minio

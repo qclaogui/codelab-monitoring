@@ -1,4 +1,4 @@
-name: Release start publishing
+name: Release
 
 on:
   push:
@@ -6,7 +6,8 @@ on:
       - '[0-9]+.[0-9]+.[0-9]+*'
 
 jobs:
-  check-release-tag:
+  check_tag:
+    name: Parse the pushed tag version
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 #v4.1.1
@@ -22,12 +23,13 @@ jobs:
               ;;
           esac
     outputs:
-      isRc: ${{ steps.vars.outputs.isRc }}
-  publish:
-    name: start publishing
+      isPreRelease: ${{ steps.vars.outputs.isRc }}
+
+  update_release:
+    name: Trigger a release update
     uses: ./.github/workflows/publish-release.yml
-    needs: [check-release-tag]
+    needs: [check_tag]
     with:
-      isReleaseCandidate: ${{ needs.check-release-tag.outputs.isRc == 'true' }}
+      isPreRelease: ${{ needs.check_tag.outputs.isPreRelease == 'true' }}
     secrets:
       ghPAT: ${{ secrets.QCBOT_TOKEN }}

@@ -1,11 +1,21 @@
-name: Trigger Release
+name: Trigger Release (Manually)
 
+# https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#onworkflow_dispatchinputs
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Push tag and open PR to default branch'
+        required: true
+        default: 'prepare-release-candidate'
+        type: choice
+        options:
+          - prepare-release
+          - prepare-release-candidate
 
 jobs:
-  rc:
-    name: Push release tag
+  prepare_release:
+    name: Trigger a ${{ inputs.release }} job
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 #v4.1.1
@@ -16,10 +26,9 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.22'
-
       - name: Setup identity
         uses: ./.github/actions/setup-identity
         with:
           token: ${{ secrets.QCBOT_TOKEN }}
-      - name: Push tag and open PR to default branch
-        run: make prepare-release
+
+      - run: make ${{ inputs.release }}

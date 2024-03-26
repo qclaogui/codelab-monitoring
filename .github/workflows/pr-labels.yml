@@ -1,0 +1,19 @@
+name: Check PR labels
+
+on:
+  pull_request:
+    types: [labeled, unlabeled, opened, edited, synchronize]
+
+jobs:
+  enforce-kind:
+    name: Enforce a valid PR category
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if a valid PR category is present
+        env:
+          LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
+        run: |
+          if ! jq --exit-status 'any(test("kind/feature") or test("kind/docs") or test("kind/improvement") or test("kind/bug") or test("kind/maintenance") or test("dependencies") or test("skip-release-notes") or test("area/tech-debt"))' >/dev/null <<< $LABELS; then
+            echo "::error ::Please set either kind/feature, kind/docs, kind/improvement, kind/bug, kind/maintenance, dependencies, skip-release-notes or area/tech-debt as label"
+            exit 1
+          fi

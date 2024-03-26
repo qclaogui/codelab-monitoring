@@ -1,32 +1,24 @@
 # Provisioning Scalable Observability Workspace
 
-<p align="center">
-  <a href="https://github.com/qclaogui/codelab-monitoring/actions/workflows/ci.yml">
-    <img src="https://github.com/qclaogui/codelab-monitoring/actions/workflows/ci.yml/badge.svg">
-  </a>
-  <a href="https://github.com/qclaogui/codelab-monitoring/blob/master/LICENSE">
-    <img src="https://img.shields.io/github/license/qclaogui/codelab-monitoring.svg" alt="License">
-  </a>
-  <a href="https://github.com/qclaogui/codelab-monitoring/tags">
-    <img src="https://img.shields.io/github/last-commit/qclaogui/codelab-monitoring" alt="GitHub Last Commit">
-  </a>
-</p>
+![CI](https://github.com/qclaogui/codelab-monitoring/actions/workflows/ci.yml/badge.svg)
+![Go version](https://img.shields.io/github/go-mod/go-version/qclaogui/codelab-monitoring)
+![License](https://img.shields.io/github/license/qclaogui/codelab-monitoring.svg)
+![GitHub Last Commit](https://img.shields.io/github/last-commit/qclaogui/codelab-monitoring)
 
-## Quick Start
+A simple command to run Grafana LGTMP Stack in Docker or Kubernetes.
 
-Open a new terminal window to create `compose.yaml`, an simple use case `compose.yaml` like so:
+## Usage
+
+An simple use case `compose.yaml` like so:
 
 ```yaml
-# include is available in Docker Compose version 2.20 and later, and Docker Desktop version 4.22 and later.
-include:
-- path: https://github.com/qclaogui/codelab-monitoring.git#main:docker-compose/monolithic-mode/logs/compose.yaml # Just Metrics and Logs
+include: # include is available in Docker Compose version 2.20 and later, and Docker Desktop version 4.22 and later.
+- path: https://github.com/qclaogui/codelab-monitoring.git#main:docker-compose/monolithic-mode/logs/compose.yaml
 
 services:
   github-exporter:
-    # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
-    labels:
-      # want metrics just set false to true
-      metrics.agent.grafana.com/scrape: false
+    labels: # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
+      metrics.agent.grafana.com/scrape: false # want metrics just set false to true
     image: githubexporter/github-exporter:1.1.0
     environment:
     - REPOS=qclaogui/codelab-monitoring
@@ -50,7 +42,6 @@ For more examples, See: [examples/](./examples/)
 
 ```shell
 ❯ make help
-
 Usage:
   make <target>
 
@@ -93,7 +84,6 @@ Kubernetes
   deploy-microservices-mode-traces          Deploy microservices-mode Tempo for traces
 
 Grafana Agent Integrations
-  deploy-memcached                          Deploy integration memcached manifests
   deploy-mysql                              Deploy integration mysql manifests
   deploy-redis                              Deploy integration redis manifests
 
@@ -116,11 +106,11 @@ General
 
 ## Docker Compose
 
-These instructions will get you through the deploying samples with Docker Compose.
+The easiest way to run project locally is to use docker compose, these instructions will get you through the deploying samples with Docker Compose.
 
 ***Prerequisites:*** Make sure that you have Docker and Docker Compose installed
 
-> NOTE:
+> Note:
 > `include` is available in Docker Compose version 2.20 and later, and Docker Desktop version 4.22 and later.
 
 ### [Monolithic mode (单体模式)](./docker-compose/monolithic-mode)
@@ -152,8 +142,6 @@ git clone https://github.com/qclaogui/codelab-monitoring.git && cd "$(basename "
 
 make up-monolithic-mode-all-in-one
 ```
-
-That's it.
 
 Once all containers are up and running you can search for metrics in Grafana.
 
@@ -251,3 +239,34 @@ Flags:
 
 Use "lgtmp [command] --help" for more information about a command.
 ```
+
+## Grafana LGTMP Stack default port-mapping
+
+| Port-mapping | Component | Description |
+| --- | --- | --- |
+| `12345:12345`, `4317`, `4318`, `6831` | [Grafana Agent][1] | Eexpose `12345` port so we can directly access `grafana-agent` inside container |
+| `33100:3100` | [Loki][2] | Expose `33100` port so we can directly access `loki` inside container |
+| `3000:3000`, `6060` | [Grafana][3] | Expose `3000` port so we can directly access `grafana` inside container |
+| `33200:3200`, `4317`, `4318` | [Tempo][4] | Expose `33200` port so we can directly access `tempo` inside container |
+| `38080:8080` | [Mimir][5] | Expose `38080` port so we can directly access `mimir` inside container |
+| `34040:4040` | [Pyroscope][6] | Expose `34040` port so we can directly access `pyroscope` inside container |
+| `9001:9001`, `9000` | [Minio][7] | Expose `9001` port so we can access `minio` console with `MINIO_ROOT_USER=lgtmp`, `MINIO_ROOT_PASSWORD=supersecret` |
+
+[1]: https://github.com/grafana/agent
+[2]: https://github.com/grafana/loki
+[3]: https://github.com/grafana/grafana
+[4]: https://github.com/grafana/tempo
+[5]: https://github.com/grafana/mimir
+[6]: https://github.com/grafana/pyroscope
+[7]: https://github.com/minio/minio
+
+## Helpful Links
+
+- <https://grafana.com/docs/>
+- <https://github.com/grafana/agent-modules>
+- <https://github.com/docker/compose>
+- <https://grafana.com/docs/agent/latest/flow/reference/components/>
+- <https://github.com/k3d-io/k3d>
+- <https://github.com/k3s-io/k3s>
+- <https://github.com/grafana/grafana>
+- [Grafana Agent Configuration Generator](https://github.com/grafana/agent-configurator) a tool allows for easy configuration of Grafana Agents Flow system
