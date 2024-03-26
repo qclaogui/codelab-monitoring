@@ -1,0 +1,21 @@
+services:
+  tempo:
+    depends_on:
+      minio:
+        condition: service_healthy
+    image: ${TEMPO_IMAGE:-docker.io/grafana/tempo:2.4.1}
+    restart: always
+    volumes:
+      - ../config/tempo:/etc/tempo
+    command:
+      - -config.file=/etc/tempo/monolithic-mode-traces.yaml
+      - -target=all
+      - -config.expand-env=true
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ready || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    # expose 33200 port so we can directly access tempo inside container
+    ports:
+      - "33200:3200"

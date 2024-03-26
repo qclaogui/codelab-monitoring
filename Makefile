@@ -88,8 +88,8 @@ up-monolithic-mode-all-in-one: ## Run monolithic-mode all-in-one
 	$(info ******************** run monolithic-mode all-in-one ********************)
 	docker compose \
 		--project-name all-in-one \
-		--project-directory . \
-		--file ./compose.yaml \
+		--project-directory docker-compose/monolithic-mode/all-in-one \
+		--file docker-compose/monolithic-mode/all-in-one/compose.yaml \
 		--env-file docker-compose/common/config/.env \
 		up -d --remove-orphans
 	@$(call echo_info, "Go to http://localhost:3000/explore for the metrics.")

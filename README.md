@@ -14,26 +14,20 @@
 
 ## Quick Start
 
-This quick start guide will show you how to getting started.
-
-Open a new terminal window to create `compose.yaml` or get it from [examples/](./examples/) by running:
-
-```shell
-wget https://raw.githubusercontent.com/qclaogui/codelab-monitoring/main/examples/github-exporter/compose.yaml
-```
-
-An simple use case `compose.yaml` like so:
+Open a new terminal window to create `compose.yaml`, an simple use case `compose.yaml` like so:
 
 ```yaml
 # include is available in Docker Compose version 2.20 and later, and Docker Desktop version 4.22 and later.
 include:
-# - path: https://github.com/qclaogui/codelab-monitoring.git # All in one(Logs Traces Metrics Profiles)
 - path: https://github.com/qclaogui/codelab-monitoring.git#main:docker-compose/monolithic-mode/logs/compose.yaml # Just Metrics and Logs
 
-# https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
 services:
   github-exporter:
-    image: githubexporter/github-exporter:latest
+    # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
+    labels:
+      # want metrics just set false to true
+      metrics.agent.grafana.com/scrape: false
+    image: githubexporter/github-exporter:1.1.0
     environment:
     - REPOS=qclaogui/codelab-monitoring
 ```

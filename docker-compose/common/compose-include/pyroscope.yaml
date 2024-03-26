@@ -1,0 +1,22 @@
+services:
+  pyroscope:
+    depends_on:
+      minio:
+        condition: service_healthy
+    image: ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:1.5.0}
+    container_name: pyroscope
+    volumes:
+      - ../config/pyroscope:/etc/pyroscope
+    command:
+      - -config.file=/etc/pyroscope/monolithic-mode-profiles.yaml
+      - -target=all
+      - -config.expand-env=true
+      # - -runtime-config.file=/etc/pyroscope/overrides.yaml
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:4040/ready || exit 1" ]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    # expose 34040 port so we can directly access pyroscope inside container
+    ports:
+      - "34040:4040"
