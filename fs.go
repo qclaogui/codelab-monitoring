@@ -18,7 +18,7 @@ import (
 //go:embed .lgtmp.tar
 var DirFS embed.FS
 
-//go:generate tar cf .lgtmp.tar .bingo docker-compose kubernetes monitoring-mixins tools Makefile compose.yaml
+//go:generate tar cf .lgtmp.tar .bingo docker-compose kubernetes monitoring-mixins tools Makefile
 var GenDir = ".lgtmp"
 
 func init() {
