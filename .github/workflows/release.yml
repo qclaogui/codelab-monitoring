@@ -1,0 +1,33 @@
+name: Release start publishing
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+*'
+
+jobs:
+  check-release-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 #v4.1.1
+      - name: Set output
+        id: vars
+        run: |
+          case ${GITHUB_REF#refs/*/} in 
+            *-rc.*)
+              echo 'isRc=true' >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo 'isRc=false' >> $GITHUB_OUTPUT
+              ;;
+          esac
+    outputs:
+      isRc: ${{ steps.vars.outputs.isRc }}
+  publish:
+    name: start publishing
+    uses: ./.github/workflows/publish-release.yml
+    needs: [check-release-tag]
+    with:
+      isReleaseCandidate: ${{ needs.check-release-tag.outputs.isRc == 'true' }}
+    secrets:
+      ghPAT: ${{ secrets.QCBOT_TOKEN }}

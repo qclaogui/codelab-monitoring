@@ -9,7 +9,6 @@ fi
 
 tag="${GITHUB_REF_NAME}"
 
-export RELEASE_DESCRIPTION="${tag}"
 RELEASE_NOTES_FILE="docs/release_notes/${tag/-rc.*}.md"
 
 if [ ! -f "${RELEASE_NOTES_FILE}" ]; then
@@ -17,5 +16,10 @@ if [ ! -f "${RELEASE_NOTES_FILE}" ]; then
     exit 1
 fi
 
-cat ./.goreleaser.yml ./.goreleaser.brew.yml > .goreleaser.combined.yml
-GORELEASER_CURRENT_TAG="v${tag}" RELEASE_BUILD=1 PRE_RELEASE_ID="${tag#*-}" ${GORELEASER} release --clean --timeout 60m --skip=validate --config=./.goreleaser.combined.yml --release-notes="${RELEASE_NOTES_FILE}"
+# Update version to release-candidate
+pre_release_id="${tag#*-}"
+
+export RELEASE_DESCRIPTION="v${tag}"
+
+cat .github/.goreleaser.yml > .github/.goreleaser.combined.yml
+RELEASE_BUILD=1 GORELEASER_CURRENT_TAG="v${tag}" PRE_RELEASE_ID="${pre_release_id}" ${GORELEASER} release --clean --timeout 60m --skip=validate --config=.github/.goreleaser.combined.yml --release-notes="${RELEASE_NOTES_FILE}"

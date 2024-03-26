@@ -1,19 +1,22 @@
-name: Release Candidate (Manually)
+name: Trigger Release Candidate
 
 on:
   workflow_dispatch: {}
 
 jobs:
   rc:
-    name: Trigger (Publish Release Candidate) build
+    name: Push release candidate tag
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 #v4.1.1
         with:
           token: ${{ secrets.QCBOT_TOKEN }}
           # Set fetch-depth: 0 to fetch all history for all branches and tags.
           fetch-depth: 0
-      
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
       - name: Setup identity
         uses: ./.github/actions/setup-identity
         with:
