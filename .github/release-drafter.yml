@@ -16,6 +16,7 @@ categories:
     labels: 
       - 'area/tech-debt'
       - 'area/ci'
+      - 'kind/maintenance'
   - title: '📝 Documentation'
     labels: 
       - 'area/docs'
@@ -26,8 +27,6 @@ categories:
     collapse-after: 5
 
 change-template: '- $TITLE (#$NUMBER)'
-sort-by: title
-sort-direction: ascending
 change-title-escapes: '\<*_&#@`' # You can add # and @ to disable mentions, and add ` to disable code blocks.
 version-template: '$COMPLETE'
 no-changes-template: 'This release contains minor changes and bugfixes.'
@@ -37,23 +36,50 @@ template: |
   ## What's Changed
   
   $CHANGES
-
-  **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$NEXT_MINOR_VERSION
-
+  
   ## New Contributors
-  
+
   $CONTRIBUTORS
-  
+
   🎉 **Thanks to all contributors helping with this release!** 🎉
-  
-# replacers:
-#   - search: '/@(qclaogui|dependabot(?:\[bot\])?)(?:,| |$)/gm'
-#     replace: ''
 
 exclude-labels:
   - 'skip-release-notes'
   - 'skip-changelog'
-
 exclude-contributors:
-  - 'dependabot[bot]'
-  
+  - 'qclaogui'
+  - 'dependabot'
+replacers:
+  - search: '/\s(?:and )?@dependabot(?:\[bot\])?,?/g'
+    replace: ''
+
+footer: |
+  ## Grafana LGTMP Stack default port-mapping
+
+  | Port-mapping | Component | Description |
+  | --- | --- | --- |
+  | `12345:12345` | [Grafana Agent][7] | Eexpose `12345` port so we can directly access `grafana-agent` inside container |
+  | `33100:3100` | [Loki][1] | Expose `33100` port so we can directly access `loki` inside container |
+  | `3000:3000` | [Grafana][2] | Expose `3000` port so we can directly access `grafana` inside container |
+  | `33200:3200` | [Tempo][3] | Expose `33200` port so we can directly access `tempo` inside container |
+  | `38080:8080` | [Mimir][4] | Expose `38080` port so we can directly access `mimir` inside container |
+  | `34040:4040` | [Pyroscope][5] | Expose `34040` port so we can directly access `pyroscope` inside container |
+  | `9001:9001` | [Minio][6] | Expose `9001` port so we can access `minio` console with `MINIO_ROOT_USER=lgtmp`, `MINIO_ROOT_PASSWORD=supersecret` |
+
+  [7]: https://github.com/grafana/agent
+  [1]: https://github.com/grafana/loki
+  [2]: https://github.com/grafana/grafana
+  [3]: https://github.com/grafana/tempo
+  [4]: https://github.com/grafana/mimir
+  [5]: https://github.com/grafana/pyroscope
+  [6]: https://github.com/minio/minio
+
+  ## Helpful Links
+
+  - <https://grafana.com/docs/>
+  - <https://github.com/grafana/agent-modules>
+  - <https://github.com/docker/compose>
+  - <https://grafana.com/docs/agent/latest/flow/reference/components/>
+  - <https://github.com/k3d-io/k3d>
+  - <https://github.com/k3s-io/k3s>
+  - <https://github.com/grafana/grafana>

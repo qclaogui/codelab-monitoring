@@ -1,18 +1,51 @@
-name: Publish Release
-run-name: Publish Release by @${{ github.actor }}
+name: GoReleaser Release
 
 on:
-  push:
-    tags:
-      - '[0-9]+.[0-9]+.[0-9]+'
+  workflow_call:
+    inputs:
+      isReleaseCandidate:
+        required: true
+        type: boolean
+    secrets:
+      ghPAT:
+        required: true
+
+env:
+  GORELEASER_VERSION: '1.24.0'
 
 jobs:
 
   publish-release:
-    name: Publish Release
-    uses: ./.github/workflows/publish.yml
-    with:
-      isReleaseCandidate: false
-      name: release
-    secrets:
-      ghPAT: ${{ secrets.QCBOT_TOKEN }}
+    name: ${{ inputs.isReleaseCandidate && 'prerelease' || 'release' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Free up disk space
+        run: |
+          echo "Available storage:"
+          df -h && echo
+          sudo docker image prune --all --force
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          echo "Available storage:"
+          df -h
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 #v4.1.1
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      
+      - name: Install GoReleaser
+        run: |
+          wget -q https://github.com/goreleaser/goreleaser/releases/download/v${GORELEASER_VERSION}/goreleaser_Linux_x86_64.tar.gz
+          tar -xzf goreleaser_Linux_x86_64.tar.gz
+          mv goreleaser /home/runner/go/bin/goreleaser-v${GORELEASER_VERSION}
+  
+      - name: GoReleaser Release
+        if: ${{ !inputs.isReleaseCandidate }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.ghPAT }}
+        run: ./tools/scripts/do-release.sh
+
+      - name: GoReleaser Release Candidate
+        if: ${{ inputs.isReleaseCandidate }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.ghPAT }}
+        run: ./tools/scripts/do-release-candidate.sh
