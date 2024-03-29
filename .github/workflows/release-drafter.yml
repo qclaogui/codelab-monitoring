@@ -9,17 +9,17 @@ on:
 
 jobs:
   update_release_draft:
-    name: Trigger a draft release update
-    permissions:
-      contents: write
-      pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      # Drafts your next Release notes as Pull Requests are merged into "main"
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
       - uses: release-drafter/release-drafter@v6
         id: draft
         env:
-          GITHUB_TOKEN: ${{ secrets.QCBOT_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
         with:
           commitish: main
 
@@ -31,15 +31,13 @@ jobs:
       - name: Upsert Pull Request
         uses: peter-evans/create-pull-request@70a41aba780001da0a30141984ae2a0c95d8704e #v6.0.2
         with:
-          token: ${{ secrets.QCBOT_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
           title: Add release notes for ${{ steps.draft.outputs.tag_name }}
           commit-message: Add release notes for ${{ steps.draft.outputs.tag_name }}
-          committer: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+          committer: 🤖QC Owl App[bot] <165384878+qc-owl-app[bot]@users.noreply.github.com>
           signoff: true
-          # author: ${{ github.actor }} <${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com>
-          author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
           assignees: qclaogui
-          # reviewers: qclaogui
+          reviewers: qclaogui
           body: |
             🤖 Copy release notes from Draft
 
