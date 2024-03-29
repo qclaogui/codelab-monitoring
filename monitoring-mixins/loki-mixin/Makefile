@@ -5,7 +5,7 @@ include ../../.bingo/Variables.mk
 # path to jsonnetfmt
 JSONNET_FMT := $(JSONNETFMT) -n 2 --max-blank-lines 2 --string-style s --comment-style s
 # path to the mixin
-MIXIN_OUT_PATH := deploy
+MIXIN_OUT_PATH := deploy microservices-mode
 
 CURRENT_DIR = $(notdir $(shell pwd))
 
@@ -14,20 +14,26 @@ fmt: ## Format the mixin files
 	@find . -type f -name '*.libsonnet' | xargs -n 1 -- $(JSONNET_FMT) -i
 
 .PHONY: update
-update: ## update mixin 
+update: $(JB) ## update mixin 
 	$(JB) update
+
+define build_mixin_func
+	$(eval $@_MIXIN_OUTPUT = $(1))
+	@mkdir -p "${$@_MIXIN_OUTPUT}"; \
+	find "${$@_MIXIN_OUTPUT}" ! -name "kustomization.yaml" ! -name "prometheus-alerts.yaml" ! -name "prometheus-rules.yaml" -type f -delete
+	@$(MIXTOOL) generate all --output-alerts "${$@_MIXIN_OUTPUT}/alerts.yaml" --output-rules "${$@_MIXIN_OUTPUT}/rules.yaml" --directory "${$@_MIXIN_OUTPUT}/dashboards_out" "${$@_MIXIN_OUTPUT}.libsonnet"
+	@../../tools/check-rules.sh "${$@_MIXIN_OUTPUT}/rules.yaml" 20
+	@mv ${$@_MIXIN_OUTPUT}/alerts.yaml ${$@_MIXIN_OUTPUT}/${CURRENT_DIR}-alerts.yaml
+	@mv ${$@_MIXIN_OUTPUT}/rules.yaml ${$@_MIXIN_OUTPUT}/${CURRENT_DIR}-rules.yaml
+endef
+
 
 .PHONY: build
 build: $(MIXTOOL) ## Generates the mixin files
-	@mkdir -p "$(MIXIN_OUT_PATH)"; \
-	find "$(MIXIN_OUT_PATH)" ! -name "kustomization.yaml" ! -name "prometheus-alerts.yaml" ! -name "prometheus-rules.yaml" -type f -delete
-	@$(MIXTOOL) generate all --output-alerts "$(MIXIN_OUT_PATH)/alerts.yaml" --output-rules "$(MIXIN_OUT_PATH)/rules.yaml" --directory "$(MIXIN_OUT_PATH)/dashboards_out" "mixin.libsonnet"
-	@../../tools/check-rules.sh "$(MIXIN_OUT_PATH)/rules.yaml" 20
-	@mv $(MIXIN_OUT_PATH)/alerts.yaml $(MIXIN_OUT_PATH)/${CURRENT_DIR}-alerts.yaml
-	@mv $(MIXIN_OUT_PATH)/rules.yaml $(MIXIN_OUT_PATH)/${CURRENT_DIR}-rules.yaml
+	$(foreach mixin,$(MIXIN_OUT_PATH),$(call build_mixin_func, $(mixin)))
 
 .PHONY: check
-check: build fmt ## Build, fmt and check the mixin files
+check: $(MIXTOOL) build fmt ## Build, fmt and check the mixin files
 	@../../tools/find-diff-or-untracked.sh . "$(MIXIN_OUT_PATH)" || (echo "Please build and fmt mixin by running 'make build fmt'" && false); \
 	# jb install && \
 	# $(MIXTOOL) lint mixin.libsonnet
@@ -38,15 +44,16 @@ check: build fmt ## Build, fmt and check the mixin files
 manifests: $(KUSTOMIZE) build ## Generates dashboards for k8s
 	$(KUSTOMIZE) build deploy > deploy/manifests/k8s-all-in-one.yaml
 
+# NOTE: dashboards_out has been deprecated, please use build instead
+dashboards_out:
+	@mkdir -p deploy/dashboards_out deploy/manifests
+	jsonnet -J vendor -e '(import "mixin.libsonnet").grafanaDashboards' -m deploy/dashboards_out
+
 prom_alerts.yaml:
 	jsonnet -J vendor -S -e 'std.manifestYamlDoc((import "mixin.libsonnet").prometheusAlerts)' > deploy/$@
 
 prom_rules.yaml:
 	jsonnet -J vendor -S -e 'std.manifestYamlDoc((import "mixin.libsonnet").prometheusRules)'  > deploy/$@
-
-
-rules_load: ## Load rules and alerts to monitoring system
-	mimirtool rules load --id=anonymous --address=http://localhost:38080 deploy/rules.yaml deploy/alerts.yaml
 
 ##@ General
 
