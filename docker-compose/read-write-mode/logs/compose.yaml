@@ -6,11 +6,14 @@ version: '3.9'
 
 # Note: 
 # include is available in Docker Compose version 2.20 and later, and Docker Desktop version 4.22 and later.
+# docs: https://docs.docker.com/compose/multiple-compose-files/include/#include-and-overrides
 include:
   - path: ../../common/compose-include/minio.yaml
   - path: ../../common/compose-include/memcached.yaml
   - path: ../../common/compose-include/mimir.yaml
-  - path: ../../common/compose-include/grafana-agent.yaml
+  - path:
+      - ../../common/compose-include/grafana-agent.yaml
+      - ./compose.override.yaml  # Read-Write Mode services override
   - path: ../../common/compose-include/grafana.yaml
 
 x-labels: &loki-labels
