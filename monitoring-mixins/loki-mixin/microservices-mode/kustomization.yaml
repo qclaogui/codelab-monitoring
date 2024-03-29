@@ -1,0 +1,49 @@
+# ----------------------------------------------------
+# apiVersion and kind of Kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: monitoring-system
+
+resources:
+- prometheus-alerts.yaml
+- prometheus-rules.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_dashboard_folder: "/dashboards/Loki Mixin"
+
+configMapGenerator:
+- name: loki-chunks.json
+  files:
+  - dashboards_out/loki-chunks.json
+- name: loki-deletion.json
+  files:
+  - dashboards_out/loki-deletion.json
+- name: loki-logs.json
+  files:
+  - dashboards_out/loki-logs.json
+- name: loki-mixin-recording-rules.json
+  files:
+  - dashboards_out/loki-mixin-recording-rules.json
+- name: loki-operational.json
+  files:
+  - dashboards_out/loki-operational.json
+- name: loki-reads-resources.json
+  files:
+  - dashboards_out/loki-reads-resources.json
+- name: loki-reads.json
+  files:
+  - dashboards_out/loki-reads.json
+- name: loki-retention.json
+  files:
+  - dashboards_out/loki-retention.json
+- name: loki-writes-resources.json
+  files:
+  - dashboards_out/loki-writes-resources.json
+- name: loki-writes.json
+  files:
+  - dashboards_out/loki-writes.json

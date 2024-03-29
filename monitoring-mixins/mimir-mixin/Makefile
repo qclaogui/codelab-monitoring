@@ -17,14 +17,20 @@ fmt: ## Format the mixin files
 update: $(JB) ## update mixin 
 	$(JB) update
 
+define build_mixin_func
+	$(eval $@_MIXIN_OUTPUT = $(1))
+	@mkdir -p "${$@_MIXIN_OUTPUT}"; \
+	find "${$@_MIXIN_OUTPUT}" ! -name "kustomization.yaml" ! -name "prometheus-alerts.yaml" ! -name "prometheus-rules.yaml" -type f -delete
+	@$(MIXTOOL) generate all --output-alerts "${$@_MIXIN_OUTPUT}/alerts.yaml" --output-rules "${$@_MIXIN_OUTPUT}/rules.yaml" --directory "${$@_MIXIN_OUTPUT}/dashboards_out" "${$@_MIXIN_OUTPUT}.libsonnet"
+	@../../tools/check-rules.sh "${$@_MIXIN_OUTPUT}/rules.yaml" 20
+	@mv ${$@_MIXIN_OUTPUT}/alerts.yaml ${$@_MIXIN_OUTPUT}/${CURRENT_DIR}-alerts.yaml
+	@mv ${$@_MIXIN_OUTPUT}/rules.yaml ${$@_MIXIN_OUTPUT}/${CURRENT_DIR}-rules.yaml
+endef
+
+
 .PHONY: build
 build: $(MIXTOOL) ## Generates the mixin files
-	@mkdir -p "$(MIXIN_OUT_PATH)"; \
-	find "$(MIXIN_OUT_PATH)" ! -name "kustomization.yaml" ! -name "prometheus-alerts.yaml" ! -name "prometheus-rules.yaml" -type f -delete
-	@$(MIXTOOL) generate all --output-alerts "$(MIXIN_OUT_PATH)/alerts.yaml" --output-rules "$(MIXIN_OUT_PATH)/rules.yaml" --directory "$(MIXIN_OUT_PATH)/dashboards_out" "mixin.libsonnet"
-	@../../tools/check-rules.sh "$(MIXIN_OUT_PATH)/rules.yaml" 20
-	@mv $(MIXIN_OUT_PATH)/alerts.yaml $(MIXIN_OUT_PATH)/${CURRENT_DIR}-alerts.yaml
-	@mv $(MIXIN_OUT_PATH)/rules.yaml $(MIXIN_OUT_PATH)/${CURRENT_DIR}-rules.yaml
+	$(foreach mixin,$(MIXIN_OUT_PATH),$(call build_mixin_func, $(mixin)))
 
 .PHONY: check
 check: $(MIXTOOL) build fmt ## Build, fmt and check the mixin files
