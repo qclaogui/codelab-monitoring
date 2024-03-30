@@ -1,0 +1,17 @@
+
+# Inbucket is an email testing service; it will accept email for any email
+# address and make it available to view without a password
+#
+# https://inbucket.org/packages/docker.html
+services:
+  inbucket:
+    labels:
+      metrics.agent.grafana.com/scrape: false
+    image: inbucket/inbucket:latest
+    ports:
+      - 2500 # SMTP
+      - "39000:9000" # HTTP
+      - 1100 # POP3
+    environment:
+      # https://github.com/inbucket/inbucket/blob/main/doc/config.md
+      INBUCKET_STORAGE_TYPE: ${INBUCKET_STORAGE_TYPE:-memory}

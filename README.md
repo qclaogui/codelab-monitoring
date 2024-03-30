@@ -251,6 +251,7 @@ Use "lgtmp [command] --help" for more information about a command.
 | `38080:8080` | [Mimir][5] | Expose `38080` port so we can directly access `mimir` inside container |
 | `34040:4040` | [Pyroscope][6] | Expose `34040` port so we can directly access `pyroscope` inside container |
 | `9001:9001`, `9000` | [Minio][7] | Expose `9001` port so we can access `minio` console with `MINIO_ROOT_USER=lgtmp`, `MINIO_ROOT_PASSWORD=supersecret` |
+| `39000:9000`, `2500`, `1100` | [Inbucket][8] | Expose `39000` port to use for the email testing server web interface. |
 
 [1]: https://github.com/grafana/agent
 [2]: https://github.com/grafana/loki
@@ -259,6 +260,7 @@ Use "lgtmp [command] --help" for more information about a command.
 [5]: https://github.com/grafana/mimir
 [6]: https://github.com/grafana/pyroscope
 [7]: https://github.com/minio/minio
+[8]: https://github.com/inbucket/inbucket
 
 ## Helpful Links
 
