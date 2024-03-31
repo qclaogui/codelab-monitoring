@@ -1,0 +1,13 @@
+
+services:
+  # override included service grafana environment
+  grafana:
+    volumes:
+      - ./config/grafana/provisioning/plugins/grafana-oncall-app.yaml:/etc/grafana/provisioning/plugins/grafana-oncall-app.yaml
+      - ./config/grafana/provisioning/plugins/redis-app.yaml:/etc/grafana/provisioning/plugins/redis-app.yaml
+      - ./config/grafana/provisioning/datasources/redis.yaml:/etc/grafana/provisioning/datasources/redis.yaml
+    environment:
+      GF_SECURITY_ADMIN_USER: oncall
+      GF_SECURITY_ADMIN_PASSWORD: oncall
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: grafana-oncall-app
+      GF_INSTALL_PLUGINS: grafana-oncall-app v1.3.115, redis-app v2.2.1

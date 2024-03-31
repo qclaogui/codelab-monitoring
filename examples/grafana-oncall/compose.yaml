@@ -1,0 +1,106 @@
+# ============================================================================ #
+#                           Grafana OnCall                                   
+# ============================================================================ #
+
+# Usage:
+#   COMPOSE_EXPERIMENTAL_GIT_REMOTE=true docker compose up -d --remove-orphans
+#   COMPOSE_EXPERIMENTAL_GIT_REMOTE=true docker compose down
+
+# Note:
+# include is available in Docker Compose version 2.20 and later, and Docker Desktop version 4.22 and later.
+# docs: https://docs.docker.com/compose/multiple-compose-files/include/#include-and-overrides
+include:
+- path:
+    - ../../docker-compose/monolithic-mode/logs/compose.yaml
+    - ./compose.override.yaml
+
+x-environment: &oncall-environment
+  SEND_ANONYMOUS_USAGE_STATS: ${SEND_ANONYMOUS_USAGE_STATS:-false}
+  DATABASE_TYPE: sqlite3
+  BROKER_TYPE: redis
+  BASE_URL: http://engine:8080
+  SECRET_KEY: ${SECRET_KEY:-r4KriYc9sL6PJLaGdDRQL3PKqT6bufTx2uhj}
+  FEATURE_PROMETHEUS_EXPORTER_ENABLED: ${FEATURE_PROMETHEUS_EXPORTER_ENABLED:-true}
+  REDIS_URI: redis://redis:6379/0
+  DJANGO_SETTINGS_MODULE: settings.hobby
+  CELERY_WORKER_QUEUE: "default,critical,long,slack,telegram,webhook,retry,celery,grafana"
+  CELERY_WORKER_CONCURRENCY: "1"
+  CELERY_WORKER_MAX_TASKS_PER_CHILD: "100"
+  CELERY_WORKER_SHUTDOWN_INTERVAL: "65m"
+  CELERY_WORKER_BEAT_ENABLED: "True"
+  GRAFANA_API_URL: http://grafana:3000
+  EMAIL_HOST: inbucket
+  EMAIL_PORT: 2500
+  EMAIL_FROM_ADDRESS: oncall@grafana.localhost
+  EMAIL_USE_TLS: false
+  # GRAFANA_CLOUD_ONCALL_TOKEN: ${GRAFANA_CLOUD_ONCALL_TOKEN:-}
+
+services:
+  engine:
+    # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
+    labels:
+      metrics.agent.grafana.com/scrape: true
+      # metrics are exposed on path /metrics/ and not on /metrics
+      # Related Issues-3597: https://github.com/grafana/oncall/issues/3597
+      metrics.agent.grafana.com/path: "/metrics/"
+    depends_on:
+      oncall_db_migration:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    image: grafana/oncall
+    restart: always
+    ports:
+      - "8080"
+      # - "8080:8080"
+    command: sh -c "uwsgi --ini uwsgi.ini"
+    environment:
+      <<: *oncall-environment
+    volumes:
+      - oncall_data:/var/lib/oncall
+
+  celery:
+    labels:
+      metrics.agent.grafana.com/scrape: false
+    depends_on:
+      oncall_db_migration:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    image: grafana/oncall
+    restart: always
+    command: sh -c "./celery_with_exporter.sh"
+    environment:
+      <<: *oncall-environment
+    volumes:
+      - oncall_data:/var/lib/oncall
+
+  oncall_db_migration:
+    labels:
+      metrics.agent.grafana.com/scrape: false
+    depends_on:
+      redis:
+        condition: service_healthy
+    image: grafana/oncall
+    command: python manage.py migrate --noinput
+    environment:
+      <<: *oncall-environment
+    volumes:
+      - oncall_data:/var/lib/oncall
+
+  redis:
+    labels:
+      metrics.agent.grafana.com/scrape: false
+    image: redis:7.0.5
+    restart: always
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      timeout: 5s
+      interval: 5s
+      retries: 10
+
+volumes:
+  oncall_data:
+  redis_data:
