@@ -1438,6 +1438,17 @@ data:
              {
                 "datasource": "${datasource}",
                 "description": "Number of spans successfully pushed into the pipeline.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "custom": {
+                         "fillOpacity": 20,
+                         "gradientMode": "hue",
+                         "stacking": {
+                            "mode": "normal"
+                         }
+                      }
+                   }
+                },
                 "gridPos": {
                    "h": 10,
                    "w": 8,
@@ -1491,11 +1502,6 @@ data:
              {
                 "datasource": "${datasource}",
                 "description": "The duration of inbound RPCs.\n",
-                "fieldConfig": {
-                   "defaults": {
-                      "unit": "milliseconds"
-                   }
-                },
                 "gridPos": {
                    "h": 10,
                    "w": 8,
@@ -1524,7 +1530,7 @@ data:
                       "yHistogram": true
                    },
                    "yAxis": {
-                      "unit": "s"
+                      "unit": "ms"
                    }
                 },
                 "pluginVersion": "9.0.6",
@@ -1538,7 +1544,7 @@ data:
                       "range": true
                    }
                 ],
-                "title": "RPC server duration (traces)",
+                "title": "RPC server duration",
                 "type": "heatmap"
              },
              {
@@ -1549,12 +1555,17 @@ data:
                    "x": 0,
                    "y": 10
                 },
-                "title": "Batching [otelcol.processor.batch]",
+                "title": "Batching of logs, metrics, and traces [otelcol.processor.batch]",
                 "type": "row"
              },
              {
                 "datasource": "${datasource}",
-                "description": "Number of units in the batch\n",
+                "description": "Number of spans, metric datapoints, or log lines in a batch\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "short"
+                   }
+                },
                 "gridPos": {
                    "h": 10,
                    "w": 8,
@@ -1583,7 +1594,7 @@ data:
                       "yHistogram": true
                    },
                    "yAxis": {
-                      "unit": "s"
+                      "unit": "short"
                    }
                 },
                 "pluginVersion": "9.0.6",
@@ -1656,6 +1667,17 @@ data:
              {
                 "datasource": "${datasource}",
                 "description": "Number of spans successfully sent to destination.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "custom": {
+                         "fillOpacity": 20,
+                         "gradientMode": "hue",
+                         "stacking": {
+                            "mode": "normal"
+                         }
+                      }
+                   }
+                },
                 "gridPos": {
                    "h": 10,
                    "w": 8,
@@ -1677,6 +1699,17 @@ data:
              {
                 "datasource": "${datasource}",
                 "description": "Number of spans in failed attempts to send to destination.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "custom": {
+                         "fillOpacity": 20,
+                         "gradientMode": "hue",
+                         "stacking": {
+                            "mode": "normal"
+                         }
+                      }
+                   }
+                },
                 "gridPos": {
                    "h": 10,
                    "w": 8,
@@ -2807,37 +2840,27 @@ spec:
     rules:
     - alert: ClusterNotConverging
       annotations:
-        message: Cluster is not converging.
+        message: 'Cluster is not converging: nodes report different number of peers
+          in the cluster.'
       expr: stddev by (cluster, namespace) (sum without (state) (cluster_node_peers))
         != 0
-      for: 5m
-    - alert: ClusterSplitBrain
+      for: 10m
+    - alert: ClusterNodeCountMismatch
       annotations:
-        message: Cluster nodes have entered a split brain state.
+        message: Nodes report different number of peers vs. the count of observed
+          agent metrics. Some agent metrics may be missing or the cluster is in a
+          split brain state.
       expr: |
         sum without (state) (cluster_node_peers) !=
         on (cluster, namespace) group_left
         count by (cluster, namespace) (cluster_node_info)
-      for: 5m
-    - alert: ClusterLamportClockDrift
-      annotations:
-        message: Cluster nodes' lamport clocks are not converging.
-      expr: stddev by (cluster, namespace) (cluster_node_lamport_time) > 4 * sqrt(count
-        by (cluster, namespace) (cluster_node_info))
-      for: 5m
+      for: 15m
     - alert: ClusterNodeUnhealthy
       annotations:
-        message: Cluster node is reporting a health score > 0.
+        message: Cluster node is reporting a gossip protocol health score > 0.
       expr: |
         cluster_node_gossip_health_score > 0
-      for: 5m
-    - alert: ClusterLamportClockStuck
-      annotations:
-        message: Cluster nodes's lamport clocks is not progressing.
-      expr: |
-        sum by (cluster, namespace, instance) (rate(cluster_node_lamport_time[2m])) == 0
-        and on (cluster, namespace, instance) (cluster_node_peers > 1)
-      for: 5m
+      for: 10m
     - alert: ClusterNodeNameConflict
       annotations:
         message: A node tried to join the cluster with a name conflicting with an
@@ -2850,7 +2873,7 @@ spec:
         message: Cluster node stuck in Terminating state.
       expr: sum by (cluster, namespace, instance) (cluster_node_peers{state="terminating"})
         > 0
-      for: 5m
+      for: 10m
     - alert: ClusterConfigurationDrift
       annotations:
         message: Cluster nodes are not using the same configuration file.
@@ -2870,6 +2893,6 @@ spec:
     - alert: UnhealthyComponents
       annotations:
         message: Unhealthy Flow components detected.
-      expr: sum(agent_component_controller_running_components{health_type!="healthy"})
+      expr: sum by (cluster, namespace) (agent_component_controller_running_components{health_type!="healthy"})
         > 0
       for: 15m

@@ -1,3 +1,14 @@
 (import 'mixin.libsonnet') + {
     // Config overrides
+    _config+:: {
+      jobs: {
+        gateway: 'cortex-gw(-internal)?',
+        query_frontend: '(tempo|query-frontend)',
+        querier: '(tempo|querier)',
+        ingester: '(tempo|ingester)',
+        metrics_generator: '(tempo|metrics-generator)',
+        distributor: '(tempo|distributor)',
+        compactor: '(tempo|compactor)',
+      }
+    }
 }
