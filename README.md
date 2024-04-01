@@ -20,7 +20,7 @@ include: # include is available in Docker Compose version 2.20 and later, and Do
 services:
   github-exporter:
     labels: # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
-      metrics.agent.grafana.com/scrape: false # want metrics just set false to true
+      metrics.agent.grafana.com/scrape: true
     image: githubexporter/github-exporter:1.1.0
     environment:
     - REPOS=qclaogui/codelab-monitoring
