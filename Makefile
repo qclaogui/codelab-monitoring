@@ -117,7 +117,6 @@ up-read-write-mode-logs: ## Run read-write-mode Loki for logs
 		--project-name read-write-logs \
 		--project-directory docker-compose/read-write-mode/logs \
 		--file docker-compose/read-write-mode/logs/compose.yaml \
-		--file docker-compose/read-write-mode/logs/compose.override.yaml \
 		--env-file docker-compose/common/config/.env \
 		up -d --remove-orphans
 	@$(call echo_info, "Go to http://localhost:3000/explore for the logs.")
@@ -145,7 +144,6 @@ up-microservices-mode-logs: ## Run microservices-mode Loki for logs
 		--project-name microservices-logs \
 		--project-directory docker-compose/microservices-mode/logs \
 		--file docker-compose/microservices-mode/logs/compose.yaml \
-		--file docker-compose/microservices-mode/logs/compose.override.yaml \
 		--env-file docker-compose/common/config/.env \
 		up -d --remove-orphans
 	@$(call echo_info, "Go to http://localhost:3000/explore for the logs.")
@@ -159,7 +157,6 @@ up-microservices-mode-traces: ## Run microservices-mode Tempo for traces
 		--project-name microservices-traces \
 		--project-directory docker-compose/microservices-mode/traces \
 		--file docker-compose/microservices-mode/traces/compose.yaml \
-		--file docker-compose/microservices-mode/traces/compose.override.yaml \
 		--env-file docker-compose/common/config/.env \
 		up -d --remove-orphans
 	@$(call echo_info, "Go to http://localhost:3000/explore for the traces.")
@@ -173,7 +170,6 @@ up-microservices-mode-profiles: ## Run microservices-mode Pyroscope for profiles
 		--project-name microservices-profiles \
 		--project-directory docker-compose/microservices-mode/profiles \
 		--file docker-compose/microservices-mode/profiles/compose.yaml \
-		--file docker-compose/microservices-mode/profiles/compose.override.yaml \
 		--env-file docker-compose/common/config/.env \
 		up -d --remove-orphans
 	@$(call echo_info, "Go to http://localhost:3000/explore for the profiles.")

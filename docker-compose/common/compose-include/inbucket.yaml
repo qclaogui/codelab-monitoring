@@ -3,6 +3,7 @@
 # address and make it available to view without a password
 #
 # https://inbucket.org/packages/docker.html
+# https://github.com/inbucket/inbucket/blob/main/doc/config.md
 services:
   inbucket:
     labels:
@@ -12,6 +13,9 @@ services:
       - 2500 # SMTP
       - "39000:9000" # HTTP
       - 1100 # POP3
-    environment:
-      # https://github.com/inbucket/inbucket/blob/main/doc/config.md
-      INBUCKET_STORAGE_TYPE: ${INBUCKET_STORAGE_TYPE:-memory}
+    volumes:
+      - inbucket_data:/storage
+      - inbucket_data:/config
+
+volumes:
+  inbucket_data:
