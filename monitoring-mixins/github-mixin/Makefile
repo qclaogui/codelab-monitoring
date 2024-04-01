@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-include ../../../.bingo/Variables.mk
+include ../../.bingo/Variables.mk
 
 # path to jsonnetfmt
 JSONNET_FMT := $(JSONNETFMT) -n 2 --max-blank-lines 2 --string-style s --comment-style s
@@ -33,7 +33,7 @@ build: $(MIXTOOL) ## Generates the mixin files
 
 .PHONY: check
 check: $(MIXTOOL) build fmt ## Build, fmt and check the mixin files
-	@../../../tools/find-diff-or-untracked.sh . "$(MIXIN_OUT_PATH)" || (echo "Please build and fmt mixin by running 'make build fmt'" && false); \
+	@../../tools/find-diff-or-untracked.sh . "$(MIXIN_OUT_PATH)" || (echo "Please build and fmt mixin by running 'make build fmt'" && false); \
 	# jb install && \
 	# $(MIXTOOL) lint mixin.libsonnet
 
