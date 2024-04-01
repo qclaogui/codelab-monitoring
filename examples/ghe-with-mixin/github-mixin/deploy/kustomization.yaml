@@ -1,0 +1,21 @@
+# ----------------------------------------------------
+# apiVersion and kind of Kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: monitoring-system
+
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_dashboard_folder: "/dashboards/GitHub Mixin"
+
+configMapGenerator:
+- name: api-usage.json
+  files:
+  - dashboards_out/api-usage.json
+- name: repository-stats.json
+  files:
+  - dashboards_out/repository-stats.json
