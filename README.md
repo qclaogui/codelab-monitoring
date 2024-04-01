@@ -7,8 +7,6 @@
 
 A simple command to run Grafana LGTMP Stack in Docker or Kubernetes.
 
-> Apply knowledge and experience to improve open source.
-
 ## Usage
 
 An simple use case `compose.yaml` like so:

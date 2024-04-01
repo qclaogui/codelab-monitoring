@@ -37,7 +37,7 @@ func main() {
 		WithWorkdir("/workspace")
 
 	// Install dependencies tools
-	if _, err = goContainer.WithExec([]string{"bash", "-c", "make", "install-build-deps"}).Sync(ctx); err != nil {
+	if _, err = goContainer.WithExec([]string{"make", "install-build-deps"}).Sync(ctx); err != nil {
 		panic(err)
 	}
 }
