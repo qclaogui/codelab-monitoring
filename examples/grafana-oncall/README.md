@@ -36,8 +36,8 @@ services:
 COMPOSE_EXPERIMENTAL_GIT_REMOTE=true docker compose up -d --remove-orphans
 ```
 
-> 😞 Grafana OnCall is available for authorized users only, please sign in to proceed.
-> default log in credentials: `oncall`/`oncall`
+> [!IMPORTANT]  
+> 😞 Grafana OnCall is available for authorized users only, please sign in to proceed. For this example log in credentials: `oncall`/`oncall`.
 
 Navigate to [http://localhost:3000](http://localhost:3000)
 

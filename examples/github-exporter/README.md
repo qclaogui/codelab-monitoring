@@ -12,9 +12,9 @@ include:
 # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
 services:
   github-exporter:
-    image: githubexporter/github-exporter:latest
+    image: githubexporter/github-exporter:1.1.0
     environment:
-    - REPOS=qclaogui/codelab-monitoring,grafana/agent
+    - REPOS=qclaogui/codelab-monitoring
 
 ```
 
@@ -33,6 +33,10 @@ Once all containers are up and running you can search for metrics(from Mimir) lo
 > In this case you can find `github-exporter` metrics and logs.
 
 Navigate to [http://localhost:3000](http://localhost:3000)
+
+## Debug info(`grafana-agent` target scrape)
+
+<http://localhost:12345/component/module.file.metrics_primary/module.file.mf_label_auto_scrape/prometheus.scrape.pc_docker_metrics>
 
 ## Resource Utilization
 

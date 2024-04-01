@@ -12,9 +12,14 @@ include:
   - path: ../../common/compose-include/memcached.yaml
   - path: ../../common/compose-include/mimir.yaml
   - path:
+      - ../../common/compose-include/mimirtool.yaml
+      - ./mimirtool.override.yaml
+  - path:
+      - ../../common/compose-include/grafana.yaml
+      - ./grafana.override.yaml
+  - path:
       - ../../common/compose-include/grafana-agent.yaml
-      - ./compose.override.yaml  # Microservices Mode services override
-  - path: ../../common/compose-include/grafana.yaml
+      - ./grafana-agent.override.yaml
 
 # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
 x-labels: &profiles-labels
@@ -58,6 +63,7 @@ services:
     image: &pyroscopeImage ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:1.5.0}
     volumes:
       - ../../common/config/pyroscope:/etc/pyroscope
+      - pyroscope_data:/data
     command:
       - -config.file=/etc/pyroscope/microservices-mode-profiles.yaml
       - -target=distributor
@@ -85,6 +91,7 @@ services:
     image: *pyroscopeImage
     volumes:
       - ../../common/config/pyroscope:/etc/pyroscope
+      - pyroscope_data:/data
     command:
       - -config.file=/etc/pyroscope/microservices-mode-profiles.yaml
       - -target=ingester
@@ -108,6 +115,7 @@ services:
     image: *pyroscopeImage
     volumes:
       - ../../common/config/pyroscope:/etc/pyroscope
+      - pyroscope_data:/data
     command:
       - -config.file=/etc/pyroscope/microservices-mode-profiles.yaml
       - -target=compactor
@@ -131,6 +139,7 @@ services:
     image: *pyroscopeImage
     volumes:
       - ../../common/config/pyroscope:/etc/pyroscope
+      - pyroscope_data:/data
     command:
       - -config.file=/etc/pyroscope/microservices-mode-profiles.yaml
       - -target=query-frontend
@@ -154,6 +163,7 @@ services:
     image: *pyroscopeImage
     volumes:
       - ../../common/config/pyroscope:/etc/pyroscope
+      - pyroscope_data:/data
     command:
       - -config.file=/etc/pyroscope/microservices-mode-profiles.yaml
       - -target=querier
@@ -176,6 +186,7 @@ services:
     image: *pyroscopeImage
     volumes:
       - ../../common/config/pyroscope:/etc/pyroscope
+      - pyroscope_data:/data
     command:
       - -config.file=/etc/pyroscope/microservices-mode-profiles.yaml
       - -target=query-scheduler
@@ -197,6 +208,7 @@ services:
     image: *pyroscopeImage
     volumes:
       - ../../common/config/pyroscope:/etc/pyroscope
+      - pyroscope_data:/data
     command:
       - -config.file=/etc/pyroscope/microservices-mode-profiles.yaml
       - -target=store-gateway
@@ -208,3 +220,6 @@ services:
       default:
         aliases:
           - pyroscope-memberlist
+
+volumes:
+  pyroscope_data:
