@@ -1,0 +1,24 @@
+# ============================================================================ #
+#                           Github Exporter                                   
+# ============================================================================ #
+
+# Usage:
+#   COMPOSE_EXPERIMENTAL_GIT_REMOTE=true docker compose up -d --remove-orphans
+#   COMPOSE_EXPERIMENTAL_GIT_REMOTE=true docker compose down
+
+# Note:
+# include is available in Docker Compose version 2.20 and later, and Docker Desktop version 4.22 and later.
+# docs: https://docs.docker.com/compose/multiple-compose-files/include/#include-and-overrides
+include:
+# - path: https://github.com/qclaogui/codelab-monitoring.git#main:docker-compose/monolithic-mode/logs/compose.yaml
+# Local
+- path: ../../docker-compose/monolithic-mode/logs/compose.yaml
+
+services:
+  github-exporter:
+    # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
+    labels:
+      metrics.agent.grafana.com/scrape: true
+    image: githubexporter/github-exporter:1.1.0
+    environment:
+    - REPOS=grafana/agent
