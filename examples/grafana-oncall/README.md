@@ -13,14 +13,14 @@ Developer-friendly incident response with brilliant Slack integration.
 
 ## Docker `compose.yaml`
 
+`compose.yaml`:
+
 ```yaml
-# Note:
-# include is available in Docker Compose version 2.20 and later, and Docker Desktop version 4.22 and later.
-# docs: https://docs.docker.com/compose/multiple-compose-files/include/#include-and-overrides
 include:
-- path:
-    - https://github.com/qclaogui/codelab-monitoring.git#main:docker-compose/monolithic-mode/logs/compose.yaml
-    - ./compose.override.yaml
+# use git remote
+- path: https://github.com/qclaogui/codelab-monitoring.git#main:docker-compose/monolithic-mode/logs/compose.yaml
+# use local path
+# - path: ../../docker-compose/monolithic-mode/logs/compose.yaml
 
 services:
   grafana-oncall:
@@ -30,14 +30,34 @@ services:
 
 ```
 
+`compose.override.yaml`:
+
+```yaml
+
+services:
+  # override included service grafana environment
+  grafana:
+    volumes:
+      - ./config/grafana/provisioning/plugins/grafana-oncall-app.yaml:/etc/grafana/provisioning/plugins/grafana-oncall-app.yaml
+      - ./config/grafana/provisioning/plugins/redis-app.yaml:/etc/grafana/provisioning/plugins/redis-app.yaml
+      - ./config/grafana/provisioning/datasources/redis.yaml:/etc/grafana/provisioning/datasources/redis.yaml
+    environment:
+      GF_SECURITY_ADMIN_USER: oncall
+      GF_SECURITY_ADMIN_PASSWORD: oncall
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: grafana-oncall-app
+      GF_INSTALL_PLUGINS: grafana-oncall-app v1.3.115, redis-app v2.2.1
+```
+
 ## Launch services
 
 ```shell
 COMPOSE_EXPERIMENTAL_GIT_REMOTE=true docker compose up -d --remove-orphans
 ```
 
+Once all containers are up and running you can search for metrics in Grafana.
+
 > [!IMPORTANT]  
-> 😞 Grafana OnCall is available for authorized users only, please sign in to proceed. For this example log in credentials: `oncall`/`oncall`.
+> 😞 Grafana OnCall is available for authorized users only, please sign in to proceed. For this example login credentials: `oncall`/`oncall`.
 
 Navigate to [http://localhost:3000](http://localhost:3000)
 

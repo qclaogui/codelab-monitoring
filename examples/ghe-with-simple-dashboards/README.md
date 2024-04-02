@@ -22,6 +22,16 @@ services:
     - REPOS=grafana/agent
 ```
 
+`compose.override.yaml`:
+
+```yaml
+services:
+  # override included service grafana for dashboards pre-provisioning
+  grafana:
+    volumes:
+      - ./dashboards:/var/lib/grafana/dashboards/github-mixin
+```
+
 ## Try it
 
 ```shell
