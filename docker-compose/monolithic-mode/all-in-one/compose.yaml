@@ -10,10 +10,6 @@ version: '3.9'
 include:
   - path: ../../common/compose-include/minio.yaml
   - path: ../../common/compose-include/memcached.yaml
-  - path: ../../common/compose-include/inbucket.yaml
-  - path:
-      - ../../common/compose-include/mimirtool.yaml
-      - ./mimirtool.override.yaml
   - path:
       - ../../common/compose-include/grafana.yaml
       - ./grafana.override.yaml
@@ -177,6 +173,28 @@ services:
         aliases:
           - mimir-memberlist
 
+  mimirtool:
+    # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
+    labels:
+      metrics.agent.grafana.com/scrape: false
+    image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:2.11.0}
+    volumes:
+      - ../../../monitoring-mixins/crontab:/etc/crontabs/root
+      - ../../../monitoring-mixins/agent-flow-mixin/deploy/agent-flow-mixin-alerts.yaml:/rules/agent-flow-mixin-alerts.yaml
+      - ../../../monitoring-mixins/memcached-mixin/deploy/memcached-mixin-alerts.yaml:/rules/memcached-mixin-alerts.yaml
+      - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-rules.yaml:/rules/mimir-mixin-rules.yaml
+      - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-alerts.yaml:/rules/mimir-mixin-alerts.yaml
+      - ../../../monitoring-mixins/loki-mixin/deploy/loki-mixin-rules.yaml:/rules/loki-mixin-rules.yaml
+      - ../../../monitoring-mixins/loki-mixin/deploy/loki-mixin-alerts.yaml:/rules/loki-mixin-alerts.yaml
+      - ../../../monitoring-mixins/pyroscope-mixin/deploy/pyroscope-mixin-rules.yaml:/rules/pyroscope-mixin-rules.yaml
+      - ../../../monitoring-mixins/tempo-mixin/deploy/tempo-mixin-rules.yaml:/rules/tempo-mixin-rules.yaml
+      - ../../../monitoring-mixins/tempo-mixin/deploy/tempo-mixin-alerts.yaml:/rules/tempo-mixin-alerts.yaml
+    environment:
+      - MIMIR_ADDRESS=http://gateway:8080
+      - MIMIR_TENANT_ID=anonymous
+    entrypoint: crond -f
+    restart: always
+
   pyroscope:
     labels:
       - logs.agent.grafana.com/log-format=logfmt
@@ -186,9 +204,10 @@ services:
     image: ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:1.5.0}
     container_name: pyroscope
     volumes:
-      - ../../common/config/pyroscope/monolithic-mode-profiles.yaml:/etc/config.yaml
+      - ../../common/config/pyroscope:/etc/pyroscope
+      - pyroscope_data:/data
     command:
-      - -config.file=/etc/config.yaml
+      - -config.file=/etc/pyroscope/monolithic-mode-profiles.yaml
       - -config.expand-env=true
     environment:
       <<: *jaeger-environment
@@ -201,3 +220,6 @@ services:
     # expose 34040 port so we can directly access pyroscope inside container
     ports:
       - "34040:4040"
+
+volumes:
+  pyroscope_data:

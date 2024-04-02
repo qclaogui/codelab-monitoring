@@ -1,10 +1,22 @@
 
-# Note: 
-# include is available in Docker Compose version 2.20 and later, and Docker Desktop version 4.22 and later.
-include:
-  - path: ./inbucket.yaml
-
 services:
+  # Inbucket is an email testing service; it will accept email for any email
+  # address and make it available to view without a password
+  #
+  # https://inbucket.org/packages/docker.html
+  # https://github.com/inbucket/inbucket/blob/main/doc/config.md
+  inbucket:
+    labels:
+      metrics.agent.grafana.com/scrape: false
+    image: ${INBUCKET_IMAGE:-inbucket/inbucket:3.0.4}
+    ports:
+      - 2500 # SMTP
+      - "39000:9000" # HTTP
+      - 1100 # POP3
+    volumes:
+      - inbucket_data:/storage
+      - inbucket_data:/config
+
   grafana:
     labels:
       logs.agent.grafana.com/log-format: logfmt
@@ -21,5 +33,10 @@ services:
       - ../../../monitoring-mixins/memcached-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/memcached-mixin
     environment:
       GF_FEATURE_TOGGLES_ENABLE: traceqlEditor tracesEmbeddedFlameGraph traceqlSearch correlations metricsSummary traceToMetrics traceToProfiles
+      GF_SMTP_ENABLED: true
+      GF_SMTP_HOST: inbucket:2500
     ports:
       - "3000:3000"
+
+volumes:
+  inbucket_data:
