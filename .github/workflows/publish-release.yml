@@ -10,30 +10,58 @@ on:
       ghPAT:
         required: true
 
-env:
-  GORELEASER_VERSION: '1.24.0'
-
 jobs:
   publish_release:
     name: ${{ inputs.isPreRelease && 'prerelease' || 'release' }} publishing
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 #v4.1.1
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.22'
-      - name: Install GoReleaser
+      - uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 #v4.1.2
+      - 
+        name: Set variables
+        id: vars
         run: |
-          wget -q https://github.com/goreleaser/goreleaser/releases/download/v${GORELEASER_VERSION}/goreleaser_Linux_x86_64.tar.gz
-          tar -xzf goreleaser_Linux_x86_64.tar.gz
-          mv goreleaser /home/runner/go/bin/goreleaser-v${GORELEASER_VERSION}
-  
-      - if: ${{ !inputs.isPreRelease }}
-        run: ./tools/scripts/do-release.sh
-        env:
-          GITHUB_TOKEN: ${{ secrets.ghPAT }}
+          if [ -z "${GITHUB_REF_NAME}" ] || [ "${GITHUB_REF_TYPE}" != "tag" ] ; then
+            echo "Expected a tag push event, skipping release workflow"
+            exit 1
+          fi
 
-      - if: ${{ inputs.isPreRelease }}
-        run: ./tools/scripts/do-release-candidate.sh
+          # Example: tag_name       = 0.1.0-rc.4
+          #  echo ${tag_name/-rc.*} = 0.1.0
+          #  echo ${tag_name#*-}    = rc.4
+
+          tag_name=${GITHUB_REF_NAME}
+          echo "GORELEASER_CURRENT_TAG=v${tag_name}" >> $GITHUB_ENV
+          echo "RELEASE_DESCRIPTION=${tag_name}" >> $GITHUB_ENV
+
+          RELEASE_NOTES_FILE="docs/release_notes/${tag_name/-rc.*}.md"
+          echo "RELEASE_NOTES_FILE=${RELEASE_NOTES_FILE}" >> $GITHUB_ENV
+          if [ ! -f "${RELEASE_NOTES_FILE}" ]; then
+              echo "Release notes ${RELEASE_NOTES_FILE} not found. Exiting..."
+              exit 1
+          fi
+
+          echo "RELEASE_BUILD=1" >> $GITHUB_ENV
+          # Update prerelease version to release-candidate
+          echo "PRE_RELEASE_ID=${tag_name#*-}" >> $GITHUB_OUTPUT
+          
+          cat .github/.goreleaser.yml .github/.goreleaser.brew.yml > .github/.goreleaser.combined.yml
+      - 
+        name: GoReleaser Release
+        if: ${{ !inputs.isPreRelease }}
+        uses: goreleaser/goreleaser-action@7ec5c2b0c6cdda6e8bbb49444bc797dd33d74dd8 #v5.0.0
+        with:
+          version: v1.24.0
+          args: release --clean --timeout 60m --skip=validate --config=.github/.goreleaser.combined.yml --release-notes="${{env.RELEASE_NOTES_FILE}}"
         env:
           GITHUB_TOKEN: ${{ secrets.ghPAT }}
+          PRE_RELEASE_ID: 
+      - 
+        name: GoReleaser Release Candidate
+        if: ${{ inputs.isPreRelease }}
+        uses: goreleaser/goreleaser-action@7ec5c2b0c6cdda6e8bbb49444bc797dd33d74dd8 #v5.0.0
+        with:
+          version: v1.24.0
+          args: release --clean --timeout 60m --skip=validate --config=.github/.goreleaser.yml --release-notes="${{env.RELEASE_NOTES_FILE}}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.ghPAT }}
+          PRE_RELEASE_ID: ${{steps.vars.outputs.PRE_RELEASE_ID}}

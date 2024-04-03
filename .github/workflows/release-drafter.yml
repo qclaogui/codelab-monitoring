@@ -11,24 +11,31 @@ jobs:
   update_release_draft:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/create-github-app-token@v1
+      - 
+        name: Get App[bot] Token
+        uses: actions/create-github-app-token@v1
         id: app-token
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.PRIVATE_KEY }}
-      - uses: release-drafter/release-drafter@v6
+      - 
+        name: Drafts your next Release notes
+        uses: release-drafter/release-drafter@v6
         id: draft
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
         with:
           commitish: main
-
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 #v4.1.1
-      - name: Copy release notes from Draft
+      - 
+        name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 #v4.1.1
+      - 
+        name: Copy release notes from Draft
         run: |
           tag_name=${{ steps.draft.outputs.tag_name }}
           echo "${{ steps.draft.outputs.body }}" > docs/release_notes/${tag_name:1}.md
-      - name: Upsert Pull Request
+      - 
+        name: Upsert Pull Request
         uses: peter-evans/create-pull-request@70a41aba780001da0a30141984ae2a0c95d8704e #v6.0.2
         with:
           token: ${{ steps.app-token.outputs.token }}
@@ -37,7 +44,7 @@ jobs:
           committer: 🤖QC Owl App[bot] <165384878+qc-owl-app[bot]@users.noreply.github.com>
           signoff: true
           # assignees: qclaogui
-          reviewers: qclaogui
+          # reviewers: qclaogui
           body: |
             🤖 Copy release notes from Draft
 

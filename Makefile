@@ -467,9 +467,9 @@ build: generate ## Build binary for current OS and place it at ./bin/lgtmp_$(GOO
 
 .PHONY: build-all
 build-all: $(GORELEASER) generate ## Build binaries for Linux and Mac and place them in dist/
-	@cat ./.goreleaser.yml ./.goreleaser.brew.yml > .goreleaser.combined.yml
-	RELEASE_BUILD=$(RELEASE_BUILD) PRE_RELEASE_ID="" $(GORELEASER) --config=.goreleaser.combined.yml --snapshot --skip=publish --clean
-	@rm .goreleaser.combined.yml
+	@cat .github/.goreleaser.yml .github/.goreleaser.brew.yml > .github/.goreleaser.combined.yml
+	RELEASE_BUILD=$(RELEASE_BUILD) PRE_RELEASE_ID="" $(GORELEASER) --config=.github/.goreleaser.combined.yml --snapshot --skip=publish --clean
+	@rm .github/.goreleaser.combined.yml
 
 
 ##@ Release
