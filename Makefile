@@ -191,7 +191,11 @@ clean: ## Clean cluster
 
 .PHONY: manifests
 manifests: ## Generates k8s manifests
-manifests: $(KUSTOMIZE) manifests-common manifests-monolithic-mode manifests-read-write-mode manifests-microservices-mode
+manifests: $(KUSTOMIZE) manifests-common manifests-monolithic-mode manifests-read-write-mode manifests-microservices-mode manifests-monitoring-mixins
+
+manifests-monitoring-mixins: $(KUSTOMIZE)
+	$(info ******************** generates manifests-monitoring-mixins manifests ********************)
+	@$(KUSTOMIZE) build monitoring-mixins > monitoring-mixins/k8s-all-in-one.yaml
 
 manifests-common: $(KUSTOMIZE)
 	$(info ******************** generates manifests-common manifests ********************)
@@ -229,43 +233,43 @@ manifests-microservices-mode: $(KUSTOMIZE)
 
 deploy-prometheus-operator-crds:
 	$(info ******************** deploy prometheus-operator-crds manifests ********************)
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/prometheus-operator-crds | kubectl replace -f - || $(KUSTOMIZE) build --enable-helm kubernetes/common/prometheus-operator-crds | kubectl create -f -
+	@kubectl replace -f kubernetes/common/prometheus-operator-crds/manifests/k8s-all-in-one.yaml || kubectl create -f kubernetes/common/prometheus-operator-crds/manifests/k8s-all-in-one.yaml
 
 # kube-prometheus-stack
 .PHONY: deploy-kube-prometheus-stack
 deploy-kube-prometheus-stack: ## Deploy kube-prometheus-stack manifests
 	$(info ******************** deploy kube-prometheus-stack manifests ********************)
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/kube-prometheus-stack | kubectl apply -f -
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/rancher-pushprox | kubectl apply -f -
+	@kubectl apply -f kubernetes/common/kube-prometheus-stack/manifests/k8s-all-in-one.yaml
+	@kubectl apply -f kubernetes/common/rancher-pushprox/manifests/k8s-all-in-one.yaml
 delete-kube-prometheus-stack:
 	$(info ******************** delete kube-prometheus-stack manifests ********************)
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/kube-prometheus-stack | kubectl delete -f -
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/rancher-pushprox | kubectl delete -f -
+	@kubectl delete --ignore-not-found -f kubernetes/common/kube-prometheus-stack/manifests/k8s-all-in-one.yaml
+	@kubectl delete --ignore-not-found -f kubernetes/common/rancher-pushprox/manifests/k8s-all-in-one.yaml
 
 .PHONY: deploy-minio
 deploy-minio:
 	$(info ******************** deploy minio manifests ********************)
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/minio-operator | kubectl apply -f -
-	kubectl rollout status -n minio-system deployment/minio-operator --watch --timeout=600s
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/minio-tenant | kubectl apply -f -
+	@kubectl apply -f kubernetes/common/minio-operator/manifests/k8s-all-in-one.yaml
+	@kubectl rollout status -n minio-system deployment/minio-operator --watch --timeout=600s
+	@kubectl apply -f kubernetes/common/minio-tenant/manifests/k8s-all-in-one.yaml
 	@echo "Waiting for Minio to be ready..."
 	@sleep 20
-	kubectl rollout status -n minio-system statefulset/codelab-pool-10gb --watch --timeout=600s || true
+	@kubectl rollout status -n minio-system statefulset/codelab-pool-10gb --watch --timeout=600s || true
 delete-minio:
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/minio-tenant | kubectl delete --ignore-not-found -f -
+	@kubectl delete --ignore-not-found -f kubernetes/common/minio-tenant/manifests/k8s-all-in-one.yaml
 	
 .PHONY: deploy-gateway
 deploy-gateway:
 	$(info ******************** deploy gateway manifests ********************)
-	@$(KUSTOMIZE) build kubernetes/common/gateway | kubectl apply -f -
-	kubectl rollout status -n gateway deployment/nginx --watch --timeout=600s
+	@kubectl apply -f kubernetes/common/gateway/manifests/k8s-all-in-one.yaml
+	@kubectl rollout status -n gateway deployment/nginx --watch --timeout=600s
 
 .PHONY: deploy-grafana
 deploy-grafana: deploy-prometheus-operator-crds deploy-minio deploy-gateway
 	$(info ******************** deploy grafana manifests ********************)
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana | kubectl apply -f -
+	@kubectl apply -f kubernetes/common/grafana/manifests/k8s-all-in-one.yaml
 delete-grafana:
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana | kubectl delete --ignore-not-found -f -
+	@kubectl delete --ignore-not-found -f kubernetes/common/grafana/manifests/k8s-all-in-one.yaml
 
 define echo_info
 	$(eval $@_MSG = $(1))
@@ -277,9 +281,9 @@ endef
 define config_changes_trigger_pod_restart
 	$(eval $@_MSG = $(1))
 	@kubectl rollout restart deployment -n gateway nginx
-	kubectl rollout status -n gateway deployment/nginx --watch --timeout=600s
+	@kubectl rollout status -n gateway deployment/nginx --watch --timeout=600s
 	@echo "Provisioning Grafana dashboards Prometheus rules and alerts..."
-	@$(KUSTOMIZE) build monitoring-mixins | kubectl apply -f -
+	@kubectl apply -f monitoring-mixins/k8s-all-in-one.yaml
 	kubectl rollout status -n monitoring-system daemonset/grafana-agent --watch --timeout=600s
 	@$(call echo_info, ${$@_MSG})
 endef
@@ -288,135 +292,135 @@ endef
 .PHONY: deploy-monolithic-mode-metrics
 deploy-monolithic-mode-metrics: deploy-memcached ## Deploy monolithic-mode Mimir for metrics
 	$(info ******************** deploy monolithic-mode metrics manifests ********************)
-	@$(KUSTOMIZE) build kubernetes/monolithic-mode/metrics | kubectl apply -f -
-	kubectl rollout status -n monitoring-system deployment/mimir --watch --timeout=600s
+	@kubectl apply -f kubernetes/monolithic-mode/metrics/k8s-all-in-one.yaml
+	@kubectl rollout status -n monitoring-system deployment/mimir --watch --timeout=600s
 	@$(call config_changes_trigger_pod_restart, "Go to http://localhost:8080/explore for the metrics.")
 delete-monolithic-mode-metrics: delete-memcached
-	@$(KUSTOMIZE) build kubernetes/monolithic-mode/metrics | kubectl delete -f -
+	@kubectl delete --ignore-not-found -f kubernetes/monolithic-mode/metrics/k8s-all-in-one.yaml
 
 
 .PHONY: deploy-monolithic-mode-logs
 deploy-monolithic-mode-logs: deploy-memcached ## Deploy monolithic-mode Loki for logs
 	$(info ******************** deploy monolithic-mode logs manifests ********************)
-	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/logs | kubectl apply -f -
-	kubectl rollout status -n logging-system statefulset/loki --watch --timeout=600s
+	@kubectl apply -f kubernetes/monolithic-mode/logs/k8s-all-in-one.yaml
+	@kubectl rollout status -n logging-system statefulset/loki --watch --timeout=600s
 	@$(call config_changes_trigger_pod_restart, "Go to http://localhost:8080/explore for the logs.")
 delete-monolithic-mode-logs: delete-memcached
-	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/logs | kubectl delete -f -
+	@kubectl delete --ignore-not-found -f kubernetes/monolithic-mode/logs/k8s-all-in-one.yaml
 
 
 .PHONY: deploy-monolithic-mode-profiles
 deploy-monolithic-mode-profiles: deploy-memcached ## Deploy monolithic-mode Pyroscope for profiles
 	$(info ******************** deploy monolithic-mode profiles manifests ********************)
-	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/profiles | kubectl apply -f -
-	kubectl rollout status -n profiles-system statefulset/pyroscope --watch --timeout=600s
+	@kubectl apply -f kubernetes/monolithic-mode/profiles/k8s-all-in-one.yaml
+	@kubectl rollout status -n profiles-system statefulset/pyroscope --watch --timeout=600s
 	@$(call config_changes_trigger_pod_restart,"Go to http://localhost:8080/explore for the profiles.")
 delete-monolithic-mode-profiles: delete-memcached
-	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/profiles | kubectl delete -f -
+	@kubectl delete --ignore-not-found -f kubernetes/monolithic-mode/profiles/k8s-all-in-one.yaml
 
 
 .PHONY: deploy-monolithic-mode-traces
 deploy-monolithic-mode-traces: deploy-memcached ## Deploy monolithic-mode Tempo for traces
 	$(info ******************** deploy monolithic-mode traces manifests ********************)
-	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/traces | kubectl apply -f -
-	kubectl rollout status -n tracing-system statefulset/tempo --watch --timeout=600s
+	@kubectl apply -f kubernetes/monolithic-mode/traces/k8s-all-in-one.yaml
+	@kubectl rollout status -n tracing-system statefulset/tempo --watch --timeout=600s
 	@$(call config_changes_trigger_pod_restart, "Go to http://localhost:8080/explore for the traces.")
 delete-monolithic-mode-traces: delete-memcached
-	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/traces | kubectl delete -f -
+	@kubectl delete --ignore-not-found -f kubernetes/monolithic-mode/traces/k8s-all-in-one.yaml
 
 
 .PHONY: deploy-monolithic-mode-all-in-one
 deploy-monolithic-mode-all-in-one: deploy-memcached ## Deploy monolithic-mode all-in-one
 	$(info ******************** deploy monolithic-mode all-in-one manifests ********************)
-	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/all-in-one | kubectl apply -f -
-	kubectl rollout status -n monitoring-system deployment/mimir --watch --timeout=600s
+	@kubectl apply -f kubernetes/monolithic-mode/all-in-one/k8s-all-in-one.yaml
+	@kubectl rollout status -n monitoring-system deployment/mimir --watch --timeout=600s
 	@$(call config_changes_trigger_pod_restart, "Go to http://localhost:8080/explore for the all-in-one.")
 delete-monolithic-mode-all-in-one: delete-memcached
-	@$(KUSTOMIZE) build --enable-helm kubernetes/monolithic-mode/all-in-one | kubectl delete -f -
+	@kubectl delete --ignore-not-found -f kubernetes/monolithic-mode/all-in-one/k8s-all-in-one.yaml
 
 
 
 .PHONY: deploy-read-write-mode-metrics
 deploy-read-write-mode-metrics: deploy-memcached ## Deploy read-write-mode Mimir for metrics
 	$(info ******************** deploy read-write-mode metrics manifests ********************)
-	@$(KUSTOMIZE) build kubernetes/read-write-mode/metrics | kubectl apply -f -
-	kubectl rollout status -n monitoring-system deployment/mimir-write --watch --timeout=600s
+	@kubectl apply -f kubernetes/read-write-mode/metrics/k8s-all-in-one.yaml
+	@kubectl rollout status -n monitoring-system deployment/mimir-write --watch --timeout=600s
 	@$(call config_changes_trigger_pod_restart, "Go to http://localhost:8080/explore for the metrics.")
 delete-read-write-mode-metrics: delete-memcached
-	@$(KUSTOMIZE) build kubernetes/read-write-mode/metrics | kubectl delete -f -
+	@kubectl delete --ignore-not-found -f kubernetes/read-write-mode/metrics/k8s-all-in-one.yaml
 
 
 .PHONY: deploy-read-write-mode-logs
 deploy-read-write-mode-logs: deploy-memcached ## Deploy read-write-mode Loki for logs
 	$(info ******************** deploy read-write-mode logs manifests ********************)
-	@$(KUSTOMIZE) build --enable-helm kubernetes/read-write-mode/logs | kubectl apply -f -
-	kubectl rollout status -n logging-system statefulset/loki-write --watch --timeout=600s
+	@kubectl apply -f kubernetes/read-write-mode/logs/k8s-all-in-one.yaml
+	@kubectl rollout status -n logging-system statefulset/loki-write --watch --timeout=600s
 	@$(call config_changes_trigger_pod_restart, "Go to http://localhost:8080/explore for the logs.")
 delete-read-write-mode-logs: delete-memcached
-	@$(KUSTOMIZE) build --enable-helm kubernetes/read-write-mode/logs | kubectl delete -f -
+	@kubectl delete --ignore-not-found -f kubernetes/read-write-mode/logs/k8s-all-in-one.yaml
 
 
 
 .PHONY: deploy-microservices-mode-logs
 deploy-microservices-mode-logs: deploy-memcached ## Deploy microservices-mode Loki for logs
 	$(info ******************** deploy microservices-mode logs manifests ********************)
-	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/logs | kubectl apply -f -
-	kubectl rollout status -n logging-system statefulset/loki-distributed-ingester --watch --timeout=600s
+	@kubectl apply -f kubernetes/microservices-mode/logs/k8s-all-in-one.yaml
+	@kubectl rollout status -n logging-system statefulset/loki-distributed-ingester --watch --timeout=600s
 	@$(call config_changes_trigger_pod_restart, "Go to http://localhost:8080/explore for the logs.")
 delete-microservices-mode-logs: delete-memcached
-	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/logs | kubectl delete -f -
+	@kubectl delete --ignore-not-found -f kubernetes/microservices-mode/logs/k8s-all-in-one.yaml
 
 
 .PHONY: deploy-microservices-mode-metrics
 deploy-microservices-mode-metrics: deploy-memcached ## Deploy microservices-mode Mimir for metrics
 	$(info ******************** deploy microservices-mode metrics manifests ********************)
-	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/metrics | kubectl apply -f -
-	kubectl rollout status -n monitoring-system statefulset/mimir-distributed-ingester --watch --timeout=600s
+	@kubectl apply -f kubernetes/microservices-mode/metrics/k8s-all-in-one.yaml
+	@kubectl rollout status -n monitoring-system statefulset/mimir-distributed-ingester --watch --timeout=600s
 	@$(call config_changes_trigger_pod_restart, "Go to http://localhost:8080/explore for the metrics.")
 delete-microservices-mode-metrics: delete-memcached
-	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/metrics | kubectl delete -f -
+	@kubectl delete --ignore-not-found -f kubernetes/microservices-mode/metrics/k8s-all-in-one.yaml
 
 
 .PHONY: deploy-microservices-mode-profiles
 deploy-microservices-mode-profiles: deploy-memcached ## Deploy microservices-mode Pyroscope for profiles
 	$(info ******************** deploy microservices-mode profiles manifests ********************)
-	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/profiles | kubectl apply -f -
+	@kubectl apply -f kubernetes/microservices-mode/profiles/k8s-all-in-one.yaml
 	@$(call config_changes_trigger_pod_restart, "Go to http://localhost:8080/explore for the profiles.")
 delete-microservices-mode-profiles: delete-memcached
-	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/profiles | kubectl delete -f -
+	@kubectl delete --ignore-not-found -f kubernetes/microservices-mode/profiles/k8s-all-in-one.yaml
 
 
 .PHONY: deploy-microservices-mode-traces
 deploy-microservices-mode-traces: deploy-memcached ## Deploy microservices-mode Tempo for traces
 	$(info ******************** deploy microservices-mode traces manifests ********************)
-	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/traces | kubectl apply -f -
-	kubectl rollout status -n tracing-system statefulset/tempo-distributed-ingester --watch --timeout=600s
+	@kubectl apply -f kubernetes/microservices-mode/traces/k8s-all-in-one.yaml
+	@kubectl rollout status -n tracing-system statefulset/tempo-distributed-ingester --watch --timeout=600s
 	@$(call config_changes_trigger_pod_restart, "Go to http://localhost:8080/explore for the traces.")
 delete-microservices-mode-traces: delete-memcached
-	@$(KUSTOMIZE) build --enable-helm kubernetes/microservices-mode/traces | kubectl delete -f -
+	@kubectl delete --ignore-not-found -f kubernetes/microservices-mode/traces/k8s-all-in-one.yaml
 
 
 ##@ Grafana Agent Integrations
 
 deploy-memcached: deploy-grafana
 	$(info ******************** deploy integration memcached manifests ********************)
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/memcached | kubectl apply -f -
+	@kubectl apply -f kubernetes/common/memcached/manifests/k8s-all-in-one.yaml
 delete-memcached: delete-minio
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/memcached | kubectl delete --ignore-not-found -f -
+	@kubectl delete --ignore-not-found -f kubernetes/common/memcached/manifests/k8s-all-in-one.yaml
 
 .PHONY: deploy-mysql
 deploy-mysql: ## Deploy integration mysql manifests
 	$(info ******************** deploy integration mysql manifests ********************)
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/mysql | kubectl apply -f -
+	@kubectl apply -f kubernetes/common/mysql/manifests/k8s-all-in-one.yaml
 delete-mysql:
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/mysql | kubectl delete --ignore-not-found -f -
+	@kubectl delete --ignore-not-found -f kubernetes/common/mysql/manifests/k8s-all-in-one.yaml
 
 .PHONY: deploy-redis
 deploy-redis: ## Deploy integration redis manifests
 	$(info ******************** deploy integration redis manifests ********************)
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/redis | kubectl apply -f -
+	@kubectl apply -f kubernetes/common/redis/manifests/k8s-all-in-one.yaml
 delete-redis:
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/redis | kubectl delete --ignore-not-found -f -
+	@kubectl delete --ignore-not-found -f kubernetes/common/redis/manifests/k8s-all-in-one.yaml
 
 
 ##@ Build
