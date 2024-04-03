@@ -51,8 +51,8 @@ services:
       - AGENT_CONFIG_FOLDER=/etc/agent-config
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:12345/ready || exit 1" ]
-      interval: 10s
-      timeout: 5s
+      interval: 5s
+      timeout: 2s
       retries: 10
     ports:
       - "12345:12345"
@@ -78,9 +78,9 @@ services:
       - ../../common/config/mimir/gateway_mimir.conf:/etc/nginx/templates/gateway_mimir.conf.template
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:4040/ || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 5s
+      timeout: 2s
+      retries: 10
 
   pyroscope:
     depends_on:
@@ -98,9 +98,9 @@ services:
       # - -runtime-config.file=/etc/pyroscope/overrides.yaml
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:4040/ready || exit 1" ]
-      interval: 15s
-      timeout: 10s
-      retries: 5
+      interval: 5s
+      timeout: 2s
+      retries: 10
     # expose 34040 port so we can directly access pyroscope inside container
     ports:
       - "34040:4040"

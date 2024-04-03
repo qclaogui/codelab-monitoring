@@ -24,6 +24,13 @@ x-environment: &jaeger-environment
   JAEGER_SAMPLER_TYPE: const
   JAEGER_SAMPLER_PARAM: 1
 
+# Configure a check that's run to determine whether or not containers for this service are "healthy".
+# docs: https://docs.docker.com/compose/compose-file/compose-file-v3/#healthcheck
+x-healthcheck: &status-healthcheck
+  interval: 5s
+  timeout: 2s
+  retries: 10
+
 services:
   grafana-agent:
     # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
@@ -52,9 +59,7 @@ services:
       - AGENT_CONFIG_FOLDER=/etc/agent-config
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:12345/ready || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+      <<: *status-healthcheck
     ports:
       - "12345:12345"
     # scale up support
@@ -81,9 +86,7 @@ services:
       - ../../common/config/loki/gateway_loki.conf:/etc/nginx/templates/gateway_loki.conf.template
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+      <<: *status-healthcheck
 
   tempo:
     depends_on:
@@ -102,9 +105,8 @@ services:
       JAEGER_TAGS: app=tempo
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ready || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+      <<: *status-healthcheck
+      start_period: 10s
     # expose 33200 port so we can directly access tempo inside container
     ports:
       - "33200:3200"
