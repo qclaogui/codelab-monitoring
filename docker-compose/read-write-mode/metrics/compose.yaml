@@ -12,6 +12,13 @@ include:
   - path: ../../common/compose-include/grafana-agent.yaml
   - path: ../../common/compose-include/grafana.yaml
 
+# Configure a check that's run to determine whether or not containers for this service are "healthy".
+# docs: https://docs.docker.com/compose/compose-file/compose-file-v3/#healthcheck
+x-healthcheck: &status-healthcheck
+  interval: 5s
+  timeout: 2s
+  retries: 10
+
 services:
   gateway:
     # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
@@ -35,9 +42,7 @@ services:
       - MIMIR_COMPACTOR_HOST=mimir-backend
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+      <<: *status-healthcheck
     ports:
       - "38080:8080"
 
@@ -54,9 +59,7 @@ services:
       - -config.expand-env=true
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+      <<: *status-healthcheck
     deploy:
       replicas: 2
 
@@ -88,9 +91,7 @@ services:
       - -config.expand-env=true
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+      <<: *status-healthcheck
     deploy:
       replicas: 3
     networks:

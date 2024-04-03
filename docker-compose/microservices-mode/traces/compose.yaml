@@ -27,6 +27,13 @@ x-environment: &jaeger-environment
   JAEGER_SAMPLER_TYPE: const
   JAEGER_SAMPLER_PARAM: 1
 
+# Configure a check that's run to determine whether or not containers for this service are "healthy".
+# docs: https://docs.docker.com/compose/compose-file/compose-file-v3/#healthcheck
+x-healthcheck: &status-healthcheck
+  interval: 5s
+  timeout: 2s
+  retries: 10
+
 services:
   gateway:
     # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
@@ -50,9 +57,7 @@ services:
       - TEMPO_COMPACTOR_HOST=compactor
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+      <<: *status-healthcheck
     ports:
       - "33200:3200"
 
@@ -72,9 +77,8 @@ services:
       JAEGER_TAGS: app=distributor
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ready || exit 1" ]
-      interval: 15s
-      timeout: 10s
-      retries: 10
+      <<: *status-healthcheck
+      start_period: 10s
 
   ingester:
     depends_on:
