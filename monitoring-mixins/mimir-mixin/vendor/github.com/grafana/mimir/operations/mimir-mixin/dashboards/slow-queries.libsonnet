@@ -7,7 +7,7 @@ local filename = 'mimir-slow-queries.json';
     ($.dashboard('Slow queries') + { uid: std.md5(filename) })
     .addClusterSelectorTemplates(false)
     .addRow(
-      $.row('Across tenants')
+      $.row('Accross tenants')
       .addPanel(
         $.timeseriesPanel('Response time') +
         $.lokiMetricsQueryPanel(

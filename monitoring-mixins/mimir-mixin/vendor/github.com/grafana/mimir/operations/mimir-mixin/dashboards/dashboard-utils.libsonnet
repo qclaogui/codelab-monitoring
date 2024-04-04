@@ -1,25 +1,22 @@
 local utils = import 'mixin-utils/utils.libsonnet';
 
 (import 'grafana-builder/grafana.libsonnet') {
-  _colors:: {
-    resourceRequest: '#FFC000',
-    resourceLimit: '#E02F44',
-    success: '#7EB26D',
-    clientError: '#EF843C',
-    warning: '#EAB839',
-    failed: '#E24D42',  // "error" is reserved word in Jsonnet.
-  },
+  local resourceRequestColor = '#FFC000',
+  local resourceLimitColor = '#E02F44',
+  local successColor = '#7EB26D',
+  local warningColor = '#EAB839',
+  local errorColor = '#E24D42',
 
   // Colors palette picked from Grafana UI, excluding red-ish colors which we want to keep reserved for errors / failures.
-  local nonErrorColorsPalette = ['#429D48', '#F1C731', '#2A66CF', '#9E44C1', '#FFAB57', '#C79424', '#84D586', '#A1C4FC', '#C788DE', '#3F6833', '#447EBC', '#967302', '#5794F2'],
+  local nonErrorColorsPalette = ['#429D48', '#F1C731', '#2A66CF', '#9E44C1', '#FFAB57', '#C79424', '#84D586', '#A1C4FC', '#C788DE'],
 
   local resourceRequestStyle = $.overrideFieldByName('request', [
-    $.overrideProperty('color', { mode: 'fixed', fixedColor: $._colors.resourceRequest }),
+    $.overrideProperty('color', { mode: 'fixed', fixedColor: resourceRequestColor }),
     $.overrideProperty('custom.fillOpacity', 0),
     $.overrideProperty('custom.lineStyle', { fill: 'dash' }),
   ]),
   local resourceLimitStyle = $.overrideFieldByName('limit', [
-    $.overrideProperty('color', { mode: 'fixed', fixedColor: $._colors.resourceLimit }),
+    $.overrideProperty('color', { mode: 'fixed', fixedColor: resourceLimitColor }),
     $.overrideProperty('custom.fillOpacity', 0),
     $.overrideProperty('custom.lineStyle', { fill: 'dash' }),
   ]),
@@ -199,14 +196,14 @@ local utils = import 'mixin-utils/utils.libsonnet';
   qpsPanel(selector, statusLabelName='status_code')::
     super.qpsPanel(selector, statusLabelName) +
     $.aliasColors({
-      '1xx': $._colors.warning,
-      '2xx': $._colors.success,
+      '1xx': warningColor,
+      '2xx': successColor,
       '3xx': '#6ED0E0',
       '4xx': '#EF843C',
-      '5xx': $._colors.failed,
-      OK: $._colors.success,
-      success: $._colors.success,
-      'error': $._colors.failed,
+      '5xx': errorColor,
+      OK: successColor,
+      success: successColor,
+      'error': errorColor,
       cancel: '#A9A9A9',
     }) + {
       fieldConfig+: {
@@ -263,15 +260,15 @@ local utils = import 'mixin-utils/utils.libsonnet';
     // Set the failure color only if there's just 1 legend and it doesn't contain any placeholder.
     $.aliasColors(
       if (std.type(legends) == 'string' && std.length(std.findSubstr('{', legends[0])) == 0) then {
-        [legends]: $._colors.failed,
+        [legends]: errorColor,
       } else {}
     ),
 
   successFailurePanel(successMetric, failureMetric)::
     $.queryPanel([successMetric, failureMetric], ['successful', 'failed']) +
     $.aliasColors({
-      successful: $._colors.success,
-      failed: $._colors.failed,
+      successful: successColor,
+      failed: errorColor,
     }),
 
   // successFailureCustomPanel is like successFailurePanel() but allows to customize the legends
@@ -280,8 +277,8 @@ local utils = import 'mixin-utils/utils.libsonnet';
   successFailureCustomPanel(queries, legends)::
     $.queryPanel(queries, legends) +
     $.aliasColors({
-      [legends[0]]: $._colors.success,
-      [legends[1]]: $._colors.failed,
+      [legends[0]]: successColor,
+      [legends[1]]: errorColor,
     }),
 
   // Displays started, completed and failed rate.
@@ -291,8 +288,8 @@ local utils = import 'mixin-utils/utils.libsonnet';
     $.stack +
     $.aliasColors({
       started: '#34CCEB',
-      completed: $._colors.success,
-      failed: $._colors.failed,
+      completed: successColor,
+      failed: errorColor,
     }),
 
   resourceUtilizationAndLimitLegend(resourceName)::
@@ -996,9 +993,9 @@ local utils = import 'mixin-utils/utils.libsonnet';
         thresholds: {
           mode: 'absolute',
           steps: [
-            { color: $._colors.success, value: null },
-            { color: $._colors.warning, value: 0.01 },  // 1%
-            { color: $._colors.failed, value: 0.05 },  // 5%
+            { color: successColor, value: null },
+            { color: warningColor, value: 0.01 },  // 1%
+            { color: errorColor, value: 0.05 },  // 5%
           ],
         },
       },
@@ -1345,24 +1342,6 @@ local utils = import 'mixin-utils/utils.libsonnet';
         }
     ), legends)),
   },
-
-  overridesNonErrorColorsPalette(overrides):: std.mapWithIndex(function(idx, override) (
-    // Do not define an override if we exausted the colors in the palette.
-    // Grafana will automatically choose another color.
-    if idx >= std.length(nonErrorColorsPalette) then override else
-      {
-        matcher: override.matcher,
-        properties: override.properties + [
-          {
-            id: 'color',
-            value: {
-              fixedColor: nonErrorColorsPalette[idx],
-              mode: 'fixed',
-            },
-          },
-        ],
-      }
-  ), overrides),
 
   // Panel query override functions
   overrideField(matcherId, options, overrideProperties):: {
