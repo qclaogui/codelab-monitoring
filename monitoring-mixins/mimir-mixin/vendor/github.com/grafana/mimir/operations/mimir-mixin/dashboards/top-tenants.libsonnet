@@ -58,10 +58,8 @@ local filename = 'mimir-top-tenants.json';
               distributor: $.jobMatcher($._config.job_names.distributor),
               group_by_cluster: $._config.group_by_cluster,
             },
-          ], {
-            user: { alias: 'user', unit: 'string' },
-            Value: { alias: 'series' },
-          }
+          ],
+          { 'Value #A': { alias: 'series' } }
         )
       ),
     )
@@ -74,10 +72,8 @@ local filename = 'mimir-top-tenants.json';
         $.tablePanel(
           [
             'topk($limit, %(in_memory_series_per_user)s)' % { in_memory_series_per_user: in_memory_series_per_user_query() },
-          ], {
-            user: { alias: 'user', unit: 'string' },
-            Value: { alias: 'series' },
-          }
+          ],
+          { 'Value #A': { alias: 'series' } }
         )
       ),
     )
@@ -111,10 +107,8 @@ local filename = 'mimir-top-tenants.json';
           [
             'topk($limit, sum by (user) (rate(cortex_distributor_received_samples_total{%(job)s}[5m])))'
             % { job: $.jobMatcher($._config.job_names.distributor) },
-          ], {
-            user: { alias: 'user', unit: 'string' },
-            Value: { alias: 'samples/s' },
-          }
+          ],
+          { 'Value #A': { alias: 'samples/s' } }
         )
       ),
     )
@@ -149,10 +143,8 @@ local filename = 'mimir-top-tenants.json';
           [
             'topk($limit, sum by (user) (rate(cortex_discarded_samples_total{%(job)s}[5m])))'
             % { job: $.jobMatcher($._config.job_names.ingester + $._config.job_names.distributor) },
-          ], {
-            user: { alias: 'user', unit: 'string' },
-            Value: { alias: 'samples/s' },
-          }
+          ],
+          { 'Value #A': { alias: 'samples/s' } }
         )
       ),
     )
@@ -198,10 +190,8 @@ local filename = 'mimir-top-tenants.json';
               distributor: $.jobMatcher($._config.job_names.distributor),
               group_by_cluster: $._config.group_by_cluster,
             },
-          ], {
-            user: { alias: 'user', unit: 'string' },
-            Value: { alias: 'series' },
-          }
+          ],
+          { 'Value #A': { alias: 'series' } }
         )
       ),
     )
@@ -215,10 +205,8 @@ local filename = 'mimir-top-tenants.json';
           [
             'topk($limit, sum by (user) (rate(cortex_distributor_received_exemplars_total{%(job)s}[5m])))'
             % { job: $.jobMatcher($._config.job_names.distributor) },
-          ], {
-            user: { alias: 'user', unit: 'string' },
-            Value: { alias: 'exemplars/s' },
-          }
+          ],
+          { 'Value #A': { alias: 'exemplars/s' } }
         )
       ),
     )
@@ -233,10 +221,8 @@ local filename = 'mimir-top-tenants.json';
           [
             'topk($limit, sum by (rule_group, user) (cortex_prometheus_rule_group_rules{%(job)s}))'
             % { job: $.jobMatcher($._config.job_names.ruler) },
-          ], {
-            user: { alias: 'user', unit: 'string' },
-            Value: { alias: 'rules' },
-          }
+          ],
+          { 'Value #A': { alias: 'rules' } }
         )
       ),
     )
@@ -250,10 +236,8 @@ local filename = 'mimir-top-tenants.json';
           [
             'topk($limit, sum by (rule_group, user) (cortex_prometheus_rule_group_last_duration_seconds{%(job)s}))'
             % { job: $.jobMatcher($._config.job_names.ruler) },
-          ], {
-            user: { alias: 'user', unit: 'string' },
-            Value: { alias: 'seconds' },
-          }
+          ],
+          { 'Value #A': { alias: 'seconds' } }
         )
       )
     )
@@ -272,10 +256,8 @@ local filename = 'mimir-top-tenants.json';
                 (sum(rate(cortex_bucket_index_estimated_compaction_jobs_errors_total{%s}[$__rate_interval])) == 0)
               )
             ||| % [$.jobMatcher($._config.job_names.compactor), $.jobMatcher($._config.job_names.compactor)],
-          ], {
-            user: { alias: 'user', unit: 'string' },
-            Value: { alias: 'Compaction Jobs', decimals: 0 },
-          }
+          ],
+          { Value: { alias: 'Compaction Jobs', decimals: 0 } }
         )
       ),
     ),

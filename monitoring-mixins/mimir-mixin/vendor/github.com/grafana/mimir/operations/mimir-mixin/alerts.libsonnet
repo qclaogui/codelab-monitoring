@@ -6,6 +6,5 @@
     (import 'alerts/blocks.libsonnet') +
     (import 'alerts/compactor.libsonnet') +
     (import 'alerts/autoscaling.libsonnet') +
-    (import 'alerts/ingest-storage.libsonnet') +
     (import 'alerts/continuous-test.libsonnet'),
 }
