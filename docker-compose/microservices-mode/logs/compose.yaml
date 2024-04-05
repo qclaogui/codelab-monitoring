@@ -30,9 +30,7 @@ services:
     labels:
       metrics.agent.grafana.com/scrape: false
       logs.agent.grafana.com/log-format: nginx
-    depends_on:
-      distributor:
-        condition: service_healthy
+    depends_on: { distributor: { condition: service_healthy } }
     image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.25-alpine}
     volumes:
       - ../../common/config/nginx/10-default-lgtmp.envsh:/docker-entrypoint.d/10-default-lgtmp.envsh
@@ -56,9 +54,7 @@ services:
 
   distributor:
     labels: *loki-labels
-    depends_on:
-      ingester:
-        condition: service_started
+    depends_on: { ingester: { condition: service_healthy } }
     image: &lokiImage ${LOKI_IMAGE:-docker.io/grafana/loki:2.9.6}
     volumes:
       - ../../common/config/loki:/etc/loki
@@ -80,9 +76,7 @@ services:
 
   ingester:
     labels: *loki-labels
-    depends_on:
-      minio:
-        condition: service_healthy
+    depends_on: { minio: { condition: service_healthy } }
     image: *lokiImage
     volumes:
       - ../../common/config/loki:/etc/loki
@@ -99,9 +93,7 @@ services:
 
   query-frontend:
     labels: *loki-labels
-    depends_on:
-      query-scheduler:
-        condition: service_started
+    depends_on: { query-scheduler: { condition: service_healthy } }
     image: *lokiImage
     volumes:
       - ../../common/config/loki:/etc/loki
@@ -128,9 +120,7 @@ services:
 
   querier:
     labels: *loki-labels
-    depends_on:
-      query-scheduler:
-        condition: service_started
+    depends_on: { query-scheduler: { condition: service_healthy } }
     image: *lokiImage
     volumes:
       - ../../common/config/loki:/etc/loki
@@ -141,9 +131,7 @@ services:
 
   ruler:
     labels: *loki-labels
-    depends_on:
-      minio:
-        condition: service_healthy
+    depends_on: { minio: { condition: service_healthy } }
     image: *lokiImage
     volumes:
       - ../../common/config/loki:/etc/loki

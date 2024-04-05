@@ -31,9 +31,7 @@ services:
     # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
     labels:
       metrics.agent.grafana.com/scrape: false
-    depends_on:
-      distributor:
-        condition: service_healthy
+    depends_on: { distributor: { condition: service_healthy } }
     image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.25-alpine}
     restart: always
     volumes:
@@ -56,9 +54,7 @@ services:
     labels:
       <<: *profiles-labels
       profiles.agent.grafana.com/service_name: pyroscope-distributor
-    depends_on:
-      ingester:
-        condition: service_started
+    depends_on: { ingester: { condition: service_healthy } }
     image: &pyroscopeImage ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:1.5.0}
     volumes:
       - ../../common/config/pyroscope:/etc/pyroscope
@@ -85,9 +81,7 @@ services:
     labels:
       <<: *profiles-labels
       profiles.agent.grafana.com/service_name: pyroscope-ingester
-    depends_on:
-      minio:
-        condition: service_healthy
+    depends_on: { minio: { condition: service_healthy } }
     image: *pyroscopeImage
     volumes:
       - ../../common/config/pyroscope:/etc/pyroscope
@@ -109,9 +103,7 @@ services:
     labels:
       <<: *profiles-labels
       profiles.agent.grafana.com/service_name: pyroscope-compactor
-    depends_on:
-      minio:
-        condition: service_healthy
+    depends_on: { minio: { condition: service_healthy } }
     image: *pyroscopeImage
     volumes:
       - ../../common/config/pyroscope:/etc/pyroscope
@@ -133,9 +125,6 @@ services:
     labels:
       <<: *profiles-labels
       profiles.agent.grafana.com/service_name: pyroscope-query-frontend
-    depends_on:
-      minio:
-        condition: service_healthy
     image: *pyroscopeImage
     volumes:
       - ../../common/config/pyroscope:/etc/pyroscope
@@ -155,11 +144,6 @@ services:
     labels:
       <<: *profiles-labels
       profiles.agent.grafana.com/service_name: pyroscope-querier
-    depends_on:
-      minio:
-        condition: service_healthy
-      query-frontend:
-        condition: service_started
     image: *pyroscopeImage
     volumes:
       - ../../common/config/pyroscope:/etc/pyroscope
@@ -180,9 +164,6 @@ services:
     labels:
       <<: *profiles-labels
       profiles.agent.grafana.com/service_name: pyroscope-query-scheduler
-    depends_on:
-      minio:
-        condition: service_healthy
     image: *pyroscopeImage
     volumes:
       - ../../common/config/pyroscope:/etc/pyroscope
@@ -202,9 +183,6 @@ services:
     labels:
       <<: *profiles-labels
       profiles.agent.grafana.com/service_name: pyroscope-store-gateway
-    depends_on:
-      minio:
-        condition: service_healthy
     image: *pyroscopeImage
     volumes:
       - ../../common/config/pyroscope:/etc/pyroscope

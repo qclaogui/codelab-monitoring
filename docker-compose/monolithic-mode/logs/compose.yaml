@@ -22,9 +22,7 @@ services:
     # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
     labels:
       logs.agent.grafana.com/log-format: logfmt
-    depends_on:
-      gateway:
-        condition: service_healthy
+    depends_on: { gateway: { condition: service_healthy } }
     image: ${AGENT_IMAGE:-docker.io/grafana/agent:v0.40.3}
     volumes:
       - ../../common/config/agent-flow:/etc/agent-config
@@ -62,9 +60,7 @@ services:
     labels:
       metrics.agent.grafana.com/scrape: false
       logs.agent.grafana.com/log-format: nginx
-    depends_on:
-      loki:
-        condition: service_healthy
+    depends_on: { loki: { condition: service_healthy } }
     image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.25-alpine}
     volumes:
       - ../../common/config/nginx/10-default-lgtmp.envsh:/docker-entrypoint.d/10-default-lgtmp.envsh
@@ -80,9 +76,7 @@ services:
   loki:
     labels:
       - logs.agent.grafana.com/log-format=json
-    depends_on:
-      minio:
-        condition: service_healthy
+    depends_on: { minio: { condition: service_healthy } }
     image: ${LOKI_IMAGE:-docker.io/grafana/loki:2.9.6}
     volumes:
       - ../../common/config/loki:/etc/loki

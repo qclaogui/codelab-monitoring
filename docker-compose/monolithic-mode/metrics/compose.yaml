@@ -17,9 +17,7 @@ services:
     # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
     labels:
       logs.agent.grafana.com/log-format: logfmt
-    depends_on:
-      gateway:
-        condition: service_healthy
+    depends_on: { gateway: { condition: service_healthy } }
     image: ${AGENT_IMAGE:-docker.io/grafana/agent:v0.40.3}
     volumes:
       - ../../common/config/agent-flow:/etc/agent-config
@@ -56,9 +54,7 @@ services:
   gateway:
     labels:
       metrics.agent.grafana.com/scrape: false
-    depends_on:
-      mimir:
-        condition: service_healthy
+    depends_on: { mimir: { condition: service_healthy } }
     image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.25-alpine}
     volumes:
       - ../../common/config/nginx/10-default-lgtmp.envsh:/docker-entrypoint.d/10-default-lgtmp.envsh
@@ -71,12 +67,10 @@ services:
       retries: 10
 
   mimir:
-    depends_on:
-      minio:
-        condition: service_healthy
+    depends_on: { minio: { condition: service_healthy } }
     image: ${MIMIR_IMAGE:-docker.io/grafana/mimir:2.12.0}
     volumes:
-      - ../config/mimir:/etc/mimir
+      - ../../common/config/mimir:/etc/mimir
     command:
       - -config.file=/etc/mimir/monolithic-mode-metrics.yaml
       - -target=all

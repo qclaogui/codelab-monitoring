@@ -36,9 +36,7 @@ services:
     # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
     labels:
       logs.agent.grafana.com/log-format: logfmt
-    depends_on:
-      gateway:
-        condition: service_healthy
+    depends_on: { gateway: { condition: service_healthy } }
     image: ${AGENT_IMAGE:-docker.io/grafana/agent:v0.40.3}
     volumes:
       - ../../common/config/agent-flow:/etc/agent-config
@@ -73,9 +71,7 @@ services:
   gateway:
     labels:
       metrics.agent.grafana.com/scrape: false
-    depends_on:
-      tempo:
-        condition: service_healthy
+    depends_on: { tempo: { condition: service_healthy } }
     image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.25-alpine}
     restart: always
     volumes:
@@ -89,9 +85,7 @@ services:
       <<: *status-healthcheck
 
   tempo:
-    depends_on:
-      minio:
-        condition: service_healthy
+    depends_on: { minio: { condition: service_healthy } }
     image: ${TEMPO_IMAGE:-docker.io/grafana/tempo:2.4.1}
     restart: always
     volumes:
