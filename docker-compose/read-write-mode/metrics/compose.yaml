@@ -24,11 +24,7 @@ services:
     # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
     labels:
       - metrics.agent.grafana.com/scrape=false
-    depends_on:
-      mimir-write:
-        condition: service_healthy
-      mimir-backend:
-        condition: service_healthy
+    depends_on: { mimir-write: { condition: service_healthy }, mimir-backend: { condition: service_healthy } }
     image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.25-alpine}
     volumes:
       - ../../common/config/nginx/10-default-lgtmp.envsh:/docker-entrypoint.d/10-default-lgtmp.envsh
@@ -47,9 +43,7 @@ services:
       - "38080:8080"
 
   mimir-backend:
-    depends_on:
-      minio:
-        condition: service_healthy
+    depends_on: { minio: { condition: service_healthy } }
     image: &mimirImage ${MIMIR_IMAGE:-docker.io/grafana/mimir:2.12.0}
     volumes:
       - ../../common/config/mimir:/etc/mimir
@@ -64,9 +58,7 @@ services:
       replicas: 2
 
   mimir-read:
-    depends_on:
-      minio:
-        condition: service_healthy
+    depends_on: { minio: { condition: service_healthy } }
     image: *mimirImage
     volumes:
       - ../../common/config/mimir:/etc/mimir
@@ -79,9 +71,7 @@ services:
 
 
   mimir-write:
-    depends_on:
-      minio:
-        condition: service_healthy
+    depends_on: { minio: { condition: service_healthy } }
     image: *mimirImage
     volumes:
       - ../../common/config/mimir:/etc/mimir

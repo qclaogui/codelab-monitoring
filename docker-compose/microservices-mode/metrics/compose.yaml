@@ -17,11 +17,7 @@ services:
     # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
     labels:
       - metrics.agent.grafana.com/scrape=false
-    depends_on:
-      distributor:
-        condition: service_healthy
-      ruler:
-        condition: service_healthy
+    depends_on: { distributor: { condition: service_healthy }, ruler: { condition: service_healthy } }
     image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.25-alpine}
     volumes:
       - ../../common/config/nginx/10-default-lgtmp.envsh:/docker-entrypoint.d/10-default-lgtmp.envsh
@@ -42,9 +38,7 @@ services:
       - "38080:8080"
 
   distributor:
-    depends_on:
-      ingester:
-        condition: service_started
+    depends_on: { ingester: { condition: service_healthy } }
     image: &mimirImage ${MIMIR_IMAGE:-docker.io/grafana/mimir:2.12.0}
     volumes:
       - ../../common/config/mimir:/etc/mimir
@@ -74,9 +68,7 @@ services:
       - -config.expand-env=true
 
   querier:
-    depends_on:
-      query-scheduler:
-        condition: service_healthy
+    depends_on: { query-scheduler: { condition: service_healthy } }
     image: *mimirImage
     volumes:
       - ../../common/config/mimir:/etc/mimir
@@ -92,9 +84,7 @@ services:
           - mimir-memberlist
 
   query-frontend:
-    depends_on:
-      query-scheduler:
-        condition: service_healthy
+    depends_on: { query-scheduler: { condition: service_healthy } }
     image: *mimirImage
     volumes:
       - ../../common/config/mimir:/etc/mimir
@@ -120,9 +110,7 @@ services:
       replicas: 2
 
   ruler:
-    depends_on:
-      minio:
-        condition: service_healthy
+    depends_on: { minio: { condition: service_healthy } }
     image: *mimirImage
     volumes:
       - ../../common/config/mimir:/etc/mimir
@@ -141,9 +129,7 @@ services:
           - mimir-memberlist
 
   alertmanager:
-    depends_on:
-      minio:
-        condition: service_healthy
+    depends_on: { minio: { condition: service_healthy } }
     image: *mimirImage
     volumes:
       - ../../common/config/mimir:/etc/mimir
@@ -157,9 +143,7 @@ services:
           - mimir-memberlist
 
   compactor:
-    depends_on:
-      minio:
-        condition: service_healthy
+    depends_on: { minio: { condition: service_healthy } }
     image: *mimirImage
     volumes:
       - ../../common/config/mimir:/etc/mimir
@@ -173,9 +157,7 @@ services:
           - mimir-memberlist
 
   ingester:
-    depends_on:
-      minio:
-        condition: service_healthy
+    depends_on: { minio: { condition: service_healthy } }
     image: *mimirImage
     volumes:
       - ../../common/config/mimir:/etc/mimir
@@ -191,9 +173,7 @@ services:
           - mimir-memberlist
 
   store-gateway:
-    depends_on:
-      minio:
-        condition: service_healthy
+    depends_on: { minio: { condition: service_healthy } }
     image: *mimirImage
     volumes:
       - ../../common/config/mimir:/etc/mimir
