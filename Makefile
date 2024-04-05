@@ -2,6 +2,10 @@
 
 include .bingo/Variables.mk
 
+# e.g. qclaogui/lgtmp:<version>-logs
+COMPOSE_REGISTRY ?= qclaogui/lgtmp
+
+
 ##@ Dependencies
 
 .PHONY: install-build-deps
@@ -30,6 +34,9 @@ fmt: ## Uses Grafana Agent to fmt the river config
 
 ##@ Docker compose
 
+.PHONY: publish
+publish: ## Publish compose files
+publish: publish-monolithic-mode-logs
 
 .PHONY: up-monolithic-mode-metrics
 up-monolithic-mode-metrics: ## Run monolithic-mode Mimir for metrics
@@ -56,6 +63,15 @@ up-monolithic-mode-logs: ## Run monolithic-mode Loki for logs
 	@$(call echo_info, "Go to http://localhost:3000/explore for the logs.")
 down-monolithic-mode-logs:
 	docker compose --project-name monolithic-logs down
+publish-monolithic-mode-logs:
+	$(info ******************** compose publish monolithic-mode logs ********************)
+	docker compose \
+		--project-name monolithic-logs \
+		--project-directory docker-compose/monolithic-mode/logs \
+		--file docker-compose/monolithic-mode/logs/compose.yaml \
+		--env-file docker-compose/common/config/.env \
+		alpha publish $(COMPOSE_REGISTRY):logs
+	@$(call echo_info, "Publish success.")
 
 .PHONY: up-monolithic-mode-traces
 up-monolithic-mode-traces: ## Run monolithic-mode Tempo for traces
