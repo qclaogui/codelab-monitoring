@@ -10,52 +10,18 @@ version: '3.9'
 include:
   - path: ../../common/compose-include/minio.yaml
   - path: ../../common/compose-include/memcached.yaml
+  - path: ../../common/compose-include/loki.yaml
   - path:
       - ../../common/compose-include/mimir.yaml
       - ./mimirtool.override.yaml
   - path:
       - ../../common/compose-include/grafana.yaml
       - ./grafana.override.yaml
+  - path:
+      - ../../common/compose-include/grafana-agent.yaml
+      - ./grafana-agent.override.yaml
 
 services:
-  grafana-agent:
-    # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
-    labels:
-      logs.agent.grafana.com/log-format: logfmt
-    depends_on: { gateway: { condition: service_healthy } }
-    image: ${AGENT_IMAGE:-docker.io/grafana/agent:v0.40.3}
-    volumes:
-      - ../../common/config/agent-flow:/etc/agent-config
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /:/rootfs:ro
-      - /sys:/sys:ro
-      - /var/lib/docker:/var/lib/docker:ro
-    entrypoint:
-      - /bin/grafana-agent
-      - run
-      - /etc/agent-config/logs.river
-      - --server.http.listen-addr=0.0.0.0:12345
-      - --cluster.enabled=true
-      - --cluster.join-addresses=grafana-agent-cluster:12345
-      - --disable-reporting=true
-    environment:
-      - AGENT_MODE=flow
-      - AGENT_CONFIG_FOLDER=/etc/agent-config
-    healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:12345/ready || exit 1" ]
-      interval: 5s
-      timeout: 2s
-      retries: 10
-    ports:
-      - "12345:12345"
-    # scale up support
-    deploy:
-      replicas: 1
-    networks:
-      default:
-        aliases:
-          - grafana-agent-cluster
-
   gateway:
     labels:
       metrics.agent.grafana.com/scrape: false
@@ -72,27 +38,3 @@ services:
       interval: 5s
       timeout: 2s
       retries: 10
-
-  loki:
-    labels:
-      - logs.agent.grafana.com/log-format=json
-    depends_on: { minio: { condition: service_healthy } }
-    image: ${LOKI_IMAGE:-docker.io/grafana/loki:2.9.6}
-    volumes:
-      - ../../common/config/loki:/etc/loki
-    command:
-      - -config.file=/etc/loki/monolithic-mode-logs.yaml
-      - -target=all
-      - -config.expand-env=true
-    healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1" ]
-      interval: 5s
-      timeout: 2s
-      retries: 10
-    # expose 33100 port so we can directly access loki inside container
-    ports:
-      - "33100:3100"
-    networks:
-      default:
-        aliases:
-          - loki-memberlist
