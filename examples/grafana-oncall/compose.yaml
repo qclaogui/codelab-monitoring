@@ -49,7 +49,7 @@ services:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
-    image: grafana/oncall
+    image: &oncallImage grafana/oncall:v1.3.117
     restart: always
     ports:
       - "8080"
@@ -68,7 +68,7 @@ services:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
-    image: grafana/oncall
+    image: *oncallImage
     restart: always
     command: sh -c "./celery_with_exporter.sh"
     environment:
@@ -82,7 +82,7 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-    image: grafana/oncall
+    image: *oncallImage
     command: python manage.py migrate --noinput
     environment:
       <<: *oncall-environment

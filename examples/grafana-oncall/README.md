@@ -17,17 +17,93 @@ Developer-friendly incident response with brilliant Slack integration.
 
 ```yaml
 include:
-# use git remote
 - path: https://github.com/qclaogui/codelab-monitoring.git#main:docker-compose/monolithic-mode/logs/compose.yaml
-# use local path
-# - path: ../../docker-compose/monolithic-mode/logs/compose.yaml
+
+x-environment: &oncall-environment
+  SEND_ANONYMOUS_USAGE_STATS: ${SEND_ANONYMOUS_USAGE_STATS:-false}
+  DATABASE_TYPE: sqlite3
+  BROKER_TYPE: redis
+  BASE_URL: http://engine:8080
+  SECRET_KEY: ${SECRET_KEY:-r4KriYc9sL6PJLaGdDRQL3PKqT6bufTx2uhj}
+  FEATURE_PROMETHEUS_EXPORTER_ENABLED: ${FEATURE_PROMETHEUS_EXPORTER_ENABLED:-true}
+  REDIS_URI: redis://redis:6379/0
+  DJANGO_SETTINGS_MODULE: settings.hobby
+  CELERY_WORKER_QUEUE: "default,critical,long,slack,telegram,webhook,retry,celery,grafana"
+  CELERY_WORKER_CONCURRENCY: "1"
+  CELERY_WORKER_MAX_TASKS_PER_CHILD: "100"
+  CELERY_WORKER_SHUTDOWN_INTERVAL: "65m"
+  CELERY_WORKER_BEAT_ENABLED: "True"
+  GRAFANA_API_URL: http://grafana:3000
+  EMAIL_HOST: inbucket
+  EMAIL_PORT: 2500
+  EMAIL_FROM_ADDRESS: oncall@grafana.localhost
+  EMAIL_USE_TLS: false
 
 services:
-  grafana-oncall:
-    image: grafana/oncall
+  engine:
+    labels:
+      metrics.agent.grafana.com/scrape: true
+      metrics.agent.grafana.com/path: "/metrics/"
+    depends_on:
+      oncall_db_migration:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    image: &oncallImage grafana/oncall:v1.3.117
+    restart: always
+    ports:
+      - "8080"
+    command: sh -c "uwsgi --ini uwsgi.ini"
+    environment:
+      <<: *oncall-environment
+    volumes:
+      - oncall_data:/var/lib/oncall
 
-    ...
+  celery:
+    labels:
+      metrics.agent.grafana.com/scrape: false
+    depends_on:
+      oncall_db_migration:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    image: *oncallImage
+    restart: always
+    command: sh -c "./celery_with_exporter.sh"
+    environment:
+      <<: *oncall-environment
+    volumes:
+      - oncall_data:/var/lib/oncall
 
+  oncall_db_migration:
+    labels:
+      metrics.agent.grafana.com/scrape: false
+    depends_on:
+      redis:
+        condition: service_healthy
+    image: *oncallImage
+    command: python manage.py migrate --noinput
+    environment:
+      <<: *oncall-environment
+    volumes:
+      - oncall_data:/var/lib/oncall
+
+  redis:
+    labels:
+      metrics.agent.grafana.com/scrape: false
+    image: redis:7.0.5
+    restart: always
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      timeout: 5s
+      interval: 5s
+      retries: 10
+
+volumes:
+  oncall_data:
+  redis_data:
 ```
 
 `compose.override.yaml`:
