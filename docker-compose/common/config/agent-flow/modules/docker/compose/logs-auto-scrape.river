@@ -1,0 +1,178 @@
+/*
+Module(logs_auto_scrape): Docker Containers Logs Auto-Scraping
+Description: Scrapes targets for logs based on Docker Containers labels
+
+Note: Every argument except for "forward_to" is optional, and does have a defined default value.  However, the values for these
+      arguments are not defined using the default = " ... " argument syntax, but rather using the coalesce(argument.value, " ... ").
+      This is because if the argument passed in from another consuming module is set to null, the default = " ... " syntax will
+      does not override the value passed in, where coalesce() will return the first non-null value.
+
+
+Following labels are available:
+
+  logs.agent.grafana.com/scrape: true
+
+allow containers to declare what tenant their logs should be written to, 
+the following label is supported:
+
+  logs.agent.grafana.com/tenant: "primary"
+*/
+
+declare "logs_auto_scrape" {
+
+	/********************************************
+	* ARGUMENTS
+	********************************************/
+	argument "forward_to" {
+		comment = "Must be a list(LogsReceiver) where collected logs should be forwarded to"
+	}
+
+	argument "targets" {
+		comment = "The running containers."
+	}
+
+	argument "cluster" {
+		optional = true
+	}
+
+	argument "namespace" {
+		optional = true
+	}
+
+	argument "tenant" {
+		comment  = "The tenant to write metrics to.  This does not have to be the tenantId, this is the value to look for in the logs.agent.grafana.com/tenant label, and this can be a regex. (default: (.*))"
+		optional = true
+	}
+
+	// get logs from discovery relabel dr_docker_logs below
+	loki.source.docker "lsd_docker_logs" {
+		forward_to = argument.forward_to.value
+
+		host             = "unix:///var/run/docker.sock"
+		targets          = discovery.relabel.dr_docker_logs.output
+		relabel_rules    = discovery.relabel.dr_docker_logs.rules
+		refresh_interval = "15s"
+	}
+
+	discovery.relabel "dr_docker_logs" {
+		targets = argument.targets.value
+
+		/****************************************************************************************************************
+		* Handle Discovers From Docker Engine Containers Targets to Keep or Drop
+		* https://grafana.com/docs/agent/latest/flow/reference/components/discovery.docker/#exported-fields
+		****************************************************************************************************************/
+		// allow resources to declare their metrics scraped or not
+		// Example Annotation:
+		//   logs.agent.grafana.com/scrape: false
+		rule {
+			action        = "replace"
+			source_labels = [
+				"__meta_docker_container_label_logs_agent_grafana_com_scrape",
+			]
+			separator    = ";"
+			regex        = "^(?:;*)?(true|false).*$"
+			replacement  = "$1"
+			target_label = "__tmp_scrape"
+		}
+
+		// drop any targets that have scrape: false
+		rule {
+			action        = "drop"
+			source_labels = ["__tmp_scrape"]
+			regex         = "false"
+		}
+
+		// allow resources to declare their metrics the tenant their metrics should be sent to,
+		// Example Annotation:
+		//   logs.agent.grafana.com/tenant: primary
+		rule {
+			action        = "keep"
+			source_labels = [
+				"__meta_docker_container_label_logs_agent_grafana_com_tenant",
+			]
+			regex = "^(" + coalesce(argument.tenant.value, ".*") + ")$"
+		}
+
+		// make all labels on the pod available to the pipeline as labels(for loki process),
+		// they are omitted before write via labelallow unless explicitly set
+		rule {
+			action = "labelmap"
+			regex  = "__meta_docker_container_label_(.+)"
+		}
+
+		/********************************************
+		* Handle Setting Common Labels
+		********************************************/
+
+		// set the cluster label
+		rule {
+			action       = "replace"
+			replacement  = coalesce(argument.cluster.value, "docker-compose")
+			target_label = "cluster"
+		}
+
+		// set the namespace label
+		rule {
+			action       = "replace"
+			replacement  = coalesce(argument.namespace.value, "monitoring-system")
+			target_label = "namespace"
+		}
+
+		// set a default job label to be the namespace/service_name
+		rule {
+			action        = "replace"
+			source_labels = [
+				"__meta_docker_container_label_com_docker_compose_service",
+			]
+			regex        = "^(?:;*)?([^;]+).*$"
+			replacement  = coalesce(argument.namespace.value, "monitoring-system") + "/$1"
+			target_label = "job"
+		}
+
+		rule {
+			action        = "replace"
+			source_labels = [
+				"__meta_docker_container_label_com_docker_compose_service",
+			]
+			regex        = "^(?:;*)?([^;]+).*$"
+			replacement  = "$1"
+			target_label = "pod"
+		}
+
+		rule {
+			action        = "replace"
+			source_labels = [
+				"__meta_docker_container_label_com_docker_compose_service",
+			]
+			regex        = "^(?:;*)?([^;]+).*$"
+			replacement  = "$1"
+			target_label = "container"
+		}
+
+		rule {
+			source_labels = ["__meta_docker_container_name"]
+			regex         = "/(.*)"
+			target_label  = "container_name"
+		}
+
+		rule {
+			action        = "replace"
+			source_labels = [
+				"__meta_docker_container_label_com_docker_compose_service",
+			]
+			regex        = "^(?:;*)?([^;]+).*$"
+			replacement  = "$1"
+			target_label = "app"
+		}
+
+		rule {
+			action        = "replace"
+			source_labels = [
+				"__meta_docker_container_label_app",
+			]
+			regex        = "^(?:;*)?([^;]+).*$"
+			replacement  = "$1"
+			target_label = "app"
+		}
+	}
+}

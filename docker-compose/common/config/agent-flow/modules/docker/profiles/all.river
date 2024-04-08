@@ -11,11 +11,11 @@ argument "tenant" {
 	optional = true
 }
 
-module.file "mf_profiles_auto_scrape" {
-	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/docker/profiles/profiles-auto-scrape.river"
+import.file "docker_compose" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/docker/compose/profiles-auto-scrape.river"
+}
 
-	arguments {
-		forward_to = argument.forward_to.value
-		tenant     = coalesce(argument.tenant.value, ".*")
-	}
+docker_compose.profiles_auto_scrape "default" {
+	forward_to = argument.forward_to.value
+	tenant     = coalesce(argument.tenant.value, ".*")
 }
