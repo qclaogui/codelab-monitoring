@@ -22,15 +22,15 @@ discovery.docker "dd_metrics" {
 	}
 }
 
-module.file "mf_label_auto_scrape" {
-	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/docker/metrics/label-auto-scrape.river"
+import.file "docker_compose" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/docker/compose/metrics-auto-scrape.river"
+}
 
-	arguments {
-		targets         = discovery.docker.dd_metrics.targets
-		forward_to      = argument.forward_to.value
-		tenant          = coalesce(argument.tenant.value, ".*")
-		scrape_interval = "15s"
-	}
+docker_compose.metrics_auto_scrape "default" {
+	targets         = discovery.docker.dd_metrics.targets
+	forward_to      = argument.forward_to.value
+	tenant          = coalesce(argument.tenant.value, ".*")
+	scrape_interval = "15s"
 }
 
 module.file "mf_job_minio_scrape" {

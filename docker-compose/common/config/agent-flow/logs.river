@@ -8,12 +8,13 @@ logging {
 /********************************************
  * Grafana LGTMP Stack Receiver Provider
  ********************************************/
-module.file "lgtmp_provider_local" {
-	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/local.river"
+import.file "provider" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/provider.river"
+}
 
-	arguments {
-		logs_endpoint = "http://gateway:3100"
-	}
+provider.lgtmp_stack "docker_compose" {
+	logs_endpoint    = "http://gateway:3100"
+	metrics_endpoint = "http://gateway:8080"
 }
 
 /********************************************
@@ -23,7 +24,7 @@ module.file "logs_primary" {
 	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker/logs/all.river"
 
 	arguments {
-		forward_to = [module.file.lgtmp_provider_local.exports.logs_receiver]
+		forward_to = [provider.lgtmp_stack.docker_compose.logs_receiver]
 	}
 }
 
@@ -34,6 +35,6 @@ module.file "metrics_primary" {
 	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/docker/metrics/all.river"
 
 	arguments {
-		forward_to = [module.file.lgtmp_provider_local.exports.metrics_receiver]
+		forward_to = [provider.lgtmp_stack.docker_compose.metrics_receiver]
 	}
 }

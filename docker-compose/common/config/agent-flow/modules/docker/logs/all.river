@@ -47,14 +47,14 @@ discovery.docker "dd_logs" {
 	}
 }
 
-module.file "mf_logs_auto_scrape" {
-	filename = env("AGENT_CONFIG_FOLDER") + "/modules/docker/logs/logs-auto-scrape.river"
+import.file "docker_compose" {
+	filename = coalesce(env("AGENT_CONFIG_FOLDER"), "/etc/agent-config") + "/modules/docker/compose/logs-auto-scrape.river"
+}
 
-	arguments {
-		targets    = discovery.docker.dd_logs.targets
-		forward_to = [module.file.mf_log_formats_all.exports.process.receiver]
-		tenant     = argument.tenant.value
-	}
+docker_compose.logs_auto_scrape "default" {
+	targets    = discovery.docker.dd_logs.targets
+	forward_to = [module.file.mf_log_formats_all.exports.process.receiver]
+	tenant     = coalesce(argument.tenant.value, ".*")
 }
 
 module.file "mf_log_formats_all" {
