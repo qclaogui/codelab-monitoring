@@ -1,0 +1,146 @@
+deploymentMode: Distributed
+
+loki:
+  readinessProbe:
+    initialDelaySeconds: 10
+
+  useTestSchema: true
+  configStorageType: ConfigMap
+  configObjectName: loki-config
+  generatedConfigObjectName: ''
+
+  auth_enabled: false
+
+test:
+  enabled: false
+
+lokiCanary:
+  enabled: false
+
+gateway:
+  enabled: false
+  verboseLogging: false
+
+chunksCache:
+  enabled: false
+resultsCache:
+  enabled: false
+
+write:
+  replicas: 0
+read:
+  replicas: 0
+backend:
+  replicas: 0
+
+######################################################################################################################
+#
+# Microservices Mode
+#
+# For large Loki deployments ingesting more than 1 TB/day
+#
+######################################################################################################################
+ingester:
+  replicas: 3
+  extraArgs:
+  - -config.expand-env=true
+  extraEnvFrom:
+  - secretRef:
+      name: loki-env
+  zoneAwareReplication:
+    enabled: false
+
+distributor:
+  replicas: 2
+  maxUnavailable: 1
+  extraArgs:
+  - -config.expand-env=true
+  extraEnvFrom:
+  - secretRef:
+      name: loki-env
+
+querier:
+  replicas: 2
+  maxUnavailable: 1
+  extraArgs:
+  - -config.expand-env=true
+  extraEnvFrom:
+  - secretRef:
+      name: loki-env
+
+queryFrontend:
+  replicas: 1
+  maxUnavailable: 1
+  extraArgs:
+  - -config.expand-env=true
+  extraEnvFrom:
+  - secretRef:
+      name: loki-env
+
+queryScheduler:
+  replicas: 1
+  extraArgs:
+  - -config.expand-env=true
+  extraEnvFrom:
+  - secretRef:
+      name: loki-env
+
+# https://grafana.com/docs/loki/latest/operations/storage/boltdb-shipper/#index-gateway
+indexGateway:
+  replicas: 1
+  maxUnavailable: 1
+  extraArgs:
+  - -config.expand-env=true
+  extraEnvFrom:
+  - secretRef:
+      name: loki-env
+  persistence:
+    enabled: false
+
+compactor:
+  replicas: 1
+  extraArgs:
+  - -config.expand-env=true
+  extraEnvFrom:
+  - secretRef:
+      name: loki-env
+
+bloomGateway:
+  replicas: 1
+  extraArgs:
+  - -config.expand-env=true
+  extraEnvFrom:
+  - secretRef:
+      name: loki-env
+  extraVolumeMounts:
+  - mountPath: /data
+    name: temp
+
+bloomCompactor:
+  replicas: 1
+  extraArgs:
+  - -config.expand-env=true
+  extraEnvFrom:
+  - secretRef:
+      name: loki-env
+  extraVolumeMounts:
+  - mountPath: /data
+    name: temp
+
+patternIngester:
+  replicas: 1
+  extraArgs:
+  - -config.expand-env=true
+  extraEnvFrom:
+  - secretRef:
+      name: loki-env
+
+ruler:
+  enabled: true
+  replicas: 1
+  maxUnavailable: 1
+  extraArgs:
+  - -config.expand-env=true
+  extraEnvFrom:
+  - secretRef:
+      name: loki-env

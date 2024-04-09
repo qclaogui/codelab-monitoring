@@ -3,48 +3,41 @@ kind: Kustomization
 
 namespace: logging-system
 
-helmCharts:
-- name: loki
-  version: 5.47.1
-  repo: https://grafana.github.io/helm-charts
-  releaseName: loki
-  namespace: logging-system
-  includeCRDs: false
-  additionalValuesFiles:
-  - values-k3d-k3s.yaml
+labels:
+- includeSelectors: true
+  pairs:
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
+    app.kubernetes.io/name: loki
+- includeSelectors: false
+  pairs:
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/version: 3.0.0
 
 images:
 - name: docker.io/grafana/loki
-  newTag: 2.9.5
+  newTag: 3.0.0
 
 resources:
-- servicemonitor.yaml
 - namespace.yaml
+- rbac.yaml
+- loki-headless.yaml
+- loki-memberlist-svc.yaml
+- loki-servicemonitor.yaml
+- loki-sts.yaml
+- loki-svc.yaml
 
 secretGenerator:
 - name: loki-env
   literals:
   - LOKI_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
 
-# # Use kustomize build --enable-helm configMapGenerator not work well:
-# # https://github.com/kubernetes-sigs/kustomize/issues/4799#issuecomment-1260408886
-# configMapGenerator:
-# - name: loki-config
-#   namespace: logging-system
-#   behavior: replace
-#   files:
-#   - config.yaml=configs/loki.yaml
-
-# Solution:
-#   Move the configMapGenerator, as a plugin, under generators because kustomize runs plugins after built-in fields
-generators:
-# - configmap-generator.yaml
-- |-
-  apiVersion: builtin
-  kind: ConfigMapGenerator
-  metadata:
-    name: loki-config
-    namespace: logging-system
-  behavior: replace
+configMapGenerator:
+- name: loki-config
+  namespace: logging-system
   files:
   - config.yaml=configs/loki.yaml
+- name: loki-runtime
+  namespace: logging-system
+  files:
+  - runtime-config.yaml=configs/loki-runtime.yaml

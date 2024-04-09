@@ -269,6 +269,7 @@ deploy-grafana: deploy-prometheus-operator-crds deploy-minio deploy-gateway
 	$(info ******************** deploy grafana manifests ********************)
 	@kubectl apply -f kubernetes/common/grafana/manifests/k8s-all-in-one.yaml
 delete-grafana:
+	@kubectl delete --ignore-not-found -f monitoring-mixins/k8s-all-in-one.yaml
 	@kubectl delete --ignore-not-found -f kubernetes/common/grafana/manifests/k8s-all-in-one.yaml
 
 define echo_info
