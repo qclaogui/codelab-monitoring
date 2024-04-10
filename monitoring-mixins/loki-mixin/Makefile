@@ -15,7 +15,7 @@ fmt: ## Format the mixin files
 
 .PHONY: update
 update: $(JB) ## update mixin 
-	$(JB) update
+	$(JB) update github.com/grafana/loki/production/loki-mixin@v3.0.0
 
 define build_mixin_func
 	$(eval $@_MIXIN_OUTPUT = $(1))

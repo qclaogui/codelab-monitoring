@@ -9,17 +9,11 @@ kind: Kustomization
 
 resources:
 - ../../common/grafana-agent
-- loki-distributed
+- loki
 
 # optional
 - ../../monolithic-mode/metrics/mimir
 
-
-secretGenerator:
-- name: loki-distributed-env
-  namespace: logging-system
-  literals:
-  - LOKI_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
 
 configMapGenerator:
 - name: agent-config
@@ -27,12 +21,6 @@ configMapGenerator:
   behavior: replace
   files:
   - configs/config.river
-
-- name: loki-distributed
-  namespace: logging-system
-  behavior: replace
-  files:
-  - config.yaml=configs/loki-distributed.yaml
 
 # Update Loki Microservices Mode endpoint in gateway
 - name: nginx-env

@@ -7,7 +7,7 @@ helmCharts:
 - name: loki
   version: 6.0.0
   repo: https://grafana.github.io/helm-charts
-  releaseName: loki
+  releaseName: loki-distributed
   namespace: logging-system
   includeCRDs: false
 #  valuesMerge: override # merge, override, (default), or replace
@@ -19,6 +19,7 @@ resources:
 
 secretGenerator:
 - name: loki-env
+  namespace: logging-system
   literals:
   - LOKI_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
 
@@ -39,3 +40,20 @@ generators:
   behavior: replace
   files:
   - runtime-config.yaml=configs/loki-runtime.yaml
+
+patches:
+- patch: |-
+    apiVersion: apps/v1
+    kind: StatefulSet
+    metadata:
+      name: loki-distributed-ingester
+      namespace: logging-system
+    spec:
+      template:
+        spec:
+          containers:
+            - name: ingester
+              args:
+                - -config.file=/etc/loki/config/config.yaml
+                - -target=ingester
+                - -config.expand-env=true

@@ -1,6 +1,12 @@
 apiVersion: v1
 kind: Namespace
 metadata:
+  labels:
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 3.0.0
   name: logging-system
 ---
 apiVersion: v1
@@ -18,11 +24,11 @@ automountServiceAccountToken: true
 kind: ServiceAccount
 metadata:
   labels:
-    app.kubernetes.io/instance: loki
-    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 2.9.6
-    helm.sh/chart: loki-5.47.1
+    app.kubernetes.io/version: 3.0.0
   name: loki
   namespace: logging-system
 ---
@@ -207,11 +213,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    app.kubernetes.io/instance: loki
-    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 2.9.6
-    helm.sh/chart: loki-5.47.1
+    app.kubernetes.io/version: 3.0.0
   name: loki-clusterrole
 rules:
 - apiGroups:
@@ -267,11 +273,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    app.kubernetes.io/instance: loki
-    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 2.9.6
-    helm.sh/chart: loki-5.47.1
+    app.kubernetes.io/version: 3.0.0
   name: loki-clusterrolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -497,7 +503,6 @@ data:
 
     compactor:
       working_directory: /tmp/compactor
-      shared_store: s3
 
     memberlist:
       join_members:
@@ -536,7 +541,7 @@ data:
 
     schema_config:
       configs:
-      - from: "2023-08-01"
+      - from: "2024-04-08"
         index:
           period: 24h
           prefix: loki_index_
@@ -551,27 +556,36 @@ data:
 kind: ConfigMap
 metadata:
   labels:
-    app.kubernetes.io/instance: loki
-    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 2.9.6
-    helm.sh/chart: loki-5.47.1
-  name: loki-config
+    app.kubernetes.io/version: 3.0.0
+  name: loki-config-2b254fckgt
   namespace: logging-system
 ---
 apiVersion: v1
 data:
   runtime-config.yaml: |
-    {}
+    # This file can be used to set overrides or other runtime config.
+    overrides:
+      "fake": # limits for anonymous that the whole cluster enforces
+        ingestion_rate_mb: 1500000
+        max_streams_per_user: 100000
+        max_chunks_per_query: 100000
+      "anonymous": # limits for anonymous that the whole cluster enforces
+        ingestion_rate_mb: 1500000
+        max_streams_per_user: 100000
+        max_chunks_per_query: 100000
 kind: ConfigMap
 metadata:
   labels:
-    app.kubernetes.io/instance: loki
-    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 2.9.6
-    helm.sh/chart: loki-5.47.1
-  name: loki-runtime
+    app.kubernetes.io/version: 3.0.0
+  name: loki-runtime-9599m5k6h2
   namespace: logging-system
 ---
 apiVersion: v1
@@ -1420,6 +1434,12 @@ data:
   LOKI_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:
+  labels:
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 3.0.0
   name: loki-env-58m52b99kc
   namespace: logging-system
 type: Opaque
@@ -1496,40 +1516,35 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app.kubernetes.io/instance: loki
-    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 2.9.6
-    helm.sh/chart: loki-5.47.1
+    app.kubernetes.io/version: 3.0.0
   name: loki
   namespace: logging-system
 spec:
   ports:
   - name: http-metrics
     port: 3100
-    protocol: TCP
-    targetPort: http-metrics
-  - name: grpc
+  - appProtocol: grpc
+    name: grpc
     port: 9095
-    protocol: TCP
-    targetPort: grpc
   selector:
-    app.kubernetes.io/component: single-binary
-    app.kubernetes.io/instance: loki
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/name: loki
-  type: ClusterIP
 ---
 apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app.kubernetes.io/instance: loki
-    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 2.9.6
-    helm.sh/chart: loki-5.47.1
+    app.kubernetes.io/version: 3.0.0
     prometheus.io/service-monitor: "false"
-    variant: headless
   name: loki-headless
   namespace: logging-system
 spec:
@@ -1537,35 +1552,34 @@ spec:
   ports:
   - name: http-metrics
     port: 3100
-    protocol: TCP
-    targetPort: http-metrics
   selector:
-    app.kubernetes.io/instance: loki
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/name: loki
 ---
 apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app.kubernetes.io/instance: loki
-    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 2.9.6
-    helm.sh/chart: loki-5.47.1
+    app.kubernetes.io/version: 3.0.0
+    prometheus.io/service-monitor: "false"
   name: loki-memberlist
   namespace: logging-system
 spec:
   clusterIP: None
   ports:
-  - name: tcp
+  - name: tcp-gossip-ring
     port: 7946
-    protocol: TCP
-    targetPort: http-memberlist
+  publishNotReadyAddresses: true
   selector:
-    app.kubernetes.io/instance: loki
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/name: loki
     app.kubernetes.io/part-of: memberlist
-  type: ClusterIP
 ---
 apiVersion: v1
 kind: Service
@@ -1922,13 +1936,12 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   labels:
-    app.kubernetes.io/component: single-binary
-    app.kubernetes.io/instance: loki
-    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 2.9.6
-    helm.sh/chart: loki-5.47.1
+    app.kubernetes.io/version: 3.0.0
   name: loki
   namespace: logging-system
 spec:
@@ -1937,17 +1950,16 @@ spec:
     whenScaled: Delete
   podManagementPolicy: Parallel
   replicas: 1
-  revisionHistoryLimit: 10
   selector:
     matchLabels:
-      app.kubernetes.io/component: single-binary
-      app.kubernetes.io/instance: loki
+      app.kubernetes.io/component: loki
+      app.kubernetes.io/instance: loki-monolithic-mode
       app.kubernetes.io/name: loki
+      app.kubernetes.io/part-of: memberlist
   serviceName: loki-headless
   template:
     metadata:
       annotations:
-        checksum/config: 6f399fbc5d22cc768618e99d92fdadf0e375afc39ba5ffde3e06a65a960b01cf
         logs.agent.grafana.com/scrub-level: info
         profiles.grafana.com/cpu.port_name: http-metrics
         profiles.grafana.com/cpu.scrape: "false"
@@ -1957,20 +1969,11 @@ spec:
         profiles.grafana.com/memory.scrape: "false"
         pyroscope.io/service_name: loki
       labels:
-        app.kubernetes.io/component: single-binary
-        app.kubernetes.io/instance: loki
+        app.kubernetes.io/component: loki
+        app.kubernetes.io/instance: loki-monolithic-mode
         app.kubernetes.io/name: loki
         app.kubernetes.io/part-of: memberlist
     spec:
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchLabels:
-                app.kubernetes.io/component: single-binary
-                app.kubernetes.io/instance: loki
-                app.kubernetes.io/name: loki
-            topologyKey: kubernetes.io/hostname
       automountServiceAccountToken: true
       containers:
       - args:
@@ -1980,7 +1983,7 @@ spec:
         envFrom:
         - secretRef:
             name: loki-env-58m52b99kc
-        image: docker.io/grafana/loki:2.9.5
+        image: docker.io/grafana/loki:3.0.0
         imagePullPolicy: IfNotPresent
         name: loki
         ports:
@@ -1997,8 +2000,6 @@ spec:
           httpGet:
             path: /ready
             port: http-metrics
-          initialDelaySeconds: 30
-          timeoutSeconds: 1
         resources: {}
         securityContext:
           allowPrivilegeEscalation: false
@@ -2030,10 +2031,10 @@ spec:
           items:
           - key: config.yaml
             path: config.yaml
-          name: loki-config
+          name: loki-config-2b254fckgt
         name: config
       - configMap:
-          name: loki-runtime
+          name: loki-runtime-9599m5k6h2
         name: runtime-config
   updateStrategy:
     rollingUpdate:
@@ -2042,6 +2043,10 @@ spec:
   - apiVersion: v1
     kind: PersistentVolumeClaim
     metadata:
+      labels:
+        app.kubernetes.io/component: loki
+        app.kubernetes.io/instance: loki-monolithic-mode
+        app.kubernetes.io/name: loki
       name: storage
     spec:
       accessModes:
@@ -2378,6 +2383,12 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
+  labels:
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 3.0.0
   name: loki
   namespace: logging-system
 spec:
