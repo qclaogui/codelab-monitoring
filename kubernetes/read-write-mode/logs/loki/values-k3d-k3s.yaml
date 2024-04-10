@@ -1,3 +1,5 @@
+deploymentMode: SimpleScalable
+
 loki:
   readinessProbe:
     initialDelaySeconds: 10
@@ -6,10 +8,6 @@ loki:
   configStorageType: ConfigMap
   configObjectName: loki-config
   generatedConfigObjectName: ''
-
-  auth_enabled: false
-  commonConfig:
-    replication_factor: 1
 
 test:
   enabled: false
@@ -26,6 +24,14 @@ chunksCache:
 resultsCache:
   enabled: false
 
+######################################################################################################################
+#
+# Simple Scalable Deployment (SSD) Mode
+#
+# For small to medium size Loki deployments up to around 1 TB/day, this is the default mode for this helm chart
+#
+######################################################################################################################
+
 write:
   replicas: 3
   extraArgs:
@@ -37,7 +43,7 @@ write:
     volumeClaimsEnabled: false
 
 read:
-  replicas: 3
+  replicas: 2
   extraArgs:
   - -config.expand-env=true
   extraEnvFrom:

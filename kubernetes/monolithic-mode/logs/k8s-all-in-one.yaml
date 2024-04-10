@@ -225,13 +225,13 @@ data:
 
     # https://grafana.com/docs/loki/latest/configure/#use-environment-variables-in-the-configuration
     common:
-      compactor_address: 'loki'
+      compactor_address: http://loki.logging-system.svc.cluster.local:3100
       path_prefix: /var/loki
       replication_factor: 1
       storage:
         s3:
           bucketnames: loki-data
-          endpoint: ${LOKI_S3_ENDPOINT:-minio.minio-system.svc:443}
+          endpoint: ${LOKI_S3_ENDPOINT:-minio.minio-system.svc.cluster.local:443}
           access_key_id: ${LOKI_S3_ACCESS_KEY_ID:-lgtmp}
           secret_access_key: ${LOKI_S3_SECRET_ACCESS_KEY:-supersecret}
           insecure: ${LOKI_S3_INSECURE:-false}
@@ -244,7 +244,7 @@ data:
 
     memberlist:
       join_members:
-      - loki-memberlist:7946
+      - loki-memberlist.logging-system.svc.cluster.local:7946
 
     # https://github.com/grafana/loki/blob/main/docs/sources/configure/_index.md#query_range
     query_range:
@@ -254,13 +254,13 @@ data:
       results_cache:
         cache:
           memcached_client:
-            addresses: "dns+memcached.memcached-system.svc:11211"
+            addresses: "dns+memcached.memcached-system.svc.cluster.local:11211"
 
       cache_index_stats_results: true
       index_stats_results_cache:
         cache:
           memcached_client:
-            addresses: "dns+memcached.memcached-system.svc:11211"
+            addresses: "dns+memcached.memcached-system.svc.cluster.local:11211"
 
     limits_config:
       max_cache_freshness_per_query: 10m
@@ -290,7 +290,7 @@ data:
     chunk_store_config:
       chunk_cache_config:
         memcached_client:
-          addresses: "dns+memcached.memcached-system.svc:11211"
+          addresses: "dns+memcached.memcached-system.svc.cluster.local:11211"
 kind: ConfigMap
 metadata:
   labels:
@@ -299,7 +299,7 @@ metadata:
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-  name: loki-config-2b254fckgt
+  name: loki-config-mm68htf5g6
   namespace: logging-system
 ---
 apiVersion: v1
@@ -1418,7 +1418,7 @@ spec:
           items:
           - key: config.yaml
             path: config.yaml
-          name: loki-config-2b254fckgt
+          name: loki-config-mm68htf5g6
         name: config
       - configMap:
           name: loki-runtime-9599m5k6h2

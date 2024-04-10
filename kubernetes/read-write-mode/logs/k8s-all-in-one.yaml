@@ -12,7 +12,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.0.0
+    helm.sh/chart: loki-6.1.0
   name: loki
   namespace: logging-system
 ---
@@ -150,7 +150,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.0.0
+    helm.sh/chart: loki-6.1.0
   name: loki-clusterrole
 rules:
 - apiGroups:
@@ -190,7 +190,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.0.0
+    helm.sh/chart: loki-6.1.0
   name: loki-clusterrolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -233,13 +233,13 @@ data:
 
     # https://grafana.com/docs/loki/latest/configure/#use-environment-variables-in-the-configuration
     common:
-      compactor_address: 'http://loki-backend:3100'
+      compactor_address: http://loki-backend.logging-system.svc.cluster.local:3100
       path_prefix: /var/loki
       replication_factor: 1
       storage:
         s3:
           bucketnames: loki-data
-          endpoint: ${LOKI_S3_ENDPOINT:-minio.minio-system.svc:443}
+          endpoint: ${LOKI_S3_ENDPOINT:-minio.minio-system.svc.cluster.local:443}
           access_key_id: ${LOKI_S3_ACCESS_KEY_ID:-lgtmp}
           secret_access_key: ${LOKI_S3_SECRET_ACCESS_KEY:-supersecret}
           insecure: ${LOKI_S3_INSECURE:-false}
@@ -248,10 +248,10 @@ data:
             insecure_skip_verify: true
 
     frontend:
-      scheduler_address: query-scheduler-discovery.logging-system.svc.cluster.local.:9095
+      scheduler_address: query-scheduler-discovery.logging-system.svc.cluster.local:9095
       tail_proxy_url: http://loki-querier.logging-system.svc.cluster.local:3100
     frontend_worker:
-      scheduler_address: query-scheduler-discovery.logging-system.svc.cluster.local.:9095
+      scheduler_address: query-scheduler-discovery.logging-system.svc.cluster.local:9095
 
     index_gateway:
       mode: simple
@@ -261,7 +261,7 @@ data:
 
     memberlist:
       join_members:
-      - loki-memberlist:7946
+      - loki-memberlist.logging-system.svc.cluster.local:7946
 
     query_range:
       align_queries_with_step: true
@@ -270,13 +270,13 @@ data:
       results_cache:
         cache:
           memcached_client:
-            addresses: "dns+memcached.memcached-system.svc:11211"
+            addresses: "dns+memcached.memcached-system.svc.cluster.local:11211"
 
       cache_index_stats_results: true
       index_stats_results_cache:
         cache:
           memcached_client:
-            addresses: "dns+memcached.memcached-system.svc:11211"
+            addresses: "dns+memcached.memcached-system.svc.cluster.local:11211"
 
     limits_config:
       max_cache_freshness_per_query: 10m
@@ -314,10 +314,10 @@ data:
     chunk_store_config:
       chunk_cache_config:
         memcached_client:
-          addresses: "dns+memcached.memcached-system.svc:11211"
+          addresses: "dns+memcached.memcached-system.svc.cluster.local:11211"
 kind: ConfigMap
 metadata:
-  name: loki-config-b7kc78d59h
+  name: loki-config-dc8b8mh58b
   namespace: logging-system
 ---
 apiVersion: v1
@@ -340,7 +340,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.0.0
+    helm.sh/chart: loki-6.1.0
   name: loki-runtime
   namespace: logging-system
 ---
@@ -1058,7 +1058,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.0.0
+    helm.sh/chart: loki-6.1.0
   name: loki-backend
   namespace: logging-system
 spec:
@@ -1113,7 +1113,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.0.0
+    helm.sh/chart: loki-6.1.0
   name: loki-memberlist
   namespace: logging-system
 spec:
@@ -1138,7 +1138,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.0.0
+    helm.sh/chart: loki-6.1.0
   name: loki-read
   namespace: logging-system
 spec:
@@ -1195,7 +1195,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.0.0
+    helm.sh/chart: loki-6.1.0
   name: loki-write
   namespace: logging-system
 spec:
@@ -1408,11 +1408,11 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.0.0
+    helm.sh/chart: loki-6.1.0
   name: loki-read
   namespace: logging-system
 spec:
-  replicas: 3
+  replicas: 2
   revisionHistoryLimit: 10
   selector:
     matchLabels:
@@ -1502,7 +1502,7 @@ spec:
           items:
           - key: config.yaml
             path: config.yaml
-          name: loki-config-b7kc78d59h
+          name: loki-config-dc8b8mh58b
         name: config
       - configMap:
           name: loki-runtime
@@ -1604,7 +1604,7 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.0.0
+    helm.sh/chart: loki-6.1.0
   name: loki-backend
   namespace: logging-system
 spec:
@@ -1718,7 +1718,7 @@ spec:
           items:
           - key: config.yaml
             path: config.yaml
-          name: loki-config-b7kc78d59h
+          name: loki-config-dc8b8mh58b
         name: config
       - configMap:
           name: loki-runtime
@@ -1739,7 +1739,7 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.0.0
+    helm.sh/chart: loki-6.1.0
   name: loki-write
   namespace: logging-system
 spec:
@@ -1826,7 +1826,7 @@ spec:
           items:
           - key: config.yaml
             path: config.yaml
-          name: loki-config-b7kc78d59h
+          name: loki-config-dc8b8mh58b
         name: config
       - configMap:
           name: loki-runtime
@@ -1844,7 +1844,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.0.0
+    helm.sh/chart: loki-6.1.0
   name: loki-backend
   namespace: logging-system
 spec:
@@ -1864,7 +1864,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.0.0
+    helm.sh/chart: loki-6.1.0
   name: loki-read
   namespace: logging-system
 spec:
@@ -1884,7 +1884,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.0.0
+    helm.sh/chart: loki-6.1.0
   name: loki-write
   namespace: logging-system
 spec:

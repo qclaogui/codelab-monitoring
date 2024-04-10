@@ -13,13 +13,13 @@ server:
 
 # https://grafana.com/docs/loki/latest/configure/#use-environment-variables-in-the-configuration
 common:
-  compactor_address: 'http://loki-backend:3100'
+  compactor_address: http://loki-backend.logging-system.svc.cluster.local:3100
   path_prefix: /var/loki
   replication_factor: 1
   storage:
     s3:
       bucketnames: loki-data
-      endpoint: ${LOKI_S3_ENDPOINT:-minio.minio-system.svc:443}
+      endpoint: ${LOKI_S3_ENDPOINT:-minio.minio-system.svc.cluster.local:443}
       access_key_id: ${LOKI_S3_ACCESS_KEY_ID:-lgtmp}
       secret_access_key: ${LOKI_S3_SECRET_ACCESS_KEY:-supersecret}
       insecure: ${LOKI_S3_INSECURE:-false}
@@ -28,10 +28,10 @@ common:
         insecure_skip_verify: true
 
 frontend:
-  scheduler_address: query-scheduler-discovery.logging-system.svc.cluster.local.:9095
+  scheduler_address: query-scheduler-discovery.logging-system.svc.cluster.local:9095
   tail_proxy_url: http://loki-querier.logging-system.svc.cluster.local:3100
 frontend_worker:
-  scheduler_address: query-scheduler-discovery.logging-system.svc.cluster.local.:9095
+  scheduler_address: query-scheduler-discovery.logging-system.svc.cluster.local:9095
 
 index_gateway:
   mode: simple
@@ -41,7 +41,7 @@ compactor:
 
 memberlist:
   join_members:
-  - loki-memberlist:7946
+  - loki-memberlist.logging-system.svc.cluster.local:7946
 
 query_range:
   align_queries_with_step: true
@@ -50,13 +50,13 @@ query_range:
   results_cache:
     cache:
       memcached_client:
-        addresses: "dns+memcached.memcached-system.svc:11211"
+        addresses: "dns+memcached.memcached-system.svc.cluster.local:11211"
 
   cache_index_stats_results: true
   index_stats_results_cache:
     cache:
       memcached_client:
-        addresses: "dns+memcached.memcached-system.svc:11211"
+        addresses: "dns+memcached.memcached-system.svc.cluster.local:11211"
 
 limits_config:
   max_cache_freshness_per_query: 10m
@@ -94,4 +94,4 @@ storage_config:
 chunk_store_config:
   chunk_cache_config:
     memcached_client:
-      addresses: "dns+memcached.memcached-system.svc:11211"
+      addresses: "dns+memcached.memcached-system.svc.cluster.local:11211"
