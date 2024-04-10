@@ -1,0 +1,111 @@
+/*
+Module: Grafana Cloud Receiver Provider
+Description: Grafana LGTMP Stack Receiver Provider
+*/
+
+declare "grafana_cloud" {
+	/*
+	To create a token:
+		1. Navigate to the Grafana Cloud Portal: https://grafana.com/profile/org
+		2. Go to either the Access Policies or API Keys page, located in the Security section
+		3. Create an Access Policy or API token with the correct permissions
+
+	The token must have permissions to read stack information. The setup of these permissions depends on the type of token:
+		Access Policies need the stacks:read scope
+		API Keys need at least the the MetricsPublisher role
+	*/
+
+	/********************************************
+	* ARGUMENTS
+	********************************************/
+	argument "stack_name" {
+		comment = "Name of your stack as shown in the account console"
+	}
+
+	argument "token" {
+		comment = "Access policy token or API Key."
+	}
+
+	/********************************************
+	* External information
+	********************************************/
+	remote.http "json_config" {
+		url = "https://grafana.com/api/instances/" + argument.stack_name.value
+
+		client {
+			bearer_token = argument.token.value
+		}
+		poll_frequency = "24h"
+	}
+
+	/********************************************
+	* Setup Receivers
+	********************************************/
+	prometheus.remote_write "grafana_cloud" {
+		endpoint {
+			url = json_decode(remote.http.json_config.content)["hmInstancePromUrl"] + "/api/prom/push"
+
+			basic_auth {
+				username = json_decode(remote.http.json_config.content)["hmInstancePromId"]
+				password = argument.token.value
+			}
+		}
+	}
+
+	loki.write "grafana_cloud" {
+		endpoint {
+			url = json_decode(remote.http.json_config.content)["hlInstanceUrl"] + "/loki/api/v1/push"
+
+			basic_auth {
+				username = json_decode(remote.http.json_config.content)["hlInstanceId"]
+				password = argument.token.value
+			}
+		}
+	}
+
+	otelcol.auth.basic "grafana_cloud" {
+		username = json_decode(remote.http.json_config.content)["htInstanceId"]
+		password = argument.token.value
+	}
+
+	otelcol.exporter.otlp "grafana_cloud" {
+		client {
+			endpoint = json_decode(remote.http.json_config.content)["htInstanceUrl"] + ":443"
+			auth     = otelcol.auth.basic.grafana_cloud.handler
+		}
+	}
+
+	pyroscope.write "grafana_cloud" {
+		endpoint {
+			url = json_decode(remote.http.json_config.content)["hpInstanceUrl"]
+
+			basic_auth {
+				username = json_decode(remote.http.json_config.content)["hpInstanceId"]
+				password = argument.token.value
+			}
+		}
+	}
+
+	/********************************************
+	* EXPORTS
+	********************************************/
+	export "metrics_receiver" {
+		value = prometheus.remote_write.grafana_cloud.receiver
+	}
+
+	export "logs_receiver" {
+		value = loki.write.grafana_cloud.receiver
+	}
+
+	export "traces_receiver" {
+		value = otelcol.exporter.otlp.grafana_cloud.input
+	}
+
+	export "profiles_receiver" {
+		value = pyroscope.write.grafana_cloud.receiver
+	}
+
+	export "stack_information" {
+		value = json_decode(remote.http.json_config.content)
+	}
+}

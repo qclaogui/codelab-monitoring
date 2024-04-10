@@ -17,16 +17,23 @@ include:
       - ../../common/compose-include/grafana.yaml
       - ./grafana.override.yaml
   - path:
-      - ../../common/compose-include/grafana-agent.yaml
-      - ./grafana-agent.override.yaml
+      - ../../common/compose-include/alloy.yaml
+      - ./alloy.override.yaml
 
-# https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
+# https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/alloy/modules/compose/README.md
 x-labels: &loki-labels
   logs.agent.grafana.com/log-format: json
 
+# Configure a check that's run to determine whether or not containers for this service are "healthy".
+# docs: https://docs.docker.com/compose/compose-file/compose-file-v3/#healthcheck
+x-healthcheck: &status-healthcheck
+  interval: 5s
+  timeout: 2s
+  retries: 10
+
 services:
   gateway:
-    # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
+    # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/alloy/modules/compose/README.md
     labels:
       metrics.agent.grafana.com/scrape: false
       logs.agent.grafana.com/log-format: nginx
@@ -46,16 +53,14 @@ services:
       - LOKI_COMPACTOR_HOST=compactor
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ || exit 1" ]
-      interval: 5s
-      timeout: 2s
-      retries: 10
+      <<: *status-healthcheck
     ports:
       - "33100:3100"
 
   distributor:
     labels: *loki-labels
     depends_on: { ingester: { condition: service_healthy } }
-    image: &lokiImage ${LOKI_IMAGE:-docker.io/grafana/loki:2.9.6}
+    image: &lokiImage ${LOKI_IMAGE:-docker.io/grafana/loki:3.0.0}
     volumes:
       - ../../common/config/loki:/etc/loki
     command:
@@ -64,9 +69,7 @@ services:
       - -config.expand-env=true
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1" ]
-      interval: 5s
-      timeout: 2s
-      retries: 10
+      <<: *status-healthcheck
     deploy:
       replicas: 2
     networks:
@@ -84,6 +87,9 @@ services:
       - -config.file=/etc/loki/microservices-mode-logs.yaml
       - -target=ingester
       - -config.expand-env=true
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1" ]
+      <<: *status-healthcheck
     deploy:
       replicas: 3
     networks:
@@ -111,6 +117,9 @@ services:
       - -config.file=/etc/loki/microservices-mode-logs.yaml
       - -target=query-scheduler
       - -config.expand-env=true
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1" ]
+      <<: *status-healthcheck
     deploy:
       replicas: 2
     networks:

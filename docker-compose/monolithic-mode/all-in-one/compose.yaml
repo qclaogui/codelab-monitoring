@@ -14,14 +14,14 @@ include:
       - ../../common/compose-include/grafana.yaml
       - ./grafana.override.yaml
 
-# https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
+# https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/alloy/modules/compose/README.md
 x-labels: &profiles-labels
   profiles.agent.grafana.com/cpu.scrape: true
   profiles.agent.grafana.com/memory.scrape: true
   profiles.agent.grafana.com/goroutine.scrape: true
 
 x-environment: &jaeger-environment
-  JAEGER_AGENT_HOST: grafana-agent
+  JAEGER_AGENT_HOST: alloy
   JAEGER_AGENT_PORT: 6831
   JAEGER_SAMPLER_TYPE: const
   JAEGER_SAMPLER_PARAM: 1
@@ -34,30 +34,41 @@ x-healthcheck: &status-healthcheck
   retries: 10
 
 services:
-  grafana-agent:
+  alloy:
     labels:
       logs.agent.grafana.com/log-format: logfmt
     depends_on: { gateway: { condition: service_healthy } }
-    image: ${AGENT_IMAGE:-docker.io/grafana/agent:v0.40.3}
+    image: ${ALLOY_IMAGE:-docker.io/grafana/alloy:v1.0.0}
     volumes:
-      - ../../common/config/agent-flow:/etc/agent-config
+      - ../../common/config/alloy:/etc/alloy
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /:/rootfs:ro
       - /sys:/sys:ro
       - /var/lib/docker:/var/lib/docker:ro
     entrypoint:
-      - /bin/grafana-agent
+      - /bin/alloy
       - run
-      - /etc/agent-config/monolithic-mode-all.river
+      - /etc/alloy/all-in-one.alloy
       - --server.http.listen-addr=0.0.0.0:12345
       - --cluster.enabled=true
+      - --cluster.join-addresses=alloy-cluster:12345
       - --disable-reporting=true
+      - --stability.level=experimental
+      - --storage.path=/var/lib/alloy/data
     environment:
-      - AGENT_MODE=flow
-      - AGENT_CONFIG_FOLDER=/etc/agent-config
-    # expose 12345 port so we can directly access grafana-agent inside container
+      - ALLOY_CONFIG_FOLDER=/etc/alloy
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:12345/ready || exit 1" ]
+      <<: *status-healthcheck
     ports:
       - "12345:12345"
+      # - "12345-12348:12345" # Note: max replicas num is 3.
+    deploy:
+      replicas: 1
+    networks:
+      default:
+        aliases:
+          - alloy-cluster
 
   gateway:
     labels:
@@ -82,7 +93,7 @@ services:
       profiles.agent.grafana.com/service_name: loki
       logs.agent.grafana.com/log-format: json
     depends_on: { minio: { condition: service_healthy } }
-    image: ${LOKI_IMAGE:-docker.io/grafana/loki:2.9.6}
+    image: ${LOKI_IMAGE:-docker.io/grafana/loki:3.0.0}
     volumes:
       - ../../common/config/loki:/etc/loki
     command:
@@ -156,13 +167,13 @@ services:
           - mimir-memberlist
 
   mimirtool:
-    # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
+    # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/alloy/modules/compose/README.md
     labels:
       metrics.agent.grafana.com/scrape: false
-    image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:2.11.0}
+    image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:2.12.0}
     volumes:
       - ../../../monitoring-mixins/crontab:/etc/crontabs/root
-      - ../../../monitoring-mixins/agent-flow-mixin/deploy/agent-flow-mixin-alerts.yaml:/rules/agent-flow-mixin-alerts.yaml
+      - ../../../monitoring-mixins/alloy-mixin/deploy/alloy-mixin-alerts.yaml:/rules/alloy-mixin-alerts.yaml
       - ../../../monitoring-mixins/memcached-mixin/deploy/memcached-mixin-alerts.yaml:/rules/memcached-mixin-alerts.yaml
       - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-rules.yaml:/rules/mimir-mixin-rules.yaml
       - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-alerts.yaml:/rules/mimir-mixin-alerts.yaml

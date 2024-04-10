@@ -1,0 +1,61 @@
+/*
+Module: keep-labels
+Description: Pre-defined set of labels to keep, this stage should always be in-place as the previous relabeing
+              stages make every pod label and annotation a label in the pipeline, which we do not want created
+              in Loki as that would have extremely high-cardinality.
+*/
+
+declare "keep_labels" {
+
+	/********************************************
+	* ARGUMENTS
+	********************************************/
+	argument "forward_to" {
+		comment = "Must be a list(LogsReceiver) where collected logs should be forwarded to"
+	}
+
+	argument "keep_labels" {
+		optional = true
+		comment  = "List of labels to keep before the log message is written to Loki"
+		default  = [
+			"app",
+			"cluster",
+			"component",
+			"container",
+			"env",
+			"job",
+			"level",
+			"namespace",
+			"region",
+			"service",
+			"squad",
+			"team",
+			"workload",
+		]
+	}
+
+	/********************************************
+	* LOKI PROCESS
+	********************************************/
+	loki.process "keep_labels" {
+		forward_to = argument.forward_to.value
+
+		/*
+		As all of the pod labels and annotations we transformed into labels in the previous relabelings to make
+		them available to the pipeline processing we need to ensure they are not automatically created in Loki.
+		This would result in an extremely high number of labels and values severely impacting query performance.
+		Not every log has to contain these labels, but this list should reflect the set of labels that you want
+		to explicitly allow.
+		*/
+		stage.label_keep {
+			values = argument.keep_labels.value
+		}
+	}
+
+	/********************************************
+	* EXPORTS
+	********************************************/
+	export "receiver" {
+		value = loki.process.keep_labels.receiver
+	}
+}

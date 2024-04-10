@@ -9,8 +9,8 @@ version: '3.9'
 include:
   - path: ../../common/compose-include/minio.yaml
   - path: ../../common/compose-include/memcached.yaml
-  - path: ../../common/compose-include/grafana-agent.yaml
   - path: ../../common/compose-include/grafana.yaml
+  - path: ../../common/compose-include/alloy.yaml
 
 # Configure a check that's run to determine whether or not containers for this service are "healthy".
 # docs: https://docs.docker.com/compose/compose-file/compose-file-v3/#healthcheck
@@ -21,7 +21,7 @@ x-healthcheck: &status-healthcheck
 
 services:
   gateway:
-    # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
+    # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/alloy/modules/compose/README.md
     labels:
       - metrics.agent.grafana.com/scrape=false
     depends_on: { mimir-write: { condition: service_healthy }, mimir-backend: { condition: service_healthy } }
@@ -92,10 +92,10 @@ services:
   mimirtool:
     labels:
       metrics.agent.grafana.com/scrape: false
-    image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:2.11.0}
+    image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:2.12.0}
     volumes:
       - ../../../monitoring-mixins/crontab:/etc/crontabs/root
-      - ../../../monitoring-mixins/agent-flow-mixin/deploy/agent-flow-mixin-alerts.yaml:/rules/agent-flow-mixin-alerts.yaml
+      - ../../../monitoring-mixins/alloy-mixin/deploy/alloy-mixin-alerts.yaml:/rules/alloy-mixin-alerts.yaml
       - ../../../monitoring-mixins/memcached-mixin/deploy/memcached-mixin-alerts.yaml:/rules/memcached-mixin-alerts.yaml
       - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-rules.yaml:/rules/mimir-mixin-rules.yaml
       - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-alerts.yaml:/rules/mimir-mixin-alerts.yaml

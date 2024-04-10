@@ -21,12 +21,20 @@ copyright: $(COPYRIGHT) ## Add Copyright header to .go files.
 CONFIG_FILES = $(shell find . -type f -name '*.river')
 CONFIG_FILES_IN_DOCKER = $(subst ./, /data/, $(CONFIG_FILES))
 .PHONY: fmt
-fmt: ## Uses Grafana Agent to fmt the river config
+fmt: alloy-fmt ## Uses Grafana Agent to fmt the river config
 	@for c in $(CONFIG_FILES_IN_DOCKER); do \
 		echo "$$c"; \
 		docker run -e AGENT_MODE=flow --rm --volume "$(shell pwd):/data" -u $(shell id -u) grafana/agent:v0.40.3 fmt -w $$c ; \
 	done
 
+ALLOY_CONFIG_FILES = $(shell find . -type f -name '*.alloy')
+ALLOY_CONFIG_FILES_IN_DOCKER = $(subst ./, /data/, $(ALLOY_CONFIG_FILES))
+.PHONY: alloy-fmt
+alloy-fmt: ## Uses Grafana Alloy to fmt the config
+	@for c in $(ALLOY_CONFIG_FILES_IN_DOCKER); do \
+		echo "$$c"; \
+		docker run --rm --volume "$(shell pwd):/data" -u $(shell id -u) grafana/alloy:v1.0.0 fmt -w $$c ; \
+	done
 
 ##@ Docker compose
 

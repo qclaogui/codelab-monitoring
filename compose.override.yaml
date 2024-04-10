@@ -1,29 +1,30 @@
 
 # https://docs.docker.com/compose/multiple-compose-files/include/#include-and-overrides
 
-# https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
+# https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/alloy/modules/compose/README.md
 x-labels: &profiles-labels
   profiles.agent.grafana.com/cpu.scrape: true
   profiles.agent.grafana.com/memory.scrape: true
   profiles.agent.grafana.com/goroutine.scrape: true
 
 x-environment: &jaeger-environment
-  JAEGER_AGENT_HOST: grafana-agent
+  JAEGER_AGENT_HOST: alloy
   JAEGER_AGENT_PORT: 6831
   JAEGER_SAMPLER_TYPE: const
   JAEGER_SAMPLER_PARAM: 1
 
 services:
-  # override compose.yaml included service grafana-agent's entrypoint to use monolithic-mode-all.river. default(metrics.river)
-  grafana-agent:
+  alloy: # override compose.yaml included service alloy entrypoint to use all-in-one.alloy. default(metrics.alloy)
     entrypoint:
-      - /bin/grafana-agent
+      - /bin/alloy
       - run
-      - /etc/agent-config/monolithic-mode-all.river # Note: Agent use monolithic-mode-all.river
+      - /etc/alloy/all-in-one.alloy
       - --server.http.listen-addr=0.0.0.0:12345
       - --cluster.enabled=true
-      - --cluster.join-addresses=grafana-agent-cluster:12345
+      - --cluster.join-addresses=alloy-cluster:12345
       - --disable-reporting=true
+      - --stability.level=experimental
+      - --storage.path=/var/lib/alloy/data
 
   # override compose.yaml included service loki's labels and environment to enabled profiles and traces data collection
   loki:
