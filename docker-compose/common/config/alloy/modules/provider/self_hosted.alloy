@@ -1,7 +1,7 @@
-/*
-Module: Self Hosteded Receiver Provider
-Description: Grafana LGTMP Stack Receiver Provider
-*/
+/************************************************
+* Component: self_hosted
+* Description: Self Hosteded Receiver Provider
+*************************************************/
 
 declare "self_hosted" {
 
@@ -11,25 +11,25 @@ declare "self_hosted" {
 	argument "metrics_endpoint" {
 		comment  = "Where to send collected metrics."
 		optional = true
-		default  = "http://mimir:8080"
+		default  = coalesce(env("SELF_HOSTED_METRICS_ENDPOINT"), "http://mimir:8080")
 	}
 
 	argument "logs_endpoint" {
 		comment  = "Where to send collected logs."
 		optional = true
-		default  = "http://loki:3100"
+		default  = coalesce(env("SELF_HOSTED_LOGS_ENDPOINT"), "http://loki:3100")
 	}
 
 	argument "traces_endpoint" {
 		comment  = "Where to send collected traces."
 		optional = true
-		default  = "tempo:4317"
+		default  = coalesce(env("SELF_HOSTED_TRACES_ENDPOINT"), "http://tempo:4318")
 	}
 
 	argument "profiles_endpoint" {
 		comment  = "Where to send collected profiles."
 		optional = true
-		default  = "http://pyroscope:4040"
+		default  = coalesce(env("SELF_HOSTED_PROFILES_ENDPOINT"), "http://pyroscope:4040")
 	}
 
 	/********************************************
@@ -39,18 +39,36 @@ declare "self_hosted" {
 		endpoint {
 			url                    = argument.metrics_endpoint.value + "/api/v1/push"
 			send_native_histograms = true
+
+			basic_auth {
+				password_file = coalesce(env("SELF_HOSTED_METRICS_BASIC_AUTH_PASSWORD_FILE"), env("SELF_HOSTED_BASIC_AUTH_PASSWORD_FILE"))
+				password      = coalesce(env("SELF_HOSTED_METRICS_BASIC_AUTH_PASSWORD"), env("SELF_HOSTED_BASIC_AUTH_PASSWORD"))
+				username      = coalesce(env("SELF_HOSTED_METRICS_BASIC_AUTH_USERNAME"), env("SELF_HOSTED_BASIC_AUTH_USERNAME"))
+			}
 		}
 	}
 
 	loki.write "self_hosted" {
 		endpoint {
 			url = argument.logs_endpoint.value + "/loki/api/v1/push"
+
+			basic_auth {
+				password_file = coalesce(env("SELF_HOSTED_LOGS_BASIC_AUTH_PASSWORD_FILE"), env("SELF_HOSTED_BASIC_AUTH_PASSWORD_FILE"))
+				password      = coalesce(env("SELF_HOSTED_LOGS_BASIC_AUTH_PASSWORD"), env("SELF_HOSTED_BASIC_AUTH_PASSWORD"))
+				username      = coalesce(env("SELF_HOSTED_LOGS_BASIC_AUTH_USERNAME"), env("SELF_HOSTED_BASIC_AUTH_USERNAME"))
+			}
 		}
 	}
 
-	otelcol.exporter.otlp "self_hosted" {
+	otelcol.auth.basic "self_hosted" {
+		username = coalesce(env("SELF_HOSTED_TRACES_BASIC_AUTH_USERNAME"), env("SELF_HOSTED_BASIC_AUTH_USERNAME"))
+		password = coalesce(env("SELF_HOSTED_TRACES_BASIC_AUTH_PASSWORD"), env("SELF_HOSTED_BASIC_AUTH_PASSWORD"))
+	}
+
+	otelcol.exporter.otlphttp "self_hosted" {
 		client {
 			endpoint = argument.traces_endpoint.value
+			auth     = otelcol.auth.basic.self_hosted.handler
 
 			tls {
 				insecure             = true
@@ -62,6 +80,11 @@ declare "self_hosted" {
 	pyroscope.write "self_hosted" {
 		endpoint {
 			url = argument.profiles_endpoint.value
+			basic_auth {
+				password_file = coalesce(env("SELF_HOSTED_PROFILES_BASIC_AUTH_PASSWORD_FILE"), env("SELF_HOSTED_BASIC_AUTH_PASSWORD_FILE"))
+				password      = coalesce(env("SELF_HOSTED_PROFILES_BASIC_AUTH_PASSWORD"), env("SELF_HOSTED_BASIC_AUTH_PASSWORD"))
+				username      = coalesce(env("SELF_HOSTED_PROFILES_BASIC_AUTH_USERNAME"), env("SELF_HOSTED_BASIC_AUTH_USERNAME"))
+			}
 		}
 	}
 
@@ -77,7 +100,7 @@ declare "self_hosted" {
 	}
 
 	export "traces_receiver" {
-		value = otelcol.exporter.otlp.self_hosted.input
+		value = otelcol.exporter.otlphttp.self_hosted.input
 	}
 
 	export "profiles_receiver" {

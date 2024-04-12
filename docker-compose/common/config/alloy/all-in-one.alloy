@@ -14,7 +14,7 @@ import.file "provider" {
 provider.self_hosted "compose" {
 	logs_endpoint     = "http://gateway:3100"
 	metrics_endpoint  = "http://gateway:8080"
-	traces_endpoint   = "gateway:4317"
+	traces_endpoint   = "http://gateway:4318"
 	profiles_endpoint = "http://gateway:4040"
 }
 
@@ -32,17 +32,17 @@ metrics.label_auto_scrape "default" {
 	scrape_interval = "15s"
 }
 
-metrics.job_minio "scrape" {
+metrics.jobs_minio "scrape" {
 	forward_to      = [provider.self_hosted.compose.metrics_receiver]
 	scrape_interval = "15s"
 }
 
-metrics.integration_cadvisor "scrape" {
+metrics.integrations_cadvisor "scrape" {
 	forward_to      = [provider.self_hosted.compose.metrics_receiver]
 	scrape_interval = "15s"
 }
 
-metrics.integration_node_exporter "scrape" {
+metrics.integrations_node_exporter "scrape" {
 	forward_to      = [provider.self_hosted.compose.metrics_receiver]
 	scrape_interval = "15s"
 }
@@ -59,6 +59,7 @@ logs.label_auto_scrape "default" {
 	forward_to   = [logs.keep_labels.default.receiver]
 }
 
+// logs Processing And Transformation
 logs.keep_labels "default" {
 	forward_to = [provider.self_hosted.compose.logs_receiver]
 }
@@ -70,7 +71,8 @@ import.file "traces" {
 	filename = coalesce(env("ALLOY_CONFIG_FOLDER"), "/etc/alloy") + "/modules/compose/traces"
 }
 
-traces.all "default" {
+// traces Processing And Transformation
+traces.pat "default" {
 	metrics_forward_to = [provider.self_hosted.compose.metrics_receiver]
 	logs_forward_to    = [provider.self_hosted.compose.logs_receiver]
 	traces_forward_to  = [provider.self_hosted.compose.traces_receiver]
@@ -78,7 +80,7 @@ traces.all "default" {
 
 tracing {
 	sampling_fraction = 0.8
-	write_to          = [traces.all.default.alloy_traces_input]
+	write_to          = [traces.pat.default.alloy_traces_input]
 }
 
 /********************************************

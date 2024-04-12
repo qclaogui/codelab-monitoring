@@ -1,9 +1,8 @@
-/*
-Module: integration-job
-Description: Wrapper module to include all Docker containers metric modules
-*/
+/************************************************
+* Component: integrations_node_exporter
+*************************************************/
 
-declare "integration_node_exporter" {
+declare "integrations_node_exporter" {
 
 	/********************************************
 	* ARGUMENTS
@@ -37,14 +36,45 @@ declare "integration_node_exporter" {
 	/********************************************
 	* Integrations Node Exporter
 	********************************************/
-	prometheus.exporter.unix "peu_unix" { }
+	prometheus.exporter.unix "integrations_node_exporter" { }
+
+	/********************************************
+	* Discovery Relabelings (pre-scrape)
+	********************************************/
+	discovery.relabel "integrations_node_exporter" {
+		targets = prometheus.exporter.unix.integrations_node_exporter.targets
+
+		// set the cluster label
+		rule {
+			action       = "replace"
+			replacement  = coalesce(argument.cluster.value, "docker-compose")
+			target_label = "cluster"
+		}
+
+		// set the namespace label
+		rule {
+			action       = "replace"
+			replacement  = coalesce(argument.namespace.value, "monitoring-system")
+			target_label = "namespace"
+		}
+
+		rule {
+			target_label = "instance"
+			replacement  = constants.hostname
+		}
+
+		rule {
+			target_label = "job"
+			replacement  = "integrations/node-exporter"
+		}
+	}
 
 	/********************************************
 	* Prometheus Scrape Integrations Targets
 	********************************************/
-	prometheus.scrape "ps_node_exporter" {
+	prometheus.scrape "integrations_node_exporter" {
 		targets = concat(
-			prometheus.exporter.unix.peu_unix.targets,
+			discovery.relabel.integrations_node_exporter.output,
 		)
 
 		enable_protobuf_negotiation = true
@@ -57,13 +87,13 @@ declare "integration_node_exporter" {
 			enabled = true
 		}
 
-		forward_to = [prometheus.relabel.pr_node_exporter.receiver]
+		forward_to = [prometheus.relabel.integrations_node_exporter.receiver]
 	}
 
 	/********************************************
 	* Prometheus Metric Relabelings (post-scrape)
 	********************************************/
-	prometheus.relabel "pr_node_exporter" {
+	prometheus.relabel "integrations_node_exporter" {
 		forward_to = argument.forward_to.value
 
 		// keep only metrics that match the keep_metrics regex
@@ -79,20 +109,6 @@ declare "integration_node_exporter" {
 			separator     = "@"
 			regex         = "node_filesystem.*@(tempfs)"
 			action        = "drop"
-		}
-
-		// set the cluster label
-		rule {
-			action       = "replace"
-			replacement  = coalesce(argument.cluster.value, "docker-compose")
-			target_label = "cluster"
-		}
-
-		// set the namespace label
-		rule {
-			action       = "replace"
-			replacement  = coalesce(argument.namespace.value, "monitoring-system")
-			target_label = "namespace"
 		}
 	}
 }
