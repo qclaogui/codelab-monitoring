@@ -1,0 +1,316 @@
+/*
+Module: minio-job
+Description: Scrapes Minio Metrics(v3)
+
+https://github.com/minio/minio/blob/master/docs/metrics/v3.md
+
+Note: Every argument except for "forward_to" is optional, and does have a defined default value.  However, the values for these
+      arguments are not defined using the default = " ... " argument syntax, but rather using the coalesce(argument.value, " ... ").
+      This is because if the argument passed in from another consuming module is set to null, the default = " ... " syntax will
+      does not override the value passed in, where coalesce() will return the first non-null value.
+
+## Request, System and Cluster Metrics
+
+At a high level metrics are grouped into three categories, listed in the following sub-sections. The path in each of the tables is relative to the top-level endpoint.
+
+### Request metrics
+
+These are metrics about requests served by the (current) node.
+
+| Path            | Description                                      |
+|-----------------|--------------------------------------------------|
+| `/api/requests` | Metrics over all requests                        |
+| `/api/bucket`   | Metrics over all requests split by bucket labels |
+|                 |                                                  |
+
+
+### System metrics
+
+These are metrics about the minio process and the node.
+
+| Path                        | Description                                       |
+|-----------------------------|---------------------------------------------------|
+| `/system/drive`             | Metrics about drives on the system                |
+| `/system/network/internode` | Metrics about internode requests made by the node |
+| `/system/process`           | Standard process metrics                          |
+| `/system/go`                | Standard Go lang metrics                          |
+|                             |                                                   |
+
+### Cluster metrics
+
+These present metrics about the whole MinIO cluster.
+
+| Path                     | Description                 |
+|--------------------------|-----------------------------|
+| `/cluster/health`        | Cluster health metrics      |
+| `/cluster/usage/objects` | Object statistics           |
+| `/cluster/usage/buckets` | Object statistics by bucket |
+| `/cluster/erasure-set`   | Erasure set metrics         |
+|                          |                             |
+
+*/
+
+declare "job_minio" {
+
+	/********************************************
+	* ARGUMENTS
+	********************************************/
+	argument "forward_to" {
+		comment = "Must be a list(MetricsReceiver) where collected metrics should be forwarded to"
+	}
+
+	argument "enabled" {
+		comment  = "Whether or not the job should be enabled (default: true)"
+		optional = true
+	}
+
+	argument "job_label" {
+		comment  = "The job label (default: minio-job)"
+		optional = true
+	}
+
+	argument "metrics_port" {
+		comment  = "The the port to use when collecting metrics(default: 9000)"
+		optional = true
+	}
+
+	argument "keep_metrics" {
+		comment  = "A regex of metrics to keep (default: see below)"
+		optional = true
+	}
+
+	argument "scrape_interval" {
+		comment  = "How often to scrape metrics from the targets (default: 60s)"
+		optional = true
+	}
+
+	argument "scrape_timeout" {
+		comment  = "How long before a scrape times out (default: 10s)"
+		optional = true
+	}
+
+	/********************************************
+	* Targets From Docker Discovery
+	********************************************/
+	discovery.docker "dd_metrics" {
+		host             = "unix:///var/run/docker.sock"
+		refresh_interval = "30s"
+
+		filter {
+			name   = "status"
+			values = ["running"]
+		}
+	}
+
+	/********************************************
+	* Discovery Relabelings (pre-scrape)
+	********************************************/
+	discovery.relabel "dr_minio" {
+		targets = discovery.docker.dd_metrics.targets
+
+		// drop all targets if enabled is false
+		rule {
+			target_label = "__enabled"
+			replacement  = format("%s", coalesce(argument.enabled.value, "true"))
+		}
+
+		rule {
+			source_labels = ["__enabled"]
+			regex         = "false"
+			action        = "drop"
+		}
+
+		// only keep minio targets
+		rule {
+			action        = "keep"
+			source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+			regex         = "minio"
+		}
+
+		// declare the port to use when collecting metrics
+		rule {
+			action       = "replace"
+			replacement  = coalesce(argument.metrics_port.value, "9000")
+			target_label = "__tmp_metrics_port"
+		}
+
+		rule {
+			source_labels = ["__meta_docker_port_private"]
+			target_label  = "__tmp_metrics_port"
+			action        = "keepequal"
+		}
+	}
+
+	discovery.relabel "dr_metrics_v3_api_requests" {
+		targets = discovery.relabel.dr_minio.output
+
+		// declare the metrics_path to use when collecting metrics
+		rule {
+			action       = "replace"
+			replacement  = "/minio/metrics/v3/api/requests"
+			target_label = "__metrics_path__"
+		}
+	}
+
+	discovery.relabel "dr_metrics_v3_api_bucket" {
+		targets = discovery.relabel.dr_minio.output
+
+		// declare the metrics_path to use when collecting metrics
+		rule {
+			action       = "replace"
+			replacement  = "/minio/metrics/v3/api/bucket"
+			target_label = "__metrics_path__"
+		}
+
+		// As the number of buckets can be large, the metrics scrape operation needs to be provided with a specific list of buckets via the bucket query parameter.
+		// Only metrics for the given buckets will be returned (with the bucket label set)
+		// For example to query API metrics for buckets test1 and test2, make a scrape request to /minio/metrics/v3/api/bucket?buckets=test1,test2.
+		rule {
+			action       = "replace"
+			replacement  = "mimir-blocks,mimir-ruler,mimir-alertmanager,loki-data,loki-ruler,tempo-data,pyroscope-data"
+			target_label = "__param_buckets"
+		}
+	}
+
+	discovery.relabel "dr_metrics_v3_system_drive" {
+		targets = discovery.relabel.dr_minio.output
+
+		// declare the metrics_path to use when collecting metrics
+		rule {
+			action       = "replace"
+			replacement  = "/minio/metrics/v3/system/drive"
+			target_label = "__metrics_path__"
+		}
+	}
+
+	discovery.relabel "dr_metrics_v3_system_network_internode" {
+		targets = discovery.relabel.dr_minio.output
+
+		// declare the metrics_path to use when collecting metrics
+		rule {
+			action       = "replace"
+			replacement  = "/minio/metrics/v3/system/network/internode"
+			target_label = "__metrics_path__"
+		}
+	}
+
+	discovery.relabel "dr_metrics_v3_system_process" {
+		targets = discovery.relabel.dr_minio.output
+
+		// declare the metrics_path to use when collecting metrics
+		rule {
+			action       = "replace"
+			replacement  = "/minio/metrics/v3/system/process"
+			target_label = "__metrics_path__"
+		}
+	}
+
+	discovery.relabel "dr_metrics_v3_system_go" {
+		targets = discovery.relabel.dr_minio.output
+
+		// declare the metrics_path to use when collecting metrics
+		rule {
+			action       = "replace"
+			replacement  = "/minio/metrics/v3/system/go"
+			target_label = "__metrics_path__"
+		}
+	}
+
+	discovery.relabel "dr_metrics_v3_cluster_health" {
+		targets = discovery.relabel.dr_minio.output
+
+		// declare the metrics_path to use when collecting metrics
+		rule {
+			action       = "replace"
+			replacement  = "/minio/metrics/v3/cluster/health"
+			target_label = "__metrics_path__"
+		}
+	}
+
+	discovery.relabel "dr_metrics_v3_cluster_usage_objects" {
+		targets = discovery.relabel.dr_minio.output
+
+		// declare the metrics_path to use when collecting metrics
+		rule {
+			action       = "replace"
+			replacement  = "/minio/metrics/v3/cluster/usage/objects"
+			target_label = "__metrics_path__"
+		}
+	}
+
+	discovery.relabel "dr_metrics_v3_cluster_usage_buckets" {
+		targets = discovery.relabel.dr_minio.output
+
+		// declare the metrics_path to use when collecting metrics
+		rule {
+			action       = "replace"
+			replacement  = "/minio/metrics/v3/cluster/usage/buckets"
+			target_label = "__metrics_path__"
+		}
+
+		// As the number of buckets can be large, the metrics scrape operation needs to be provided with a specific list of buckets via the bucket query parameter.
+		// Only metrics for the given buckets will be returned (with the bucket label set)
+		// For example to query API metrics for buckets test1 and test2, make a scrape request to /minio/metrics/v3/api/bucket?buckets=test1,test2.
+		rule {
+			action       = "replace"
+			replacement  = "mimir-blocks,mimir-ruler,mimir-alertmanager,loki-data,loki-ruler,tempo-data,pyroscope-data"
+			target_label = "__param_buckets"
+		}
+	}
+
+	discovery.relabel "dr_metrics_v3_cluster_erasure_set" {
+		targets = discovery.relabel.dr_minio.output
+
+		// declare the metrics_path to use when collecting metrics
+		rule {
+			action       = "replace"
+			replacement  = "/minio/metrics/v3/cluster/erasure-set"
+			target_label = "__metrics_path__"
+		}
+	}
+
+	/********************************************
+	* Prometheus Scrape Jobs Targets
+	********************************************/
+	prometheus.scrape "ps_minio" {
+		targets = concat(
+			discovery.relabel.dr_metrics_v3_api_requests.output,
+			discovery.relabel.dr_metrics_v3_api_bucket.output,
+			discovery.relabel.dr_metrics_v3_system_drive.output,
+			discovery.relabel.dr_metrics_v3_system_network_internode.output,
+			discovery.relabel.dr_metrics_v3_system_process.output,
+			discovery.relabel.dr_metrics_v3_system_go.output,
+			discovery.relabel.dr_metrics_v3_cluster_health.output,
+			discovery.relabel.dr_metrics_v3_cluster_usage_objects.output,
+			discovery.relabel.dr_metrics_v3_cluster_usage_buckets.output,
+			discovery.relabel.dr_metrics_v3_cluster_erasure_set.output,
+		)
+
+		job_name        = coalesce(argument.job_label.value, "minio-job")
+		scrape_interval = coalesce(argument.scrape_interval.value, "60s")
+		scrape_timeout  = coalesce(argument.scrape_timeout.value, "10s")
+
+		enable_protobuf_negotiation = true
+		scrape_classic_histograms   = true
+
+		clustering {
+			enabled = true
+		}
+
+		forward_to = [prometheus.relabel.pr_minio.receiver]
+	}
+
+	/********************************************
+	* Prometheus Metric Relabelings (post-scrape)
+	********************************************/
+	prometheus.relabel "pr_minio" {
+		forward_to = argument.forward_to.value
+
+		// keep only metrics that match the keep_metrics regex
+		rule {
+			source_labels = ["__name__"]
+			regex         = coalesce(argument.keep_metrics.value, "(.+)")
+			action        = "keep"
+		}
+	}
+}

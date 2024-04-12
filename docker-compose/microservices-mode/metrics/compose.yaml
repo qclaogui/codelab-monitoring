@@ -9,12 +9,19 @@ version: '3.9'
 include:
   - path: ../../common/compose-include/minio.yaml
   - path: ../../common/compose-include/memcached.yaml
-  - path: ../../common/compose-include/grafana-agent.yaml
   - path: ../../common/compose-include/grafana.yaml
+  - path: ../../common/compose-include/alloy.yaml
+
+# Configure a check that's run to determine whether or not containers for this service are "healthy".
+# docs: https://docs.docker.com/compose/compose-file/compose-file-v3/#healthcheck
+x-healthcheck: &status-healthcheck
+  interval: 5s
+  timeout: 2s
+  retries: 10
 
 services:
   gateway:
-    # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
+    # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/alloy/modules/compose/README.md
     labels:
       - metrics.agent.grafana.com/scrape=false
     depends_on: { distributor: { condition: service_healthy }, ruler: { condition: service_healthy } }
@@ -31,9 +38,7 @@ services:
       - MIMIR_COMPACTOR_HOST=compactor
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ || exit 1" ]
-      interval: 5s
-      timeout: 2s
-      retries: 10
+      <<: *status-healthcheck
     ports:
       - "38080:8080"
 
@@ -48,9 +53,7 @@ services:
       - -config.expand-env=true
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
-      interval: 5s
-      timeout: 2s
-      retries: 10
+      <<: *status-healthcheck
     deploy:
       replicas: 2
     networks:
@@ -103,9 +106,7 @@ services:
       - -target=query-scheduler
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+      <<: *status-healthcheck
     deploy:
       replicas: 2
 
@@ -120,9 +121,7 @@ services:
       - -target=ruler
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
-      interval: 5s
-      timeout: 2s
-      retries: 10
+      <<: *status-healthcheck
     networks:
       default:
         aliases:
@@ -165,6 +164,9 @@ services:
       - -config.file=/etc/mimir/microservices-mode-metrics.yaml
       - -config.expand-env=true
       - -target=ingester
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
+      <<: *status-healthcheck
     deploy:
       replicas: 3
     networks:
@@ -189,10 +191,10 @@ services:
   mimirtool:
     labels:
       metrics.agent.grafana.com/scrape: false
-    image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:2.11.0}
+    image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:2.12.0}
     volumes:
       - ../../../monitoring-mixins/crontab:/etc/crontabs/root
-      - ../../../monitoring-mixins/agent-flow-mixin/deploy/agent-flow-mixin-alerts.yaml:/rules/agent-flow-mixin-alerts.yaml
+      - ../../../monitoring-mixins/alloy-mixin/deploy/alloy-mixin-alerts.yaml:/rules/alloy-mixin-alerts.yaml
       - ../../../monitoring-mixins/memcached-mixin/deploy/memcached-mixin-alerts.yaml:/rules/memcached-mixin-alerts.yaml
       - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-rules.yaml:/rules/mimir-mixin-rules.yaml
       - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-alerts.yaml:/rules/mimir-mixin-alerts.yaml

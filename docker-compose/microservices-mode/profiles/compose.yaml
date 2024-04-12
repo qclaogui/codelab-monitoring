@@ -17,18 +17,25 @@ include:
       - ../../common/compose-include/grafana.yaml
       - ./grafana.override.yaml
   - path:
-      - ../../common/compose-include/grafana-agent.yaml
-      - ./grafana-agent.override.yaml
+      - ../../common/compose-include/alloy.yaml
+      - ./alloy.override.yaml
 
-# https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
+# https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/alloy/modules/compose/README.md
 x-labels: &profiles-labels
   profiles.agent.grafana.com/cpu.scrape: true
   profiles.agent.grafana.com/memory.scrape: true
   profiles.agent.grafana.com/goroutine.scrape: true
 
+# Configure a check that's run to determine whether or not containers for this service are "healthy".
+# docs: https://docs.docker.com/compose/compose-file/compose-file-v3/#healthcheck
+x-healthcheck: &status-healthcheck
+  interval: 5s
+  timeout: 2s
+  retries: 10
+
 services:
   gateway:
-    # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
+    # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/alloy/modules/compose/README.md
     labels:
       metrics.agent.grafana.com/scrape: false
     depends_on: { distributor: { condition: service_healthy } }
@@ -44,9 +51,7 @@ services:
       - PYROSCOPE_QUERY_FRONTEND_HOST=query-frontend
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:4040/ || exit 1" ]
-      interval: 5s
-      timeout: 2s
-      retries: 10
+      <<: *status-healthcheck
     ports:
       - "34040:4040"
 
@@ -68,10 +73,7 @@ services:
       # - -runtime-config.file=/etc/pyroscope/overrides.yaml
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:4040/ready || exit 1" ]
-      interval: 5s
-      timeout: 2s
-      retries: 10
-      start_period: 10s
+      <<: *status-healthcheck
     networks:
       default:
         aliases:
@@ -92,6 +94,9 @@ services:
       - -config.expand-env=true
       - -memberlist.cluster-label=profiles-system
       - -memberlist.join=pyroscope-memberlist:7946
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:4040/ready || exit 1" ]
+      <<: *status-healthcheck
     deploy:
       replicas: 3
     networks:

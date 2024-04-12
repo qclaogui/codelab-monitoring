@@ -1,0 +1,59 @@
+logging {
+	level  = coalesce(env("ALLOY_LOG_LEVEL"), "info")
+	format = "logfmt"
+}
+
+/********************************************
+ * Grafana LGTMP Stack Receiver Provider
+ ********************************************/
+import.file "provider" {
+	filename = coalesce(env("ALLOY_CONFIG_FOLDER"), "/etc/alloy") + "/modules/provider"
+}
+
+// get lgtmp receivers provider
+provider.self_hosted "compose" {
+	metrics_endpoint  = "http://gateway:8080"
+	profiles_endpoint = "http://gateway:4040"
+}
+
+/********************************************
+ * Profiles
+ ********************************************/
+import.file "profiles" {
+	filename = coalesce(env("ALLOY_CONFIG_FOLDER"), "/etc/alloy") + "/modules/compose/profiles"
+}
+
+// targets auto scrape by docker compose label
+profiles.label_auto_scrape "default" {
+	label_prefix = "profiles.agent.grafana.com"
+	forward_to   = [provider.self_hosted.compose.profiles_receiver]
+}
+
+/********************************************
+ * Metrics
+ ********************************************/
+import.file "metrics" {
+	filename = coalesce(env("ALLOY_CONFIG_FOLDER"), "/etc/alloy") + "/modules/compose/metrics"
+}
+
+// targets auto scrape by docker compose label
+metrics.label_auto_scrape "default" {
+	label_prefix    = "metrics.agent.grafana.com"
+	forward_to      = [provider.self_hosted.compose.metrics_receiver]
+	scrape_interval = "15s"
+}
+
+metrics.job_minio "scrape" {
+	forward_to      = [provider.self_hosted.compose.metrics_receiver]
+	scrape_interval = "15s"
+}
+
+metrics.integration_cadvisor "scrape" {
+	forward_to      = [provider.self_hosted.compose.metrics_receiver]
+	scrape_interval = "15s"
+}
+
+metrics.integration_node_exporter "scrape" {
+	forward_to      = [provider.self_hosted.compose.metrics_receiver]
+	scrape_interval = "15s"
+}

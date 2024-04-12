@@ -17,8 +17,8 @@ include:
       - ../../common/compose-include/grafana.yaml
       - ./grafana.override.yaml
   - path:
-      - ../../common/compose-include/grafana-agent.yaml
-      - ./grafana-agent.override.yaml
+      - ../../common/compose-include/alloy.yaml
+      - ./alloy.override.yaml
 
 x-labels: &loki-labels
   logs.agent.grafana.com/log-format: json
@@ -32,7 +32,7 @@ x-healthcheck: &status-healthcheck
 
 services:
   gateway:
-    # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/agent-flow/modules/docker/README.md
+    # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/alloy/modules/compose/README.md
     labels:
       metrics.agent.grafana.com/scrape: false
       logs.agent.grafana.com/log-format: nginx
@@ -59,7 +59,7 @@ services:
   loki-read:
     labels: *loki-labels
     depends_on: { minio: { condition: service_healthy } }
-    image: &lokiImage ${LOKI_IMAGE:-docker.io/grafana/loki:2.9.6}
+    image: &lokiImage ${LOKI_IMAGE:-docker.io/grafana/loki:3.0.0}
     volumes:
       - ../../common/config/loki:/etc/loki
     command:

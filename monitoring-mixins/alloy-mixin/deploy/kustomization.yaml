@@ -1,0 +1,36 @@
+# ----------------------------------------------------
+# apiVersion and kind of Kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: monitoring-system
+
+resources:
+- prometheus-alerts.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_dashboard_folder: "/dashboards/Alloy Mixin"
+
+configMapGenerator:
+- name: alloy-cluster-node.json
+  files:
+  - dashboards_out/alloy-cluster-node.json
+- name: alloy-cluster-overview.json
+  files:
+  - dashboards_out/alloy-cluster-overview.json
+- name: alloy-controller.json
+  files:
+  - dashboards_out/alloy-controller.json
+- name: alloy-opentelemetry.json
+  files:
+  - dashboards_out/alloy-opentelemetry.json
+- name: alloy-prometheus-remote-write.json
+  files:
+  - dashboards_out/alloy-prometheus-remote-write.json
+- name: alloy-resources.json
+  files:
+  - dashboards_out/alloy-resources.json

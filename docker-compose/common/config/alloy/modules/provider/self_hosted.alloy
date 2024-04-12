@@ -1,0 +1,86 @@
+/*
+Module: Self Hosteded Receiver Provider
+Description: Grafana LGTMP Stack Receiver Provider
+*/
+
+declare "self_hosted" {
+
+	/********************************************
+	* ARGUMENTS
+	********************************************/
+	argument "metrics_endpoint" {
+		comment  = "Where to send collected metrics."
+		optional = true
+		default  = "http://mimir:8080"
+	}
+
+	argument "logs_endpoint" {
+		comment  = "Where to send collected logs."
+		optional = true
+		default  = "http://loki:3100"
+	}
+
+	argument "traces_endpoint" {
+		comment  = "Where to send collected traces."
+		optional = true
+		default  = "tempo:4317"
+	}
+
+	argument "profiles_endpoint" {
+		comment  = "Where to send collected profiles."
+		optional = true
+		default  = "http://pyroscope:4040"
+	}
+
+	/********************************************
+	* Setup Receivers
+	********************************************/
+	prometheus.remote_write "self_hosted" {
+		endpoint {
+			url                    = argument.metrics_endpoint.value + "/api/v1/push"
+			send_native_histograms = true
+		}
+	}
+
+	loki.write "self_hosted" {
+		endpoint {
+			url = argument.logs_endpoint.value + "/loki/api/v1/push"
+		}
+	}
+
+	otelcol.exporter.otlp "self_hosted" {
+		client {
+			endpoint = argument.traces_endpoint.value
+
+			tls {
+				insecure             = true
+				insecure_skip_verify = true
+			}
+		}
+	}
+
+	pyroscope.write "self_hosted" {
+		endpoint {
+			url = argument.profiles_endpoint.value
+		}
+	}
+
+	/********************************************
+	* EXPORTS
+	********************************************/
+	export "metrics_receiver" {
+		value = prometheus.remote_write.self_hosted.receiver
+	}
+
+	export "logs_receiver" {
+		value = loki.write.self_hosted.receiver
+	}
+
+	export "traces_receiver" {
+		value = otelcol.exporter.otlp.self_hosted.input
+	}
+
+	export "profiles_receiver" {
+		value = pyroscope.write.self_hosted.receiver
+	}
+}
