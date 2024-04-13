@@ -91,6 +91,7 @@ services:
     labels:
       <<: *profiles-labels
       profiles.agent.grafana.com/service_name: loki
+      metrics.agent.grafana.com/scrape: false
       logs.agent.grafana.com/log-format: json
     depends_on: { minio: { condition: service_healthy } }
     image: ${LOKI_IMAGE:-docker.io/grafana/loki:3.0.0}
@@ -118,6 +119,7 @@ services:
     labels:
       <<: *profiles-labels
       profiles.agent.grafana.com/service_name: tempo
+      metrics.agent.grafana.com/scrape: false
       logs.agent.grafana.com/log-format: logfmt
     depends_on: { minio: { condition: service_healthy }, mimir: { condition: service_healthy } }
     image: ${TEMPO_IMAGE:-docker.io/grafana/tempo:2.4.1}
@@ -177,11 +179,6 @@ services:
       - ../../../monitoring-mixins/memcached-mixin/deploy/memcached-mixin-alerts.yaml:/rules/memcached-mixin-alerts.yaml
       - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-rules.yaml:/rules/mimir-mixin-rules.yaml
       - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-alerts.yaml:/rules/mimir-mixin-alerts.yaml
-      - ../../../monitoring-mixins/loki-mixin/deploy/loki-mixin-rules.yaml:/rules/loki-mixin-rules.yaml
-      - ../../../monitoring-mixins/loki-mixin/deploy/loki-mixin-alerts.yaml:/rules/loki-mixin-alerts.yaml
-      - ../../../monitoring-mixins/pyroscope-mixin/deploy/pyroscope-mixin-rules.yaml:/rules/pyroscope-mixin-rules.yaml
-      - ../../../monitoring-mixins/tempo-mixin/deploy/tempo-mixin-rules.yaml:/rules/tempo-mixin-rules.yaml
-      - ../../../monitoring-mixins/tempo-mixin/deploy/tempo-mixin-alerts.yaml:/rules/tempo-mixin-alerts.yaml
     environment:
       - MIMIR_ADDRESS=http://gateway:8080
       - MIMIR_TENANT_ID=anonymous
@@ -190,7 +187,8 @@ services:
 
   pyroscope:
     labels:
-      - logs.agent.grafana.com/log-format=logfmt
+      metrics.agent.grafana.com/scrape: false
+      logs.agent.grafana.com/log-format: logfmt
     depends_on: { minio: { condition: service_healthy } }
     image: ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:1.5.0}
     container_name: pyroscope

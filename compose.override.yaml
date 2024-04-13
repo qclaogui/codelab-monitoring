@@ -31,6 +31,7 @@ services:
     labels:
       <<: *profiles-labels
       profiles.agent.grafana.com/service_name: loki
+      metrics.agent.grafana.com/scrape: true
       logs.agent.grafana.com/log-format: json
     environment:
       <<: *jaeger-environment
@@ -42,6 +43,7 @@ services:
       <<: *profiles-labels
       profiles.agent.grafana.com/service_name: grafana
       profiles.agent.grafana.com/port: 6060
+      metrics.agent.grafana.com/scrape: true
       logs.agent.grafana.com/log-format: logfmt
     volumes:
       - ./monitoring-mixins/pyroscope-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/pyroscope-mixin
@@ -58,6 +60,7 @@ services:
     labels:
       <<: *profiles-labels
       profiles.agent.grafana.com/service_name: tempo
+      metrics.agent.grafana.com/scrape: true
       logs.agent.grafana.com/log-format: logfmt
     depends_on: { minio: { condition: service_healthy }, mimir: { condition: service_healthy } }
     environment:
@@ -86,7 +89,8 @@ services:
   # override compose.yaml included service pyroscope's labels and environment to enabled traces data collection
   pyroscope:
     labels:
-      - logs.agent.grafana.com/log-format=logfmt
+      metrics.agent.grafana.com/scrape: true
+      logs.agent.grafana.com/log-format: logfmt
     environment:
       <<: *jaeger-environment
       JAEGER_TAGS: app=pyroscope
