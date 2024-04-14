@@ -16,7 +16,7 @@ include:
 services:
   github-exporter:
     labels:
-      metrics.agent.grafana.com/scrape: true
+      metrics.grafana.com/scrape: true
     image: githubexporter/github-exporter:1.1.0
     environment:
     - REPOS=grafana/agent

@@ -42,8 +42,8 @@ x-environment: &oncall-environment
 services:
   engine:
     labels:
-      metrics.agent.grafana.com/scrape: true
-      metrics.agent.grafana.com/path: "/metrics/"
+      metrics.grafana.com/scrape: true
+      metrics.grafana.com/path: "/metrics/"
     depends_on:
       oncall_db_migration:
         condition: service_completed_successfully
@@ -61,7 +61,7 @@ services:
 
   celery:
     labels:
-      metrics.agent.grafana.com/scrape: false
+      metrics.grafana.com/scrape: false
     depends_on:
       oncall_db_migration:
         condition: service_completed_successfully
@@ -77,7 +77,7 @@ services:
 
   oncall_db_migration:
     labels:
-      metrics.agent.grafana.com/scrape: false
+      metrics.grafana.com/scrape: false
     depends_on:
       redis:
         condition: service_healthy
@@ -90,7 +90,7 @@ services:
 
   redis:
     labels:
-      metrics.agent.grafana.com/scrape: false
+      metrics.grafana.com/scrape: false
     image: redis:7.0.5
     restart: always
     volumes:

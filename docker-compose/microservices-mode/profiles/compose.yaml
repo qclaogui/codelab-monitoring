@@ -18,9 +18,9 @@ include:
 
 # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/alloy/modules/compose/README.md
 x-labels: &profiles-labels
-  profiles.agent.grafana.com/cpu.scrape: true
-  profiles.agent.grafana.com/memory.scrape: true
-  profiles.agent.grafana.com/goroutine.scrape: true
+  profiles.grafana.com/cpu.scrape: true
+  profiles.grafana.com/memory.scrape: true
+  profiles.grafana.com/goroutine.scrape: true
 
 # Configure a check that's run to determine whether or not containers for this service are "healthy".
 # docs: https://docs.docker.com/compose/compose-file/compose-file-v3/#healthcheck
@@ -33,7 +33,7 @@ services:
   gateway:
     # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/alloy/modules/compose/README.md
     labels:
-      metrics.agent.grafana.com/scrape: false
+      metrics.grafana.com/scrape: false
     depends_on: { distributor: { condition: service_healthy } }
     image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.25-alpine}
     restart: always
@@ -54,7 +54,7 @@ services:
   distributor:
     labels:
       <<: *profiles-labels
-      profiles.agent.grafana.com/service_name: pyroscope-distributor
+      profiles.grafana.com/service_name: pyroscope-distributor
     depends_on: { ingester: { condition: service_healthy } }
     image: &pyroscopeImage ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:1.5.0}
     volumes:
@@ -78,7 +78,7 @@ services:
   ingester:
     labels:
       <<: *profiles-labels
-      profiles.agent.grafana.com/service_name: pyroscope-ingester
+      profiles.grafana.com/service_name: pyroscope-ingester
     depends_on: { minio: { condition: service_healthy } }
     image: *pyroscopeImage
     volumes:
@@ -103,7 +103,7 @@ services:
   compactor:
     labels:
       <<: *profiles-labels
-      profiles.agent.grafana.com/service_name: pyroscope-compactor
+      profiles.grafana.com/service_name: pyroscope-compactor
     depends_on: { minio: { condition: service_healthy } }
     image: *pyroscopeImage
     volumes:
@@ -125,7 +125,7 @@ services:
   query-frontend:
     labels:
       <<: *profiles-labels
-      profiles.agent.grafana.com/service_name: pyroscope-query-frontend
+      profiles.grafana.com/service_name: pyroscope-query-frontend
     image: *pyroscopeImage
     volumes:
       - ../../common/config/pyroscope:/etc/pyroscope
@@ -144,7 +144,7 @@ services:
   querier:
     labels:
       <<: *profiles-labels
-      profiles.agent.grafana.com/service_name: pyroscope-querier
+      profiles.grafana.com/service_name: pyroscope-querier
     image: *pyroscopeImage
     volumes:
       - ../../common/config/pyroscope:/etc/pyroscope
@@ -164,7 +164,7 @@ services:
   query-scheduler:
     labels:
       <<: *profiles-labels
-      profiles.agent.grafana.com/service_name: pyroscope-query-scheduler
+      profiles.grafana.com/service_name: pyroscope-query-scheduler
     image: *pyroscopeImage
     volumes:
       - ../../common/config/pyroscope:/etc/pyroscope
@@ -183,7 +183,7 @@ services:
   store-gateway:
     labels:
       <<: *profiles-labels
-      profiles.agent.grafana.com/service_name: pyroscope-store-gateway
+      profiles.grafana.com/service_name: pyroscope-store-gateway
     image: *pyroscopeImage
     volumes:
       - ../../common/config/pyroscope:/etc/pyroscope
