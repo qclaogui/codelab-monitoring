@@ -40,9 +40,9 @@ services:
     volumes:
       - ../../common/config/alloy:/etc/alloy
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker:/var/lib/docker:ro
       - /:/rootfs:ro
       - /sys:/sys:ro
-      - /var/lib/docker:/var/lib/docker:ro
     entrypoint:
       - /bin/alloy
       - run
@@ -55,6 +55,7 @@ services:
       - --storage.path=/var/lib/alloy/data
     environment:
       - ALLOY_CONFIG_FOLDER=/etc/alloy
+      - ALLOY_LOG_LEVEL=warn
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:12345/ready || exit 1" ]
       <<: *status-healthcheck
