@@ -13,30 +13,40 @@ declare "integrations_node_exporter" {
 
 	argument "cluster" {
 		optional = true
+		default  = "docker-compose"
 	}
 
 	argument "namespace" {
 		optional = true
+		default  = "monitoring-system"
 	}
 
 	argument "keep_metrics" {
 		optional = true
+		default  = "(up|node_exporter_build_info|node_time_seconds|node_boot_time_seconds|node_load.*|node_cpu.*|node_memory.*|node_disk.*|node_filesystem.*|process_cpu_seconds_total|process_resident_memory_bytes)"
 	}
 
 	argument "scrape_interval" {
 		comment  = "How often to scrape metrics from the targets (default: 60s)"
 		optional = true
+		default  = "60s"
 	}
 
 	argument "scrape_timeout" {
 		comment  = "How long before a scrape times out (default: 10s)"
 		optional = true
+		default  = "10s"
 	}
 
 	/********************************************
 	* Integrations Node Exporter
 	********************************************/
-	prometheus.exporter.unix "integrations_node_exporter" { }
+	prometheus.exporter.unix "integrations_node_exporter" {
+		procfs_path    = "/rootfs/proc"
+		sysfs_path     = "/rootfs/sys"
+		rootfs_path    = "/rootfs"
+		udev_data_path = "/rootfs/run/udev/data"
+	}
 
 	/********************************************
 	* Discovery Relabelings (pre-scrape)
@@ -47,20 +57,15 @@ declare "integrations_node_exporter" {
 		// set the cluster label
 		rule {
 			action       = "replace"
-			replacement  = coalesce(argument.cluster.value, "docker-compose")
+			replacement  = argument.cluster.value
 			target_label = "cluster"
 		}
 
 		// set the namespace label
 		rule {
 			action       = "replace"
-			replacement  = coalesce(argument.namespace.value, "monitoring-system")
+			replacement  = argument.namespace.value
 			target_label = "namespace"
-		}
-
-		rule {
-			target_label = "instance"
-			replacement  = constants.hostname
 		}
 
 		rule {
@@ -80,8 +85,8 @@ declare "integrations_node_exporter" {
 		enable_protobuf_negotiation = true
 		scrape_classic_histograms   = true
 
-		scrape_interval = coalesce(argument.scrape_interval.value, "60s")
-		scrape_timeout  = coalesce(argument.scrape_timeout.value, "10s")
+		scrape_interval = argument.scrape_interval.value
+		scrape_timeout  = argument.scrape_timeout.value
 
 		clustering {
 			enabled = true
@@ -99,7 +104,7 @@ declare "integrations_node_exporter" {
 		// keep only metrics that match the keep_metrics regex
 		rule {
 			source_labels = ["__name__"]
-			regex         = coalesce(argument.keep_metrics.value, "(up|node_exporter_build_info|node_time_seconds|node_boot_time_seconds|node_load.*|node_cpu.*|node_memory.*|node_disk.*|node_filesystem.*|process_cpu_seconds_total|process_resident_memory_bytes)")
+			regex         = argument.keep_metrics.value
 			action        = "keep"
 		}
 

@@ -62,31 +62,37 @@ declare "jobs_minio" {
 	argument "enabled" {
 		comment  = "Whether or not the job should be enabled (default: true)"
 		optional = true
+		default  = "true"
 	}
 
 	argument "job_label" {
 		comment  = "The job label (default: minio-job)"
 		optional = true
+		default  = "minio-job"
 	}
 
 	argument "metrics_port" {
 		comment  = "The the port to use when collecting metrics(default: 9000)"
 		optional = true
+		default  = "9000"
 	}
 
 	argument "keep_metrics" {
 		comment  = "A regex of metrics to keep (default: see below)"
 		optional = true
+		default  = "(.+)"
 	}
 
 	argument "scrape_interval" {
 		comment  = "How often to scrape metrics from the targets (default: 60s)"
 		optional = true
+		default  = "60s"
 	}
 
 	argument "scrape_timeout" {
 		comment  = "How long before a scrape times out (default: 10s)"
 		optional = true
+		default  = "10s"
 	}
 
 	/********************************************
@@ -111,7 +117,7 @@ declare "jobs_minio" {
 		// drop all targets if enabled is false
 		rule {
 			target_label = "__enabled"
-			replacement  = format("%s", coalesce(argument.enabled.value, "true"))
+			replacement  = format("%s", argument.enabled.value)
 		}
 
 		rule {
@@ -130,7 +136,7 @@ declare "jobs_minio" {
 		// declare the port to use when collecting metrics
 		rule {
 			action       = "replace"
-			replacement  = coalesce(argument.metrics_port.value, "9000")
+			replacement  = argument.metrics_port.value
 			target_label = "__tmp_metrics_port"
 		}
 
@@ -286,9 +292,9 @@ declare "jobs_minio" {
 			discovery.relabel.dr_metrics_v3_cluster_erasure_set.output,
 		)
 
-		job_name        = coalesce(argument.job_label.value, "minio-job")
-		scrape_interval = coalesce(argument.scrape_interval.value, "60s")
-		scrape_timeout  = coalesce(argument.scrape_timeout.value, "10s")
+		job_name        = argument.job_label.value
+		scrape_interval = argument.scrape_interval.value
+		scrape_timeout  = argument.scrape_timeout.value
 
 		enable_protobuf_negotiation = true
 		scrape_classic_histograms   = true
@@ -309,7 +315,7 @@ declare "jobs_minio" {
 		// keep only metrics that match the keep_metrics regex
 		rule {
 			source_labels = ["__name__"]
-			regex         = coalesce(argument.keep_metrics.value, "(.+)")
+			regex         = argument.keep_metrics.value
 			action        = "keep"
 		}
 	}

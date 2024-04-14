@@ -2,12 +2,6 @@
 Module(profiles_auto_scrape): Docker Containers Auto-Scraping
 Description: Scrapes targets for profiles based on Docker Containers labels
 
-Note: Every argument except for "forward_to" is optional, and does have a defined default value.  However, the values for these
-      arguments are not defined using the default = " ... " argument syntax, but rather using the coalesce(argument.value, " ... ").
-      This is because if the argument passed in from another consuming module is set to null, the default = " ... " syntax will
-      does not override the value passed in, where coalesce() will return the first non-null value.
-
-
 The full list of profile types supported by labels is "cpu", "memory", "goroutine", "block", "mutex" and "fgprof"
 
 For example the following labels:
@@ -49,25 +43,30 @@ declare "label_auto_scrape" {
 
 	argument "cluster" {
 		optional = true
+		default  = "docker-compose"
 	}
 
 	argument "namespace" {
 		optional = true
+		default  = "monitoring-system"
 	}
 
 	argument "tenant" {
-		comment  = "The tenant to write profile to.  This does not have to be the tenantId, this is the value to look for in the logs.grafana.com/tenant label, and this can be a regex. (default: (.*))"
+		comment  = "The tenant to write profiles to.  This does not have to be the tenantId, this is the value to look for in the logs.grafana.com/tenant label, and this can be a regex. (default: (.*))"
 		optional = true
+		default  = "(.*)"
 	}
 
 	argument "scrape_interval" {
-		comment  = "How often to scrape profile from the targets (default: 30s)"
+		comment  = "How often to scrape profiles from the targets (default: 30s)"
 		optional = true
+		default  = "30s"
 	}
 
 	argument "scrape_timeout" {
 		comment  = "How long before a scrape times out (default: 15s)"
 		optional = true
+		default  = "15s"
 	}
 
 	// get the available containers.
@@ -132,14 +131,14 @@ declare "label_auto_scrape" {
 			source_labels = [
 				"__meta_docker_container_label_" + argument.__sd_label.value + "_tenant",
 			]
-			regex = "^(" + coalesce(argument.tenant.value, ".*") + ")$"
+			regex = "^(" + argument.tenant.value + ")$"
 		}
 
 		// allow resources to declare how often their profiles should be collected.
 		// default value is 30s, the following duration formats are supported (s|m|ms|h|d)
 		rule {
 			action       = "replace"
-			replacement  = coalesce(argument.scrape_interval.value, "30s")
+			replacement  = argument.scrape_interval.value
 			target_label = "__scrape_interval__"
 		}
 
@@ -158,14 +157,14 @@ declare "label_auto_scrape" {
 		// default value is 15s, the following duration formats are supported (s|m|ms|h|d)
 		rule {
 			action       = "replace"
-			replacement  = coalesce(argument.scrape_timeout.value, "15s")
+			replacement  = argument.scrape_timeout.value
 			target_label = "__scrape_timeout__"
 		}
 
 		rule {
 			action        = "replace"
 			source_labels = [
-				"__meta_docker_container_label_" + argument.__sd_label.value + "_interval",
+				"__meta_docker_container_label_" + argument.__sd_label.value + "_timeout",
 			]
 			separator    = ";"
 			regex        = "^(?:;*)?(\\d+(s|m|ms|h|d)).*$"
@@ -180,14 +179,14 @@ declare "label_auto_scrape" {
 		// set the cluster label
 		rule {
 			action       = "replace"
-			replacement  = coalesce(argument.cluster.value, "docker-compose")
+			replacement  = argument.cluster.value
 			target_label = "cluster"
 		}
 
 		// set the namespace label
 		rule {
 			action       = "replace"
-			replacement  = coalesce(argument.namespace.value, "monitoring-system")
+			replacement  = argument.namespace.value
 			target_label = "namespace"
 		}
 
@@ -198,7 +197,7 @@ declare "label_auto_scrape" {
 				"__meta_docker_container_label_com_docker_compose_service",
 			]
 			regex        = "^(?:;*)?([^;]+).*$"
-			replacement  = coalesce(argument.namespace.value, "monitoring-system") + "/$1"
+			replacement  = argument.namespace.value + "/$1"
 			target_label = "job"
 		}
 

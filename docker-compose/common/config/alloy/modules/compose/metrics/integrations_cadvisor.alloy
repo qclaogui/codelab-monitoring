@@ -13,24 +13,29 @@ declare "integrations_cadvisor" {
 
 	argument "cluster" {
 		optional = true
+		default  = "docker-compose"
 	}
 
 	argument "namespace" {
 		optional = true
+		default  = "monitoring-system"
 	}
 
 	argument "keep_metrics" {
 		optional = true
+		default  = "(.+)"
 	}
 
 	argument "scrape_interval" {
-		comment  = "How often to scrape metrics from the targets (default: 60s)"
+		comment  = "How often to scrape metrics from the targets (default: 30s)"
 		optional = true
+		default  = "30s"
 	}
 
 	argument "scrape_timeout" {
 		comment  = "How long before a scrape times out (default: 10s)"
 		optional = true
+		default  = "10s"
 	}
 
 	/********************************************
@@ -49,8 +54,9 @@ declare "integrations_cadvisor" {
 			"prometheus.io/job",
 		]
 
+		// only show stats for docker containers
 		docker_only     = true
-		enabled_metrics = ["cpu", "diskIO", "memory", "network"]
+		enabled_metrics = ["app", "cpu", "disk", "diskIO", "memory", "network", "process"]
 	}
 
 	/********************************************
@@ -62,14 +68,14 @@ declare "integrations_cadvisor" {
 		// set the cluster label
 		rule {
 			action       = "replace"
-			replacement  = coalesce(argument.cluster.value, "docker-compose")
+			replacement  = argument.cluster.value
 			target_label = "cluster"
 		}
 
 		// set the namespace label
 		rule {
 			action       = "replace"
-			replacement  = coalesce(argument.namespace.value, "monitoring-system")
+			replacement  = argument.namespace.value
 			target_label = "namespace"
 		}
 	}
@@ -85,8 +91,8 @@ declare "integrations_cadvisor" {
 		enable_protobuf_negotiation = true
 		scrape_classic_histograms   = true
 
-		scrape_interval = coalesce(argument.scrape_interval.value, "60s")
-		scrape_timeout  = coalesce(argument.scrape_timeout.value, "10s")
+		scrape_interval = argument.scrape_interval.value
+		scrape_timeout  = argument.scrape_timeout.value
 
 		clustering {
 			enabled = true
@@ -110,7 +116,7 @@ declare "integrations_cadvisor" {
 		// keep only metrics that match the keep_metrics regex
 		rule {
 			source_labels = ["__name__"]
-			regex         = coalesce(argument.keep_metrics.value, "(.+)")
+			regex         = argument.keep_metrics.value
 			action        = "keep"
 		}
 
@@ -121,7 +127,7 @@ declare "integrations_cadvisor" {
 				"container_label_com_docker_compose_service",
 			]
 			regex        = "^(?:;*)?([^;]+).*$"
-			replacement  = coalesce(argument.namespace.value, "monitoring-system") + "/$1"
+			replacement  = argument.namespace.value + "/$1"
 			target_label = "job"
 		}
 

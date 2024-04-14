@@ -79,35 +79,42 @@ declare "label_auto_scrape" {
 
 	argument "cluster" {
 		optional = true
+		default  = "docker-compose"
 	}
 
 	argument "namespace" {
 		optional = true
+		default  = "monitoring-system"
 	}
 
 	argument "tenant" {
 		comment  = "The tenant to write metrics to.  This does not have to be the tenantId, this is the value to look for in the logs.grafana.com/tenant label, and this can be a regex. (default: (.*))"
 		optional = true
+		default  = "(.*)"
 	}
 
 	argument "keep_metrics" {
 		comment  = "A regex of metrics to keep (default: (.+))"
 		optional = true
+		default  = "(.+)"
 	}
 
 	argument "drop_metrics" {
 		comment  = "A regex of metrics to drop (default: \"\")"
 		optional = true
+		default  = ""
 	}
 
 	argument "scrape_interval" {
 		comment  = "How often to scrape metrics from the targets (default: 60s)"
 		optional = true
+		default  = "60s"
 	}
 
 	argument "scrape_timeout" {
 		comment  = "How long before a scrape times out (default: 10s)"
 		optional = true
+		default  = "10s"
 	}
 
 	/********************************************
@@ -192,7 +199,7 @@ declare "label_auto_scrape" {
 				"__meta_docker_container_label_" + argument.__sd_label.value + "_tenant",
 				"__meta_docker_container_label_prometheus_io_tenant",
 			]
-			regex = "^(" + coalesce(argument.tenant.value, ".*") + ")$"
+			regex = "^(" + argument.tenant.value + ")$"
 		}
 
 		rule {
@@ -243,7 +250,7 @@ declare "label_auto_scrape" {
 		//   metrics.grafana.com/interval: 15s
 		rule {
 			action       = "replace"
-			replacement  = coalesce(argument.scrape_interval.value, "60s")
+			replacement  = argument.scrape_interval.value
 			target_label = "__scrape_interval__"
 		}
 
@@ -265,15 +272,15 @@ declare "label_auto_scrape" {
 		//   metrics.grafana.com/timeout: 10s
 		rule {
 			action       = "replace"
-			replacement  = coalesce(argument.scrape_timeout.value, "10s")
+			replacement  = argument.scrape_timeout.value
 			target_label = "__scrape_timeout__"
 		}
 
 		rule {
 			action        = "replace"
 			source_labels = [
-				"__meta_docker_container_label_" + argument.__sd_label.value + "_interval",
-				"__meta_docker_container_label_prometheus_io_interval",
+				"__meta_docker_container_label_" + argument.__sd_label.value + "_timeout",
+				"__meta_docker_container_label_prometheus_io_timeout",
 			]
 			separator    = ";"
 			regex        = "^(?:;*)?(\\d+(s|m|ms|h|d)).*$"
@@ -288,14 +295,14 @@ declare "label_auto_scrape" {
 		// set the cluster label
 		rule {
 			action       = "replace"
-			replacement  = coalesce(argument.cluster.value, "docker-compose")
+			replacement  = argument.cluster.value
 			target_label = "cluster"
 		}
 
 		// set the namespace label
 		rule {
 			action       = "replace"
-			replacement  = coalesce(argument.namespace.value, "monitoring-system")
+			replacement  = argument.namespace.value
 			target_label = "namespace"
 		}
 
@@ -306,7 +313,7 @@ declare "label_auto_scrape" {
 				"__meta_docker_container_label_com_docker_compose_service",
 			]
 			regex        = "^(?:;*)?([^;]+).*$"
-			replacement  = coalesce(argument.namespace.value, "monitoring-system") + "/$1"
+			replacement  = argument.namespace.value + "/$1"
 			target_label = "job"
 		}
 
@@ -391,9 +398,7 @@ declare "label_auto_scrape" {
 			discovery.relabel.dr_keep_http_targets.output,
 		)
 
-		job_name        = "label-metrics"
-		scrape_interval = coalesce(argument.scrape_interval.value, "60s")
-		scrape_timeout  = coalesce(argument.scrape_timeout.value, "10s")
+		job_name = "label-metrics"
 
 		enable_protobuf_negotiation = true
 		scrape_classic_histograms   = true
@@ -416,14 +421,14 @@ declare "label_auto_scrape" {
 		rule {
 			action        = "keep"
 			source_labels = ["__name__"]
-			regex         = coalesce(argument.keep_metrics.value, "(.+)")
+			regex         = argument.keep_metrics.value
 		}
 
 		// drop metrics that match the drop_metrics regex
 		rule {
 			action        = "drop"
 			source_labels = ["__name__"]
-			regex         = coalesce(argument.drop_metrics.value, "")
+			regex         = argument.drop_metrics.value
 		}
 	}
 }
