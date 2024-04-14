@@ -11,6 +11,7 @@ include:
   - path: ../../common/compose-include/minio.yaml
   - path: ../../common/compose-include/memcached.yaml
   - path: ../../common/compose-include/grafana.yaml
+  - path: ../../common/compose-include/alloy.yaml
 
 # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/alloy/modules/compose/README.md
 x-labels: &profiles-labels
@@ -31,44 +32,11 @@ x-healthcheck: &status-healthcheck
   timeout: 2s
   retries: 10
 
-services:
-  alloy:
-    labels:
-      logs.grafana.com/log-format: logfmt
-    depends_on: { gateway: { condition: service_healthy } }
-    image: ${ALLOY_IMAGE:-docker.io/grafana/alloy:v1.0.0}
-    volumes:
-      - ../../common/config/alloy:/etc/alloy
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /var/lib/docker:/var/lib/docker:ro
-      - /:/rootfs:ro
-      - /sys:/sys:ro
-    entrypoint:
-      - /bin/alloy
-      - run
-      - /etc/alloy/all-in-one.alloy
-      - --server.http.listen-addr=0.0.0.0:12345
-      - --cluster.enabled=true
-      - --cluster.join-addresses=alloy-cluster:12345
-      - --disable-reporting=true
-      - --stability.level=experimental
-      - --storage.path=/var/lib/alloy/data
-    environment:
-      - ALLOY_CONFIG_FOLDER=/etc/alloy
-      - ALLOY_LOG_LEVEL=warn
-    healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:12345/ready || exit 1" ]
-      <<: *status-healthcheck
-    ports:
-      - "12345:12345"
-      # - "12345-12348:12345" # Note: max replicas num is 3.
-    deploy:
-      replicas: 1
-    networks:
-      default:
-        aliases:
-          - alloy-cluster
+configs:
+  alloy_config_file:
+    file: ../../common/config/alloy/all-in-one.alloy
 
+services:
   gateway:
     labels:
       metrics.grafana.com/scrape: false

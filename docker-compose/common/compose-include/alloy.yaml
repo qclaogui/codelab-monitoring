@@ -4,8 +4,11 @@ services:
       logs.grafana.com/log-format: logfmt
     depends_on: { gateway: { condition: service_healthy } }
     image: ${ALLOY_IMAGE:-docker.io/grafana/alloy:v1.0.0}
+    configs:
+      - source: alloy_config_file
+        target: /etc/alloy/config.alloy
     volumes:
-      - ../config/alloy:/etc/alloy
+      - ../config/alloy/modules:/etc/alloy/modules
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/lib/docker:/var/lib/docker:ro
       - /:/rootfs:ro
@@ -13,7 +16,7 @@ services:
     entrypoint:
       - /bin/alloy
       - run
-      - /etc/alloy/metrics.alloy
+      - /etc/alloy/config.alloy
       - --server.http.listen-addr=0.0.0.0:12345
       - --cluster.enabled=true
       - --cluster.join-addresses=alloy-cluster:12345
@@ -21,13 +24,8 @@ services:
       - --stability.level=experimental
       - --storage.path=/var/lib/alloy/data
     environment:
-      - ALLOY_CONFIG_FOLDER=/etc/alloy
+      - ALLOY_MODULES_FOLDER=/etc/alloy/modules
       - ALLOY_LOG_LEVEL=warn
-    healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:12345/ready || exit 1" ]
-      interval: 5s
-      timeout: 2s
-      retries: 10
     ports:
       - "12345:12345"
       # - "12345-12348:12345" # Note: max replicas num is 3.
