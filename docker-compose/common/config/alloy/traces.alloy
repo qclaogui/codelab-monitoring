@@ -25,7 +25,7 @@ import.file "traces" {
 }
 
 // traces Processing And Transformation
-traces.pat "default" {
+traces.pat "all" {
 	metrics_forward_to = [provider.self_hosted.compose.metrics_receiver]
 	logs_forward_to    = [provider.self_hosted.compose.logs_receiver]
 	traces_forward_to  = [provider.self_hosted.compose.traces_receiver]
@@ -38,31 +38,18 @@ import.file "metrics" {
 	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/compose/metrics"
 }
 
-// targets auto scrape by docker compose label
-metrics.label_auto_scrape "default" {
+metrics.labels_scrape "all" {
 	label_prefix    = "metrics.grafana.com"
 	forward_to      = [provider.self_hosted.compose.metrics_receiver]
 	scrape_interval = "15s"
 }
 
-metrics.jobs_minio "scrape" {
+metrics.jobs_scrape "all" {
 	forward_to      = [provider.self_hosted.compose.metrics_receiver]
 	scrape_interval = "15s"
 }
 
-metrics.integrations_cadvisor "scrape" {
+metrics.integrations_scrape "all" {
 	forward_to      = [provider.self_hosted.compose.metrics_receiver]
 	scrape_interval = "15s"
-}
-
-metrics.integrations_node_exporter "scrape" {
-	forward_to      = [provider.self_hosted.compose.metrics_receiver]
-	scrape_interval = "15s"
-}
-
-metrics.integrations_memcached "scrape" {
-	forward_to      = [provider.self_hosted.compose.metrics_receiver]
-	scrape_interval = "15s"
-
-	memcached_address = "memcached:11211"
 }
