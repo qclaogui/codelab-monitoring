@@ -12,10 +12,10 @@ import.file "provider" {
 
 // get self hosted receivers provider
 provider.self_hosted "compose" {
-	logs_endpoint     = "http://gateway:3100"
-	metrics_endpoint  = "http://gateway:8080"
-	traces_endpoint   = "http://gateway:4318"
-	profiles_endpoint = "http://gateway:4040"
+	logs_endpoint_url     = "http://gateway:3100/loki/api/v1/push"
+	metrics_endpoint_url  = "http://gateway:8080/api/v1/push"
+	traces_endpoint_url   = "http://gateway:4318"
+	profiles_endpoint_url = "http://gateway:4040"
 }
 
 /********************************************
@@ -73,8 +73,11 @@ traces.pat "all" {
 }
 
 tracing {
-	sampling_fraction = 0.8
-	write_to          = [traces.pat.all.alloy_traces_input]
+	// Write all spans. Don't do this in production!
+	sampling_fraction = 1
+
+	// Forward Alloy internal spans to traces process.
+	write_to = [traces.pat.all.alloy_traces_input]
 }
 
 /********************************************

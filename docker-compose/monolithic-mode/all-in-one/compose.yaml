@@ -28,9 +28,9 @@ x-environment: &jaeger-environment
 # Configure a check that's run to determine whether or not containers for this service are "healthy".
 # docs: https://docs.docker.com/compose/compose-file/compose-file-v3/#healthcheck
 x-healthcheck: &status-healthcheck
-  interval: 5s
-  timeout: 2s
-  retries: 10
+  interval: 2s
+  timeout: 1s
+  retries: 15
 
 configs:
   alloy_config_file:
@@ -52,14 +52,15 @@ services:
       - ../../common/config/pyroscope/gateway_pyroscope.conf:/etc/nginx/templates/gateway_pyroscope.conf.template
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ || exit 1" ]
-      <<: *status-healthcheck
+      interval: 3s
+      timeout: 1s
+      retries: 20
 
   loki:
     labels:
       <<: *profiles-labels
-      profiles.grafana.com/service_name: loki
       metrics.grafana.com/scrape: false
-      logs.grafana.com/log-format: json
+      profiles.grafana.com/service_name: loki
     depends_on: { minio: { condition: service_healthy } }
     image: ${LOKI_IMAGE:-docker.io/grafana/loki:3.0.0}
     volumes:
@@ -85,9 +86,8 @@ services:
   tempo:
     labels:
       <<: *profiles-labels
-      profiles.grafana.com/service_name: tempo
       metrics.grafana.com/scrape: false
-      logs.grafana.com/log-format: logfmt
+      profiles.grafana.com/service_name: tempo
     depends_on: { minio: { condition: service_healthy }, mimir: { condition: service_healthy } }
     image: ${TEMPO_IMAGE:-docker.io/grafana/tempo:2.4.1}
     volumes:
@@ -110,8 +110,8 @@ services:
   mimir:
     labels:
       <<: *profiles-labels
+      metrics.grafana.com/scrape: false
       profiles.grafana.com/service_name: mimir
-      logs.grafana.com/log-format: logfmt
     depends_on: { minio: { condition: service_healthy } }
     image: ${MIMIR_IMAGE:-docker.io/grafana/mimir:2.12.0}
     volumes:
@@ -155,10 +155,9 @@ services:
   pyroscope:
     labels:
       metrics.grafana.com/scrape: false
-      logs.grafana.com/log-format: logfmt
+      profiles.grafana.com/service_name: pyroscope
     depends_on: { minio: { condition: service_healthy } }
     image: ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:1.5.0}
-    container_name: pyroscope
     volumes:
       - ../../common/config/pyroscope:/etc/pyroscope
       - pyroscope_data:/data

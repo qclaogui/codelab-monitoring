@@ -1,4 +1,4 @@
-# Docker Compose `labels` Auto-Scraping Modules
+# Docker Compose `labels_scrape` Components
 
 ## Logs
 
@@ -22,7 +22,7 @@ The following service labels are supported for gathering of metrics for docker c
 | `metrics.grafana.com/path` <br>or<br> `prometheus.io/path` | the default path to scrape is `/metrics`, this can be specified as a single value which would override, the scrape path being used for all ports attached to the target |
 | `metrics.grafana.com/port` <br>or<br> `prometheus.io/port` | the default `port` to scrape is the target port, this can be specified as a single value which would override the scrape port being used for all ports attached to the target, note that even if an target had multiple targets, the relabel_config targets are deduped before scraping |
 | `metrics.grafana.com/tenant` | The tenant their metrics should be sent to, this does not necessarily have to be the actual tenantId, it can be a friendly name as well that is simply used to determine if the metrics should be gathered for the current tenant |
-| `metrics.grafana.com/job` <br>or<br> `prometheus.io/job` | The job label value to use when collecting their metrics.  However, it is common to use an integration or community project where rules / dashboards are provided for you.  Oftentimes, this provided assets use hard-coded values for a job label i.e. `...{job="integrations/kubernetes/cadvisor"...}` or `...{job="minio-job"...}` setting this annotation to that value will allow the provided asset to work out of the box. |
+| `metrics.grafana.com/job` <br>or<br> `prometheus.io/job` | The job label value to use when collecting their metrics.  However, it is common to use an integration or community project where rules / dashboards are provided for you.  Oftentimes, this provided assets use hard-coded values for a job label i.e. `...{job="integrations/cadvisor"...}` or `...{job="minio-job"...}` setting this annotation to that value will allow the provided asset to work out of the box. |
 | `metrics.grafana.com/interval` <br>or<br> `prometheus.io/interval` | The default interval to scrape is `15s`, this can be override. |
 | `metrics.grafana.com/timeout` <br>or<br> `prometheus.io/timeout` | The default timeout for scraping is `10s`, this can be override. |
 
@@ -32,7 +32,7 @@ The following service labels are supported for gathering of metrics for docker c
 
 The following service labels are supported for docker compose services:
 
-> The full list of profile types supported by labels is `cpu`, `memory`, `goroutine`, `block`, `mutex` and `fgprof`:
+> The full list of <profile-type> supported by labels is `cpu`, `memory`, `goroutine`, `block`, `mutex` and `fgprof`:
 
 | Label            | Description |
 | :--------------- | :-----------|

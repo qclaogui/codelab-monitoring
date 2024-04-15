@@ -4,7 +4,6 @@ services:
       metrics.grafana.com/scrape: false
     depends_on: { minio: { condition: service_healthy } }
     image: ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:1.5.0}
-    container_name: pyroscope
     volumes:
       - ../config/pyroscope:/etc/pyroscope
       - pyroscope_data:/data
@@ -15,9 +14,9 @@ services:
       # - -runtime-config.file=/etc/pyroscope/overrides.yaml
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:4040/ready || exit 1" ]
-      interval: 3s
-      timeout: 2s
-      retries: 10
+      interval: 2s
+      timeout: 1s
+      retries: 15
     # expose 34040 port so we can directly access pyroscope inside container
     ports:
       - "34040:4040"

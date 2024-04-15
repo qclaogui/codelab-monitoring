@@ -15,7 +15,7 @@ include:
 # Configure a check that's run to determine whether or not containers for this service are "healthy".
 # docs: https://docs.docker.com/compose/compose-file/compose-file-v3/#healthcheck
 x-healthcheck: &status-healthcheck
-  interval: 5s
+  interval: 3s
   timeout: 2s
   retries: 10
 
@@ -42,7 +42,9 @@ services:
       - MIMIR_COMPACTOR_HOST=compactor
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ || exit 1" ]
-      <<: *status-healthcheck
+      interval: 3s
+      timeout: 1s
+      retries: 20
     ports:
       - "38080:8080"
 

@@ -23,7 +23,6 @@ services:
   gateway:
     labels:
       metrics.grafana.com/scrape: false
-      logs.grafana.com/log-format: nginx
     depends_on: { loki: { condition: service_healthy } }
     image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.25-alpine}
     volumes:
@@ -33,6 +32,6 @@ services:
       - ../../common/config/mimir/gateway_mimir.conf:/etc/nginx/templates/gateway_mimir.conf.template
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ || exit 1" ]
-      interval: 5s
-      timeout: 2s
-      retries: 10
+      interval: 3s
+      timeout: 1s
+      retries: 20

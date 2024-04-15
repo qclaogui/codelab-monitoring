@@ -1,4 +1,4 @@
-# Receivers Provider Moudle
+# Data receiver provider components
 
 Provide the receivers of the collected data(`logs` `metrics` `traces` `profiles`).
 
@@ -13,21 +13,21 @@ Module to configure receivers for Self Hosted LGTMP Stack.
 
 ***Arguments***
 
-| Name                | Required | Default | Description                                        |
-| :------------------ | :------- | :---------------------- | :--------------------------------- |
-| `metrics_endpoint`  | _no_     | `http://mimir:8080`     | Where to send collected `metrics`. |
-| `logs_endpoint`     | _no_     | `http://loki:3100`      | Where to send collected `logs`.    |
-| `traces_endpoint`   | _no_     | `tempo:4317`            | Where to send collected `traces`.  |
-| `profiles_endpoint` | _no_     | `http://pyroscope:4040` | Where to send collected `profiles`.|
+| Name                    | Required | Default                                 | Description                        |
+| :---------------------- | :------- | :-------------------------------------- | :--------------------------------- |
+| `metrics_endpoint_url`  | _no_     | `http://mimir:8080/api/v1/push`         | Where to send collected `metrics`. |
+| `logs_endpoint_url`     | _no_     | `http://loki:3100/loki/api/v1/push`     | Where to send collected `logs`.    |
+| `traces_endpoint_url`   | _no_     | `http://tempo:4318`                     | Where to send collected `traces`.  |
+| `profiles_endpoint_url` | _no_     | `http://pyroscope:4040`                 | Where to send collected `profiles`.|
 
 ***Exports***
 
-| Name                |        Type              | Description                                                                 |
-| --------------------| ------------------------ | --------------------------------------------------------------------------- |
-| `metrics_receiver`  | `prometheus.Interceptor` | A value that other components can use to send metrics data to.              |
-| `logs_receiver`     | `loki.LogsReceiver`      | A value that other components can use to send logs data to.                 |
-| `traces_receiver`   | `otelcol.Consumer`       | A value that other components can use to send trace data to.                |
-| `profiles_receiver` | `write.fanOutClient`     | A value that other components can use to send profiling data to.            |
+| Name                |        Type              | Description                                                      |
+| --------------------| ------------------------ | ---------------------------------------------------------------- |
+| `metrics_receiver`  | `prometheus.Interceptor` | A value that other components can use to send metrics data to.   |
+| `logs_receiver`     | `loki.LogsReceiver`      | A value that other components can use to send logs data to.      |
+| `traces_receiver`   | `otelcol.Consumer`       | A value that other components can use to send trace data to.     |
+| `profiles_receiver` | `write.fanOutClient`     | A value that other components can use to send profiling data to. |
 
 ***Example***
 
@@ -41,12 +41,12 @@ import.git "provider" {
 
 // get the receivers from provider
 provider.self_hosted "compose" {
-  metrics_endpoint  = "http://mimir:8080"
+  metrics_endpoint_url  = "http://mimir:8080/api/v1/push"
 }
 
 // get the receivers from provider
 provider.self_hosted "kubernetes" {
-  metrics_endpoint  = "http://mimir.monitoring-system.svc.cluster.local:8080"
+  metrics_endpoint_url  = "http://mimir.monitoring-system.svc.cluster.local:8080/api/v1/push"
 }
 
 // scrape metrics and write to metric receiver
@@ -107,7 +107,7 @@ import.git "provider" {
 // get the receivers from provider
 provider.grafana_cloud "stack_name" {
   stack_name = env("GRAFANA_CLOUD_STACK_NAME")
-  token      = env("GRAFANA_CLOUD_STACK_TOKEN")
+  token      = env("GRAFANA_CLOUD_TOKEN")
 }
 
 // scrape metrics and write to metric receiver

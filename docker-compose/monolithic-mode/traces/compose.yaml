@@ -11,22 +11,10 @@ include:
   - path: ../../common/compose-include/minio.yaml
   - path: ../../common/compose-include/memcached.yaml
   - path: ../../common/compose-include/loki.yaml
+  - path: ../../common/compose-include/tempo.yaml
   - path: ../../common/compose-include/mimir.yaml
   - path: ../../common/compose-include/grafana.yaml
   - path: ../../common/compose-include/alloy.yaml
-
-x-environment: &jaeger-environment
-  JAEGER_AGENT_HOST: alloy
-  JAEGER_AGENT_PORT: 6831
-  JAEGER_SAMPLER_TYPE: const
-  JAEGER_SAMPLER_PARAM: 1
-
-# Configure a check that's run to determine whether or not containers for this service are "healthy".
-# docs: https://docs.docker.com/compose/compose-file/compose-file-v3/#healthcheck
-x-healthcheck: &status-healthcheck
-  interval: 5s
-  timeout: 2s
-  retries: 10
 
 configs:
   alloy_config_file:
@@ -47,25 +35,6 @@ services:
       - ../../common/config/loki/gateway_loki.conf:/etc/nginx/templates/gateway_loki.conf.template
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ || exit 1" ]
-      <<: *status-healthcheck
-
-  tempo:
-    depends_on: { minio: { condition: service_healthy } }
-    image: ${TEMPO_IMAGE:-docker.io/grafana/tempo:2.4.1}
-    restart: always
-    volumes:
-      - ../../common/config/tempo:/etc/tempo
-    command:
-      - -config.file=/etc/tempo/monolithic-mode-traces.yaml
-      - -target=all
-      - -config.expand-env=true
-    environment:
-      <<: *jaeger-environment
-      JAEGER_TAGS: app=tempo
-    healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ready || exit 1" ]
-      <<: *status-healthcheck
-      start_period: 10s
-    # expose 33200 port so we can directly access tempo inside container
-    ports:
-      - "33200:3200"
+      interval: 3s
+      timeout: 1s
+      retries: 20

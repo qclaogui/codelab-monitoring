@@ -16,9 +16,9 @@ services:
   loki:
     labels:
       <<: *profiles-labels
-      profiles.grafana.com/service_name: loki
+      logs.grafana.com/scrape: true
       metrics.grafana.com/scrape: true
-      logs.grafana.com/log-format: json
+      profiles.grafana.com/service_name: loki
     environment:
       <<: *jaeger-environment
       JAEGER_TAGS: app=loki
@@ -27,10 +27,10 @@ services:
   grafana:
     labels:
       <<: *profiles-labels
+      logs.grafana.com/scrape: true
+      metrics.grafana.com/scrape: true
       profiles.grafana.com/service_name: grafana
       profiles.grafana.com/port: 6060
-      metrics.grafana.com/scrape: true
-      logs.grafana.com/log-format: logfmt
     volumes:
       - ./monitoring-mixins/pyroscope-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/pyroscope-mixin
       - ./monitoring-mixins/loki-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/loki-mixin
@@ -45,9 +45,9 @@ services:
   tempo:
     labels:
       <<: *profiles-labels
-      profiles.grafana.com/service_name: tempo
+      logs.grafana.com/scrape: true
       metrics.grafana.com/scrape: true
-      logs.grafana.com/log-format: logfmt
+      profiles.grafana.com/service_name: tempo
     depends_on: { minio: { condition: service_healthy }, mimir: { condition: service_healthy } }
     environment:
       <<: *jaeger-environment
@@ -57,8 +57,9 @@ services:
   mimir:
     labels:
       <<: *profiles-labels
+      logs.grafana.com/scrape: true
+      metrics.grafana.com/scrape: true
       profiles.grafana.com/service_name: mimir
-      logs.grafana.com/log-format: logfmt
     environment:
       <<: *jaeger-environment
       JAEGER_TAGS: app=mimir
@@ -75,8 +76,9 @@ services:
   # override compose.yaml included service pyroscope's labels and environment to enabled traces data collection
   pyroscope:
     labels:
+      logs.grafana.com/scrape: true
       metrics.grafana.com/scrape: true
-      logs.grafana.com/log-format: logfmt
+      profiles.grafana.com/service_name: pyroscope
     environment:
       <<: *jaeger-environment
       JAEGER_TAGS: app=pyroscope

@@ -7,6 +7,9 @@
 
 A simple command to run Grafana LGTMP Stack in Docker or Kubernetes.
 
+> **NOTE**:
+> This project is not intended for production use and is maintained on a best-effort basis.
+
 ## Usage
 
 An simple use case `compose.yaml` like so:
@@ -110,7 +113,7 @@ The easiest way to run project locally is to use docker compose, these instructi
 
 ***Prerequisites:*** Make sure that you have Docker and Docker Compose installed
 
-> Note:
+> **NOTE**:
 > `include` is available in Docker Compose version 2.20 and later, and Docker Desktop version 4.22 and later.
 
 ### [Monolithic mode (单体模式)](./docker-compose/monolithic-mode)
