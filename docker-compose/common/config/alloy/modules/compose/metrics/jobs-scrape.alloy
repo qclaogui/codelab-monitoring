@@ -1,0 +1,46 @@
+/*
+Jobs Component: Alloy Jobs Scrape
+Description: Wrapper Component to include auto loading jobs
+
+Note: Every argument except for "forward_to" is optional, and does have a defined default value.  However, the values for these
+      arguments are not defined using the default = " ... " argument syntax, but rather using the coalesce(argument.value, " ... ").
+      This is because if the argument passed in from another consuming module is set to null, the default = " ... " syntax will
+      does not override the value passed in, where coalesce() will return the first non-null value.
+*/
+
+declare "jobs_scrape" {
+
+	/********************************************
+	* ARGUMENTS
+	********************************************/
+	argument "forward_to" {
+		comment = "Must be a list(MetricsReceiver) where collected metrics should be forwarded to"
+	}
+
+	argument "scrape_interval" {
+		comment  = "How often to scrape metrics from the targets (default: 60s)"
+		optional = true
+	}
+
+	argument "scrape_timeout" {
+		comment  = "How long before a scrape times out (default: 10s)"
+		optional = true
+	}
+
+	/********************************************
+	* Import Jobs Components
+	********************************************/
+	import.file "jobs" {
+		filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/compose/jobs"
+	}
+
+	/********************************************
+	* Minio Jobs 
+	********************************************/
+	jobs.component_minio "v3_metrics" {
+		forward_to = argument.forward_to.value
+
+		scrape_interval = coalesce(argument.scrape_interval.value, "60s")
+		scrape_timeout  = coalesce(argument.scrape_timeout.value, "10s")
+	}
+}

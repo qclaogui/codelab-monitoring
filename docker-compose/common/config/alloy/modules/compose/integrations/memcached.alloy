@@ -1,8 +1,8 @@
 /************************************************
-* Component: integrations_node_exporter
+* Integrations Component: component_memcached
 *************************************************/
 
-declare "integrations_node_exporter" {
+declare "component_memcached" {
 
 	/********************************************
 	* ARGUMENTS
@@ -11,19 +11,27 @@ declare "integrations_node_exporter" {
 		comment = "Must be a list(MetricssReceiver) where collected metrics should be forwarded to"
 	}
 
-	argument "cluster" {
+	argument "memcached_address" {
+		comment  = "address of the Memcached"
 		optional = true
-		default  = "docker-compose"
+		default  = "memcached:11211"
 	}
 
-	argument "namespace" {
+	argument "memcached_timeout" {
+		comment  = "timeout of the Memcached"
 		optional = true
-		default  = "monitoring-system"
+		default  = "5s"
+	}
+
+	argument "memcached_instance" {
+		comment  = "instance of the Memcached"
+		optional = true
+		default  = "primary"
 	}
 
 	argument "keep_metrics" {
 		optional = true
-		default  = "(up|node_exporter_build_info|node_time_seconds|node_boot_time_seconds|node_load.*|node_cpu.*|node_memory.*|node_disk.*|node_filesystem.*|process_cpu_seconds_total|process_resident_memory_bytes)"
+		default  = "(.+)"
 	}
 
 	argument "scrape_interval" {
@@ -39,45 +47,30 @@ declare "integrations_node_exporter" {
 	}
 
 	/********************************************
-	* Integrations Node Exporter
+	* Integrations Memcached
 	********************************************/
-	prometheus.exporter.unix "integrations_node_exporter" {
-		procfs_path    = "/rootfs/proc"
-		sysfs_path     = "/rootfs/sys"
-		rootfs_path    = "/rootfs"
-		udev_data_path = "/rootfs/run/udev/data"
+	prometheus.exporter.memcached "component_memcached" {
+		address = argument.memcached_address.value
+		timeout = argument.memcached_timeout.value
 	}
-
 	/********************************************
 	* Discovery Relabelings (pre-scrape)
 	********************************************/
-	discovery.relabel "integrations_node_exporter" {
-		targets = prometheus.exporter.unix.integrations_node_exporter.targets
-
-		// set the cluster label
-		rule {
-			target_label = "cluster"
-			replacement  = argument.cluster.value
-		}
-
-		// set the namespace label
-		rule {
-			target_label = "namespace"
-			replacement  = argument.namespace.value
-		}
+	discovery.relabel "component_memcached" {
+		targets = prometheus.exporter.memcached.component_memcached.targets
 
 		rule {
 			target_label = "job"
-			replacement  = "integrations/node-exporter"
+			replacement  = "integrations/memcached"
 		}
 	}
 
 	/********************************************
 	* Prometheus Scrape Integrations Targets
 	********************************************/
-	prometheus.scrape "integrations_node_exporter" {
+	prometheus.scrape "component_memcached" {
 		targets = concat(
-			discovery.relabel.integrations_node_exporter.output,
+			discovery.relabel.component_memcached.output,
 		)
 
 		enable_protobuf_negotiation = true
@@ -90,13 +83,13 @@ declare "integrations_node_exporter" {
 			enabled = true
 		}
 
-		forward_to = [prometheus.relabel.integrations_node_exporter.receiver]
+		forward_to = [prometheus.relabel.component_memcached.receiver]
 	}
 
 	/********************************************
 	* Prometheus Metric Relabelings (post-scrape)
 	********************************************/
-	prometheus.relabel "integrations_node_exporter" {
+	prometheus.relabel "component_memcached" {
 		forward_to = argument.forward_to.value
 
 		// keep only metrics that match the keep_metrics regex
@@ -106,12 +99,9 @@ declare "integrations_node_exporter" {
 			action        = "keep"
 		}
 
-		// Drop metrics for certain file systems
 		rule {
-			source_labels = ["__name__", "fstype"]
-			separator     = "@"
-			regex         = "node_filesystem.*@(tempfs)"
-			action        = "drop"
+			replacement  = argument.memcached_instance.value
+			target_label = "instance"
 		}
 	}
 }

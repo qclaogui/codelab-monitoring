@@ -3,13 +3,13 @@ services:
   minio:
     # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/alloy/modules/compose/README.md
     labels:
-      - logs.grafana.com/scrape=false
-      - metrics.grafana.com/scrape=true
-      - metrics.grafana.com/job=minio-job
-      - metrics.grafana.com/path=/minio/v2/metrics/cluster
-      - metrics.grafana.com/port=9000
-      - metrics.grafana.com/interval=15s
-      - metrics.grafana.com/timeout=10s
+      logs.grafana.com/scrape: false
+      metrics.grafana.com/scrape: true
+      metrics.grafana.com/job: minio-job
+      metrics.grafana.com/path: /minio/v2/metrics/cluster
+      metrics.grafana.com/port: 9000
+      metrics.grafana.com/interval: 15s
+      metrics.grafana.com/timeout: 10s
     image: ${MINIO_IMAGE:-docker.io/minio/minio:RELEASE.2024-03-15T01-07-19Z}
     entrypoint:
       - sh
@@ -32,9 +32,9 @@ services:
       - minio_data:/data:delegated
     healthcheck:
       test: ["CMD-SHELL", "mc ready local"]
-      interval: 5s
+      interval: 3s
       timeout: 2s
-      retries: 5
+      retries: 10
     ports:
       - "9001:9001"
 

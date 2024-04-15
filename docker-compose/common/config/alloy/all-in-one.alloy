@@ -10,7 +10,7 @@ import.file "provider" {
 	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/provider"
 }
 
-// get lgtmp receivers provider
+// get self hosted receivers provider
 provider.self_hosted "compose" {
 	logs_endpoint     = "http://gateway:3100"
 	metrics_endpoint  = "http://gateway:8080"
@@ -25,33 +25,20 @@ import.file "metrics" {
 	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/compose/metrics"
 }
 
-// targets auto scrape by docker compose label
-metrics.label_auto_scrape "default" {
+metrics.labels_scrape "all" {
 	label_prefix    = "metrics.grafana.com"
 	forward_to      = [provider.self_hosted.compose.metrics_receiver]
 	scrape_interval = "15s"
 }
 
-metrics.jobs_minio "scrape" {
+metrics.jobs_scrape "all" {
 	forward_to      = [provider.self_hosted.compose.metrics_receiver]
 	scrape_interval = "15s"
 }
 
-metrics.integrations_cadvisor "scrape" {
+metrics.integrations_scrape "all" {
 	forward_to      = [provider.self_hosted.compose.metrics_receiver]
 	scrape_interval = "15s"
-}
-
-metrics.integrations_node_exporter "scrape" {
-	forward_to      = [provider.self_hosted.compose.metrics_receiver]
-	scrape_interval = "15s"
-}
-
-metrics.integrations_memcached "scrape" {
-	forward_to      = [provider.self_hosted.compose.metrics_receiver]
-	scrape_interval = "15s"
-
-	memcached_address = "memcached:11211"
 }
 
 /********************************************
@@ -61,7 +48,7 @@ import.file "logs" {
 	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/compose/logs"
 }
 
-logs.label_auto_scrape "default" {
+logs.labels_scrape "all" {
 	label_prefix = "logs.grafana.com"
 	forward_to   = [logs.keep_labels.default.receiver]
 }
@@ -79,7 +66,7 @@ import.file "traces" {
 }
 
 // traces Processing And Transformation
-traces.pat "default" {
+traces.pat "all" {
 	metrics_forward_to = [provider.self_hosted.compose.metrics_receiver]
 	logs_forward_to    = [provider.self_hosted.compose.logs_receiver]
 	traces_forward_to  = [provider.self_hosted.compose.traces_receiver]
@@ -87,7 +74,7 @@ traces.pat "default" {
 
 tracing {
 	sampling_fraction = 0.8
-	write_to          = [traces.pat.default.alloy_traces_input]
+	write_to          = [traces.pat.all.alloy_traces_input]
 }
 
 /********************************************
@@ -97,8 +84,7 @@ import.file "profiles" {
 	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/compose/profiles"
 }
 
-// targets auto scrape by docker compose label
-profiles.label_auto_scrape "default" {
+profiles.labels_scrape "all" {
 	label_prefix = "profiles.grafana.com"
 	forward_to   = [provider.self_hosted.compose.profiles_receiver]
 }

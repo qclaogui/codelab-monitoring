@@ -23,8 +23,7 @@ import.file "profiles" {
 	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/compose/profiles"
 }
 
-// targets auto scrape by docker compose label
-profiles.label_auto_scrape "default" {
+profiles.labels_scrape "all" {
 	label_prefix = "profiles.grafana.com"
 	forward_to   = [provider.self_hosted.compose.profiles_receiver]
 }
@@ -36,31 +35,18 @@ import.file "metrics" {
 	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/compose/metrics"
 }
 
-// targets auto scrape by docker compose label
-metrics.label_auto_scrape "default" {
+metrics.labels_scrape "all" {
 	label_prefix    = "metrics.grafana.com"
 	forward_to      = [provider.self_hosted.compose.metrics_receiver]
 	scrape_interval = "15s"
 }
 
-metrics.jobs_minio "scrape" {
+metrics.jobs_scrape "all" {
 	forward_to      = [provider.self_hosted.compose.metrics_receiver]
 	scrape_interval = "15s"
 }
 
-metrics.integrations_cadvisor "scrape" {
+metrics.integrations_scrape "all" {
 	forward_to      = [provider.self_hosted.compose.metrics_receiver]
 	scrape_interval = "15s"
-}
-
-metrics.integrations_node_exporter "scrape" {
-	forward_to      = [provider.self_hosted.compose.metrics_receiver]
-	scrape_interval = "15s"
-}
-
-metrics.integrations_memcached "scrape" {
-	forward_to      = [provider.self_hosted.compose.metrics_receiver]
-	scrape_interval = "15s"
-
-	memcached_address = "memcached:11211"
 }

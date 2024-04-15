@@ -1,8 +1,8 @@
 /************************************************
-* Component: integrations_cadvisor
+* Integrations Component: component_cadvisor
 *************************************************/
 
-declare "integrations_cadvisor" {
+declare "component_cadvisor" {
 
 	/********************************************
 	* ARGUMENTS
@@ -41,7 +41,7 @@ declare "integrations_cadvisor" {
 	/********************************************
 	* Integrations cAdvisor
 	********************************************/
-	prometheus.exporter.cadvisor "integrations_cadvisor" {
+	prometheus.exporter.cadvisor "component_cadvisor" {
 		docker_host = "unix:///var/run/docker.sock"
 
 		store_container_labels = false
@@ -62,8 +62,8 @@ declare "integrations_cadvisor" {
 	/********************************************
 	* Discovery Relabelings (pre-scrape)
 	********************************************/
-	discovery.relabel "integrations_cadvisor" {
-		targets = prometheus.exporter.cadvisor.integrations_cadvisor.targets
+	discovery.relabel "component_cadvisor" {
+		targets = prometheus.exporter.cadvisor.component_cadvisor.targets
 
 		// set the cluster label
 		rule {
@@ -81,9 +81,9 @@ declare "integrations_cadvisor" {
 	/********************************************
 	* Prometheus Scrape Integrations Targets
 	********************************************/
-	prometheus.scrape "integrations_cadvisor" {
+	prometheus.scrape "component_cadvisor" {
 		targets = concat(
-			discovery.relabel.integrations_cadvisor.output,
+			discovery.relabel.component_cadvisor.output,
 		)
 
 		enable_protobuf_negotiation = true
@@ -96,13 +96,13 @@ declare "integrations_cadvisor" {
 			enabled = true
 		}
 
-		forward_to = [prometheus.relabel.integrations_cadvisor.receiver]
+		forward_to = [prometheus.relabel.component_cadvisor.receiver]
 	}
 
 	/********************************************
 	* Prometheus Metric Relabelings (post-scrape)
 	********************************************/
-	prometheus.relabel "integrations_cadvisor" {
+	prometheus.relabel "component_cadvisor" {
 		forward_to = argument.forward_to.value
 
 		// drop unused metric label
