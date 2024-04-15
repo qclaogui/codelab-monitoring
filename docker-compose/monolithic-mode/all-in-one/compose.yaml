@@ -28,9 +28,9 @@ x-environment: &jaeger-environment
 # Configure a check that's run to determine whether or not containers for this service are "healthy".
 # docs: https://docs.docker.com/compose/compose-file/compose-file-v3/#healthcheck
 x-healthcheck: &status-healthcheck
-  interval: 2s
-  timeout: 1s
-  retries: 15
+  interval: 3s
+  timeout: 2s
+  retries: 10
 
 configs:
   alloy_config_file:
@@ -144,8 +144,6 @@ services:
       - ../../../monitoring-mixins/crontab:/etc/crontabs/root
       - ../../../monitoring-mixins/alloy-mixin/deploy/alloy-mixin-alerts.yaml:/rules/alloy-mixin-alerts.yaml
       - ../../../monitoring-mixins/memcached-mixin/deploy/memcached-mixin-alerts.yaml:/rules/memcached-mixin-alerts.yaml
-      - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-rules.yaml:/rules/mimir-mixin-rules.yaml
-      - ../../../monitoring-mixins/mimir-mixin/deploy/mimir-mixin-alerts.yaml:/rules/mimir-mixin-alerts.yaml
     environment:
       - MIMIR_ADDRESS=http://gateway:8080
       - MIMIR_TENANT_ID=anonymous

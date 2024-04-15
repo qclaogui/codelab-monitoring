@@ -11,7 +11,7 @@ import.file "provider" {
 }
 
 // get lgtmp receivers provider
-provider.self_hosted "compose" {
+provider.self_hosted_stack "compose" {
 	logs_endpoint_url    = "http://gateway:3100/loki/api/v1/push"
 	metrics_endpoint_url = "http://gateway:8080/api/v1/push"
 	traces_endpoint_url  = "http://gateway:4318"
@@ -26,9 +26,9 @@ import.file "traces" {
 
 // traces Processing And Transformation
 traces.pat "all" {
-	metrics_forward_to = [provider.self_hosted.compose.metrics_receiver]
-	logs_forward_to    = [provider.self_hosted.compose.logs_receiver]
-	traces_forward_to  = [provider.self_hosted.compose.traces_receiver]
+	metrics_forward_to = [provider.self_hosted_stack.compose.metrics_receiver]
+	logs_forward_to    = [provider.self_hosted_stack.compose.logs_receiver]
+	traces_forward_to  = [provider.self_hosted_stack.compose.traces_receiver]
 }
 
 tracing {
@@ -48,16 +48,16 @@ import.file "metrics" {
 
 metrics.labels_scrape "all" {
 	label_prefix    = "metrics.grafana.com"
-	forward_to      = [provider.self_hosted.compose.metrics_receiver]
+	forward_to      = [provider.self_hosted_stack.compose.metrics_receiver]
 	scrape_interval = "15s"
 }
 
 metrics.jobs_scrape "all" {
-	forward_to      = [provider.self_hosted.compose.metrics_receiver]
+	forward_to      = [provider.self_hosted_stack.compose.metrics_receiver]
 	scrape_interval = "15s"
 }
 
 metrics.integrations_scrape "all" {
-	forward_to      = [provider.self_hosted.compose.metrics_receiver]
+	forward_to      = [provider.self_hosted_stack.compose.metrics_receiver]
 	scrape_interval = "15s"
 }

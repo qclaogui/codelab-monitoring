@@ -24,7 +24,7 @@ x-environment: &jaeger-environment
 # Configure a check that's run to determine whether or not containers for this service are "healthy".
 # docs: https://docs.docker.com/compose/compose-file/compose-file-v3/#healthcheck
 x-healthcheck: &status-healthcheck
-  interval: 3s
+  interval: 5s
   timeout: 2s
   retries: 10
 
@@ -74,7 +74,6 @@ services:
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ready || exit 1" ]
       <<: *status-healthcheck
-      start_period: 10s
 
   ingester:
     depends_on: { minio: { condition: service_healthy } }
@@ -91,7 +90,6 @@ services:
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ready || exit 1" ]
       <<: *status-healthcheck
-      start_period: 10s
     deploy:
       replicas: 3
     networks:

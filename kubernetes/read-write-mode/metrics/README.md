@@ -32,8 +32,8 @@ flowchart LR
     subgraph Minio
         M{"Object Storage"}
     end
-    subgraph Agent["Grafana Agent"]
-        A("agent")
+    subgraph Agent["Grafana Alloy"]
+        A("alloy")
     end
     subgraph Grafana
         G("grafana")

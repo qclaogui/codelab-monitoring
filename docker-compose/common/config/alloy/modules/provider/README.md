@@ -4,10 +4,10 @@ Provide the receivers of the collected data(`logs` `metrics` `traces` `profiles`
 
 ## Components
 
-- [self_hosted](#self_hosted)
+- [self_hosted_stack](#self_hosted_stack)
 - [grafana_cloud](#grafana_cloud)
 
-### `self_hosted`
+### `self_hosted_stack`
 
 Module to configure receivers for Self Hosted LGTMP Stack.
 
@@ -40,12 +40,12 @@ import.git "provider" {
 }
 
 // get the receivers from provider
-provider.self_hosted "compose" {
+provider.self_hosted_stack "compose" {
   metrics_endpoint_url  = "http://mimir:8080/api/v1/push"
 }
 
 // get the receivers from provider
-provider.self_hosted "kubernetes" {
+provider.self_hosted_stack "kubernetes" {
   metrics_endpoint_url  = "http://mimir.monitoring-system.svc.cluster.local:8080/api/v1/push"
 }
 
@@ -56,8 +56,8 @@ prometheus.scrape "default" {
   ]
 
   forward_to = [
-    provider.self_hosted.compose.metrics_receiver,
-    provider.self_hosted.kubernetes.metrics_receiver,
+    provider.self_hosted_stack.compose.metrics_receiver,
+    provider.self_hosted_stack.kubernetes.metrics_receiver,
   ]
 }
 ```
