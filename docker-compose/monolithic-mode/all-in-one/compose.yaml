@@ -13,7 +13,7 @@ include:
   - path: ../../common/compose-include/grafana.yaml
   - path: ../../common/compose-include/alloy.yaml
 
-# https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/alloy/modules/compose/README.md
+# https://github.com/qclaogui/codelab-monitoring/blob/main/alloy-modules/compose/README.md
 x-labels: &profiles-labels
   profiles.grafana.com/cpu.scrape: true
   profiles.grafana.com/memory.scrape: true
@@ -29,8 +29,8 @@ x-environment: &jaeger-environment
 # docs: https://docs.docker.com/compose/compose-file/compose-file-v3/#healthcheck
 x-healthcheck: &status-healthcheck
   interval: 3s
-  timeout: 2s
-  retries: 10
+  timeout: 1s
+  retries: 15
 
 configs:
   alloy_config_file:
@@ -136,7 +136,7 @@ services:
           - mimir-memberlist
 
   mimirtool:
-    # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/alloy/modules/compose/README.md
+    # https://github.com/qclaogui/codelab-monitoring/blob/main/alloy-modules/compose/README.md
     labels:
       metrics.grafana.com/scrape: false
     image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:2.12.0}

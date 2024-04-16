@@ -6,6 +6,15 @@ logging {
 /********************************************
  * Grafana LGTMP Stack Receiver Provider
  ********************************************/
+// // git remote
+// import.git "provider" {
+// 	repository     = "https://github.com/qclaogui/codelab-monitoring.git"
+// 	revision       = "main"
+// 	path           = "alloy-modules/provider"
+// 	pull_frequency = "24h"
+// }
+
+// local file
 import.file "provider" {
 	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/provider"
 }
@@ -25,18 +34,18 @@ import.file "metrics" {
 	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/compose/metrics"
 }
 
-metrics.labels_scrape "all" {
+metrics.labels_scrape "compose" {
 	label_prefix    = "metrics.grafana.com"
 	forward_to      = [provider.self_hosted_stack.compose.metrics_receiver]
 	scrape_interval = "15s"
 }
 
-metrics.jobs_scrape "all" {
+metrics.jobs_scrape "compose" {
 	forward_to      = [provider.self_hosted_stack.compose.metrics_receiver]
 	scrape_interval = "15s"
 }
 
-metrics.integrations_scrape "all" {
+metrics.integrations_scrape "compose" {
 	forward_to      = [provider.self_hosted_stack.compose.metrics_receiver]
 	scrape_interval = "15s"
 }
@@ -48,13 +57,13 @@ import.file "logs" {
 	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/compose/logs"
 }
 
-logs.labels_scrape "all" {
+logs.labels_scrape "compose" {
 	label_prefix = "logs.grafana.com"
-	forward_to   = [logs.keep_labels.default.receiver]
+	forward_to   = [logs.keep_labels.compose.receiver]
 }
 
 // logs Processing And Transformation
-logs.keep_labels "default" {
+logs.keep_labels "compose" {
 	forward_to = [provider.self_hosted_stack.compose.logs_receiver]
 }
 
@@ -65,8 +74,8 @@ import.file "traces" {
 	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/compose/traces"
 }
 
-// traces Processing And Transformation
-traces.pat "all" {
+// traces Processing And Transformation process_and_transform
+traces.process_and_transform "compose" {
 	metrics_forward_to = [provider.self_hosted_stack.compose.metrics_receiver]
 	logs_forward_to    = [provider.self_hosted_stack.compose.logs_receiver]
 	traces_forward_to  = [provider.self_hosted_stack.compose.traces_receiver]
@@ -77,7 +86,7 @@ tracing {
 	sampling_fraction = 1
 
 	// Forward Alloy internal spans to traces process.
-	write_to = [traces.pat.all.alloy_traces_input]
+	write_to = [traces.process_and_transform.compose.alloy_traces_input]
 }
 
 /********************************************
@@ -87,7 +96,7 @@ import.file "profiles" {
 	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/compose/profiles"
 }
 
-profiles.labels_scrape "all" {
+profiles.labels_scrape "compose" {
 	label_prefix = "profiles.grafana.com"
 	forward_to   = [provider.self_hosted_stack.compose.profiles_receiver]
 }

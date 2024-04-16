@@ -3,9 +3,8 @@
 Provide the receivers of the collected data(`logs` `metrics` `traces` `profiles`).
 
 ## Components
-
-- [self_hosted_stack](#self_hosted_stack)
-- [grafana_cloud](#grafana_cloud)
+  - [`self_hosted_stack`](#self_hosted_stack)
+  - [`grafana_cloud`](#grafana_cloud)
 
 ### `self_hosted_stack`
 
@@ -13,17 +12,17 @@ Module to configure receivers for Self Hosted LGTMP Stack.
 
 ***Arguments***
 
-| Name                    | Required | Default                                 | Description                        |
-| :---------------------- | :------- | :-------------------------------------- | :--------------------------------- |
-| `metrics_endpoint_url`  | _no_     | `http://mimir:8080/api/v1/push`         | Where to send collected `metrics`. |
-| `logs_endpoint_url`     | _no_     | `http://loki:3100/loki/api/v1/push`     | Where to send collected `logs`.    |
-| `traces_endpoint_url`   | _no_     | `http://tempo:4318`                     | Where to send collected `traces`.  |
-| `profiles_endpoint_url` | _no_     | `http://pyroscope:4040`                 | Where to send collected `profiles`.|
+| Name                    | Required | Default                             | Description                         |
+|:------------------------|:---------|:------------------------------------|:------------------------------------|
+| `metrics_endpoint_url`  | _no_     | `http://mimir:8080/api/v1/push`     | Where to send collected `metrics`.  |
+| `logs_endpoint_url`     | _no_     | `http://loki:3100/loki/api/v1/push` | Where to send collected `logs`.     |
+| `traces_endpoint_url`   | _no_     | `http://tempo:4318`                 | Where to send collected `traces`.   |
+| `profiles_endpoint_url` | _no_     | `http://pyroscope:4040`             | Where to send collected `profiles`. |
 
 ***Exports***
 
-| Name                |        Type              | Description                                                      |
-| --------------------| ------------------------ | ---------------------------------------------------------------- |
+| Name                | Type                     | Description                                                      |
+|---------------------|--------------------------|------------------------------------------------------------------|
 | `metrics_receiver`  | `prometheus.Interceptor` | A value that other components can use to send metrics data to.   |
 | `logs_receiver`     | `loki.LogsReceiver`      | A value that other components can use to send logs data to.      |
 | `traces_receiver`   | `otelcol.Consumer`       | A value that other components can use to send trace data to.     |
@@ -35,8 +34,8 @@ Module to configure receivers for Self Hosted LGTMP Stack.
 import.git "provider" {
   repository     = "https://github.com/qclaogui/codelab-monitoring.git"
   revision       = "main"
-  path           = "docker-compose/common/config/alloy/modules/provider"
-  pull_frequency = "15m"
+  path           = "alloy-modules/provider"
+  pull_frequency = "24h"
 }
 
 // get the receivers from provider
@@ -80,18 +79,18 @@ The token must have permissions to read stack information. The setup of these pe
 ***Arguments***
 
 | Name         | Required | Default | Description                                        |
-| :----------- | :------- | :------ | :------------------------------------------------- |
+|:-------------|:---------|:--------|:---------------------------------------------------|
 | `stack_name` | _yes_    | `N/A`   | Name of your stack as shown in the account console |
 | `token`      | _yes_    | `N/A`   | Access policy token or API Key.                    |
 
 ***Exports***
 
-| Name                |        Type              | Description                                                                 |
-| --------------------| ------------------------ | --------------------------------------------------------------------------- |
-| `metrics_receiver`  | `prometheus.Interceptor` | A value that other components can use to send metrics data to.              |
-| `logs_receiver`     | `loki.LogsReceiver`      | A value that other components can use to send logs data to.                 |
-| `traces_receiver`   | `otelcol.Consumer`       | A value that other components can use to send trace data to.                |
-| `profiles_receiver` | `write.fanOutClient`     | A value that other components can use to send profiling data to.            |
+| Name                | Type                     | Description                                                                                                                  |
+|---------------------|--------------------------|------------------------------------------------------------------------------------------------------------------------------|
+| `metrics_receiver`  | `prometheus.Interceptor` | A value that other components can use to send metrics data to.                                                               |
+| `logs_receiver`     | `loki.LogsReceiver`      | A value that other components can use to send logs data to.                                                                  |
+| `traces_receiver`   | `otelcol.Consumer`       | A value that other components can use to send trace data to.                                                                 |
+| `profiles_receiver` | `write.fanOutClient`     | A value that other components can use to send profiling data to.                                                             |
 | `stack_information` | `object`                 | Decoded representation of the [Stack info endpoint](https://grafana.com/docs/grafana-cloud/api-reference/cloud-api/#stacks). |
 
 ***Example***
@@ -100,8 +99,8 @@ The token must have permissions to read stack information. The setup of these pe
 import.git "provider" {
   repository     = "https://github.com/qclaogui/codelab-monitoring.git"
   revision       = "main"
-  path           = "docker-compose/common/config/alloy/modules/provider"
-  pull_frequency = "15m"
+  path           = "alloy-modules/provider"
+  pull_frequency = "24h"
 }
 
 // get the receivers from provider

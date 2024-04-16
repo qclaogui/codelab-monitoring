@@ -20,7 +20,7 @@ include: # include is available in Docker Compose version 2.20 and later, and Do
 
 services:
   github-exporter:
-    labels: # https://github.com/qclaogui/codelab-monitoring/blob/main/docker-compose/common/config/alloy/modules/compose/README.md
+    labels: # https://github.com/qclaogui/codelab-monitoring/blob/main/alloy-modules/compose/README.md
       metrics.grafana.com/scrape: true
     image: githubexporter/github-exporter:1.1.0
     environment:

@@ -1,6 +1,17 @@
-# Docker Compose `labels_scrape` Components
+# Alloy Modules - Docker Compose
 
-## Logs
+## Modules
+
+- [Logs](logs/)
+- [Traces](traces/)
+- [Metrics](metrics/)
+- [Profiles](profiles/)
+- [Jobs](jobs/)
+- [Integrations](integrations/)
+
+## Compose `labels_scrape` Component for [`Logs`](logs/labels-scrape.alloy), [`Metrics`](metrics/labels-scrape.alloy) and [`Profiles`](profiles/labels-scrape.alloy)
+
+### Logs
 
 The following service labels are supported:
 
@@ -11,7 +22,7 @@ The following service labels are supported:
 
 ---
 
-## Metrics
+### Metrics
 
 The following service labels are supported for gathering of metrics for docker compose services:
 
@@ -28,7 +39,7 @@ The following service labels are supported for gathering of metrics for docker c
 
 ---
 
-## Profiles
+### Profiles
 
 The following service labels are supported for docker compose services:
 
