@@ -1,12 +1,12 @@
-/************************************************
-* Integrations Component: component_node_exporter
-*************************************************/
+/*
+Module Components: component_node_exporter
+*/
 
 declare "component_node_exporter" {
 
-	/********************************************
+	/*****************************************************************
 	* ARGUMENTS
-	********************************************/
+	*****************************************************************/
 	argument "forward_to" {
 		comment = "Must be a list(MetricssReceiver) where collected metrics should be forwarded to"
 	}
@@ -28,9 +28,9 @@ declare "component_node_exporter" {
 		default  = "10s"
 	}
 
-	/********************************************
-	* Integrations Node Exporter
-	********************************************/
+	/***************************************************************
+	* Integrations cAdvisor
+	****************************************************************/
 	prometheus.exporter.unix "component_node_exporter" {
 		procfs_path    = "/rootfs/proc"
 		sysfs_path     = "/rootfs/sys"
@@ -38,9 +38,9 @@ declare "component_node_exporter" {
 		udev_data_path = "/rootfs/run/udev/data"
 	}
 
-	/********************************************
+	/***************************************************************
 	* Discovery Relabelings (pre-scrape)
-	********************************************/
+	****************************************************************/
 	discovery.relabel "component_node_exporter" {
 		targets = prometheus.exporter.unix.component_node_exporter.targets
 
@@ -50,9 +50,9 @@ declare "component_node_exporter" {
 		}
 	}
 
-	/********************************************
+	/***************************************************************
 	* Prometheus Scrape Integrations Targets
-	********************************************/
+	****************************************************************/
 	prometheus.scrape "component_node_exporter" {
 		targets = concat(
 			discovery.relabel.component_node_exporter.output,
@@ -71,9 +71,9 @@ declare "component_node_exporter" {
 		forward_to = [prometheus.relabel.component_node_exporter.receiver]
 	}
 
-	/********************************************
+	/***************************************************************
 	* Prometheus Metric Relabelings (post-scrape)
-	********************************************/
+	****************************************************************/
 	prometheus.relabel "component_node_exporter" {
 		forward_to = argument.forward_to.value
 

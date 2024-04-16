@@ -8,33 +8,18 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-- ../../common/grafana-agent
+- ../../common/alloy
 - pyroscope
 
 # optional
 - ../../monolithic-mode/metrics/mimir
 
-
-secretGenerator:
-- name: pyroscope-env
-  namespace: profiles-system
-  literals:
-  - PYROSCOPE_STORAGE_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
-
 configMapGenerator:
-- name: agent-config
+- name: alloy-config
   namespace: monitoring-system
   behavior: replace
   files:
-  - configs/config.river
-
-- name: pyroscope-config
-  namespace: profiles-system
-  options:
-    disableNameSuffixHash: true
-  behavior: replace
-  files:
-  - config.yaml=configs/pyroscope.yaml
+  - config.alloy=profiles.alloy
 
 # Update Pyroscope Microservices Mode endpoint in gateway
 - name: nginx-env

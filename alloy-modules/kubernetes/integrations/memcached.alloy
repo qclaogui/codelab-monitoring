@@ -1,0 +1,108 @@
+/*
+Module Components: component_memcached
+*/
+
+declare "component_memcached" {
+
+	/***************************************************
+	* ARGUMENTS
+	***************************************************/
+	argument "forward_to" {
+		comment = "Must be a list(MetricssReceiver) where collected metrics should be forwarded to"
+	}
+
+	argument "memcached_address" {
+		comment  = "address of the Memcached"
+		optional = true
+		default  = "memcached:11211"
+	}
+
+	argument "memcached_timeout" {
+		comment  = "timeout of the Memcached"
+		optional = true
+		default  = "5s"
+	}
+
+	argument "memcached_instance" {
+		comment  = "instance of the Memcached"
+		optional = true
+		default  = "primary"
+	}
+
+	argument "keep_metrics" {
+		optional = true
+		default  = "(.+)"
+	}
+
+	argument "scrape_interval" {
+		comment  = "How often to scrape metrics from the targets (default: 60s)"
+		optional = true
+		default  = "60s"
+	}
+
+	argument "scrape_timeout" {
+		comment  = "How long before a scrape times out (default: 10s)"
+		optional = true
+		default  = "10s"
+	}
+
+	/***************************************************************
+	* Integrations Memcached
+	****************************************************************/
+	prometheus.exporter.memcached "component_memcached" {
+		address = argument.memcached_address.value
+		timeout = argument.memcached_timeout.value
+	}
+
+	/***************************************************************
+	* Discovery Relabelings (pre-scrape)
+	****************************************************************/
+	discovery.relabel "component_memcached" {
+		targets = prometheus.exporter.memcached.component_memcached.targets
+
+		rule {
+			target_label = "job"
+			replacement  = "integrations/kubernetes/memcached"
+		}
+	}
+
+	/***************************************************************
+	* Prometheus Scrape Integrations Targets
+	****************************************************************/
+	prometheus.scrape "component_memcached" {
+		targets = concat(
+			discovery.relabel.component_memcached.output,
+		)
+
+		enable_protobuf_negotiation = true
+		scrape_classic_histograms   = true
+
+		scrape_interval = argument.scrape_interval.value
+		scrape_timeout  = argument.scrape_timeout.value
+
+		clustering {
+			enabled = true
+		}
+
+		forward_to = [prometheus.relabel.component_memcached.receiver]
+	}
+
+	/***************************************************************
+	* Prometheus Metric Relabelings (post-scrape)
+	****************************************************************/
+	prometheus.relabel "component_memcached" {
+		forward_to = argument.forward_to.value
+
+		// keep only metrics that match the keep_metrics regex
+		rule {
+			source_labels = ["__name__"]
+			regex         = argument.keep_metrics.value
+			action        = "keep"
+		}
+
+		rule {
+			replacement  = argument.memcached_instance.value
+			target_label = "instance"
+		}
+	}
+}

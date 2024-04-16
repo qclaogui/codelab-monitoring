@@ -1,22 +1,21 @@
 /*
-Component: labels_scrape
+Module Components: labels_scrape
 Description: Scrapes targets for logs based on Docker Containers labels
 
 Following labels are available:
-
   logs.grafana.com/scrape: true
 
-allow containers to declare what tenant their logs should be written to, 
-the following label is supported:
+ allow containers to declare what tenant their logs should be written to,
+ the following label is supported:
 
-  logs.grafana.com/tenant: "primary"
+   logs.grafana.com/tenant: "primary"
 */
 
 declare "labels_scrape" {
 
-	/********************************************
+	/*****************************************************************
 	* ARGUMENTS
-	********************************************/
+	*****************************************************************/
 	argument "forward_to" {
 		comment = "Must be a list(LogsReceiver) where collected logs should be forwarded to"
 	}
@@ -53,9 +52,9 @@ declare "labels_scrape" {
 		default  = "(.*)"
 	}
 
-	/********************************************
+	/*****************************************************************
 	* Targets From Docker Discovery
-	********************************************/
+	*****************************************************************/
 	discovery.docker "dd_logs" {
 		host             = "unix:///var/run/docker.sock"
 		refresh_interval = "60s"
@@ -115,7 +114,7 @@ declare "labels_scrape" {
 		}
 
 		// make all labels on the pod available to the pipeline as labels(for loki process),
-		// they are omitted before write via labelallow unless explicitly set
+		// they are omitted before write via label allow unless explicitly set
 		rule {
 			action = "labelmap"
 			regex  = "__meta_docker_container_label_(.+)"

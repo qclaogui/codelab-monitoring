@@ -1,0 +1,59 @@
+/*
+Module Components: integrations_scrape
+Description: Integrations Module Components Scrape
+
+Note: Every argument except for "forward_to" is optional, and does have a defined default value.  However, the values for these
+      arguments are not defined using the default = " ... " argument syntax, but rather using the coalesce(argument.value, " ... ").
+      This is because if the argument passed in from another consuming module is set to null, the default = " ... " syntax will
+      does not override the value passed in, where coalesce() will return the first non-null value.
+*/
+
+declare "integrations_scrape" {
+
+	/*****************************************************************
+	* ARGUMENTS
+	*****************************************************************/
+	argument "forward_to" {
+		comment = "Must be a list(MetricssReceiver) where collected metrics should be forwarded to"
+	}
+
+	argument "name" {
+		comment  = "Name of the integrations config"
+		optional = true
+		default  = "alloy-integrations"
+	}
+
+	argument "namespace" {
+		comment  = "Namespace of the integrations config"
+		optional = true
+		default  = "default"
+	}
+
+	/*****************************************************************
+	* Import Integrations Components
+	*****************************************************************/
+	// integrate components local files
+	import.file "integrate" {
+		filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/kubernetes/integrations"
+	}
+
+	// // integrate components kubernetes configmap
+	// remote.kubernetes.configmap "integrations" {
+	// 	name      = argument.name.value
+	// 	namespace = argument.namespace.value
+	// }
+	// import.string "integrate" {
+	// 	content = remote.kubernetes.configmap.integrations.data["memcached.alloy"]
+	// }
+
+	/*****************************************************************
+	* Memcached Integrations
+	*****************************************************************/
+	integrate.component_memcached "primary" {
+		forward_to = argument.forward_to.value
+
+		memcached_address  = "memcached.memcached-system.svc.cluster.local:11211"
+		memcached_timeout  = "5s"
+		memcached_instance = "primary"
+	}
+}

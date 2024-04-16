@@ -13,3 +13,38 @@ helmCharts:
   skipTests: true
   additionalValuesFiles:
   - values-k3d-k3s.yaml
+
+secretGenerator:
+- name: mimir-distributed-env
+  namespace: monitoring-system
+  literals:
+  - MIMIR_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
+
+generators:
+- |-
+  apiVersion: builtin
+  kind: ConfigMapGenerator
+  metadata:
+    name: mimir-distributed-config
+    namespace: monitoring-system
+  behavior: replace
+  files:
+  - mimir.yaml=configs/mimir-distributed.yaml
+- |-
+  apiVersion: builtin
+  kind: ConfigMapGenerator
+  metadata:
+    name: mimir-distributed-runtime
+    namespace: monitoring-system
+  behavior: replace
+  files:
+  - configs/runtime.yaml
+- |-
+  apiVersion: builtin
+  kind: ConfigMapGenerator
+  metadata:
+    name: mimir-distributed-alertmanager-fallback-config
+    namespace: monitoring-system
+  behavior: replace
+  files:
+  - alertmanager_fallback_config.yaml=configs/alertmanager-fallback-config.yaml

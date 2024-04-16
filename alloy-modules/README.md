@@ -4,6 +4,6 @@
 
 ## Modules
 
-- [Docker Compose](compose/)
-- [Kubernetes](kubernetes/)
-- [Grafana LGTMP Stack Provider](provider/)
+- [Docker Compose](compose/README.md)
+- [Kubernetes](kubernetes/README.md)
+- [Grafana LGTMP Stack Provider](provider/README.md)

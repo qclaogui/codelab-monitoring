@@ -1,14 +1,15 @@
 /*
-Component: process_and_transform
+Module Components: process_and_transform
+
 Description: Traces data collection processing and transformation
 */
 
 // Processing And Transformation
 declare "process_and_transform" {
 
-	/********************************************
+	/*****************************************************************
 	* ARGUMENTS
-	********************************************/
+	*****************************************************************/
 	argument "traces_forward_to" {
 		comment = "Must be a list(TracesReceiver) where collected traces should be forwarded to"
 	}
@@ -21,9 +22,9 @@ declare "process_and_transform" {
 		comment = "Must be a list(MetricsReceiver) where collected metrics should be forwarded to"
 	}
 
-	/********************************************
+	/*****************************************************************
 	* Jaeger for Metrics Logs Traces
-	********************************************/
+	*****************************************************************/
 	otelcol.receiver.jaeger "default" {
 		protocols {
 			grpc {
@@ -50,9 +51,9 @@ declare "process_and_transform" {
 		}
 	}
 
-	/********************************************
+	/*****************************************************************
 	* Otelcol for Metrics Logs Traces
-	********************************************/
+	*****************************************************************/
 	otelcol.receiver.otlp "default" {
 		grpc {
 			endpoint = "0.0.0.0:4317"
@@ -227,9 +228,9 @@ declare "process_and_transform" {
 		forward_to = argument.logs_forward_to.value
 	}
 
-	/********************************************
+	/*****************************************************************
 	* EXPORTS
-	********************************************/
+	*****************************************************************/
 	export "alloy_traces_input" {
 		value = otelcol.processor.resourcedetection.default.input
 	}

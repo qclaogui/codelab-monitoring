@@ -1,0 +1,34 @@
+/*
+Module Components: podmonitors_scrape
+Description: Scrapes targets for metrics based on prometheus.operator.podmonitors
+*/
+
+declare "podmonitors_scrape" {
+
+	/*****************************************************************
+	* ARGUMENTS
+	*****************************************************************/
+	argument "forward_to" {
+		comment  = "Must be a list(MetricssReceiver) where collected metrics should be forwarded to"
+		optional = false
+	}
+
+	/*****************************************************************
+	* Kubernetes Auto Scrape PodMonitors
+	*****************************************************************/
+	prometheus.operator.podmonitors "scrape" {
+		forward_to = argument.forward_to.value
+
+		clustering {
+			enabled = true
+		}
+
+		// selector {
+		// 	match_expression {
+		// 		key      = "team"
+		// 		operator = "In"
+		// 		values   = ["team-infra"]
+		// 	}
+		// }
+	}
+}

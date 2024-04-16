@@ -1,0 +1,934 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/instance: alloy
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: alloy
+    app.kubernetes.io/version: v1.0.0
+    helm.sh/chart: alloy-0.1.1
+  name: alloy
+  namespace: monitoring-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/instance: alloy
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: alloy
+    app.kubernetes.io/version: v1.0.0
+    helm.sh/chart: alloy-0.1.1
+  name: alloy
+rules:
+- apiGroups:
+  - ""
+  - discovery.k8s.io
+  - networking.k8s.io
+  resources:
+  - endpoints
+  - endpointslices
+  - ingresses
+  - nodes
+  - nodes/proxy
+  - nodes/metrics
+  - pods
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - pods/log
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - monitoring.grafana.com
+  resources:
+  - podlogs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - prometheusrules
+  verbs:
+  - get
+  - list
+  - watch
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - podmonitors
+  - servicemonitors
+  - probes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - extensions
+  resources:
+  - replicasets
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/instance: alloy
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: alloy
+    app.kubernetes.io/version: v1.0.0
+    helm.sh/chart: alloy-0.1.1
+  name: alloy
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: alloy
+subjects:
+- kind: ServiceAccount
+  name: alloy
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  config.alloy: "logging {\n\tlevel  = coalesce(env(\"ALLOY_LOG_LEVEL\"), \"info\")\n\tformat
+    = \"logfmt\"\n}\n"
+kind: ConfigMap
+metadata:
+  name: alloy-config-ftt29f8k85
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  memcached.alloy: "/*\nModule Components: component_memcached\n*/\n\ndeclare \"component_memcached\"
+    {\n\n\t/***************************************************\n\t* ARGUMENTS\n\t***************************************************/\n\targument
+    \"forward_to\" {\n\t\tcomment = \"Must be a list(MetricssReceiver) where collected
+    metrics should be forwarded to\"\n\t}\n\n\targument \"memcached_address\" {\n\t\tcomment
+    \ = \"address of the Memcached\"\n\t\toptional = true\n\t\tdefault  = \"memcached:11211\"\n\t}\n\n\targument
+    \"memcached_timeout\" {\n\t\tcomment  = \"timeout of the Memcached\"\n\t\toptional
+    = true\n\t\tdefault  = \"5s\"\n\t}\n\n\targument \"memcached_instance\" {\n\t\tcomment
+    \ = \"instance of the Memcached\"\n\t\toptional = true\n\t\tdefault  = \"primary\"\n\t}\n\n\targument
+    \"keep_metrics\" {\n\t\toptional = true\n\t\tdefault  = \"(.+)\"\n\t}\n\n\targument
+    \"scrape_interval\" {\n\t\tcomment  = \"How often to scrape metrics from the targets
+    (default: 60s)\"\n\t\toptional = true\n\t\tdefault  = \"60s\"\n\t}\n\n\targument
+    \"scrape_timeout\" {\n\t\tcomment  = \"How long before a scrape times out (default:
+    10s)\"\n\t\toptional = true\n\t\tdefault  = \"10s\"\n\t}\n\n\t/***************************************************************\n\t*
+    Integrations Memcached\n\t****************************************************************/\n\tprometheus.exporter.memcached
+    \"component_memcached\" {\n\t\taddress = argument.memcached_address.value\n\t\ttimeout
+    = argument.memcached_timeout.value\n\t}\n\n\t/***************************************************************\n\t*
+    Discovery Relabelings (pre-scrape)\n\t****************************************************************/\n\tdiscovery.relabel
+    \"component_memcached\" {\n\t\ttargets = prometheus.exporter.memcached.component_memcached.targets\n\n\t\trule
+    {\n\t\t\ttarget_label = \"job\"\n\t\t\treplacement  = \"integrations/kubernetes/memcached\"\n\t\t}\n\t}\n\n\t/***************************************************************\n\t*
+    Prometheus Scrape Integrations Targets\n\t****************************************************************/\n\tprometheus.scrape
+    \"component_memcached\" {\n\t\ttargets = concat(\n\t\t\tdiscovery.relabel.component_memcached.output,\n\t\t)\n\n\t\tenable_protobuf_negotiation
+    = true\n\t\tscrape_classic_histograms   = true\n\n\t\tscrape_interval = argument.scrape_interval.value\n\t\tscrape_timeout
+    \ = argument.scrape_timeout.value\n\n\t\tclustering {\n\t\t\tenabled = true\n\t\t}\n\n\t\tforward_to
+    = [prometheus.relabel.component_memcached.receiver]\n\t}\n\n\t/***************************************************************\n\t*
+    Prometheus Metric Relabelings (post-scrape)\n\t****************************************************************/\n\tprometheus.relabel
+    \"component_memcached\" {\n\t\tforward_to = argument.forward_to.value\n\n\t\t//
+    keep only metrics that match the keep_metrics regex\n\t\trule {\n\t\t\tsource_labels
+    = [\"__name__\"]\n\t\t\tregex         = argument.keep_metrics.value\n\t\t\taction
+    \       = \"keep\"\n\t\t}\n\n\t\trule {\n\t\t\treplacement  = argument.memcached_instance.value\n\t\t\ttarget_label
+    = \"instance\"\n\t\t}\n\t}\n}\n"
+kind: ConfigMap
+metadata:
+  name: alloy-modules-kubernetes-integrations-4574dtf9mm
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  annotations-ingest.alloy: "/*\nModule Components: annotations_ingest\nDescription:
+    Scrapes targets for logs based on kubernetes Pod annotations\n\n  Annotations:\n
+    \   logs.grafana.com/ingest: true\n    logs.grafana.com/tenant: \"primary\"\n*/\n\ndeclare
+    \"annotations_ingest\" {\n\n\t/*****************************************************************\n\t*
+    ARGUMENTS\n\t*****************************************************************/\n\targument
+    \"forward_to\" {\n\t\tcomment = \"Must be a list(LogsReceiver) where collected
+    logs should be forwarded to\"\n\t}\n\n\targument \"tenant\" {\n\t\tcomment  =
+    \"The tenant to filter logs to.  This does not have to be the tenantId, this is
+    the value to look for in the logs.agent.grafana.com/tenant annotation, and this
+    can be a regex.\"\n\t\toptional = true\n\t\tdefault  = \".*\"\n\t}\n\n\t// arguments
+    for kubernetes discovery\n\targument \"namespaces\" {\n\t\tcomment  = \"The namespaces
+    to look for targets in (default: [\\\"kube-system\\\"] is all namespaces)\"\n\t\toptional
+    = true\n\t}\n\n\targument \"annotation_prefix\" {\n\t\tcomment  = \"The annotation_prefix
+    to use (default: logs.grafana.com)\"\n\t\tdefault  = \"logs.grafana.com\"\n\t\toptional
+    = true\n\t}\n\n\t/*\n    Hidden Arguments\n    These arguments are used to set
+    reusable variables to avoid repeating logic\n  */\n\targument \"__sd_annotation\"
+    {\n\t\toptional = true\n\t\tcomment  = \"The logic is used to transform the annotation
+    argument into a valid label name by removing unsupported characters.\"\n\t\tdefault
+    \ = replace(replace(replace(coalesce(argument.annotation_prefix.value, \"logs.grafana.com\"),
+    \".\", \"_\"), \"/\", \"_\"), \"-\", \"_\")\n\t}\n\n\t// find all pods\n\tdiscovery.kubernetes
+    \"log_annotations\" {\n\t\trole = \"pod\"\n\n\t\tnamespaces {\n\t\t\tnames = coalesce(argument.namespaces.value,
+    [])\n\t\t}\n\t}\n\n\t// apply relabelings\n\tdiscovery.relabel \"log_annotations\"
+    {\n\t\ttargets = discovery.kubernetes.log_annotations.targets\n\n\t\t// allow
+    pods to declare their logs to be ingested or not, the default is true\n\t\t//
+    \  i.e. logs.grafana.com/ingest: false\n\t\trule {\n\t\t\taction        = \"keep\"\n\t\t\tsource_labels
+    = [\n\t\t\t\t\"__meta_kubernetes_pod_annotation_\" + argument.__sd_annotation.value
+    + \"_ingest\",\n\t\t\t]\n\t\t\tregex = \"^(true|)$\"\n\t\t}\n\n\t\t// allow pods
+    to declare what tenant their logs should be written to, the following annotation
+    is supported:\n\t\t//   logs.grafana.com/tenant: \"primary\"\n\t\trule {\n\t\t\taction
+    \       = \"keep\"\n\t\t\tsource_labels = [\n\t\t\t\t\"__meta_kubernetes_pod_annotation_\"
+    + argument.__sd_annotation.value + \"_tenant\",\n\t\t\t]\n\t\t\tregex = \"^(\"
+    + argument.tenant.value + \")$\"\n\t\t}\n\n\t\t// set the instance label as the
+    name of the worker node the pod is on\n\t\trule {\n\t\t\taction        = \"replace\"\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_node_name\"]\n\t\t\ttarget_label  = \"instance\"\n\t\t}\n\n\t\t//
+    set the namespace label\n\t\trule {\n\t\t\tsource_labels = [\"__meta_kubernetes_namespace\"]\n\t\t\ttarget_label
+    \ = \"namespace\"\n\t\t}\n\n\t\t// set the pod label\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_name\"]\n\t\t\ttarget_label  = \"pod\"\n\t\t}\n\n\t\t//
+    set the container label\n\t\trule {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_container_name\"]\n\t\t\ttarget_label
+    \ = \"container\"\n\t\t}\n\n\t\t// set a workload label\n\t\trule {\n\t\t\tsource_labels
+    = [\n\t\t\t\t\"__meta_kubernetes_pod_controller_kind\",\n\t\t\t\t\"__meta_kubernetes_pod_controller_name\",\n\t\t\t]\n\t\t\tseparator
+    \   = \"/\"\n\t\t\ttarget_label = \"workload\"\n\t\t}\n\t\t// remove the hash
+    from the ReplicaSet\n\t\trule {\n\t\t\tsource_labels = [\"workload\"]\n\t\t\tregex
+    \        = \"(ReplicaSet/.+)-.+\"\n\t\t\ttarget_label  = \"workload\"\n\t\t}\n\n\t\t//
+    set the app name if specified as metadata labels \"app:\" or \"app.kubernetes.io/name:\"
+    or \"k8s-app:\"\n\t\trule {\n\t\t\taction        = \"replace\"\n\t\t\tsource_labels
+    = [\n\t\t\t\t\"__meta_kubernetes_pod_label_app_kubernetes_io_name\",\n\t\t\t\t\"__meta_kubernetes_pod_label_k8s_app\",\n\t\t\t\t\"__meta_kubernetes_pod_label_app\",\n\t\t\t]\n\t\t\tseparator
+    \   = \";\"\n\t\t\tregex        = \"^(?:;*)?([^;]+).*$\"\n\t\t\treplacement  =
+    \"$1\"\n\t\t\ttarget_label = \"app\"\n\t\t}\n\n\t\t// set the component if specified
+    as metadata labels \"component:\" or \"app.kubernetes.io/component:\" or \"k8s-component:\"\n\t\trule
+    {\n\t\t\taction        = \"replace\"\n\t\t\tsource_labels = [\n\t\t\t\t\"__meta_kubernetes_pod_label_app_kubernetes_io_component\",\n\t\t\t\t\"__meta_kubernetes_pod_label_k8s_component\",\n\t\t\t\t\"__meta_kubernetes_pod_label_component\",\n\t\t\t]\n\t\t\tregex
+    \       = \"^(?:;*)?([^;]+).*$\"\n\t\t\treplacement  = \"$1\"\n\t\t\ttarget_label
+    = \"component\"\n\t\t}\n\n\t\t// set the version if specified as metadata labels
+    \"version:\" or \"app.kubernetes.io/version:\" or \"app_version:\"\n\t\trule {\n\t\t\taction
+    \       = \"replace\"\n\t\t\tsource_labels = [\n\t\t\t\t\"__meta_kubernetes_pod_label_app_kubernetes_io_version\",\n\t\t\t\t\"__meta_kubernetes_pod_label_version\",\n\t\t\t\t\"__meta_kubernetes_pod_label_app_version\",\n\t\t\t]\n\t\t\tregex
+    \       = \"^(?:;*)?([^;]+).*$\"\n\t\t\treplacement  = \"$1\"\n\t\t\ttarget_label
+    = \"version\"\n\t\t}\n\n\t\t// set a source label\n\t\trule {\n\t\t\taction       =
+    \"replace\"\n\t\t\treplacement  = \"kubernetes\"\n\t\t\ttarget_label = \"source\"\n\t\t}\n\n\t\t//
+    set the job label to be namespace / friendly pod name\n\t\trule {\n\t\t\taction
+    \       = \"replace\"\n\t\t\tsource_labels = [\n\t\t\t\t\"workload\",\n\t\t\t\t\"__meta_kubernetes_namespace\",\n\t\t\t]\n\t\t\tregex
+    \       = \".+\\\\/(.+);(.+)\"\n\t\t\treplacement  = \"$2/$1\"\n\t\t\ttarget_label
+    = \"job\"\n\t\t}\n\t}\n\n\tdiscovery.relabel \"worker_logs\" {\n\t\ttargets =
+    discovery.relabel.log_annotations.output\n\n\t\t// set the __path__, this is automatically
+    translated as a label of filename (which should be dropped or normalized)\n\t\t//
+    DO NOT delete this line as it is needed to tail the pod logs on the node\n\t\trule
+    {\n\t\t\taction        = \"replace\"\n\t\t\tseparator     = \"/\"\n\t\t\tsource_labels
+    = [\n\t\t\t\t\"__meta_kubernetes_pod_uid\",\n\t\t\t\t\"__meta_kubernetes_pod_container_name\",\n\t\t\t]\n\t\t\treplacement
+    \ = \"/var/log/pods/*$1/*.log\"\n\t\t\ttarget_label = \"__path__\"\n\t\t}\n\n\t\t//
+    set the __host__\n\t\trule {\n\t\t\taction        = \"replace\"\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_node_name\"]\n\t\t\ttarget_label  = \"__host__\"\n\t\t}\n\n\t\t//
+    as a result of kubernetes service discovery for pods, all of the meta data information
+    is exposed in labels\n\t\t// __meta_kubernetes_pod_*, including __meta_kubernetes_pod_container_id
+    which can be used to determine what\n\t\t// the pods container runtime is, docker
+    (docker://...) or containerd (containerd://...) this will inform us\n\t\t// which
+    parsing stage to use.  However, any labels that begin with __* are not passed
+    to loki.process\n\t\t// (pipeline) stages. Use a relabeling stage to set a label
+    that can be used a LogQL selector in the stage\n\t\t// below so parsing can be
+    automatically determined, then drop the label from the loki.process stage.\n\t\t//
+    set the container runtime as a label\n\t\trule {\n\t\t\taction        = \"replace\"\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_container_id\"]\n\t\t\tregex         = \"^(\\\\w+):\\\\/\\\\/.+$\"\n\t\t\treplacement
+    \  = \"$1\"\n\t\t\ttarget_label  = \"tmp_container_runtime\"\n\t\t}\n\n\t\t//
+    make all labels on the pod available to the pipeline as labels,\n\t\t// they are
+    omitted before write via labelallow unless explicitly set\n\t\trule {\n\t\t\taction
+    = \"labelmap\"\n\t\t\tregex  = \"__meta_kubernetes_pod_label_(.+)\"\n\t\t}\n\n\t\t//
+    make all annotations on the pod available to the pipeline as labels,\n\t\t// they
+    are omitted before write via labelallow unless explicitly set\n\t\trule {\n\t\t\taction
+    = \"labelmap\"\n\t\t\tregex  = \"__meta_kubernetes_pod_annotation_(.+)\"\n\t\t}\n\t}\n\n\t//
+    find eligible files on the worker\n\tlocal.file_match \"pods\" {\n\t\tpath_targets
+    = discovery.relabel.worker_logs.output\n\t}\n\n\t// tail the files\n\tloki.source.file
+    \"pods\" {\n\t\ttargets    = local.file_match.pods.targets\n\t\tforward_to = [loki.process.parse.receiver]\n\t}\n\n\t//
+    parse the log based on the container runtime\n\tloki.process \"parse\" {\n\t\tforward_to
+    = argument.forward_to.value\n\t\t/*******************************************************************************\n
+    \    *                         Container Runtime Parsing\n     ********************************************************************************/\n\t\t//
+    if the label tmp_container_runtime from above is containerd parse using cri\n\t\tstage.match
+    {\n\t\t\tselector = \"{tmp_container_runtime=\\\"containerd\\\"}\"\n\t\t\t// the
+    cri processing stage extracts the following k/v pairs: log, stream, time, flags\n\t\t\tstage.cri
+    { }\n\n\t\t\t// Set the extract flags and stream values as labels\n\t\t\tstage.labels
+    {\n\t\t\t\tvalues = {\n\t\t\t\t\tflags  = \"\",\n\t\t\t\t\tstream = \"\",\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\t//
+    if the label tmp_container_runtime from above is docker parse using docker\n\t\tstage.match
+    {\n\t\t\tselector = \"{tmp_container_runtime=\\\"docker\\\"}\"\n\t\t\t// the docker
+    processing stage extracts the following k/v pairs: log, stream, time\n\t\t\tstage.docker
+    { }\n\n\t\t\t// Set the extract stream value as a label\n\t\t\tstage.labels {\n\t\t\t\tvalues
+    = {\n\t\t\t\t\tstream = \"\",\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\t// drop the temporary
+    container runtime label as it is no longer needed\n\t\tstage.label_drop {\n\t\t\tvalues
+    = [\"tmp_container_runtime\"]\n\t\t}\n\t}\n}\n"
+  keep-labels.alloy: "/*\nModule Components: keep_labels\nDescription: Pre-defined
+    set of labels to keep, this stage should always be in-place as the previous relabeing\n
+    \            stages make every pod label and annotation a label in the pipeline,
+    which we do not want created\n             in Loki as that would have extremely
+    high-cardinality.\n*/\n\ndeclare \"keep_labels\" {\n\n\t/*****************************************************************\n\t*
+    ARGUMENTS\n\t*****************************************************************/\n\targument
+    \"forward_to\" {\n\t\tcomment = \"Must be a list(LogsReceiver) where collected
+    logs should be forwarded to\"\n\t}\n\n\targument \"keep_labels\" {\n\t\toptional
+    = true\n\t\tcomment  = \"List of labels to keep before the log message is written
+    to Loki\"\n\t\tdefault  = [\n\t\t\t\"app\",\n\t\t\t\"cluster\",\n\t\t\t\"component\",\n\t\t\t\"container\",\n\t\t\t\"env\",\n\t\t\t\"job\",\n\t\t\t\"level\",\n\t\t\t\"namespace\",\n\t\t\t\"region\",\n\t\t\t\"service\",\n\t\t\t\"squad\",\n\t\t\t\"team\",\n\t\t\t\"workload\",\n\t\t]\n\t}\n\n\t/*****************************************************************\n\t*
+    LOKI PROCESS\n\t*****************************************************************/\n\tloki.process
+    \"keep_labels\" {\n\t\tforward_to = argument.forward_to.value\n\n\t\t/*\n\t\tAs
+    all of the pod labels and annotations we transformed into labels in the previous
+    relabelings to make\n\t\tthem available to the pipeline processing we need to
+    ensure they are not automatically created in Loki.\n\t\tThis would result in an
+    extremely high number of labels and values severely impacting query performance.\n\t\tNot
+    every log has to contain these labels, but this list should reflect the set of
+    labels that you want\n\t\tto explicitly allow.\n\t\t*/\n\t\tstage.label_keep {\n\t\t\tvalues
+    = argument.keep_labels.value\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
+    EXPORTS\n\t*****************************************************************/\n\texport
+    \"receiver\" {\n\t\tvalue = loki.process.keep_labels.receiver\n\t}\n}\n"
+kind: ConfigMap
+metadata:
+  name: alloy-modules-kubernetes-logs-ff7fmcftkt
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  integrations-scrape.alloy: "/*\nModule Components: integrations_scrape\nDescription:
+    Integrations Module Components Scrape\n\nNote: Every argument except for \"forward_to\"
+    is optional, and does have a defined default value.  However, the values for these\n
+    \     arguments are not defined using the default = \" ... \" argument syntax,
+    but rather using the coalesce(argument.value, \" ... \").\n      This is because
+    if the argument passed in from another consuming module is set to null, the default
+    = \" ... \" syntax will\n      does not override the value passed in, where coalesce()
+    will return the first non-null value.\n*/\n\ndeclare \"integrations_scrape\" {\n\n\t/*****************************************************************\n\t*
+    ARGUMENTS\n\t*****************************************************************/\n\targument
+    \"forward_to\" {\n\t\tcomment = \"Must be a list(MetricssReceiver) where collected
+    metrics should be forwarded to\"\n\t}\n\n\targument \"name\" {\n\t\tcomment  =
+    \"Name of the integrations config\"\n\t\toptional = true\n\t\tdefault  = \"alloy-integrations\"\n\t}\n\n\targument
+    \"namespace\" {\n\t\tcomment  = \"Namespace of the integrations config\"\n\t\toptional
+    = true\n\t\tdefault  = \"default\"\n\t}\n\n\t/*****************************************************************\n\t*
+    Import Integrations Components\n\t*****************************************************************/\n\t//
+    integrate components local files\n\timport.file \"integrate\" {\n\t\tfilename
+    = coalesce(env(\"ALLOY_MODULES_FOLDER\"), \"/etc/alloy/modules\") + \"/kubernetes/integrations\"\n\t}\n\n\t//
+    // integrate components kubernetes configmap\n\t// remote.kubernetes.configmap
+    \"integrations\" {\n\t// \tname      = argument.name.value\n\t// \tnamespace =
+    argument.namespace.value\n\t// }\n\t// import.string \"integrate\" {\n\t// \tcontent
+    = remote.kubernetes.configmap.integrations.data[\"memcached.alloy\"]\n\t// }\n\n\t/*****************************************************************\n\t*
+    Memcached Integrations\n\t*****************************************************************/\n\tintegrate.component_memcached
+    \"primary\" {\n\t\tforward_to = argument.forward_to.value\n\n\t\tmemcached_address
+    \ = \"memcached.memcached-system.svc.cluster.local:11211\"\n\t\tmemcached_timeout
+    \ = \"5s\"\n\t\tmemcached_instance = \"primary\"\n\t}\n}\n"
+  podmonitors-scrape.alloy: "/*\nModule Components: podmonitors_scrape\nDescription:
+    Scrapes targets for metrics based on prometheus.operator.podmonitors\n*/\n\ndeclare
+    \"podmonitors_scrape\" {\n\n\t/*****************************************************************\n\t*
+    ARGUMENTS\n\t*****************************************************************/\n\targument
+    \"forward_to\" {\n\t\tcomment  = \"Must be a list(MetricssReceiver) where collected
+    metrics should be forwarded to\"\n\t\toptional = false\n\t}\n\n\t/*****************************************************************\n\t*
+    Kubernetes Auto Scrape PodMonitors\n\t*****************************************************************/\n\tprometheus.operator.podmonitors
+    \"scrape\" {\n\t\tforward_to = argument.forward_to.value\n\n\t\tclustering {\n\t\t\tenabled
+    = true\n\t\t}\n\n\t\t// selector {\n\t\t// \tmatch_expression {\n\t\t// \t\tkey
+    \     = \"team\"\n\t\t// \t\toperator = \"In\"\n\t\t// \t\tvalues   = [\"team-infra\"]\n\t\t//
+    \t}\n\t\t// }\n\t}\n}\n"
+  servicemonitors-scrape.alloy: "/*\nModule Components: servicemonitors_scrape\nDescription:
+    Scrapes targets for metrics based on prometheus.operator.servicemonitors\n*/\n\ndeclare
+    \"servicemonitors_scrape\" {\n\n\t/*****************************************************************\n\t*
+    ARGUMENTS\n\t*****************************************************************/\n\targument
+    \"forward_to\" {\n\t\tcomment  = \"Must be a list(MetricssReceiver) where collected
+    metrics should be forwarded to\"\n\t\toptional = false\n\t}\n\n\t/*****************************************************************\n\t*
+    Kubernetes Auto Scrape ServiceMonitors\n\t*****************************************************************/\n\tprometheus.operator.servicemonitors
+    \"scrape\" {\n\t\tforward_to = argument.forward_to.value\n\n\t\tclustering {\n\t\t\tenabled
+    = true\n\t\t}\n\t}\n}\n"
+kind: ConfigMap
+metadata:
+  name: alloy-modules-kubernetes-metrics-7m49m8gmhd
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  annotations-scrape.alloy: "/*\nModule Components: annotations_scrape\nDescription:
+    Scrapes targets for metrics based on kubernetes Pod annotations\n\n*/\n\ndeclare
+    \"annotations_scrape\" {\n\n\t/*****************************************************************\n\t*
+    ARGUMENTS\n\t*****************************************************************/\n\targument
+    \"forward_to\" {\n\t\tcomment = \"Must be a list(ProfilessReceiver) where collected
+    logs should be forwarded to\"\n\t}\n\n\tdiscovery.kubernetes \"pyroscope_kubernetes\"
+    {\n\t\trole = \"pod\"\n\t}\n\n\t// The default scrape config allows to define
+    annotations based scraping.\n\t//\n\t// For example the following annotations:\n\t//\n\t//
+    ```\n\t// profiles.grafana.com/memory.scrape: \"true\"\n\t// profiles.grafana.com/memory.port:
+    \"8080\"\n\t// profiles.grafana.com/cpu.scrape: \"true\"\n\t// profiles.grafana.com/cpu.port:
+    \"8080\"\n\t// profiles.grafana.com/goroutine.scrape: \"true\"\n\t// profiles.grafana.com/goroutine.port:
+    \"8080\"\n\t// ```\n\t//\n\t// will scrape the `memory`, `cpu` and `goroutine`
+    profiles from the `8080` port of the pod.\n\t//\n\t// For more information see
+    https://grafana.com/docs/phlare/latest/operators-guide/deploy-kubernetes/#optional-scrape-your-own-workloads-profiles\n\tdiscovery.relabel
+    \"kubernetes_pods\" {\n\t\ttargets = concat(discovery.kubernetes.pyroscope_kubernetes.targets)\n\n\t\trule
+    {\n\t\t\taction        = \"drop\"\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_phase\"]\n\t\t\tregex
+    \        = \"Pending|Succeeded|Failed|Completed\"\n\t\t}\n\n\t\trule {\n\t\t\taction
+    = \"labelmap\"\n\t\t\tregex  = \"__meta_kubernetes_pod_label_(.+)\"\n\t\t}\n\n\t\trule
+    {\n\t\t\taction        = \"replace\"\n\t\t\tsource_labels = [\"__meta_kubernetes_namespace\"]\n\t\t\ttarget_label
+    \ = \"namespace\"\n\t\t}\n\n\t\trule {\n\t\t\taction        = \"replace\"\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_name\"]\n\t\t\ttarget_label  = \"pod\"\n\t\t}\n\n\t\trule
+    {\n\t\t\taction        = \"replace\"\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_container_name\"]\n\t\t\ttarget_label
+    \ = \"container\"\n\t\t}\n\t}\n\n\tdiscovery.relabel \"kubernetes_pods_memory_default_name\"
+    {\n\t\ttargets = concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
+    {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_memory_scrape\"]\n\t\t\taction
+    \       = \"keep\"\n\t\t\tregex         = \"true\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_memory_port_name\"]\n\t\t\taction
+    \       = \"keep\"\n\t\t\tregex         = \"\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_memory_scheme\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(https?)\"\n\t\t\ttarget_label
+    \ = \"__scheme__\"\n\t\t\treplacement   = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_memory_path\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(.+)\"\n\t\t\ttarget_label  = \"__profile_path__\"\n\t\t\treplacement
+    \  = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels = [\"__address__\", \"__meta_kubernetes_pod_annotation_profiles_grafana_com_memory_port\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(.+?)(?::\\\\d+)?;(\\\\d+)\"\n\t\t\ttarget_label
+    \ = \"__address__\"\n\t\t\treplacement   = \"$1:$2\"\n\t\t}\n\t}\n\n\tdiscovery.relabel
+    \"kubernetes_pods_memory_custom_name\" {\n\t\ttargets = concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
+    {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_memory_scrape\"]\n\t\t\taction
+    \       = \"keep\"\n\t\t\tregex         = \"true\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_memory_port_name\"]\n\t\t\taction
+    \       = \"drop\"\n\t\t\tregex         = \"\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_container_port_name\"]\n\t\t\ttarget_label  = \"__meta_kubernetes_pod_annotation_profiles_grafana_com_memory_port_name\"\n\t\t\taction
+    \       = \"keepequal\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_memory_scheme\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(https?)\"\n\t\t\ttarget_label
+    \ = \"__scheme__\"\n\t\t\treplacement   = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_memory_path\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(.+)\"\n\t\t\ttarget_label  = \"__profile_path__\"\n\t\t\treplacement
+    \  = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels = [\"__address__\", \"__meta_kubernetes_pod_annotation_profiles_grafana_com_memory_port\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(.+?)(?::\\\\d+)?;(\\\\d+)\"\n\t\t\ttarget_label
+    \ = \"__address__\"\n\t\t\treplacement   = \"$1:$2\"\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
+    Kubernetes Pyroscope Scrape Memory\n\t*****************************************************************/\n\tpyroscope.scrape
+    \"pyroscope_scrape_memory\" {\n\t\tclustering {\n\t\t\tenabled = true\n\t\t}\n\n\t\ttargets
+    \   = concat(discovery.relabel.kubernetes_pods_memory_default_name.output, discovery.relabel.kubernetes_pods_memory_custom_name.output)\n\t\tforward_to
+    = argument.forward_to.value\n\n\t\tprofiling_config {\n\t\t\tprofile.memory {\n\t\t\t\tenabled
+    = true\n\t\t\t}\n\n\t\t\tprofile.process_cpu {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.goroutine
+    {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.block {\n\t\t\t\tenabled
+    = false\n\t\t\t}\n\n\t\t\tprofile.mutex {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.fgprof
+    {\n\t\t\t\tenabled = false\n\t\t\t}\n\t\t}\n\t}\n\n\tdiscovery.relabel \"kubernetes_pods_cpu_default_name\"
+    {\n\t\ttargets = concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
+    {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_cpu_scrape\"]\n\t\t\taction
+    \       = \"keep\"\n\t\t\tregex         = \"true\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_cpu_port_name\"]\n\t\t\taction
+    \       = \"keep\"\n\t\t\tregex         = \"\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_cpu_scheme\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(https?)\"\n\t\t\ttarget_label
+    \ = \"__scheme__\"\n\t\t\treplacement   = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_cpu_path\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(.+)\"\n\t\t\ttarget_label  = \"__profile_path__\"\n\t\t\treplacement
+    \  = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels = [\"__address__\", \"__meta_kubernetes_pod_annotation_profiles_grafana_com_cpu_port\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(.+?)(?::\\\\d+)?;(\\\\d+)\"\n\t\t\ttarget_label
+    \ = \"__address__\"\n\t\t\treplacement   = \"$1:$2\"\n\t\t}\n\t}\n\n\tdiscovery.relabel
+    \"kubernetes_pods_cpu_custom_name\" {\n\t\ttargets = concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
+    {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_cpu_scrape\"]\n\t\t\taction
+    \       = \"keep\"\n\t\t\tregex         = \"true\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_cpu_port_name\"]\n\t\t\taction
+    \       = \"drop\"\n\t\t\tregex         = \"\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_container_port_name\"]\n\t\t\ttarget_label  = \"__meta_kubernetes_pod_annotation_profiles_grafana_com_cpu_port_name\"\n\t\t\taction
+    \       = \"keepequal\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_cpu_scheme\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(https?)\"\n\t\t\ttarget_label
+    \ = \"__scheme__\"\n\t\t\treplacement   = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_cpu_path\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(.+)\"\n\t\t\ttarget_label  = \"__profile_path__\"\n\t\t\treplacement
+    \  = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels = [\"__address__\", \"__meta_kubernetes_pod_annotation_profiles_grafana_com_cpu_port\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(.+?)(?::\\\\d+)?;(\\\\d+)\"\n\t\t\ttarget_label
+    \ = \"__address__\"\n\t\t\treplacement   = \"$1:$2\"\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
+    Kubernetes Pyroscope Scrape CPU\n\t*****************************************************************/\n\tpyroscope.scrape
+    \"pyroscope_scrape_cpu\" {\n\t\tclustering {\n\t\t\tenabled = true\n\t\t}\n\n\t\ttargets
+    \   = concat(discovery.relabel.kubernetes_pods_cpu_default_name.output, discovery.relabel.kubernetes_pods_cpu_custom_name.output)\n\t\tforward_to
+    = argument.forward_to.value\n\n\t\tprofiling_config {\n\t\t\tprofile.memory {\n\t\t\t\tenabled
+    = false\n\t\t\t}\n\n\t\t\tprofile.process_cpu {\n\t\t\t\tenabled = true\n\t\t\t}\n\n\t\t\tprofile.goroutine
+    {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.block {\n\t\t\t\tenabled
+    = false\n\t\t\t}\n\n\t\t\tprofile.mutex {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.fgprof
+    {\n\t\t\t\tenabled = false\n\t\t\t}\n\t\t}\n\t}\n\n\tdiscovery.relabel \"kubernetes_pods_goroutine_default_name\"
+    {\n\t\ttargets = concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
+    {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_goroutine_scrape\"]\n\t\t\taction
+    \       = \"keep\"\n\t\t\tregex         = \"true\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_goroutine_port_name\"]\n\t\t\taction
+    \       = \"keep\"\n\t\t\tregex         = \"\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_goroutine_scheme\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(https?)\"\n\t\t\ttarget_label
+    \ = \"__scheme__\"\n\t\t\treplacement   = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_goroutine_path\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(.+)\"\n\t\t\ttarget_label  = \"__profile_path__\"\n\t\t\treplacement
+    \  = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels = [\"__address__\", \"__meta_kubernetes_pod_annotation_profiles_grafana_com_goroutine_port\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(.+?)(?::\\\\d+)?;(\\\\d+)\"\n\t\t\ttarget_label
+    \ = \"__address__\"\n\t\t\treplacement   = \"$1:$2\"\n\t\t}\n\t}\n\n\tdiscovery.relabel
+    \"kubernetes_pods_goroutine_custom_name\" {\n\t\ttargets = concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
+    {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_goroutine_scrape\"]\n\t\t\taction
+    \       = \"keep\"\n\t\t\tregex         = \"true\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_goroutine_port_name\"]\n\t\t\taction
+    \       = \"drop\"\n\t\t\tregex         = \"\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_container_port_name\"]\n\t\t\ttarget_label  = \"__meta_kubernetes_pod_annotation_profiles_grafana_com_goroutine_port_name\"\n\t\t\taction
+    \       = \"keepequal\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_goroutine_scheme\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(https?)\"\n\t\t\ttarget_label
+    \ = \"__scheme__\"\n\t\t\treplacement   = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_goroutine_path\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(.+)\"\n\t\t\ttarget_label  = \"__profile_path__\"\n\t\t\treplacement
+    \  = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels = [\"__address__\", \"__meta_kubernetes_pod_annotation_profiles_grafana_com_goroutine_port\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(.+?)(?::\\\\d+)?;(\\\\d+)\"\n\t\t\ttarget_label
+    \ = \"__address__\"\n\t\t\treplacement   = \"$1:$2\"\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
+    Kubernetes Pyroscope Scrape Goroutine\n\t*****************************************************************/\n\tpyroscope.scrape
+    \"pyroscope_scrape_goroutine\" {\n\t\tclustering {\n\t\t\tenabled = true\n\t\t}\n\n\t\ttargets
+    \   = concat(discovery.relabel.kubernetes_pods_goroutine_default_name.output,
+    discovery.relabel.kubernetes_pods_goroutine_custom_name.output)\n\t\tforward_to
+    = argument.forward_to.value\n\n\t\tprofiling_config {\n\t\t\tprofile.memory {\n\t\t\t\tenabled
+    = false\n\t\t\t}\n\n\t\t\tprofile.process_cpu {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.goroutine
+    {\n\t\t\t\tenabled = true\n\t\t\t}\n\n\t\t\tprofile.block {\n\t\t\t\tenabled =
+    false\n\t\t\t}\n\n\t\t\tprofile.mutex {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.fgprof
+    {\n\t\t\t\tenabled = false\n\t\t\t}\n\t\t}\n\t}\n\n\tdiscovery.relabel \"kubernetes_pods_block_default_name\"
+    {\n\t\ttargets = concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
+    {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_block_scrape\"]\n\t\t\taction
+    \       = \"keep\"\n\t\t\tregex         = \"true\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_block_port_name\"]\n\t\t\taction
+    \       = \"keep\"\n\t\t\tregex         = \"\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_block_scheme\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(https?)\"\n\t\t\ttarget_label
+    \ = \"__scheme__\"\n\t\t\treplacement   = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_block_path\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(.+)\"\n\t\t\ttarget_label  = \"__profile_path__\"\n\t\t\treplacement
+    \  = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels = [\"__address__\", \"__meta_kubernetes_pod_annotation_profiles_grafana_com_block_port\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(.+?)(?::\\\\d+)?;(\\\\d+)\"\n\t\t\ttarget_label
+    \ = \"__address__\"\n\t\t\treplacement   = \"$1:$2\"\n\t\t}\n\t}\n\n\tdiscovery.relabel
+    \"kubernetes_pods_block_custom_name\" {\n\t\ttargets = concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
+    {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_block_scrape\"]\n\t\t\taction
+    \       = \"keep\"\n\t\t\tregex         = \"true\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_block_port_name\"]\n\t\t\taction
+    \       = \"drop\"\n\t\t\tregex         = \"\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_container_port_name\"]\n\t\t\ttarget_label  = \"__meta_kubernetes_pod_annotation_profiles_grafana_com_block_port_name\"\n\t\t\taction
+    \       = \"keepequal\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_block_scheme\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(https?)\"\n\t\t\ttarget_label
+    \ = \"__scheme__\"\n\t\t\treplacement   = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_block_path\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(.+)\"\n\t\t\ttarget_label  = \"__profile_path__\"\n\t\t\treplacement
+    \  = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels = [\"__address__\", \"__meta_kubernetes_pod_annotation_profiles_grafana_com_block_port\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(.+?)(?::\\\\d+)?;(\\\\d+)\"\n\t\t\ttarget_label
+    \ = \"__address__\"\n\t\t\treplacement   = \"$1:$2\"\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
+    Kubernetes Pyroscope Scrape Block\n\t*****************************************************************/\n\tpyroscope.scrape
+    \"pyroscope_scrape_block\" {\n\t\tclustering {\n\t\t\tenabled = true\n\t\t}\n\n\t\ttargets
+    \   = concat(discovery.relabel.kubernetes_pods_block_default_name.output, discovery.relabel.kubernetes_pods_block_custom_name.output)\n\t\tforward_to
+    = argument.forward_to.value\n\n\t\tprofiling_config {\n\t\t\tprofile.memory {\n\t\t\t\tenabled
+    = false\n\t\t\t}\n\n\t\t\tprofile.process_cpu {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.goroutine
+    {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.block {\n\t\t\t\tenabled
+    = true\n\t\t\t}\n\n\t\t\tprofile.mutex {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.fgprof
+    {\n\t\t\t\tenabled = false\n\t\t\t}\n\t\t}\n\t}\n\n\tdiscovery.relabel \"kubernetes_pods_mutex_default_name\"
+    {\n\t\ttargets = concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
+    {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_mutex_scrape\"]\n\t\t\taction
+    \       = \"keep\"\n\t\t\tregex         = \"true\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_mutex_port_name\"]\n\t\t\taction
+    \       = \"keep\"\n\t\t\tregex         = \"\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_mutex_scheme\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(https?)\"\n\t\t\ttarget_label
+    \ = \"__scheme__\"\n\t\t\treplacement   = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_mutex_path\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(.+)\"\n\t\t\ttarget_label  = \"__profile_path__\"\n\t\t\treplacement
+    \  = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels = [\"__address__\", \"__meta_kubernetes_pod_annotation_profiles_grafana_com_mutex_port\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(.+?)(?::\\\\d+)?;(\\\\d+)\"\n\t\t\ttarget_label
+    \ = \"__address__\"\n\t\t\treplacement   = \"$1:$2\"\n\t\t}\n\t}\n\n\tdiscovery.relabel
+    \"kubernetes_pods_mutex_custom_name\" {\n\t\ttargets = concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
+    {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_mutex_scrape\"]\n\t\t\taction
+    \       = \"keep\"\n\t\t\tregex         = \"true\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_mutex_port_name\"]\n\t\t\taction
+    \       = \"drop\"\n\t\t\tregex         = \"\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_container_port_name\"]\n\t\t\ttarget_label  = \"__meta_kubernetes_pod_annotation_profiles_grafana_com_mutex_port_name\"\n\t\t\taction
+    \       = \"keepequal\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_mutex_scheme\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(https?)\"\n\t\t\ttarget_label
+    \ = \"__scheme__\"\n\t\t\treplacement   = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_mutex_path\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(.+)\"\n\t\t\ttarget_label  = \"__profile_path__\"\n\t\t\treplacement
+    \  = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels = [\"__address__\", \"__meta_kubernetes_pod_annotation_profiles_grafana_com_mutex_port\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(.+?)(?::\\\\d+)?;(\\\\d+)\"\n\t\t\ttarget_label
+    \ = \"__address__\"\n\t\t\treplacement   = \"$1:$2\"\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
+    Kubernetes Pyroscope Scrape Mutex\n\t*****************************************************************/\n\tpyroscope.scrape
+    \"pyroscope_scrape_mutex\" {\n\t\tclustering {\n\t\t\tenabled = true\n\t\t}\n\n\t\ttargets
+    \   = concat(discovery.relabel.kubernetes_pods_mutex_default_name.output, discovery.relabel.kubernetes_pods_mutex_custom_name.output)\n\t\tforward_to
+    = argument.forward_to.value\n\n\t\tprofiling_config {\n\t\t\tprofile.memory {\n\t\t\t\tenabled
+    = false\n\t\t\t}\n\n\t\t\tprofile.process_cpu {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.goroutine
+    {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.block {\n\t\t\t\tenabled
+    = false\n\t\t\t}\n\n\t\t\tprofile.mutex {\n\t\t\t\tenabled = true\n\t\t\t}\n\n\t\t\tprofile.fgprof
+    {\n\t\t\t\tenabled = false\n\t\t\t}\n\t\t}\n\t}\n\n\tdiscovery.relabel \"kubernetes_pods_fgprof_default_name\"
+    {\n\t\ttargets = concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
+    {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_fgprof_scrape\"]\n\t\t\taction
+    \       = \"keep\"\n\t\t\tregex         = \"true\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_fgprof_port_name\"]\n\t\t\taction
+    \       = \"keep\"\n\t\t\tregex         = \"\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_fgprof_scheme\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(https?)\"\n\t\t\ttarget_label
+    \ = \"__scheme__\"\n\t\t\treplacement   = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_fgprof_path\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(.+)\"\n\t\t\ttarget_label  = \"__profile_path__\"\n\t\t\treplacement
+    \  = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels = [\"__address__\", \"__meta_kubernetes_pod_annotation_profiles_grafana_com_fgprof_port\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(.+?)(?::\\\\d+)?;(\\\\d+)\"\n\t\t\ttarget_label
+    \ = \"__address__\"\n\t\t\treplacement   = \"$1:$2\"\n\t\t}\n\t}\n\n\tdiscovery.relabel
+    \"kubernetes_pods_fgprof_custom_name\" {\n\t\ttargets = concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
+    {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_fgprof_scrape\"]\n\t\t\taction
+    \       = \"keep\"\n\t\t\tregex         = \"true\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_fgprof_port_name\"]\n\t\t\taction
+    \       = \"drop\"\n\t\t\tregex         = \"\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_container_port_name\"]\n\t\t\ttarget_label  = \"__meta_kubernetes_pod_annotation_profiles_grafana_com_fgprof_port_name\"\n\t\t\taction
+    \       = \"keepequal\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_fgprof_scheme\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(https?)\"\n\t\t\ttarget_label
+    \ = \"__scheme__\"\n\t\t\treplacement   = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_fgprof_path\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(.+)\"\n\t\t\ttarget_label  = \"__profile_path__\"\n\t\t\treplacement
+    \  = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels = [\"__address__\", \"__meta_kubernetes_pod_annotation_profiles_grafana_com_fgprof_port\"]\n\t\t\taction
+    \       = \"replace\"\n\t\t\tregex         = \"(.+?)(?::\\\\d+)?;(\\\\d+)\"\n\t\t\ttarget_label
+    \ = \"__address__\"\n\t\t\treplacement   = \"$1:$2\"\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
+    Kubernetes Pyroscope Scrape Fgprof\n\t*****************************************************************/\n\tpyroscope.scrape
+    \"pyroscope_scrape_fgprof\" {\n\t\tclustering {\n\t\t\tenabled = true\n\t\t}\n\n\t\ttargets
+    \   = concat(discovery.relabel.kubernetes_pods_fgprof_default_name.output, discovery.relabel.kubernetes_pods_fgprof_custom_name.output)\n\t\tforward_to
+    = argument.forward_to.value\n\n\t\tprofiling_config {\n\t\t\tprofile.memory {\n\t\t\t\tenabled
+    = false\n\t\t\t}\n\n\t\t\tprofile.process_cpu {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.goroutine
+    {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.block {\n\t\t\t\tenabled
+    = false\n\t\t\t}\n\n\t\t\tprofile.mutex {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.fgprof
+    {\n\t\t\t\tenabled = true\n\t\t\t}\n\t\t}\n\t}\n}\n"
+kind: ConfigMap
+metadata:
+  name: alloy-modules-kubernetes-profiles-66c27bc84g
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  process-and-transform.alloy: "/*\nModule Components: process_and_transform\n\nDescription:
+    Traces data collection processing and transformation\n*/\n\n// Processing And
+    Transformation\ndeclare \"process_and_transform\" {\n\n\t/*****************************************************************\n\t*
+    ARGUMENTS\n\t*****************************************************************/\n\targument
+    \"traces_forward_to\" {\n\t\tcomment = \"Must be a list(TracesReceiver) where
+    collected traces should be forwarded to\"\n\t}\n\n\targument \"logs_forward_to\"
+    {\n\t\tcomment = \"Must be a list(LogsReceiver) where collected logs should be
+    forwarded to\"\n\t}\n\n\targument \"metrics_forward_to\" {\n\t\tcomment = \"Must
+    be a list(MetricsReceiver) where collected metrics should be forwarded to\"\n\t}\n\n\targument
+    \"cluster\" {\n\t\toptional = true\n\t\tdefault  = \"k3d-k3s-codelab\"\n\t}\n\n\targument
+    \"otlp_http_endpoint\" {\n\t\toptional = true\n\t\tdefault  = \"0.0.0.0:4318\"\n\t}\n\n\targument
+    \"otlp_grpc_endpoint\" {\n\t\toptional = true\n\t\tdefault  = \"0.0.0.0:4317\"\n\t}\n\n\t/*****************************************************************\n\t*
+    Jaeger for Metrics Logs Traces\n\t*****************************************************************/\n\totelcol.receiver.jaeger
+    \"default\" {\n\t\tprotocols {\n\t\t\tgrpc {\n\t\t\t\tendpoint = \"0.0.0.0:14250\"\n\t\t\t}\n\n\t\t\tthrift_http
+    {\n\t\t\t\tendpoint = \"0.0.0.0:14268\"\n\t\t\t}\n\n\t\t\tthrift_binary {\n\t\t\t\tendpoint
+    = \"0.0.0.0:6832\"\n\t\t\t}\n\n\t\t\tthrift_compact {\n\t\t\t\tendpoint = \"0.0.0.0:6831\"\n\t\t\t}\n\t\t}\n\n\t\toutput
+    {\n\t\t\tmetrics = [otelcol.processor.batch.default.input]\n\t\t\tlogs    = [otelcol.processor.resourcedetection.default.input]\n\t\t\ttraces
+    \ = [otelcol.processor.resourcedetection.default.input]\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
+    Otelcol for Metrics Logs Traces\n\t*****************************************************************/\n\totelcol.receiver.otlp
+    \"default\" {\n\t\tgrpc {\n\t\t\tendpoint = argument.otlp_grpc_endpoint.value\n\t\t}\n\n\t\thttp
+    {\n\t\t\tendpoint = argument.otlp_http_endpoint.value\n\t\t}\n\n\t\toutput {\n\t\t\tmetrics
+    = [otelcol.processor.batch.default.input]\n\t\t\tlogs    = [otelcol.processor.resourcedetection.default.input]\n\t\t\ttraces
+    \ = [\n\t\t\t\totelcol.processor.resourcedetection.default.input,\n\t\t\t\totelcol.connector.spanlogs.autologging.input,\n\t\t\t]\n\t\t}\n\t}\n\n\totelcol.processor.resourcedetection
+    \"default\" {\n\t\tdetectors = [\"env\"]\n\n\t\toutput {\n\t\t\tlogs   = [otelcol.processor.k8sattributes.default.input]\n\t\t\ttraces
+    = [otelcol.processor.k8sattributes.default.input]\n\t\t}\n\t}\n\n\totelcol.processor.k8sattributes
+    \"default\" {\n\t\textract {\n\t\t\tmetadata = [\n\t\t\t\t\"k8s.namespace.name\",\n\t\t\t\t\"k8s.pod.name\",\n\t\t\t\t\"k8s.deployment.name\",\n\t\t\t\t\"k8s.statefulset.name\",\n\t\t\t\t\"k8s.daemonset.name\",\n\t\t\t\t\"k8s.cronjob.name\",\n\t\t\t\t\"k8s.job.name\",\n\t\t\t\t\"k8s.node.name\",\n\t\t\t\t\"k8s.pod.uid\",\n\t\t\t\t\"k8s.pod.start_time\",\n\t\t\t]\n\t\t}\n\n\t\tpod_association
+    {\n\t\t\tsource {\n\t\t\t\tfrom = \"connection\"\n\t\t\t}\n\t\t}\n\n\t\toutput
+    {\n\t\t\tlogs   = [otelcol.processor.transform.add_resource_attributes.input]\n\t\t\ttraces
+    = [otelcol.processor.transform.add_resource_attributes.input]\n\t\t}\n\t}\n\n\totelcol.processor.transform
+    \"add_resource_attributes\" {\n\t\terror_mode = \"ignore\"\n\n\t\tlog_statements
+    {\n\t\t\tcontext    = \"resource\"\n\t\t\tstatements = [\n\t\t\t\t`set(attributes[\"pod\"],
+    attributes[\"k8s.pod.name\"])`,\n\t\t\t\t`set(attributes[\"namespace\"], attributes[\"k8s.namespace.name\"])`,\n\t\t\t\t`set(attributes[\"loki.resource.labels\"],
+    \"pod, namespace, cluster, job\")`,\n\t\t\t\t`set(attributes[\"k8s.cluster.name\"],
+    \"k3d-k3s-codelab\") where attributes[\"k8s.cluster.name\"] == nil`,\n\t\t\t]\n\t\t}\n\n\t\ttrace_statements
+    {\n\t\t\tcontext    = \"resource\"\n\t\t\tstatements = [\n\t\t\t\t`set(attributes[\"k8s.cluster.name\"],
+    \"k3d-k3s-codelab\") where attributes[\"k8s.cluster.name\"] == nil`,\n\t\t\t]\n\t\t}\n\n\t\toutput
+    {\n\t\t\tlogs   = [otelcol.processor.filter.default.input]\n\t\t\ttraces = [otelcol.processor.filter.default.input]\n\t\t}\n\t}\n\n\totelcol.processor.filter
+    \"default\" {\n\t\terror_mode = \"ignore\"\n\n\t\toutput {\n\t\t\tlogs   = [otelcol.processor.batch.default.input]\n\t\t\ttraces
+    = [otelcol.processor.batch.default.input]\n\t\t}\n\t}\n\n\totelcol.processor.batch
+    \"default\" {\n\t\tsend_batch_size     = 16384\n\t\tsend_batch_max_size = 0\n\t\ttimeout
+    \            = \"5s\"\n\n\t\toutput {\n\t\t\tmetrics = [otelcol.processor.memory_limiter.default.input]\n\t\t\tlogs
+    \   = [otelcol.processor.memory_limiter.default.input]\n\t\t\ttraces  = [otelcol.processor.memory_limiter.default.input]\n\t\t}\n\t}\n\n\totelcol.processor.memory_limiter
+    \"default\" {\n\t\tcheck_interval         = \"1s\"\n\t\tlimit_percentage       =
+    50\n\t\tspike_limit_percentage = 30\n\n\t\toutput {\n\t\t\tmetrics = [otelcol.exporter.prometheus.tracesmetrics.input]\n\t\t\tlogs
+    \   = [otelcol.exporter.loki.traceslogs.input]\n\t\t\ttraces  = argument.traces_forward_to.value\n\t\t}\n\t}\n\n\totelcol.exporter.prometheus
+    \"tracesmetrics\" {\n\t\tforward_to = argument.metrics_forward_to.value\n\t}\n\n\totelcol.exporter.loki
+    \"traceslogs\" {\n\t\tforward_to = [loki.process.traceslogs.receiver]\n\t}\n\n\t//
+    The OpenTelemetry spanlog connector processes incoming trace spans and extracts
+    data from them ready\n\t// for logging.\n\totelcol.connector.spanlogs \"autologging\"
+    {\n\t\t// We only want to output a line for each root span (ie. every single trace),
+    and not for every\n\t\t// process or span (outputting a line for every span would
+    be extremely verbose).\n\t\tspans     = false\n\t\troots     = true\n\t\tprocesses
+    = false\n\n\t\t// We want to ensure that the following three span attributes are
+    included in the log line, if present.\n\t\tspan_attributes = [\n\t\t\t\"http.method\",\n\t\t\t\"http.target\",\n\t\t\t\"http.status_code\",\n\t\t]\n\n\t\t//
+    Overrides the default key in the log line to be `traceId`, which is then used
+    by Grafana to\n\t\t// identify the trace ID for correlation with the Tempo datasource.\n\t\toverrides
+    {\n\t\t\ttrace_id_key = \"traceId\"\n\t\t}\n\n\t\t// Send to the OpenTelemetry
+    Loki exporter.\n\t\toutput {\n\t\t\tlogs = [otelcol.exporter.loki.autologging.input]\n\t\t}\n\t}\n\n\t//
+    Simply forwards the incoming OpenTelemetry log format out as a Loki log.\n\t//
+    We need this stage to ensure we can then process the logline as a Loki object.\n\totelcol.exporter.loki
+    \"autologging\" {\n\t\tforward_to = [loki.process.autologging.receiver]\n\t}\n\n\t//
+    The Loki processor allows us to accept a correctly formatted Loki log and mutate
+    it into\n\t// a set of fields for output.\n\tloki.process \"autologging\" {\n\t\t//
+    The JSON stage simply extracts the `body` (the actual logline) from the Loki log,
+    ignoring\n\t\t// all other fields.\n\t\tstage.json {\n\t\t\texpressions = {\"body\"
+    = \"\"}\n\t\t}\n\t\t// The output stage takes the body (the main logline) and
+    uses this as the source for the output\n\t\t// logline. In this case, it essentially
+    turns it into logfmt.\n\t\tstage.output {\n\t\t\tsource = \"body\"\n\t\t}\n\n\t\tforward_to
+    = [loki.process.traceslogs.receiver]\n\t}\n\n\tloki.process \"traceslogs\" {\n\t\tstage.tenant
+    {\n\t\t\tvalue = \"anonymous\"\n\t\t}\n\n\t\tforward_to = argument.logs_forward_to.value\n\t}\n\n\t/*****************************************************************\n\t*
+    EXPORTS\n\t*****************************************************************/\n\texport
+    \"alloy_traces_input\" {\n\t\tvalue = otelcol.processor.batch.default.input\n\t}\n}\n"
+kind: ConfigMap
+metadata:
+  name: alloy-modules-kubernetes-traces-8mgm8th9m5
+  namespace: monitoring-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: alloy
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: alloy
+    app.kubernetes.io/version: v1.0.0
+    helm.sh/chart: alloy-0.1.1
+  name: alloy
+  namespace: monitoring-system
+spec:
+  internalTrafficPolicy: Cluster
+  ports:
+  - name: http-metrics
+    port: 12345
+    protocol: TCP
+    targetPort: 12345
+  - name: grpc-otlp
+    port: 4317
+    protocol: TCP
+    targetPort: 4317
+  - name: http-otlp
+    port: 4318
+    protocol: TCP
+    targetPort: 4318
+  - name: zipkin
+    port: 9411
+    protocol: TCP
+    targetPort: 9411
+  - name: jaeger-compact
+    port: 6831
+    protocol: UDP
+    targetPort: 6831
+  selector:
+    app.kubernetes.io/instance: alloy
+    app.kubernetes.io/name: alloy
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: alloy
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: alloy
+    app.kubernetes.io/version: v1.0.0
+    helm.sh/chart: alloy-0.1.1
+  name: alloy-cluster
+  namespace: monitoring-system
+spec:
+  clusterIP: None
+  ports:
+  - name: http
+    port: 12345
+    protocol: TCP
+    targetPort: 12345
+  - name: grpc-otlp
+    port: 4317
+    protocol: TCP
+    targetPort: 4317
+  - name: http-otlp
+    port: 4318
+    protocol: TCP
+    targetPort: 4318
+  - name: zipkin
+    port: 9411
+    protocol: TCP
+    targetPort: 9411
+  - name: jaeger-compact
+    port: 6831
+    protocol: UDP
+    targetPort: 6831
+  selector:
+    app.kubernetes.io/instance: alloy
+    app.kubernetes.io/name: alloy
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app.kubernetes.io/instance: alloy
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: alloy
+    app.kubernetes.io/version: v1.0.0
+    helm.sh/chart: alloy-0.1.1
+  name: alloy
+  namespace: monitoring-system
+spec:
+  minReadySeconds: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: alloy
+      app.kubernetes.io/name: alloy
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: alloy
+        logs.agent.grafana.com/scrape: "true"
+        logs.agent.grafana.com/scrub-level: debug
+        profiles.grafana.com/cpu.port_name: http-metrics
+        profiles.grafana.com/cpu.scrape: "false"
+        profiles.grafana.com/goroutine.port_name: http-metrics
+        profiles.grafana.com/goroutine.scrape: "false"
+        profiles.grafana.com/memory.port_name: http-metrics
+        profiles.grafana.com/memory.scrape: "false"
+        pyroscope.io/service_name: alloy
+      labels:
+        app.kubernetes.io/instance: alloy
+        app.kubernetes.io/name: alloy
+    spec:
+      containers:
+      - args:
+        - run
+        - /etc/alloy/config.alloy
+        - --storage.path=/tmp/alloy
+        - --server.http.listen-addr=0.0.0.0:12345
+        - --server.http.ui-path-prefix=/
+        - --disable-reporting
+        - --cluster.enabled=true
+        - --cluster.join-addresses=alloy-cluster
+        - --stability.level=experimental
+        env:
+        - name: ALLOY_DEPLOY_MODE
+          value: helm
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        envFrom:
+        - secretRef:
+            name: alloy-env
+            optional: true
+        image: docker.io/grafana/alloy:v1.0.0
+        imagePullPolicy: IfNotPresent
+        name: alloy
+        ports:
+        - containerPort: 12345
+          name: http-metrics
+        - containerPort: 4317
+          name: grpc-otlp
+          protocol: TCP
+        - containerPort: 4318
+          name: http-otlp
+          protocol: TCP
+        - containerPort: 9411
+          name: zipkin
+          protocol: TCP
+        - containerPort: 6831
+          name: jaeger-compact
+          protocol: UDP
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: 12345
+            scheme: HTTP
+          initialDelaySeconds: 10
+          timeoutSeconds: 1
+        volumeMounts:
+        - mountPath: /etc/alloy
+          name: config
+        - mountPath: /var/log
+          name: varlog
+          readOnly: true
+        - mountPath: /etc/alloy/modules/kubernetes/metrics
+          name: modules-kubernetes-metrics
+        - mountPath: /etc/alloy/modules/kubernetes/integrations
+          name: modules-kubernetes-integrations
+        - mountPath: /etc/alloy/modules/kubernetes/logs
+          name: modules-kubernetes-logs
+        - mountPath: /etc/alloy/modules/kubernetes/traces
+          name: modules-kubernetes-traces
+        - mountPath: /etc/alloy/modules/kubernetes/profiles
+          name: modules-kubernetes-profiles
+      dnsPolicy: ClusterFirst
+      nodeSelector:
+        kubernetes.io/os: linux
+      serviceAccountName: alloy
+      volumes:
+      - configMap:
+          name: alloy-config-ftt29f8k85
+        name: config
+      - hostPath:
+          path: /var/log
+        name: varlog
+      - configMap:
+          name: alloy-modules-kubernetes-metrics-7m49m8gmhd
+        name: modules-kubernetes-metrics
+      - configMap:
+          name: alloy-modules-kubernetes-integrations-4574dtf9mm
+        name: modules-kubernetes-integrations
+      - configMap:
+          name: alloy-modules-kubernetes-logs-ff7fmcftkt
+        name: modules-kubernetes-logs
+      - configMap:
+          name: alloy-modules-kubernetes-traces-8mgm8th9m5
+        name: modules-kubernetes-traces
+      - configMap:
+          name: alloy-modules-kubernetes-profiles-66c27bc84g
+        name: modules-kubernetes-profiles
+  updateStrategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 2
+    type: RollingUpdate
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/instance: alloy
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: alloy
+    app.kubernetes.io/version: v1.0.0
+    helm.sh/chart: alloy-0.1.1
+  name: alloy
+  namespace: monitoring-system
+spec:
+  endpoints:
+  - honorLabels: true
+    port: http-metrics
+    scheme: http
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: alloy
+      app.kubernetes.io/name: alloy
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  labels:
+    app.kubernetes.io/instance: alloy
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: alloy
+    app.kubernetes.io/version: v1.0.0
+    helm.sh/chart: alloy-0.1.1
+  name: alloy
+  namespace: monitoring-system
+spec:
+  rules:
+  - host: alloy.localhost
+    http:
+      paths:
+      - backend:
+          service:
+            name: alloy
+            port:
+              number: 12345
+        path: /
+        pathType: Prefix

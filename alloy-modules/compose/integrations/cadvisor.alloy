@@ -1,12 +1,12 @@
-/************************************************
-* Integrations Component: component_cadvisor
-*************************************************/
+/*
+Module Components: component_cadvisor
+*/
 
 declare "component_cadvisor" {
 
-	/********************************************
+	/*****************************************************************
 	* ARGUMENTS
-	********************************************/
+	*****************************************************************/
 	argument "forward_to" {
 		comment = "Must be a list(MetricssReceiver) where collected metrics should be forwarded to"
 	}
@@ -38,9 +38,9 @@ declare "component_cadvisor" {
 		default  = "10s"
 	}
 
-	/********************************************
+	/***************************************************************
 	* Integrations cAdvisor
-	********************************************/
+	****************************************************************/
 	prometheus.exporter.cadvisor "component_cadvisor" {
 		docker_host = "unix:///var/run/docker.sock"
 
@@ -59,9 +59,9 @@ declare "component_cadvisor" {
 		enabled_metrics = ["app", "cpu", "disk", "diskIO", "memory", "network", "process"]
 	}
 
-	/********************************************
+	/***************************************************************
 	* Discovery Relabelings (pre-scrape)
-	********************************************/
+	****************************************************************/
 	discovery.relabel "component_cadvisor" {
 		targets = prometheus.exporter.cadvisor.component_cadvisor.targets
 
@@ -78,9 +78,9 @@ declare "component_cadvisor" {
 		}
 	}
 
-	/********************************************
+	/***************************************************************
 	* Prometheus Scrape Integrations Targets
-	********************************************/
+	****************************************************************/
 	prometheus.scrape "component_cadvisor" {
 		targets = concat(
 			discovery.relabel.component_cadvisor.output,
@@ -99,9 +99,9 @@ declare "component_cadvisor" {
 		forward_to = [prometheus.relabel.component_cadvisor.receiver]
 	}
 
-	/********************************************
+	/***************************************************************
 	* Prometheus Metric Relabelings (post-scrape)
-	********************************************/
+	****************************************************************/
 	prometheus.relabel "component_cadvisor" {
 		forward_to = argument.forward_to.value
 

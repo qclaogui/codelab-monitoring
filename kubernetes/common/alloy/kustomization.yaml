@@ -1,0 +1,88 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: monitoring-system
+
+helmCharts:
+- name: alloy
+  repo: https://grafana.github.io/helm-charts
+  version: 0.1.1
+  releaseName: alloy
+  namespace: monitoring-system
+  includeCRDs: false
+  valuesFile: values-k3d-k3s.yaml
+
+configMapGenerator:
+- name: alloy-config
+  namespace: monitoring-system
+  files:
+  - configs/config.alloy
+
+# Alloy Modules local config files
+- name: alloy-modules-kubernetes-metrics
+  namespace: monitoring-system
+  files:
+  - configs/kubernetes/metrics/integrations-scrape.alloy
+  - configs/kubernetes/metrics/podmonitors-scrape.alloy
+  - configs/kubernetes/metrics/servicemonitors-scrape.alloy
+- name: alloy-modules-kubernetes-integrations
+  namespace: monitoring-system
+  files:
+  - configs/kubernetes/integrations/memcached.alloy
+- name: alloy-modules-kubernetes-logs
+  namespace: monitoring-system
+  files:
+  - configs/kubernetes/logs/annotations-ingest.alloy
+  - configs/kubernetes/logs/keep-labels.alloy
+- name: alloy-modules-kubernetes-traces
+  namespace: monitoring-system
+  files:
+  - configs/kubernetes/traces/process-and-transform.alloy
+- name: alloy-modules-kubernetes-profiles
+  namespace: monitoring-system
+  files:
+  - configs/kubernetes/profiles/annotations-scrape.alloy
+
+
+# # Agent Integrations Config
+# - name: agent-integrations
+#   namespace: monitoring-system
+#   options:
+#     disableNameSuffixHash: true
+#   literals:
+#   - MYSQL_SECRET_NAME=integrations-mysql
+#   - MEMCACHED_SECRET_NAME=integrations-memcached
+#   - REDIS_SECRET_NAME=integrations-redis
+#   files:
+#   - integrations/mysql.river
+#   - integrations/memcached.river
+#   - integrations/redis.river
+
+
+# secretGenerator:
+# # integrations mysql credentials
+# - name: integrations-mysql
+#   namespace: monitoring-system
+#   options:
+#     disableNameSuffixHash: true
+#   literals:
+#   - mysql-host=mysql.mysql-system.svc.cluster.local
+#   - mysql-username=lgtmp
+#   - mysql-password=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
+
+# # integrations memcached credentials
+# - name: integrations-memcached
+#   namespace: monitoring-system
+#   options:
+#     disableNameSuffixHash: true
+#   literals:
+#   - memcached-address=memcached.memcached-system.svc.cluster.local:11211
+
+# # integrations redis credentials
+# - name: integrations-redis
+#   namespace: monitoring-system
+#   options:
+#     disableNameSuffixHash: true
+#   literals:
+#   - redis-addr=redis-master.redis-system.svc.cluster.local:6379
+#   - redis-password=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm

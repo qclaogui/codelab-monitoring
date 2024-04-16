@@ -1,7 +1,7 @@
-/************************************************
-* Component: grafana_cloud
+/*******************************************************
+* Module Components: grafana_cloud
 * Description: Grafana Cloud Receiver Provider
-*************************************************/
+*******************************************************/
 
 declare "grafana_cloud" {
 	/*
@@ -15,9 +15,9 @@ declare "grafana_cloud" {
 		API Keys need at least the the MetricsPublisher role
 	*/
 
-	/********************************************
+	/***************************************************
 	* ARGUMENTS
-	********************************************/
+	***************************************************/
 	argument "stack_name" {
 		comment = "Name of your stack as shown in the account console"
 	}
@@ -26,9 +26,9 @@ declare "grafana_cloud" {
 		comment = "Access policy token or API Key."
 	}
 
-	/********************************************
+	/***************************************************
 	* External information
-	********************************************/
+	***************************************************/
 	remote.http "json_config" {
 		url = "https://grafana.com/api/instances/" + argument.stack_name.value
 
@@ -38,9 +38,9 @@ declare "grafana_cloud" {
 		poll_frequency = "24h"
 	}
 
-	/********************************************
+	/***************************************************
 	* Setup Receivers
-	********************************************/
+	***************************************************/
 	prometheus.remote_write "grafana_cloud" {
 		endpoint {
 			url = json_decode(remote.http.json_config.content)["hmInstancePromUrl"] + "/api/prom/push"
@@ -86,9 +86,9 @@ declare "grafana_cloud" {
 		}
 	}
 
-	/********************************************
+	/***************************************************
 	* EXPORTS
-	********************************************/
+	***************************************************/
 	export "metrics_receiver" {
 		value = prometheus.remote_write.grafana_cloud.receiver
 	}

@@ -1,9 +1,33 @@
-# Integrations Components
+# Module Components
 
-Docker Compose Integrations Components
+Docker Compose Integrations Module Components
 
 ## Components
 
-- [cadvisor](cadvisor.alloy)
-- [memcached](memcached.alloy)
-- [node_exporter](node_exporter.alloy)
+- [`components_cadvisor`](#components_cadvisor)
+- [`components_memcached`](#components_memcached)
+- [`components_node_exporter`](#components_node_exporter)
+
+### `components_cadvisor`
+
+***Arguments***
+
+***Exports***
+
+***Example***
+
+### `components_memcached`
+
+***Arguments***
+
+***Exports***
+
+***Example***
+
+### `components_node_exporter`
+
+***Arguments***
+
+***Exports***
+
+***Example***

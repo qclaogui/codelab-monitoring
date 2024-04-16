@@ -1,6 +1,6 @@
 /*
-Integrations Component: Alloy Integrations Scrape
-Description: Wrapper Component to include auto loading integrations
+Module Components: integrations_scrape
+Description: Integrations Module Components Scrape
 
 Note: Every argument except for "forward_to" is optional, and does have a defined default value.  However, the values for these
       arguments are not defined using the default = " ... " argument syntax, but rather using the coalesce(argument.value, " ... ").
@@ -10,9 +10,9 @@ Note: Every argument except for "forward_to" is optional, and does have a define
 
 declare "integrations_scrape" {
 
-	/********************************************
+	/*****************************************************************
 	* ARGUMENTS
-	********************************************/
+	*****************************************************************/
 	argument "forward_to" {
 		comment = "Must be a list(MetricssReceiver) where collected metrics should be forwarded to"
 	}
@@ -27,16 +27,16 @@ declare "integrations_scrape" {
 		optional = true
 	}
 
-	/********************************************
+	/*****************************************************************
 	* Import Integrations Components
-	********************************************/
+	*****************************************************************/
 	import.file "integrate" {
 		filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/compose/integrations"
 	}
 
-	/********************************************
+	/*****************************************************************
 	* cAdvisor Integrations
-	********************************************/
+	*****************************************************************/
 	integrate.component_cadvisor "default" {
 		forward_to = argument.forward_to.value
 
@@ -44,9 +44,9 @@ declare "integrations_scrape" {
 		scrape_timeout  = coalesce(argument.scrape_timeout.value, "10s")
 	}
 
-	/********************************************
+	/*****************************************************************
 	* Node Exporter Integrations
-	********************************************/
+	*****************************************************************/
 	integrate.component_node_exporter "default" {
 		forward_to = argument.forward_to.value
 
@@ -54,9 +54,9 @@ declare "integrations_scrape" {
 		scrape_timeout  = coalesce(argument.scrape_timeout.value, "10s")
 	}
 
-	/********************************************
+	/*****************************************************************
 	* Memcached Integrations
-	********************************************/
+	*****************************************************************/
 	integrate.component_memcached "primary" {
 		forward_to = argument.forward_to.value
 

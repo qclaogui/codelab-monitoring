@@ -1,12 +1,12 @@
-/************************************************
-* Integrations Component: component_memcached
-*************************************************/
+/*
+Module Components: component_memcached
+*/
 
 declare "component_memcached" {
 
-	/********************************************
+	/*****************************************************************
 	* ARGUMENTS
-	********************************************/
+	*****************************************************************/
 	argument "forward_to" {
 		comment = "Must be a list(MetricssReceiver) where collected metrics should be forwarded to"
 	}
@@ -46,28 +46,29 @@ declare "component_memcached" {
 		default  = "10s"
 	}
 
-	/********************************************
+	/***************************************************************
 	* Integrations Memcached
-	********************************************/
+	****************************************************************/
 	prometheus.exporter.memcached "component_memcached" {
 		address = argument.memcached_address.value
 		timeout = argument.memcached_timeout.value
 	}
-	/********************************************
+
+	/***************************************************************
 	* Discovery Relabelings (pre-scrape)
-	********************************************/
+	****************************************************************/
 	discovery.relabel "component_memcached" {
 		targets = prometheus.exporter.memcached.component_memcached.targets
 
 		rule {
 			target_label = "job"
-			replacement  = "integrations/memcached"
+			replacement  = "integrations/compose/memcached"
 		}
 	}
 
-	/********************************************
+	/***************************************************************
 	* Prometheus Scrape Integrations Targets
-	********************************************/
+	****************************************************************/
 	prometheus.scrape "component_memcached" {
 		targets = concat(
 			discovery.relabel.component_memcached.output,
@@ -86,9 +87,9 @@ declare "component_memcached" {
 		forward_to = [prometheus.relabel.component_memcached.receiver]
 	}
 
-	/********************************************
+	/***************************************************************
 	* Prometheus Metric Relabelings (post-scrape)
-	********************************************/
+	****************************************************************/
 	prometheus.relabel "component_memcached" {
 		forward_to = argument.forward_to.value
 

@@ -11,28 +11,15 @@ kind: Kustomization
 # https://grafana.com/docs/mimir/latest/references/architecture/deployment-modes/#read-write-mode
 
 resources:
-- ../../common/grafana-agent
+- ../../common/alloy
 - mimir
 
-secretGenerator:
-- name: mimir-env
-  namespace: monitoring-system
-  literals:
-  - MIMIR_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
-
 configMapGenerator:
-- name: agent-config
+- name: alloy-config
   namespace: monitoring-system
   behavior: replace
   files:
-  - configs/config.river
-
-- name: mimir-config
-  namespace: monitoring-system
-  files:
-  - configs/mimir.yaml
-  - configs/runtime.yaml
-  - alertmanager_fallback_config.yaml=configs/alertmanager-fallback-config.yaml
+  - config.alloy=metrics.alloy
 
 # Update Mimir Read-Write Mode endpoint in gateway
 - name: nginx-env
