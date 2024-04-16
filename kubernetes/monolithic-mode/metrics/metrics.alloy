@@ -1,0 +1,44 @@
+logging {
+	level  = coalesce(env("ALLOY_LOG_LEVEL"), "info")
+	format = "logfmt"
+}
+
+/********************************************
+ * Grafana LGTMP Stack Receiver Provider
+ ********************************************/
+import.git "provider" {
+	repository     = "https://github.com/qclaogui/codelab-monitoring.git"
+	revision       = "main"
+	path           = "alloy-modules/provider"
+	pull_frequency = "24h"
+}
+
+// get lgtmp receivers provider
+provider.self_hosted_stack "kubernetes" {
+	metrics_endpoint_url = coalesce(env("SELF_HOSTED_METRICS_ENDPOINT_URL"), "http://nginx.gateway.svc:8080/api/v1/push")
+}
+
+/********************************************
+ * Metrics
+ ********************************************/
+import.file "metrics" {
+	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/kubernetes/metrics"
+}
+
+metrics.integrations_scrape "kubernetes" {
+	forward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]
+}
+
+metrics.podmonitors_scrape "kubernetes" {
+	forward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]
+}
+
+metrics.servicemonitors_scrape "kubernetes" {
+	forward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]
+}
+
+// metrics.annotations_scrape "kubernetes" {
+// 	label_prefix    = "metrics.grafana.com"
+// 	forward_to      = [provider.self_hosted_stack.kubernetes.metrics_receiver]
+// 	scrape_interval = "15s"
+// }

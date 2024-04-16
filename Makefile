@@ -18,19 +18,10 @@ copyright: $(COPYRIGHT) ## Add Copyright header to .go files.
 	@echo ">> ensured all .go files have copyright headers"
 
 
-CONFIG_FILES = $(shell find . -type f -name '*.river')
-CONFIG_FILES_IN_DOCKER = $(subst ./, /data/, $(CONFIG_FILES))
-.PHONY: fmt
-fmt: alloy-fmt ## Uses Grafana Agent to fmt the river config
-	@for c in $(CONFIG_FILES_IN_DOCKER); do \
-		echo "$$c"; \
-		docker run -e AGENT_MODE=flow --rm --volume "$(shell pwd):/data" -u $(shell id -u) grafana/agent:v0.40.3 fmt -w $$c ; \
-	done
-
 ALLOY_CONFIG_FILES = $(shell find . -type f -name '*.alloy')
 ALLOY_CONFIG_FILES_IN_DOCKER = $(subst ./, /data/, $(ALLOY_CONFIG_FILES))
-.PHONY: alloy-fmt
-alloy-fmt: ## Uses Grafana Alloy to fmt the config
+.PHONY: fmt
+fmt: ## Uses Grafana Alloy to fmt the config
 	@for c in $(ALLOY_CONFIG_FILES_IN_DOCKER); do \
 		echo "$$c"; \
 		docker run --rm --volume "$(shell pwd):/data" -u $(shell id -u) grafana/alloy:v1.0.0 fmt -w $$c ; \
@@ -207,9 +198,9 @@ manifests-monitoring-mixins: $(KUSTOMIZE)
 
 manifests-common: $(KUSTOMIZE)
 	$(info ******************** generates manifests-common manifests ********************)
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/alloy > kubernetes/common/alloy/manifests/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/gateway > kubernetes/common/gateway/manifests/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana > kubernetes/common/grafana/manifests/k8s-all-in-one.yaml
-	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana-agent > kubernetes/common/grafana-agent/manifests/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/kube-prometheus-stack > kubernetes/common/kube-prometheus-stack/manifests/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/memcached > kubernetes/common/memcached/manifests/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/minio-operator > kubernetes/common/minio-operator/manifests/k8s-all-in-one.yaml
@@ -293,7 +284,7 @@ define config_changes_trigger_pod_restart
 	@kubectl rollout status -n gateway deployment/nginx --watch --timeout=600s
 	@echo "Provisioning Grafana dashboards Prometheus rules and alerts..."
 	@kubectl apply -f monitoring-mixins/k8s-all-in-one.yaml
-	kubectl rollout status -n monitoring-system daemonset/grafana-agent --watch --timeout=600s
+	kubectl rollout status -n monitoring-system daemonset/alloy --watch --timeout=600s
 	@$(call echo_info, ${$@_MSG})
 endef
 
@@ -409,7 +400,7 @@ delete-microservices-mode-traces: delete-memcached
 	@kubectl delete --ignore-not-found -f kubernetes/microservices-mode/traces/k8s-all-in-one.yaml
 
 
-##@ Grafana Agent Integrations
+##@ Grafana Alloy Integrations
 
 deploy-memcached: deploy-grafana
 	$(info ******************** deploy integration memcached manifests ********************)

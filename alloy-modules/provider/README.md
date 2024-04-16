@@ -1,6 +1,6 @@
-# Data receiver provider components
+# Module Components
 
-Provide the receivers of the collected data(`logs` `metrics` `traces` `profiles`).
+Provides configurable receivers for collected data(`logs` `metrics` `traces` `profiles`).
 
 ## Components
   - [`self_hosted_stack`](#self_hosted_stack)
@@ -8,7 +8,7 @@ Provide the receivers of the collected data(`logs` `metrics` `traces` `profiles`
 
 ### `self_hosted_stack`
 
-Module to configure receivers for Self Hosted LGTMP Stack.
+Module component to configure receivers for Self Hosted LGTMP Stack.
 
 ***Arguments***
 
@@ -63,7 +63,7 @@ prometheus.scrape "default" {
 
 ### `grafana_cloud`
 
-Module to automatically configure receivers for Grafana Cloud.
+Module component to automatically configure receivers for Grafana Cloud.
 
 To create a token:
 

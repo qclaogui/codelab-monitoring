@@ -8,7 +8,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-- ../../common/grafana-agent
+- ../../common/alloy
 - tempo-distributed
 
 # optional
@@ -19,18 +19,18 @@ secretGenerator:
   namespace: tracing-system
   literals:
   - TEMPO_S3_SECRET_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
-  - JAEGER_AGENT_HOST=grafana-agent.monitoring-system.svc.cluster.local
+  - JAEGER_AGENT_HOST=alloy.monitoring-system.svc.cluster.local
   - JAEGER_AGENT_PORT=6831
   - JAEGER_TAGS=app=tempo
   - JAEGER_SAMPLER_TYPE=const
   - JAEGER_SAMPLER_PARAM=1
 
 configMapGenerator:
-- name: agent-config
+- name: alloy-config
   namespace: monitoring-system
   behavior: replace
   files:
-  - configs/config.river
+  - config.alloy=configs/traces.alloy
 
 - name: tempo-distributed-config
   namespace: tracing-system

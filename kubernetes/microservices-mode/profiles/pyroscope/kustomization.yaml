@@ -13,3 +13,20 @@ helmCharts:
 
 resources:
 - namespace.yaml
+
+secretGenerator:
+- name: pyroscope-env
+  namespace: profiles-system
+  literals:
+  - PYROSCOPE_STORAGE_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
+
+generators:
+- |-
+  apiVersion: builtin
+  kind: ConfigMapGenerator
+  metadata:
+    name: pyroscope-config
+    namespace: profiles-system
+  behavior: replace
+  files:
+  - config.yaml=configs/pyroscope.yaml

@@ -1,0 +1,91 @@
+logging {
+	level  = coalesce(env("ALLOY_LOG_LEVEL"), "info")
+	format = "logfmt"
+}
+
+/********************************************
+ * Grafana LGTMP Stack Receiver Provider
+ ********************************************/
+import.git "provider" {
+	repository     = "https://github.com/qclaogui/codelab-monitoring.git"
+	revision       = "main"
+	path           = "alloy-modules/provider"
+	pull_frequency = "24h"
+}
+
+// get lgtmp receivers provider
+provider.self_hosted_stack "kubernetes" {
+	metrics_endpoint_url  = coalesce(env("SELF_HOSTED_METRICS_ENDPOINT_URL"), "http://nginx.gateway.svc:8080/api/v1/push")
+	logs_endpoint_url     = coalesce(env("SELF_HOSTED_LOGS_ENDPOINT_URL"), "http://nginx.gateway.svc:3100/loki/api/v1/push")
+	traces_endpoint_url   = coalesce(env("SELF_HOSTED_TRACES_ENDPOINT_URL"), "http://nginx.gateway.svc:4318")
+	profiles_endpoint_url = coalesce(env("SELF_HOSTED_PROFILES_ENDPOINT_URL"), "http://nginx.gateway.svc:4040")
+}
+
+/********************************************
+ * Metrics
+ ********************************************/
+import.file "metrics" {
+	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/kubernetes/metrics"
+}
+
+metrics.integrations_scrape "kubernetes" {
+	forward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]
+}
+
+metrics.podmonitors_scrape "kubernetes" {
+	forward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]
+}
+
+metrics.servicemonitors_scrape "kubernetes" {
+	forward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]
+}
+
+/********************************************
+ * Logs
+ ********************************************/
+import.file "logs" {
+	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/kubernetes/logs"
+}
+
+logs.annotations_ingest "kubernetes" {
+	forward_to        = [logs.keep_labels.kubernetes.receiver]
+	annotation_prefix = "logs.grafana.com"
+}
+
+logs.keep_labels "kubernetes" {
+	forward_to = [provider.self_hosted_stack.kubernetes.logs_receiver]
+}
+
+/********************************************
+ * Traces
+ ********************************************/
+import.file "traces" {
+	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/kubernetes/traces"
+}
+
+// traces Processing And Transformation process_and_transform
+traces.process_and_transform "kubernetes" {
+	metrics_forward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]
+	logs_forward_to    = [provider.self_hosted_stack.kubernetes.logs_receiver]
+	traces_forward_to  = [provider.self_hosted_stack.kubernetes.traces_receiver]
+}
+
+tracing {
+	// Write all spans. Don't do this in production!
+	sampling_fraction = 1
+
+	// Forward Alloy internal spans to traces process.
+	write_to = [traces.process_and_transform.kubernetes.alloy_traces_input]
+}
+
+/********************************************
+ * Profiles
+ ********************************************/
+import.file "profiles" {
+	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/kubernetes/profiles"
+}
+
+profiles.annotations_scrape "kubernetes" {
+	forward_to = [provider.self_hosted_stack.kubernetes.profiles_receiver]
+	// annotation_prefix = "profiles.grafana.com"
+}

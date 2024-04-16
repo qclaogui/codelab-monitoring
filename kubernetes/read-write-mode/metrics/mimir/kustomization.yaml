@@ -30,3 +30,17 @@ resources:
 - mimir-write-dep.yaml
 - mimir-write-svc.yaml
 - mimir-write-servicemonitor.yaml
+
+secretGenerator:
+- name: mimir-env
+  namespace: monitoring-system
+  literals:
+  - MIMIR_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
+
+configMapGenerator:
+- name: mimir-config
+  namespace: monitoring-system
+  files:
+  - configs/mimir.yaml
+  - configs/runtime.yaml
+  - alertmanager_fallback_config.yaml=configs/alertmanager-fallback-config.yaml

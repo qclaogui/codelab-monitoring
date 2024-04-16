@@ -1,13 +1,13 @@
-/************************************************
-* Component: self_hosted_stack
+/*******************************************************
+* Module Components: self_hosted_stack
 * Description: Self Hosted Receiver Provider
-*************************************************/
+*******************************************************/
 
 declare "self_hosted_stack" {
 
-	/********************************************
+	/***************************************************
 	* ARGUMENTS
-	********************************************/
+	***************************************************/
 	argument "metrics_endpoint_url" {
 		comment  = "Where to send collected metrics."
 		optional = true
@@ -32,9 +32,9 @@ declare "self_hosted_stack" {
 		default  = coalesce(env("SELF_HOSTED_PROFILES_ENDPOINT_URL"), "http://pyroscope:4040")
 	}
 
-	/********************************************
+	/***************************************************
 	* Setup Receivers
-	********************************************/
+	***************************************************/
 	prometheus.remote_write "self_hosted" {
 		endpoint {
 			url                    = argument.metrics_endpoint_url.value
@@ -89,9 +89,9 @@ declare "self_hosted_stack" {
 		}
 	}
 
-	/********************************************
+	/***************************************************
 	* EXPORTS
-	********************************************/
+	***************************************************/
 	export "metrics_receiver" {
 		value = prometheus.remote_write.self_hosted.receiver
 	}
