@@ -351,10 +351,9 @@ data:
     Stack Receiver Provider\n ********************************************/\nimport.git
     \"provider\" {\n\trepository     = \"https://github.com/qclaogui/codelab-monitoring.git\"\n\trevision
     \      = \"main\"\n\tpath           = \"alloy-modules/provider\"\n\tpull_frequency
-    = \"24h\"\n}\n\n// get lgtmp receivers provider\nprovider.self_hosted_stack \"kubernetes\"
-    {\n\tmetrics_endpoint_url = coalesce(env(\"SELF_HOSTED_METRICS_ENDPOINT_URL\"),
-    \"http://nginx.gateway.svc:8080/api/v1/push\")\n\tlogs_endpoint_url    = coalesce(env(\"SELF_HOSTED_LOGS_ENDPOINT_URL\"),
-    \"http://nginx.gateway.svc:3100/loki/api/v1/push\")\n}\n\n/********************************************\n
+    = \"24h\"\n}\n\nprovider.self_hosted_stack \"kubernetes\" {\n\tmetrics_endpoint_url
+    = coalesce(env(\"SELF_HOSTED_METRICS_ENDPOINT_URL\"), \"http://nginx.gateway.svc:8080/api/v1/push\")\n\tlogs_endpoint_url
+    \   = coalesce(env(\"SELF_HOSTED_LOGS_ENDPOINT_URL\"), \"http://nginx.gateway.svc:3100/loki/api/v1/push\")\n}\n\n/********************************************\n
     * Logs\n ********************************************/\nimport.file \"logs\" {\n\tfilename
     = coalesce(env(\"ALLOY_MODULES_FOLDER\"), \"/etc/alloy/modules\") + \"/kubernetes/logs\"\n}\n\nlogs.annotations_ingest
     \"kubernetes\" {\n\tannotation_prefix = \"logs.grafana.com\"\n\tforward_to        =
@@ -368,7 +367,7 @@ data:
     \"kubernetes\" {\n\tforward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]\n}\n"
 kind: ConfigMap
 metadata:
-  name: alloy-config-4924f95b4t
+  name: alloy-config-fk4c5tm246
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -2026,7 +2025,7 @@ spec:
       serviceAccountName: alloy
       volumes:
       - configMap:
-          name: alloy-config-4924f95b4t
+          name: alloy-config-fk4c5tm246
         name: config
       - hostPath:
           path: /var/log

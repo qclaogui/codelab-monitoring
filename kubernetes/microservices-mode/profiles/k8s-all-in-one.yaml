@@ -222,10 +222,9 @@ data:
     Stack Receiver Provider\n ********************************************/\nimport.git
     \"provider\" {\n\trepository     = \"https://github.com/qclaogui/codelab-monitoring.git\"\n\trevision
     \      = \"main\"\n\tpath           = \"alloy-modules/provider\"\n\tpull_frequency
-    = \"24h\"\n}\n\n// get lgtmp receivers provider\nprovider.self_hosted_stack \"kubernetes\"
-    {\n\tmetrics_endpoint_url  = coalesce(env(\"SELF_HOSTED_METRICS_ENDPOINT_URL\"),
-    \"http://nginx.gateway.svc:8080/api/v1/push\")\n\tprofiles_endpoint_url = coalesce(env(\"SELF_HOSTED_PROFILES_ENDPOINT_URL\"),
-    \"http://nginx.gateway.svc:4040\")\n}\n\n/********************************************\n
+    = \"24h\"\n}\n\nprovider.self_hosted_stack \"kubernetes\" {\n\tmetrics_endpoint_url
+    \ = coalesce(env(\"SELF_HOSTED_METRICS_ENDPOINT_URL\"), \"http://nginx.gateway.svc:8080/api/v1/push\")\n\tprofiles_endpoint_url
+    = coalesce(env(\"SELF_HOSTED_PROFILES_ENDPOINT_URL\"), \"http://nginx.gateway.svc:4040\")\n}\n\n/********************************************\n
     * Profiles\n ********************************************/\nimport.file \"profiles\"
     {\n\tfilename = coalesce(env(\"ALLOY_MODULES_FOLDER\"), \"/etc/alloy/modules\")
     + \"/kubernetes/profiles\"\n}\n\nprofiles.annotations_scrape \"kubernetes\" {\n\t//
@@ -238,7 +237,7 @@ data:
     \"kubernetes\" {\n\tforward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]\n}\n"
 kind: ConfigMap
 metadata:
-  name: alloy-config-g7g5bddccg
+  name: alloy-config-5k62427t46
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -2327,7 +2326,7 @@ spec:
       serviceAccountName: alloy
       volumes:
       - configMap:
-          name: alloy-config-g7g5bddccg
+          name: alloy-config-5k62427t46
         name: config
       - hostPath:
           path: /var/log
