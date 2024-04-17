@@ -1,0 +1,11 @@
+
+services:
+  # override included service grafana environment
+  grafana:
+    image: ${GRAFANA_IMAGE:-docker.io/grafana/grafana:11.0.0-preview}
+    volumes:
+      - ./grafana/provisioning/plugins/grafana-lokiexplore-app.yaml:/etc/grafana/provisioning/plugins/grafana-lokiexplore-app.yaml
+    environment:
+      GF_FEATURE_TOGGLES_ENABLE: accessControlOnCall
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: grafana-lokiexplore-app
+      GF_INSTALL_PLUGINS: https://storage.googleapis.com/integration-artifacts/grafana-lokiexplore-app/grafana-lokiexplore-app-latest.zip;grafana-lokiexplore-app

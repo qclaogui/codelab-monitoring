@@ -27,6 +27,25 @@ common:
       http_config:
         insecure_skip_verify: true
 
+bloom_gateway:
+  enabled: true
+  client:
+    addresses: "dns+loki.logging-system.svc.cluster.local:9095"
+    cache_results: true
+    results_cache:
+      cache:
+        memcached_client:
+          addresses: "dns+memcached.memcached-system.svc.cluster.local:11211"
+
+bloom_compactor:
+  enabled: true
+  ring:
+    kvstore:
+      store: memberlist
+
+index_gateway:
+  mode: simple
+
 compactor:
   working_directory: /tmp/compactor
 
@@ -50,11 +69,14 @@ query_range:
       memcached_client:
         addresses: "dns+memcached.memcached-system.svc.cluster.local:11211"
 
+pattern_ingester:
+  enabled: true
+
 limits_config:
-  max_cache_freshness_per_query: 10m
-  reject_old_samples: true
-  reject_old_samples_max_age: 168h
-  split_queries_by_interval: 15m
+  max_global_streams_per_user: 0
+  ingestion_rate_mb: 50000
+  ingestion_burst_size_mb: 50000
+  volume_enabled: true
 
 ruler:
   storage:
@@ -74,6 +96,13 @@ schema_config:
     object_store: s3
     schema: v13
     store: tsdb
+
+storage_config:
+  tsdb_shipper:
+    active_index_directory: /loki/index
+    cache_location: /loki/cache
+    index_gateway_client:
+      server_address: "dns+loki.logging-system.svc.cluster.local:9095"
 
 chunk_store_config:
   chunk_cache_config:
