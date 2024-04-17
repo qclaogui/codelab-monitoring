@@ -35,7 +35,7 @@ Once all containers are up and running you can search for metrics in Grafana. Na
 
 > In this case you can find `github-exporter` metrics and logs.
 
-For more examples, See: [examples/](./examples/)
+More usage examples, See: [examples/](./examples/)
 
 ---
 
@@ -47,10 +47,6 @@ For more examples, See: [examples/](./examples/)
 ❯ make help
 Usage:
   make <target>
-
-Lint & fmt
-  copyright                                 Add Copyright header to .go files.
-  fmt                                       Uses Grafana Agent to fmt the river config
 
 Docker compose
   up-monolithic-mode-metrics                Run monolithic-mode Mimir for metrics
@@ -86,19 +82,10 @@ Kubernetes
   deploy-microservices-mode-profiles        Deploy microservices-mode Pyroscope for profiles
   deploy-microservices-mode-traces          Deploy microservices-mode Tempo for traces
 
-Grafana Agent Integrations
-  deploy-mysql                              Deploy integration mysql manifests
-  deploy-redis                              Deploy integration redis manifests
-
 Build
   generate                                  generate embed deps
   build                                     Build binary for current OS and place it at ./bin/lgtmp_$(GOOS)_$(GOARCH)
   build-all                                 Build binaries for Linux and Mac and place them in dist/
-
-Release
-  prepare-release-candidate                 Create release candidate
-  prepare-release                           Create release
-  print-version                             Prints the upcoming release number
 
 General
   console-token                             Prints the minio-operator console jwt token

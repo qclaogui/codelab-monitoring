@@ -9,8 +9,6 @@ Developer-friendly incident response with brilliant Slack integration.
 
 ![oncall-alert-workflow](https://grafana.com/static/img/docs/oncall/oncall-alert-workflow.png)
 
-> Add Grafana OnCall integration with monitoring system
-
 ## Docker `compose.yaml`
 
 `compose.yaml`:
@@ -49,7 +47,7 @@ services:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
-    image: &oncallImage grafana/oncall:v1.3.117
+    image: &oncallImage grafana/oncall:v1.4.3
     restart: always
     ports:
       - "8080"
@@ -120,8 +118,8 @@ services:
     environment:
       GF_SECURITY_ADMIN_USER: oncall
       GF_SECURITY_ADMIN_PASSWORD: oncall
-      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: grafana-oncall-app
-      GF_INSTALL_PLUGINS: grafana-oncall-app v1.3.115, redis-app v2.2.1
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: grafana-oncall-app, redis-app
+      GF_INSTALL_PLUGINS: grafana-oncall-app v1.4.3, redis-app v2.2.1
 ```
 
 ## Launch services
@@ -135,10 +133,14 @@ Once all containers are up and running you can search for metrics in Grafana.
 > [!IMPORTANT]  
 > 😞 Grafana OnCall is available for authorized users only, please sign in to proceed. For this example login credentials: `oncall`/`oncall`.
 
-Navigate to [http://localhost:3000](http://localhost:3000)
+Navigate to <http://localhost:3000/a/grafana-oncall-app>.
 
 ## Stop services
 
 ```shell
 COMPOSE_EXPERIMENTAL_GIT_REMOTE=true docker compose down
 ```
+
+## Helpful Links
+
+- <https://github.com/grafana/oncall>

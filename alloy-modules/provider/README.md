@@ -1,6 +1,6 @@
 # Module Components
 
-Provides configurable receivers for collected data(`logs` `metrics` `traces` `profiles`).
+This module provides receivers components for collecting data(`logs` `metrics` `traces` `profiles`).
 
 ## Components
   - [`self_hosted_stack`](#self_hosted_stack)

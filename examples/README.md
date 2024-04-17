@@ -6,12 +6,13 @@ This directory contains examples, including:
 - [github-exporter-with-simple-dashboards](./ghe-with-simple-dashboards)
 - [github-exporter](./github-exporter)
 - [grafana-oncall-integration](./grafana-oncall)
+- [grafana-explore-logs](./grafana-explore-logs)
 
 ## Debug info
 
-`alloy` target Auto Scrape by [label](../docker-compose/common/config/alloy/modules/compose/README.md):
+`alloy` target Label Scrape by [label](../alloy-modules/compose/README.md#compose-labels_scrape-component):
 
-<http://localhost:12345/component/metrics.label_auto_scrape.default/prometheus.scrape.pc_docker_metrics>
+<http://localhost:12345/component/metrics.labels_scrape.compose/prometheus.scrape.pc_docker_metrics>
 
 ## Grafana LGTMP Stack default port-mapping
 
