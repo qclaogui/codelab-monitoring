@@ -48,11 +48,6 @@ compactor:
     kvstore:
       store: memberlist
 
-distributor:
-  ring:
-    kvstore:
-      store: memberlist
-
 frontend:
   log_queries_longer_than: 5s
   tail_proxy_url: http://loki-distributed-querier.logging-system.svc.cluster.local:3100
@@ -68,17 +63,15 @@ ingester:
   wal:
     dir: /var/loki/wal
 
+pattern_ingester:
+  enabled: true
+
 limits_config:
-  max_cache_freshness_per_query: 10m
-  query_timeout: 300s
-  reject_old_samples: true
-  reject_old_samples_max_age: 168h
-  split_queries_by_interval: 15m
   bloom_gateway_enable_filtering: true
   bloom_compactor_enable_compaction: true
-  ingestion_rate_mb: 150
-  max_streams_per_user: 100
-  max_chunks_per_query: 100
+  ingestion_rate_mb: 50000
+  ingestion_burst_size_mb: 50000
+  volume_enabled: true
 
 memberlist:
   join_members:
@@ -91,6 +84,7 @@ query_range:
     cache:
       memcached_client:
         addresses: "dns+memcached.memcached-system.svc.cluster.local:11211"
+
   cache_index_stats_results: true
   index_stats_results_cache:
     cache:
@@ -98,9 +92,6 @@ query_range:
         addresses: "dns+memcached.memcached-system.svc.cluster.local:11211"
 
 ruler:
-  ring:
-    kvstore:
-      store: memberlist
   storage:
     s3:
       bucketnames: loki-ruler
