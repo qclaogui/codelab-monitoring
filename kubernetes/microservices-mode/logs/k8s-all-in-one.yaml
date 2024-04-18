@@ -340,7 +340,7 @@ data:
     = coalesce(env(\"SELF_HOSTED_METRICS_ENDPOINT_URL\"), \"http://nginx.gateway.svc:8080/api/v1/push\")\n\tlogs_endpoint_url
     \   = coalesce(env(\"SELF_HOSTED_LOGS_ENDPOINT_URL\"), \"http://nginx.gateway.svc:3100/loki/api/v1/push\")\n}\n\n/********************************************\n
     * Logs\n ********************************************/\nimport.file \"logs\" {\n\tfilename
-    = coalesce(env(\"ALLOY_MODULES_FOLDER\"), \"/etc/alloy/modules\") + \"/kubernetes/logs\"\n}\n\nlogs.annotations_ingest
+    = coalesce(env(\"ALLOY_MODULES_FOLDER\"), \"/etc/alloy/modules\") + \"/kubernetes/logs\"\n}\n\nlogs.annotations_scrape
     \"kubernetes\" {\n\tannotation_prefix = \"logs.grafana.com\"\n\tforward_to        =
     [logs.keep_labels.kubernetes.receiver]\n}\n\nlogs.keep_labels \"kubernetes\" {\n\tforward_to
     = [provider.self_hosted_stack.kubernetes.logs_receiver]\n}\n\n/********************************************\n
@@ -352,52 +352,55 @@ data:
     \"kubernetes\" {\n\tforward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]\n}\n"
 kind: ConfigMap
 metadata:
-  name: alloy-config-fk4c5tm246
+  name: alloy-config-8t9d8htff7
   namespace: monitoring-system
 ---
 apiVersion: v1
 data:
   memcached.alloy: "/*\nModule Components: component_memcached\n*/\n\ndeclare \"component_memcached\"
-    {\n\n\t/***************************************************\n\t* ARGUMENTS\n\t***************************************************/\n\targument
+    {\n\n\t/*****************************************************************\n\t*
+    ARGUMENTS\n\t*****************************************************************/\n\targument
     \"forward_to\" {\n\t\tcomment = \"Must be a list(MetricssReceiver) where collected
     metrics should be forwarded to\"\n\t}\n\n\targument \"memcached_address\" {\n\t\tcomment
     \ = \"address of the Memcached\"\n\t\toptional = true\n\t\tdefault  = \"memcached:11211\"\n\t}\n\n\targument
     \"memcached_timeout\" {\n\t\tcomment  = \"timeout of the Memcached\"\n\t\toptional
-    = true\n\t\tdefault  = \"5s\"\n\t}\n\n\targument \"memcached_instance\" {\n\t\tcomment
-    \ = \"instance of the Memcached\"\n\t\toptional = true\n\t\tdefault  = \"primary\"\n\t}\n\n\targument
-    \"keep_metrics\" {\n\t\toptional = true\n\t\tdefault  = \"(.+)\"\n\t}\n\n\targument
+    = true\n\t\tdefault  = \"5s\"\n\t}\n\n\targument \"instance_name\" {\n\t\tcomment
+    \ = \"instance of the Memcached\"\n\t\toptional = true\n\t}\n\n\targument \"keep_metrics\"
+    {\n\t\toptional = true\n\t\tdefault  = \"(up|memcached_commands_total|memcached_connections_total|memcached_current_bytes|memcached_current_connections|memcached_current_items|memcached_items_evicted_total|memcached_items_total|memcached_max_connections|memcached_read_bytes_total|memcached_up|memcached_uptime_seconds|memcached_version|memcached_written_bytes_total)\"\n\t}\n\n\targument
     \"scrape_interval\" {\n\t\tcomment  = \"How often to scrape metrics from the targets
     (default: 60s)\"\n\t\toptional = true\n\t\tdefault  = \"60s\"\n\t}\n\n\targument
     \"scrape_timeout\" {\n\t\tcomment  = \"How long before a scrape times out (default:
     10s)\"\n\t\toptional = true\n\t\tdefault  = \"10s\"\n\t}\n\n\t/***************************************************************\n\t*
-    Integrations Memcached\n\t****************************************************************/\n\tprometheus.exporter.memcached
-    \"component_memcached\" {\n\t\taddress = argument.memcached_address.value\n\t\ttimeout
+    Integrations Memcached\n\t****************************************************************/\n\t//
+    https://grafana.com/docs/alloy/latest/reference/components/prometheus.exporter.memcached/\n\tprometheus.exporter.memcached
+    \"integrations_memcached_exporter\" {\n\t\taddress = argument.memcached_address.value\n\t\ttimeout
     = argument.memcached_timeout.value\n\t}\n\n\t/***************************************************************\n\t*
     Discovery Relabelings (pre-scrape)\n\t****************************************************************/\n\tdiscovery.relabel
-    \"component_memcached\" {\n\t\ttargets = prometheus.exporter.memcached.component_memcached.targets\n\n\t\trule
-    {\n\t\t\ttarget_label = \"job\"\n\t\t\treplacement  = \"integrations/kubernetes/memcached\"\n\t\t}\n\t}\n\n\t/***************************************************************\n\t*
+    \"integrations_memcached_exporter\" {\n\t\ttargets = prometheus.exporter.memcached.integrations_memcached_exporter.targets\n\n\t\trule
+    {\n\t\t\ttarget_label = \"job\"\n\t\t\treplacement  = \"integrations/kubernetes/memcached\"\n\t\t}\n\n\t\trule
+    {\n\t\t\ttarget_label = \"instance\"\n\t\t\treplacement  = coalesce(argument.instance_name.value,
+    constants.hostname)\n\t\t}\n\t}\n\n\t/***************************************************************\n\t*
     Prometheus Scrape Integrations Targets\n\t****************************************************************/\n\tprometheus.scrape
-    \"component_memcached\" {\n\t\ttargets = concat(\n\t\t\tdiscovery.relabel.component_memcached.output,\n\t\t)\n\n\t\tenable_protobuf_negotiation
+    \"integrations_memcached_exporter\" {\n\t\ttargets = concat(\n\t\t\tdiscovery.relabel.integrations_memcached_exporter.output,\n\t\t)\n\n\t\tenable_protobuf_negotiation
     = true\n\t\tscrape_classic_histograms   = true\n\n\t\tscrape_interval = argument.scrape_interval.value\n\t\tscrape_timeout
     \ = argument.scrape_timeout.value\n\n\t\tclustering {\n\t\t\tenabled = true\n\t\t}\n\n\t\tforward_to
-    = [prometheus.relabel.component_memcached.receiver]\n\t}\n\n\t/***************************************************************\n\t*
+    = [prometheus.relabel.integrations_memcached_exporter.receiver]\n\t}\n\n\t/***************************************************************\n\t*
     Prometheus Metric Relabelings (post-scrape)\n\t****************************************************************/\n\tprometheus.relabel
-    \"component_memcached\" {\n\t\tforward_to = argument.forward_to.value\n\n\t\t//
+    \"integrations_memcached_exporter\" {\n\t\tforward_to = argument.forward_to.value\n\n\t\t//
     keep only metrics that match the keep_metrics regex\n\t\trule {\n\t\t\tsource_labels
     = [\"__name__\"]\n\t\t\tregex         = argument.keep_metrics.value\n\t\t\taction
-    \       = \"keep\"\n\t\t}\n\n\t\trule {\n\t\t\treplacement  = argument.memcached_instance.value\n\t\t\ttarget_label
-    = \"instance\"\n\t\t}\n\t}\n}\n"
+    \       = \"keep\"\n\t\t}\n\t}\n}\n"
 kind: ConfigMap
 metadata:
-  name: alloy-modules-kubernetes-integrations-4574dtf9mm
+  name: alloy-modules-kubernetes-integrations-9k86fb8hkg
   namespace: monitoring-system
 ---
 apiVersion: v1
 data:
-  annotations-ingest.alloy: "/*\nModule Components: annotations_ingest\nDescription:
+  annotations-scrape.alloy: "/*\nModule Components: annotations_scrape\nDescription:
     Scrapes targets for logs based on kubernetes Pod annotations\n\n  Annotations:\n
     \   logs.grafana.com/ingest: true\n    logs.grafana.com/tenant: \"primary\"\n*/\n\ndeclare
-    \"annotations_ingest\" {\n\n\t/*****************************************************************\n\t*
+    \"annotations_scrape\" {\n\n\t/*****************************************************************\n\t*
     ARGUMENTS\n\t*****************************************************************/\n\targument
     \"forward_to\" {\n\t\tcomment = \"Must be a list(LogsReceiver) where collected
     logs should be forwarded to\"\n\t}\n\n\targument \"tenant\" {\n\t\tcomment  =
@@ -420,7 +423,7 @@ data:
     pods to declare their logs to be ingested or not, the default is true\n\t\t//
     \  i.e. logs.grafana.com/ingest: false\n\t\trule {\n\t\t\taction        = \"keep\"\n\t\t\tsource_labels
     = [\n\t\t\t\t\"__meta_kubernetes_pod_annotation_\" + argument.__sd_annotation.value
-    + \"_ingest\",\n\t\t\t]\n\t\t\tregex = \"^(true|)$\"\n\t\t}\n\n\t\t// allow pods
+    + \"_scrape\",\n\t\t\t]\n\t\t\tregex = \"^(true|)$\"\n\t\t}\n\n\t\t// allow pods
     to declare what tenant their logs should be written to, the following annotation
     is supported:\n\t\t//   logs.grafana.com/tenant: \"primary\"\n\t\trule {\n\t\t\taction
     \       = \"keep\"\n\t\t\tsource_labels = [\n\t\t\t\t\"__meta_kubernetes_pod_annotation_\"
@@ -521,7 +524,7 @@ data:
     \"receiver\" {\n\t\tvalue = loki.process.keep_labels.receiver\n\t}\n}\n"
 kind: ConfigMap
 metadata:
-  name: alloy-modules-kubernetes-logs-ff7fmcftkt
+  name: alloy-modules-kubernetes-logs-dfhkhc94gt
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -548,9 +551,9 @@ data:
     argument.namespace.value\n\t// }\n\t// import.string \"integrate\" {\n\t// \tcontent
     = remote.kubernetes.configmap.integrations.data[\"memcached.alloy\"]\n\t// }\n\n\t/*****************************************************************\n\t*
     Memcached Integrations\n\t*****************************************************************/\n\tintegrate.component_memcached
-    \"primary\" {\n\t\tforward_to = argument.forward_to.value\n\n\t\tmemcached_address
-    \ = \"memcached.memcached-system.svc.cluster.local:11211\"\n\t\tmemcached_timeout
-    \ = \"5s\"\n\t\tmemcached_instance = \"primary\"\n\t}\n}\n"
+    \"primary\" {\n\t\tforward_to = argument.forward_to.value\n\n\t\tinstance_name
+    \    = \"primary\"\n\t\tmemcached_address = \"memcached.memcached-system.svc.cluster.local:11211\"\n\t\tmemcached_timeout
+    = \"5s\"\n\t}\n}\n"
   podmonitors-scrape.alloy: "/*\nModule Components: podmonitors_scrape\nDescription:
     Scrapes targets for metrics based on prometheus.operator.podmonitors\n*/\n\ndeclare
     \"podmonitors_scrape\" {\n\n\t/*****************************************************************\n\t*
@@ -573,7 +576,7 @@ data:
     = true\n\t\t}\n\t}\n}\n"
 kind: ConfigMap
 metadata:
-  name: alloy-modules-kubernetes-metrics-7m49m8gmhd
+  name: alloy-modules-kubernetes-metrics-tf9cd8b6bg
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -2965,19 +2968,19 @@ spec:
       serviceAccountName: alloy
       volumes:
       - configMap:
-          name: alloy-config-fk4c5tm246
+          name: alloy-config-8t9d8htff7
         name: config
       - hostPath:
           path: /var/log
         name: varlog
       - configMap:
-          name: alloy-modules-kubernetes-metrics-7m49m8gmhd
+          name: alloy-modules-kubernetes-metrics-tf9cd8b6bg
         name: modules-kubernetes-metrics
       - configMap:
-          name: alloy-modules-kubernetes-integrations-4574dtf9mm
+          name: alloy-modules-kubernetes-integrations-9k86fb8hkg
         name: modules-kubernetes-integrations
       - configMap:
-          name: alloy-modules-kubernetes-logs-ff7fmcftkt
+          name: alloy-modules-kubernetes-logs-dfhkhc94gt
         name: modules-kubernetes-logs
       - configMap:
           name: alloy-modules-kubernetes-traces-8mgm8th9m5

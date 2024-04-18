@@ -23,7 +23,7 @@ declare "component_cadvisor" {
 
 	argument "keep_metrics" {
 		optional = true
-		default  = "(.+)"
+		default  = "(up|container_cpu_usage_seconds_total|container_fs_inodes_free|container_fs_inodes_total|container_fs_limit_bytes|container_fs_usage_bytes|container_last_seen|container_memory_usage_bytes|container_network_receive_bytes_total|container_network_tcp_usage_total|container_network_transmit_bytes_total|container_spec_memory_reservation_limit_bytes|machine_memory_bytes|machine_scrape_error|container_start_time_seconds|container_fs_writes_bytes_total|container_fs_reads_bytes_total|container_memory_rss)"
 	}
 
 	argument "scrape_interval" {
@@ -41,7 +41,8 @@ declare "component_cadvisor" {
 	/***************************************************************
 	* Integrations cAdvisor
 	****************************************************************/
-	prometheus.exporter.cadvisor "component_cadvisor" {
+	// https://grafana.com/docs/alloy/latest/reference/components/prometheus.exporter.cadvisor/
+	prometheus.exporter.cadvisor "integrations_cadvisor" {
 		docker_host = "unix:///var/run/docker.sock"
 
 		store_container_labels = false
@@ -62,8 +63,8 @@ declare "component_cadvisor" {
 	/***************************************************************
 	* Discovery Relabelings (pre-scrape)
 	****************************************************************/
-	discovery.relabel "component_cadvisor" {
-		targets = prometheus.exporter.cadvisor.component_cadvisor.targets
+	discovery.relabel "integrations_cadvisor" {
+		targets = prometheus.exporter.cadvisor.integrations_cadvisor.targets
 
 		// set the cluster label
 		rule {
@@ -81,9 +82,9 @@ declare "component_cadvisor" {
 	/***************************************************************
 	* Prometheus Scrape Integrations Targets
 	****************************************************************/
-	prometheus.scrape "component_cadvisor" {
+	prometheus.scrape "integrations_cadvisor" {
 		targets = concat(
-			discovery.relabel.component_cadvisor.output,
+			discovery.relabel.integrations_cadvisor.output,
 		)
 
 		enable_protobuf_negotiation = true
@@ -96,13 +97,13 @@ declare "component_cadvisor" {
 			enabled = true
 		}
 
-		forward_to = [prometheus.relabel.component_cadvisor.receiver]
+		forward_to = [prometheus.relabel.integrations_cadvisor.receiver]
 	}
 
 	/***************************************************************
 	* Prometheus Metric Relabelings (post-scrape)
 	****************************************************************/
-	prometheus.relabel "component_cadvisor" {
+	prometheus.relabel "integrations_cadvisor" {
 		forward_to = argument.forward_to.value
 
 		// drop unused metric label
