@@ -4,10 +4,13 @@ services:
       metrics.grafana.com/scrape: false
     depends_on: { minio: { condition: service_healthy } }
     image: ${LOKI_IMAGE:-docker.io/grafana/loki:3.0.0}
+    configs:
+      - source: loki_config_file
+        target: /etc/loki/config.yaml
     volumes:
-      - ../config/loki:/etc/loki
+      - ../config/loki:/etc/loki/configs
     command:
-      - -config.file=/etc/loki/monolithic-mode-logs.yaml
+      - -config.file=/etc/loki/config.yaml
       - -target=all
       - -config.expand-env=true
     healthcheck:

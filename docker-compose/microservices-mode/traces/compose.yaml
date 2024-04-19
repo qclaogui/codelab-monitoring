@@ -29,6 +29,12 @@ x-healthcheck: &status-healthcheck
 configs:
   alloy_config_file:
     file: ../../common/config/alloy/traces.alloy
+  loki_config_file:
+    file: ../../common/config/loki/monolithic-mode-logs.yaml
+  mimir_config_file:
+    file: ../../common/config/mimir/monolithic-mode-metrics.yaml
+  tempo_config_file:
+    file: ../../common/config/tempo/microservices-mode-traces.yaml
 
 services:
   gateway:
@@ -60,10 +66,13 @@ services:
   distributor:
     depends_on: { ingester: { condition: service_healthy } }
     image: &tempoImage ${TEMPO_IMAGE:-docker.io/grafana/tempo:2.4.1}
+    configs:
+      - source: tempo_config_file
+        target: /etc/tempo/config.yaml
     volumes:
-      - ../../common/config/tempo:/etc/tempo
+      - ../../common/config/tempo:/etc/tempo/configs
     command:
-      - -config.file=/etc/tempo/microservices-mode-traces.yaml
+      - -config.file=/etc/tempo/config.yaml
       - -target=distributor
       - -config.expand-env=true
     environment:
@@ -76,10 +85,13 @@ services:
   ingester:
     depends_on: { minio: { condition: service_healthy } }
     image: *tempoImage
+    configs:
+      - source: tempo_config_file
+        target: /etc/tempo/config.yaml
     volumes:
-      - ../../common/config/tempo:/etc/tempo
+      - ../../common/config/tempo:/etc/tempo/configs
     command:
-      - -config.file=/etc/tempo/microservices-mode-traces.yaml
+      - -config.file=/etc/tempo/config.yaml
       - -target=ingester
       - -config.expand-env=true
     environment:
@@ -98,10 +110,13 @@ services:
   query-frontend:
     depends_on: { minio: { condition: service_healthy } }
     image: *tempoImage
+    configs:
+      - source: tempo_config_file
+        target: /etc/tempo/config.yaml
     volumes:
-      - ../../common/config/tempo:/etc/tempo
+      - ../../common/config/tempo:/etc/tempo/configs
     command:
-      - -config.file=/etc/tempo/microservices-mode-traces.yaml
+      - -config.file=/etc/tempo/config.yaml
       - -target=query-frontend
       - -config.expand-env=true
     environment:
@@ -111,10 +126,13 @@ services:
   querier:
     depends_on: { minio: { condition: service_healthy } }
     image: *tempoImage
+    configs:
+      - source: tempo_config_file
+        target: /etc/tempo/config.yaml
     volumes:
-      - ../../common/config/tempo:/etc/tempo
+      - ../../common/config/tempo:/etc/tempo/configs
     command:
-      - -config.file=/etc/tempo/microservices-mode-traces.yaml
+      - -config.file=/etc/tempo/config.yaml
       - -target=querier
       - -config.expand-env=true
     environment:
@@ -124,10 +142,13 @@ services:
   compactor:
     depends_on: { minio: { condition: service_healthy } }
     image: *tempoImage
+    configs:
+      - source: tempo_config_file
+        target: /etc/tempo/config.yaml
     volumes:
-      - ../../common/config/tempo:/etc/tempo
+      - ../../common/config/tempo:/etc/tempo/configs
     command:
-      - -config.file=/etc/tempo/microservices-mode-traces.yaml
+      - -config.file=/etc/tempo/config.yaml
       - -target=compactor
       - -config.expand-env=true
     environment:

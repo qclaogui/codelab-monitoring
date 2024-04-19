@@ -4,14 +4,17 @@ services:
       metrics.grafana.com/scrape: false
     depends_on: { minio: { condition: service_healthy } }
     image: ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:1.5.0}
+    configs:
+      - source: pyroscope_config_file
+        target: /etc/pyroscope/config.yaml
     volumes:
-      - ../config/pyroscope:/etc/pyroscope
+      - ../config/pyroscope:/etc/pyroscope/configs
       - pyroscope_data:/data
     command:
-      - -config.file=/etc/pyroscope/monolithic-mode-profiles.yaml
+      - -config.file=/etc/pyroscope/config.yaml
       - -target=all
       - -config.expand-env=true
-      # - -runtime-config.file=/etc/pyroscope/overrides.yaml
+      # - -runtime-config.file=/etc/pyroscope/configs/overrides.yaml
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:4040/ready || exit 1" ]
       interval: 2s

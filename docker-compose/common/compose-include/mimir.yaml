@@ -5,10 +5,13 @@ services:
       metrics.grafana.com/scrape: false
     depends_on: { minio: { condition: service_healthy } }
     image: ${MIMIR_IMAGE:-docker.io/grafana/mimir:2.12.0}
+    configs:
+      - source: mimir_config_file
+        target: /etc/mimir/config.yaml
     volumes:
-      - ../config/mimir:/etc/mimir
+      - ../config/mimir:/etc/mimir/configs
     command:
-      - -config.file=/etc/mimir/monolithic-mode-metrics.yaml
+      - -config.file=/etc/mimir/config.yaml
       - -target=all
       - -config.expand-env=true
     healthcheck:

@@ -26,6 +26,10 @@ x-healthcheck: &status-healthcheck
 configs:
   alloy_config_file:
     file: ../../common/config/alloy/logs.alloy
+  mimir_config_file:
+    file: ../../common/config/mimir/monolithic-mode-metrics.yaml
+  loki_config_file:
+    file: ../../common/config/loki/microservices-mode-logs.yaml
 
 services:
   gateway:
@@ -59,10 +63,13 @@ services:
     labels: *loki-labels
     depends_on: { ingester: { condition: service_healthy } }
     image: &lokiImage ${LOKI_IMAGE:-docker.io/grafana/loki:3.0.0}
+    configs:
+      - source: loki_config_file
+        target: /etc/loki/config.yaml
     volumes:
-      - ../../common/config/loki:/etc/loki
+      - ../../common/config/loki:/etc/loki/configs
     command:
-      - -config.file=/etc/loki/microservices-mode-logs.yaml
+      - -config.file=/etc/loki/config.yaml
       - -target=distributor
       - -config.expand-env=true
     healthcheck:
@@ -79,10 +86,13 @@ services:
     labels: *loki-labels
     depends_on: { minio: { condition: service_healthy } }
     image: *lokiImage
+    configs:
+      - source: loki_config_file
+        target: /etc/loki/config.yaml
     volumes:
-      - ../../common/config/loki:/etc/loki
+      - ../../common/config/loki:/etc/loki/configs
     command:
-      - -config.file=/etc/loki/microservices-mode-logs.yaml
+      - -config.file=/etc/loki/config.yaml
       - -target=ingester
       - -config.expand-env=true
     healthcheck:
@@ -99,10 +109,13 @@ services:
     labels: *loki-labels
     depends_on: { minio: { condition: service_healthy } }
     image: *lokiImage
+    configs:
+      - source: loki_config_file
+        target: /etc/loki/config.yaml
     volumes:
-      - ../../common/config/loki:/etc/loki
+      - ../../common/config/loki:/etc/loki/configs
     command:
-      - -config.file=/etc/loki/microservices-mode-logs.yaml
+      - -config.file=/etc/loki/config.yaml
       - -target=pattern-ingester
       - -config.expand-env=true
     healthcheck:
@@ -119,10 +132,13 @@ services:
     labels: *loki-labels
     depends_on: { query-scheduler: { condition: service_healthy } }
     image: *lokiImage
+    configs:
+      - source: loki_config_file
+        target: /etc/loki/config.yaml
     volumes:
-      - ../../common/config/loki:/etc/loki
+      - ../../common/config/loki:/etc/loki/configs
     command:
-      - -config.file=/etc/loki/microservices-mode-logs.yaml
+      - -config.file=/etc/loki/config.yaml
       - -target=index-gateway
       - -config.expand-env=true
 
@@ -130,20 +146,26 @@ services:
     labels: *loki-labels
     depends_on: { query-scheduler: { condition: service_healthy } }
     image: *lokiImage
+    configs:
+      - source: loki_config_file
+        target: /etc/loki/config.yaml
     volumes:
-      - ../../common/config/loki:/etc/loki
+      - ../../common/config/loki:/etc/loki/configs
     command:
-      - -config.file=/etc/loki/microservices-mode-logs.yaml
+      - -config.file=/etc/loki/config.yaml
       - -target=query-frontend
       - -config.expand-env=true
 
   query-scheduler:
     labels: *loki-labels
     image: *lokiImage
+    configs:
+      - source: loki_config_file
+        target: /etc/loki/config.yaml
     volumes:
-      - ../../common/config/loki:/etc/loki
+      - ../../common/config/loki:/etc/loki/configs
     command:
-      - -config.file=/etc/loki/microservices-mode-logs.yaml
+      - -config.file=/etc/loki/config.yaml
       - -target=query-scheduler
       - -config.expand-env=true
     healthcheck:
@@ -160,10 +182,13 @@ services:
     labels: *loki-labels
     depends_on: { query-scheduler: { condition: service_healthy } }
     image: *lokiImage
+    configs:
+      - source: loki_config_file
+        target: /etc/loki/config.yaml
     volumes:
-      - ../../common/config/loki:/etc/loki
+      - ../../common/config/loki:/etc/loki/configs
     command:
-      - -config.file=/etc/loki/microservices-mode-logs.yaml
+      - -config.file=/etc/loki/config.yaml
       - -target=querier
       - -config.expand-env=true
 
@@ -171,10 +196,13 @@ services:
     labels: *loki-labels
     depends_on: { minio: { condition: service_healthy } }
     image: *lokiImage
+    configs:
+      - source: loki_config_file
+        target: /etc/loki/config.yaml
     volumes:
-      - ../../common/config/loki:/etc/loki
+      - ../../common/config/loki:/etc/loki/configs
     command:
-      - -config.file=/etc/loki/microservices-mode-logs.yaml
+      - -config.file=/etc/loki/config.yaml
       - -target=ruler
       - -config.expand-env=true
     networks:
@@ -185,10 +213,13 @@ services:
   compactor:
     labels: *loki-labels
     image: *lokiImage
+    configs:
+      - source: loki_config_file
+        target: /etc/loki/config.yaml
     volumes:
-      - ../../common/config/loki:/etc/loki
+      - ../../common/config/loki:/etc/loki/configs
     command:
-      - -config.file=/etc/loki/microservices-mode-logs.yaml
+      - -config.file=/etc/loki/config.yaml
       - -target=compactor
       - -config.expand-env=true
     networks:
