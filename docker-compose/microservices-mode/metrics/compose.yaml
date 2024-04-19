@@ -20,6 +20,8 @@ x-healthcheck: &status-healthcheck
 configs:
   alloy_config_file:
     file: ../../common/config/alloy/metrics.alloy
+  mimir_config_file:
+    file: ../../common/config/mimir/microservices-mode-metrics.yaml
 
 services:
   gateway:
@@ -49,10 +51,13 @@ services:
   distributor:
     depends_on: { ingester: { condition: service_healthy } }
     image: &mimirImage ${MIMIR_IMAGE:-docker.io/grafana/mimir:2.12.0}
+    configs:
+      - source: mimir_config_file
+        target: /etc/mimir/config.yaml
     volumes:
-      - ../../common/config/mimir:/etc/mimir
+      - ../../common/config/mimir:/etc/mimir/configs
     command:
-      - -config.file=/etc/mimir/microservices-mode-metrics.yaml
+      - -config.file=/etc/mimir/config.yaml
       - -target=distributor
       - -config.expand-env=true
     healthcheck:
@@ -67,20 +72,26 @@ services:
 
   overrides-exporter:
     image: *mimirImage
+    configs:
+      - source: mimir_config_file
+        target: /etc/mimir/config.yaml
     volumes:
-      - ../../common/config/mimir:/etc/mimir
+      - ../../common/config/mimir:/etc/mimir/configs
     command:
-      - -config.file=/etc/mimir/microservices-mode-metrics.yaml
+      - -config.file=/etc/mimir/config.yaml
       - -target=overrides-exporter
       - -config.expand-env=true
 
   querier:
     depends_on: { query-scheduler: { condition: service_healthy } }
     image: *mimirImage
+    configs:
+      - source: mimir_config_file
+        target: /etc/mimir/config.yaml
     volumes:
-      - ../../common/config/mimir:/etc/mimir
+      - ../../common/config/mimir:/etc/mimir/configs
     command:
-      - -config.file=/etc/mimir/microservices-mode-metrics.yaml
+      - -config.file=/etc/mimir/config.yaml
       - -target=querier
       - -config.expand-env=true
     deploy:
@@ -93,19 +104,25 @@ services:
   query-frontend:
     depends_on: { query-scheduler: { condition: service_healthy } }
     image: *mimirImage
+    configs:
+      - source: mimir_config_file
+        target: /etc/mimir/config.yaml
     volumes:
-      - ../../common/config/mimir:/etc/mimir
+      - ../../common/config/mimir:/etc/mimir/configs
     command:
-      - -config.file=/etc/mimir/microservices-mode-metrics.yaml
+      - -config.file=/etc/mimir/config.yaml
       - -target=query-frontend
       - -config.expand-env=true
 
   query-scheduler:
     image: *mimirImage
+    configs:
+      - source: mimir_config_file
+        target: /etc/mimir/config.yaml
     volumes:
-      - ../../common/config/mimir:/etc/mimir
+      - ../../common/config/mimir:/etc/mimir/configs
     command:
-      - -config.file=/etc/mimir/microservices-mode-metrics.yaml
+      - -config.file=/etc/mimir/config.yaml
       - -config.expand-env=true
       - -target=query-scheduler
     healthcheck:
@@ -117,10 +134,13 @@ services:
   ruler:
     depends_on: { minio: { condition: service_healthy } }
     image: *mimirImage
+    configs:
+      - source: mimir_config_file
+        target: /etc/mimir/config.yaml
     volumes:
-      - ../../common/config/mimir:/etc/mimir
+      - ../../common/config/mimir:/etc/mimir/configs
     command:
-      - -config.file=/etc/mimir/microservices-mode-metrics.yaml
+      - -config.file=/etc/mimir/config.yaml
       - -config.expand-env=true
       - -target=ruler
     healthcheck:
@@ -134,10 +154,13 @@ services:
   alertmanager:
     depends_on: { minio: { condition: service_healthy } }
     image: *mimirImage
+    configs:
+      - source: mimir_config_file
+        target: /etc/mimir/config.yaml
     volumes:
-      - ../../common/config/mimir:/etc/mimir
+      - ../../common/config/mimir:/etc/mimir/configs
     command:
-      - -config.file=/etc/mimir/microservices-mode-metrics.yaml
+      - -config.file=/etc/mimir/config.yaml
       - -config.expand-env=true
       - -target=alertmanager
     networks:
@@ -148,10 +171,13 @@ services:
   compactor:
     depends_on: { minio: { condition: service_healthy } }
     image: *mimirImage
+    configs:
+      - source: mimir_config_file
+        target: /etc/mimir/config.yaml
     volumes:
-      - ../../common/config/mimir:/etc/mimir
+      - ../../common/config/mimir:/etc/mimir/configs
     command:
-      - -config.file=/etc/mimir/microservices-mode-metrics.yaml
+      - -config.file=/etc/mimir/config.yaml
       - -config.expand-env=true
       - -target=compactor
     networks:
@@ -162,10 +188,13 @@ services:
   ingester:
     depends_on: { minio: { condition: service_healthy } }
     image: *mimirImage
+    configs:
+      - source: mimir_config_file
+        target: /etc/mimir/config.yaml
     volumes:
-      - ../../common/config/mimir:/etc/mimir
+      - ../../common/config/mimir:/etc/mimir/configs
     command:
-      - -config.file=/etc/mimir/microservices-mode-metrics.yaml
+      - -config.file=/etc/mimir/config.yaml
       - -config.expand-env=true
       - -target=ingester
     healthcheck:
@@ -181,10 +210,13 @@ services:
   store-gateway:
     depends_on: { minio: { condition: service_healthy } }
     image: *mimirImage
+    configs:
+      - source: mimir_config_file
+        target: /etc/mimir/config.yaml
     volumes:
-      - ../../common/config/mimir:/etc/mimir
+      - ../../common/config/mimir:/etc/mimir/configs
     command:
-      - -config.file=/etc/mimir/microservices-mode-metrics.yaml
+      - -config.file=/etc/mimir/config.yaml
       - -config.expand-env=true
       - -target=store-gateway
     networks:

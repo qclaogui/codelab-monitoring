@@ -33,6 +33,14 @@ x-healthcheck: &status-healthcheck
 configs:
   alloy_config_file:
     file: ../../common/config/alloy/all-in-one.alloy
+  loki_config_file:
+    file: ../../common/config/loki/monolithic-mode-logs.yaml
+  tempo_config_file:
+    file: ../../common/config/tempo/monolithic-mode-traces.yaml
+  mimir_config_file:
+    file: ../../common/config/mimir/monolithic-mode-metrics.yaml
+  pyroscope_config_file:
+    file: ../../common/config/pyroscope/monolithic-mode-profiles.yaml
 
 services:
   gateway:
@@ -61,10 +69,13 @@ services:
       profiles.grafana.com/service_name: loki
     depends_on: { minio: { condition: service_healthy } }
     image: ${LOKI_IMAGE:-docker.io/grafana/loki:3.0.0}
+    configs:
+      - source: loki_config_file
+        target: /etc/loki/config.yaml
     volumes:
-      - ../../common/config/loki:/etc/loki
+      - ../../common/config/loki:/etc/loki/configs
     command:
-      - -config.file=/etc/loki/monolithic-mode-logs.yaml
+      - -config.file=/etc/loki/config.yaml
       - -target=all
       - -config.expand-env=true
     environment:
@@ -88,10 +99,13 @@ services:
       profiles.grafana.com/service_name: tempo
     depends_on: { minio: { condition: service_healthy }, mimir: { condition: service_healthy } }
     image: ${TEMPO_IMAGE:-docker.io/grafana/tempo:2.4.1}
+    configs:
+      - source: tempo_config_file
+        target: /etc/tempo/config.yaml
     volumes:
-      - ../../common/config/tempo:/etc/tempo
+      - ../../common/config/tempo:/etc/tempo/configs
     command:
-      - -config.file=/etc/tempo/monolithic-mode-traces.yaml
+      - -config.file=/etc/tempo/config.yaml
       - -target=all
       - -config.expand-env=true
     environment:
@@ -112,10 +126,13 @@ services:
       profiles.grafana.com/service_name: mimir
     depends_on: { minio: { condition: service_healthy } }
     image: ${MIMIR_IMAGE:-docker.io/grafana/mimir:2.12.0}
+    configs:
+      - source: mimir_config_file
+        target: /etc/mimir/config.yaml
     volumes:
-      - ../../common/config/mimir:/etc/mimir
+      - ../../common/config/mimir:/etc/mimir/configs
     command:
-      - -config.file=/etc/mimir/monolithic-mode-metrics.yaml
+      - -config.file=/etc/mimir/config.yaml
       - -target=all
       - -config.expand-env=true
       - -ruler.max-rules-per-rule-group=50
@@ -134,7 +151,6 @@ services:
           - mimir-memberlist
 
   mimirtool:
-    # https://github.com/qclaogui/codelab-monitoring/blob/main/alloy-modules/compose/README.md
     labels:
       metrics.grafana.com/scrape: false
     image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:2.12.0}
@@ -154,12 +170,17 @@ services:
       profiles.grafana.com/service_name: pyroscope
     depends_on: { minio: { condition: service_healthy } }
     image: ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:1.5.0}
+    configs:
+      - source: pyroscope_config_file
+        target: /etc/pyroscope/config.yaml
     volumes:
-      - ../../common/config/pyroscope:/etc/pyroscope
+      - ../../common/config/pyroscope:/etc/pyroscope/configs
       - pyroscope_data:/data
     command:
-      - -config.file=/etc/pyroscope/monolithic-mode-profiles.yaml
+      - -config.file=/etc/pyroscope/config.yaml
+      - -target=all
       - -config.expand-env=true
+      # - -runtime-config.file=/etc/pyroscope/configs/overrides.yaml
     environment:
       <<: *jaeger-environment
       JAEGER_TAGS: app=pyroscope

@@ -22,6 +22,10 @@ x-healthcheck: &status-healthcheck
 configs:
   alloy_config_file:
     file: ../../common/config/alloy/logs.alloy
+  mimir_config_file:
+    file: ../../common/config/mimir/monolithic-mode-metrics.yaml
+  loki_config_file:
+    file: ../../common/config/loki/read-write-mode-logs.yaml
 
 services:
   gateway:
@@ -53,10 +57,13 @@ services:
   loki-read:
     depends_on: { minio: { condition: service_healthy } }
     image: &lokiImage ${LOKI_IMAGE:-docker.io/grafana/loki:3.0.0}
+    configs:
+      - source: loki_config_file
+        target: /etc/loki/config.yaml
     volumes:
-      - ../../common/config/loki:/etc/loki
+      - ../../common/config/loki:/etc/loki/configs
     command:
-      - -config.file=/etc/loki/read-write-mode-logs.yaml
+      - -config.file=/etc/loki/config.yaml
       - -target=read
       - -legacy-read-mode=false
       - -config.expand-env=true
@@ -73,10 +80,13 @@ services:
   loki-write:
     depends_on: { minio: { condition: service_healthy } }
     image: *lokiImage
+    configs:
+      - source: loki_config_file
+        target: /etc/loki/config.yaml
     volumes:
-      - ../../common/config/loki:/etc/loki
+      - ../../common/config/loki:/etc/loki/configs
     command:
-      - -config.file=/etc/loki/read-write-mode-logs.yaml
+      - -config.file=/etc/loki/config.yaml
       - -target=write
       - -config.expand-env=true
     healthcheck:
@@ -92,10 +102,13 @@ services:
   loki-backend:
     depends_on: { minio: { condition: service_healthy } }
     image: *lokiImage
+    configs:
+      - source: loki_config_file
+        target: /etc/loki/config.yaml
     volumes:
-      - ../../common/config/loki:/etc/loki
+      - ../../common/config/loki:/etc/loki/configs
     command:
-      - -config.file=/etc/loki/read-write-mode-logs.yaml
+      - -config.file=/etc/loki/config.yaml
       - -target=backend
       - -legacy-read-mode=false
       - -config.expand-env=true

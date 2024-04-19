@@ -4,11 +4,14 @@ services:
       metrics.grafana.com/scrape: false
     depends_on: { minio: { condition: service_healthy } }
     image: ${TEMPO_IMAGE:-docker.io/grafana/tempo:2.4.1}
+    configs:
+      - source: tempo_config_file
+        target: /etc/tempo/config.yaml
     restart: always
     volumes:
-      - ../config/tempo:/etc/tempo
+      - ../config/tempo:/etc/tempo/configs
     command:
-      - -config.file=/etc/tempo/monolithic-mode-traces.yaml
+      - -config.file=/etc/tempo/config.yaml
       - -target=all
       - -config.expand-env=true
     healthcheck:
