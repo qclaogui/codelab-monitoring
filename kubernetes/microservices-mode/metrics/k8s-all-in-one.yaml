@@ -234,15 +234,14 @@ data:
     to look for targets in (default: [\\\"kube-system\\\"] is all namespaces)\"\n\t\toptional
     = true\n\t}\n\n\targument \"annotation_prefix\" {\n\t\tcomment  = \"The annotation_prefix
     to use (default: logs.grafana.com)\"\n\t\tdefault  = \"logs.grafana.com\"\n\t\toptional
-    = true\n\t}\n\n\t/*\n    Hidden Arguments\n    These arguments are used to set
-    reusable variables to avoid repeating logic\n  */\n\targument \"__sd_annotation\"
-    {\n\t\toptional = true\n\t\tcomment  = \"The logic is used to transform the annotation
-    argument into a valid label name by removing unsupported characters.\"\n\t\tdefault
-    \ = replace(replace(replace(coalesce(argument.annotation_prefix.value, \"logs.grafana.com\"),
-    \".\", \"_\"), \"/\", \"_\"), \"-\", \"_\")\n\t}\n\n\t// find all pods\n\tdiscovery.kubernetes
-    \"log_annotations\" {\n\t\trole = \"pod\"\n\n\t\tnamespaces {\n\t\t\tnames = coalesce(argument.namespaces.value,
-    [])\n\t\t}\n\t}\n\n\t// apply relabelings\n\tdiscovery.relabel \"log_annotations\"
-    {\n\t\ttargets = discovery.kubernetes.log_annotations.targets\n\n\t\t// allow
+    = true\n\t}\n\n\targument \"__sd_annotation\" {\n\t\toptional = true\n\t\tcomment
+    \ = \"The logic is used to transform the annotation argument into a valid label
+    name by removing unsupported characters.\"\n\t\tdefault  = replace(replace(replace(coalesce(argument.annotation_prefix.value,
+    \"logs.grafana.com\"), \".\", \"_\"), \"/\", \"_\"), \"-\", \"_\")\n\t}\n\n\t//
+    find all pods\n\tdiscovery.kubernetes \"annotation_logs\" {\n\t\trole = \"pod\"\n\n\t\tnamespaces
+    {\n\t\t\tnames = coalesce(argument.namespaces.value, [])\n\t\t}\n\t}\n\n\t// filter
+    logs by kubernetes annotations\n\tdiscovery.relabel \"annotation_logs_filter\"
+    {\n\t\ttargets = discovery.kubernetes.annotation_logs.targets\n\n\t\t// allow
     pods to declare their logs to be ingested or not, the default is true\n\t\t//
     \  i.e. logs.grafana.com/ingest: false\n\t\trule {\n\t\t\taction        = \"keep\"\n\t\t\tsource_labels
     = [\n\t\t\t\t\"__meta_kubernetes_pod_annotation_\" + argument.__sd_annotation.value
@@ -280,15 +279,12 @@ data:
     set the job label to be namespace / friendly pod name\n\t\trule {\n\t\t\taction
     \       = \"replace\"\n\t\t\tsource_labels = [\n\t\t\t\t\"workload\",\n\t\t\t\t\"__meta_kubernetes_namespace\",\n\t\t\t]\n\t\t\tregex
     \       = \".+\\\\/(.+);(.+)\"\n\t\t\treplacement  = \"$2/$1\"\n\t\t\ttarget_label
-    = \"job\"\n\t\t}\n\t}\n\n\tdiscovery.relabel \"worker_logs\" {\n\t\ttargets =
-    discovery.relabel.log_annotations.output\n\n\t\t// set the __path__, this is automatically
-    translated as a label of filename (which should be dropped or normalized)\n\t\t//
-    DO NOT delete this line as it is needed to tail the pod logs on the node\n\t\trule
-    {\n\t\t\taction        = \"replace\"\n\t\t\tseparator     = \"/\"\n\t\t\tsource_labels
-    = [\n\t\t\t\t\"__meta_kubernetes_pod_uid\",\n\t\t\t\t\"__meta_kubernetes_pod_container_name\",\n\t\t\t]\n\t\t\treplacement
-    \ = \"/var/log/pods/*$1/*.log\"\n\t\t\ttarget_label = \"__path__\"\n\t\t}\n\n\t\t//
-    set the __host__\n\t\trule {\n\t\t\taction        = \"replace\"\n\t\t\tsource_labels
-    = [\"__meta_kubernetes_pod_node_name\"]\n\t\t\ttarget_label  = \"__host__\"\n\t\t}\n\n\t\t//
+    = \"job\"\n\t\t}\n\n\t\t// make all labels on the pod available to the pipeline
+    as labels,\n\t\t// they are omitted before write via labelallow unless explicitly
+    set\n\t\trule {\n\t\t\taction = \"labelmap\"\n\t\t\tregex  = \"__meta_kubernetes_pod_label_(.+)\"\n\t\t}\n\n\t\t//
+    make all annotations on the pod available to the pipeline as labels,\n\t\t// they
+    are omitted before write via labelallow unless explicitly set\n\t\trule {\n\t\t\taction
+    = \"labelmap\"\n\t\t\tregex  = \"__meta_kubernetes_pod_annotation_(.+)\"\n\t\t}\n\n\t\t//
     as a result of kubernetes service discovery for pods, all of the meta data information
     is exposed in labels\n\t\t// __meta_kubernetes_pod_*, including __meta_kubernetes_pod_container_id
     which can be used to determine what\n\t\t// the pods container runtime is, docker
@@ -299,19 +295,11 @@ data:
     automatically determined, then drop the label from the loki.process stage.\n\t\t//
     set the container runtime as a label\n\t\trule {\n\t\t\taction        = \"replace\"\n\t\t\tsource_labels
     = [\"__meta_kubernetes_pod_container_id\"]\n\t\t\tregex         = \"^(\\\\w+):\\\\/\\\\/.+$\"\n\t\t\treplacement
-    \  = \"$1\"\n\t\t\ttarget_label  = \"tmp_container_runtime\"\n\t\t}\n\n\t\t//
-    make all labels on the pod available to the pipeline as labels,\n\t\t// they are
-    omitted before write via labelallow unless explicitly set\n\t\trule {\n\t\t\taction
-    = \"labelmap\"\n\t\t\tregex  = \"__meta_kubernetes_pod_label_(.+)\"\n\t\t}\n\n\t\t//
-    make all annotations on the pod available to the pipeline as labels,\n\t\t// they
-    are omitted before write via labelallow unless explicitly set\n\t\trule {\n\t\t\taction
-    = \"labelmap\"\n\t\t\tregex  = \"__meta_kubernetes_pod_annotation_(.+)\"\n\t\t}\n\t}\n\n\t//
-    find eligible files on the worker\n\tlocal.file_match \"pods\" {\n\t\tpath_targets
-    = discovery.relabel.worker_logs.output\n\t}\n\n\t// tail the files\n\tloki.source.file
-    \"pods\" {\n\t\ttargets    = local.file_match.pods.targets\n\t\tforward_to = [loki.process.parse.receiver]\n\t}\n\n\t//
-    parse the log based on the container runtime\n\tloki.process \"parse\" {\n\t\tforward_to
-    = argument.forward_to.value\n\t\t/*******************************************************************************\n
-    \    *                         Container Runtime Parsing\n     ********************************************************************************/\n\t\t//
+    \  = \"$1\"\n\t\t\ttarget_label  = \"tmp_container_runtime\"\n\t\t}\n\t}\n\n\tloki.source.kubernetes
+    \"lsd_kubernetes_logs\" {\n\t\ttargets    = discovery.relabel.annotation_logs_filter.output\n\t\tforward_to
+    = [loki.process.parse.receiver]\n\t}\n\n\t// parse the log based on the container
+    runtime\n\tloki.process \"parse\" {\n\t\tforward_to = argument.forward_to.value\n\t\t/*******************************************************************************\n\t\t*
+    \                        Container Runtime Parsing\n\t\t********************************************************************************/\n\t\t//
     if the label tmp_container_runtime from above is containerd parse using cri\n\t\tstage.match
     {\n\t\t\tselector = \"{tmp_container_runtime=\\\"containerd\\\"}\"\n\t\t\t// the
     cri processing stage extracts the following k/v pairs: log, stream, time, flags\n\t\t\tstage.cri
@@ -347,7 +335,7 @@ data:
     \"receiver\" {\n\t\tvalue = loki.process.keep_labels.receiver\n\t}\n}\n"
 kind: ConfigMap
 metadata:
-  name: alloy-modules-kubernetes-logs-dfhkhc94gt
+  name: alloy-modules-kubernetes-logs-d7c756mt2f
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -2223,6 +2211,130 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   labels:
+    app.kubernetes.io/instance: alloy
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: alloy
+    app.kubernetes.io/version: v1.0.0
+    helm.sh/chart: alloy-0.1.1
+  name: alloy
+  namespace: monitoring-system
+spec:
+  minReadySeconds: 10
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Delete
+    whenScaled: Delete
+  podManagementPolicy: Parallel
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: alloy
+      app.kubernetes.io/name: alloy
+  serviceName: alloy
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: alloy
+        logs.agent.grafana.com/scrape: "true"
+        logs.agent.grafana.com/scrub-level: debug
+        profiles.grafana.com/cpu.port_name: http-metrics
+        profiles.grafana.com/cpu.scrape: "false"
+        profiles.grafana.com/goroutine.port_name: http-metrics
+        profiles.grafana.com/goroutine.scrape: "false"
+        profiles.grafana.com/memory.port_name: http-metrics
+        profiles.grafana.com/memory.scrape: "false"
+        pyroscope.io/service_name: alloy
+      labels:
+        app.kubernetes.io/instance: alloy
+        app.kubernetes.io/name: alloy
+    spec:
+      containers:
+      - args:
+        - run
+        - /etc/alloy/config.alloy
+        - --storage.path=/tmp/alloy
+        - --server.http.listen-addr=0.0.0.0:12345
+        - --server.http.ui-path-prefix=/
+        - --disable-reporting
+        - --cluster.enabled=true
+        - --cluster.join-addresses=alloy-cluster
+        - --stability.level=experimental
+        env:
+        - name: ALLOY_DEPLOY_MODE
+          value: helm
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        envFrom:
+        - secretRef:
+            name: alloy-env
+            optional: true
+        image: docker.io/grafana/alloy:v1.0.0
+        imagePullPolicy: IfNotPresent
+        name: alloy
+        ports:
+        - containerPort: 12345
+          name: http-metrics
+        - containerPort: 4317
+          name: grpc-otlp
+          protocol: TCP
+        - containerPort: 4318
+          name: http-otlp
+          protocol: TCP
+        - containerPort: 9411
+          name: zipkin
+          protocol: TCP
+        - containerPort: 6831
+          name: jaeger-compact
+          protocol: UDP
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: 12345
+            scheme: HTTP
+          initialDelaySeconds: 10
+          timeoutSeconds: 1
+        volumeMounts:
+        - mountPath: /etc/alloy
+          name: config
+        - mountPath: /etc/alloy/modules/kubernetes/metrics
+          name: modules-kubernetes-metrics
+        - mountPath: /etc/alloy/modules/kubernetes/integrations
+          name: modules-kubernetes-integrations
+        - mountPath: /etc/alloy/modules/kubernetes/logs
+          name: modules-kubernetes-logs
+        - mountPath: /etc/alloy/modules/kubernetes/traces
+          name: modules-kubernetes-traces
+        - mountPath: /etc/alloy/modules/kubernetes/profiles
+          name: modules-kubernetes-profiles
+      dnsPolicy: ClusterFirst
+      nodeSelector:
+        kubernetes.io/os: linux
+      serviceAccountName: alloy
+      volumes:
+      - configMap:
+          name: alloy-config-m6chdfm49m
+        name: config
+      - configMap:
+          name: alloy-modules-kubernetes-metrics-tf9cd8b6bg
+        name: modules-kubernetes-metrics
+      - configMap:
+          name: alloy-modules-kubernetes-integrations-9k86fb8hkg
+        name: modules-kubernetes-integrations
+      - configMap:
+          name: alloy-modules-kubernetes-logs-d7c756mt2f
+        name: modules-kubernetes-logs
+      - configMap:
+          name: alloy-modules-kubernetes-traces-8mgm8th9m5
+        name: modules-kubernetes-traces
+      - configMap:
+          name: alloy-modules-kubernetes-profiles-66c27bc84g
+        name: modules-kubernetes-profiles
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
     app.kubernetes.io/component: alertmanager
     app.kubernetes.io/instance: mimir-distributed
     app.kubernetes.io/managed-by: Helm
@@ -2949,135 +3061,6 @@ spec:
       app.kubernetes.io/component: store-gateway
       app.kubernetes.io/instance: mimir-distributed
       app.kubernetes.io/name: mimir
----
-apiVersion: apps/v1
-kind: DaemonSet
-metadata:
-  labels:
-    app.kubernetes.io/instance: alloy
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: alloy
-    app.kubernetes.io/version: v1.0.0
-    helm.sh/chart: alloy-0.1.1
-  name: alloy
-  namespace: monitoring-system
-spec:
-  minReadySeconds: 10
-  selector:
-    matchLabels:
-      app.kubernetes.io/instance: alloy
-      app.kubernetes.io/name: alloy
-  template:
-    metadata:
-      annotations:
-        kubectl.kubernetes.io/default-container: alloy
-        logs.agent.grafana.com/scrape: "true"
-        logs.agent.grafana.com/scrub-level: debug
-        profiles.grafana.com/cpu.port_name: http-metrics
-        profiles.grafana.com/cpu.scrape: "false"
-        profiles.grafana.com/goroutine.port_name: http-metrics
-        profiles.grafana.com/goroutine.scrape: "false"
-        profiles.grafana.com/memory.port_name: http-metrics
-        profiles.grafana.com/memory.scrape: "false"
-        pyroscope.io/service_name: alloy
-      labels:
-        app.kubernetes.io/instance: alloy
-        app.kubernetes.io/name: alloy
-    spec:
-      containers:
-      - args:
-        - run
-        - /etc/alloy/config.alloy
-        - --storage.path=/tmp/alloy
-        - --server.http.listen-addr=0.0.0.0:12345
-        - --server.http.ui-path-prefix=/
-        - --disable-reporting
-        - --cluster.enabled=true
-        - --cluster.join-addresses=alloy-cluster
-        - --stability.level=experimental
-        env:
-        - name: ALLOY_DEPLOY_MODE
-          value: helm
-        - name: HOSTNAME
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.nodeName
-        envFrom:
-        - secretRef:
-            name: alloy-env
-            optional: true
-        image: docker.io/grafana/alloy:v1.0.0
-        imagePullPolicy: IfNotPresent
-        name: alloy
-        ports:
-        - containerPort: 12345
-          name: http-metrics
-        - containerPort: 4317
-          name: grpc-otlp
-          protocol: TCP
-        - containerPort: 4318
-          name: http-otlp
-          protocol: TCP
-        - containerPort: 9411
-          name: zipkin
-          protocol: TCP
-        - containerPort: 6831
-          name: jaeger-compact
-          protocol: UDP
-        readinessProbe:
-          httpGet:
-            path: /-/ready
-            port: 12345
-            scheme: HTTP
-          initialDelaySeconds: 10
-          timeoutSeconds: 1
-        volumeMounts:
-        - mountPath: /etc/alloy
-          name: config
-        - mountPath: /var/log
-          name: varlog
-          readOnly: true
-        - mountPath: /etc/alloy/modules/kubernetes/metrics
-          name: modules-kubernetes-metrics
-        - mountPath: /etc/alloy/modules/kubernetes/integrations
-          name: modules-kubernetes-integrations
-        - mountPath: /etc/alloy/modules/kubernetes/logs
-          name: modules-kubernetes-logs
-        - mountPath: /etc/alloy/modules/kubernetes/traces
-          name: modules-kubernetes-traces
-        - mountPath: /etc/alloy/modules/kubernetes/profiles
-          name: modules-kubernetes-profiles
-      dnsPolicy: ClusterFirst
-      nodeSelector:
-        kubernetes.io/os: linux
-      serviceAccountName: alloy
-      volumes:
-      - configMap:
-          name: alloy-config-m6chdfm49m
-        name: config
-      - hostPath:
-          path: /var/log
-        name: varlog
-      - configMap:
-          name: alloy-modules-kubernetes-metrics-tf9cd8b6bg
-        name: modules-kubernetes-metrics
-      - configMap:
-          name: alloy-modules-kubernetes-integrations-9k86fb8hkg
-        name: modules-kubernetes-integrations
-      - configMap:
-          name: alloy-modules-kubernetes-logs-dfhkhc94gt
-        name: modules-kubernetes-logs
-      - configMap:
-          name: alloy-modules-kubernetes-traces-8mgm8th9m5
-        name: modules-kubernetes-traces
-      - configMap:
-          name: alloy-modules-kubernetes-profiles-66c27bc84g
-        name: modules-kubernetes-profiles
-  updateStrategy:
-    rollingUpdate:
-      maxSurge: 0
-      maxUnavailable: 2
-    type: RollingUpdate
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor

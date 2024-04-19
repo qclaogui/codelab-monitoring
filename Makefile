@@ -284,7 +284,7 @@ define config_changes_trigger_pod_restart
 	@kubectl rollout status -n gateway deployment/nginx --watch --timeout=600s
 	@echo "Provisioning Grafana dashboards Prometheus rules and alerts..."
 	@kubectl apply -f monitoring-mixins/k8s-all-in-one.yaml
-	kubectl rollout status -n monitoring-system daemonset/alloy --watch --timeout=600s
+	kubectl rollout status -n monitoring-system statefulset/alloy --watch --timeout=600s
 	@$(call echo_info, ${$@_MSG})
 endef
 

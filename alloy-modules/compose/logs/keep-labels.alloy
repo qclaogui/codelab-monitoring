@@ -20,17 +20,19 @@ declare "keep_labels" {
 		default  = [
 			"app",
 			"cluster",
-			"component",
+			"namespace",
+			"pod",
 			"container",
+			"component",
 			"env",
 			"job",
 			"level",
-			"namespace",
 			"region",
 			"service",
 			"squad",
 			"team",
 			"workload",
+			"source",
 		]
 	}
 
@@ -38,8 +40,6 @@ declare "keep_labels" {
 	* LOKI PROCESS
 	*****************************************************************/
 	loki.process "keep_labels" {
-		forward_to = argument.forward_to.value
-
 		/*
 		As all of the pod labels and annotations we transformed into labels in the previous relabelings to make
 		them available to the pipeline processing we need to ensure they are not automatically created in Loki.
@@ -50,6 +50,8 @@ declare "keep_labels" {
 		stage.label_keep {
 			values = argument.keep_labels.value
 		}
+
+		forward_to = argument.forward_to.value
 	}
 
 	/*****************************************************************
