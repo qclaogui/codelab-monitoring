@@ -17,8 +17,7 @@ alloy:
       name: alloy-env
       optional: true
   mounts:
-    # -- Mount /var/log from the host into the container for log collection.
-    varlog: true
+    # TODO(qc) remove this by Alloy import.git
     extra:
     - name: modules-kubernetes-metrics
       mountPath: /etc/alloy/modules/kubernetes/metrics
@@ -58,7 +57,9 @@ ingress:
   - alloy.localhost
 
 controller:
-  type: daemonset
+  type: statefulset
+  enableStatefulSetAutoDeletePVC: true
+  replicas: 1
   volumes:
     extra:
     - name: modules-kubernetes-metrics
@@ -88,10 +89,5 @@ controller:
     profiles.grafana.com/cpu.port_name: "http-metrics"
     profiles.grafana.com/goroutine.scrape: "false"
     profiles.grafana.com/goroutine.port_name: "http-metrics"
-  updateStrategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 2
-      maxSurge: 0
   nodeSelector:
     kubernetes.io/os: linux

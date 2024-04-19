@@ -34,10 +34,6 @@ declare "annotations_scrape" {
 		optional = true
 	}
 
-	/*
-    Hidden Arguments
-    These arguments are used to set reusable variables to avoid repeating logic
-  */
 	argument "__sd_annotation" {
 		optional = true
 		comment  = "The logic is used to transform the annotation argument into a valid label name by removing unsupported characters."
@@ -45,7 +41,7 @@ declare "annotations_scrape" {
 	}
 
 	// find all pods
-	discovery.kubernetes "log_annotations" {
+	discovery.kubernetes "annotation_logs" {
 		role = "pod"
 
 		namespaces {
@@ -53,9 +49,9 @@ declare "annotations_scrape" {
 		}
 	}
 
-	// apply relabelings
-	discovery.relabel "log_annotations" {
-		targets = discovery.kubernetes.log_annotations.targets
+	// filter logs by kubernetes annotations
+	discovery.relabel "annotation_logs_filter" {
+		targets = discovery.kubernetes.annotation_logs.targets
 
 		// allow pods to declare their logs to be ingested or not, the default is true
 		//   i.e. logs.grafana.com/ingest: false
@@ -176,29 +172,19 @@ declare "annotations_scrape" {
 			replacement  = "$2/$1"
 			target_label = "job"
 		}
-	}
 
-	discovery.relabel "worker_logs" {
-		targets = discovery.relabel.log_annotations.output
-
-		// set the __path__, this is automatically translated as a label of filename (which should be dropped or normalized)
-		// DO NOT delete this line as it is needed to tail the pod logs on the node
+		// make all labels on the pod available to the pipeline as labels,
+		// they are omitted before write via labelallow unless explicitly set
 		rule {
-			action        = "replace"
-			separator     = "/"
-			source_labels = [
-				"__meta_kubernetes_pod_uid",
-				"__meta_kubernetes_pod_container_name",
-			]
-			replacement  = "/var/log/pods/*$1/*.log"
-			target_label = "__path__"
+			action = "labelmap"
+			regex  = "__meta_kubernetes_pod_label_(.+)"
 		}
 
-		// set the __host__
+		// make all annotations on the pod available to the pipeline as labels,
+		// they are omitted before write via labelallow unless explicitly set
 		rule {
-			action        = "replace"
-			source_labels = ["__meta_kubernetes_pod_node_name"]
-			target_label  = "__host__"
+			action = "labelmap"
+			regex  = "__meta_kubernetes_pod_annotation_(.+)"
 		}
 
 		// as a result of kubernetes service discovery for pods, all of the meta data information is exposed in labels
@@ -215,30 +201,10 @@ declare "annotations_scrape" {
 			replacement   = "$1"
 			target_label  = "tmp_container_runtime"
 		}
-
-		// make all labels on the pod available to the pipeline as labels,
-		// they are omitted before write via labelallow unless explicitly set
-		rule {
-			action = "labelmap"
-			regex  = "__meta_kubernetes_pod_label_(.+)"
-		}
-
-		// make all annotations on the pod available to the pipeline as labels,
-		// they are omitted before write via labelallow unless explicitly set
-		rule {
-			action = "labelmap"
-			regex  = "__meta_kubernetes_pod_annotation_(.+)"
-		}
 	}
 
-	// find eligible files on the worker
-	local.file_match "pods" {
-		path_targets = discovery.relabel.worker_logs.output
-	}
-
-	// tail the files
-	loki.source.file "pods" {
-		targets    = local.file_match.pods.targets
+	loki.source.kubernetes "lsd_kubernetes_logs" {
+		targets    = discovery.relabel.annotation_logs_filter.output
 		forward_to = [loki.process.parse.receiver]
 	}
 
@@ -246,8 +212,8 @@ declare "annotations_scrape" {
 	loki.process "parse" {
 		forward_to = argument.forward_to.value
 		/*******************************************************************************
-     *                         Container Runtime Parsing
-     ********************************************************************************/
+		*                         Container Runtime Parsing
+		********************************************************************************/
 		// if the label tmp_container_runtime from above is containerd parse using cri
 		stage.match {
 			selector = "{tmp_container_runtime=\"containerd\"}"
