@@ -55,7 +55,7 @@ declare "labels_scrape" {
 	// find all containers
 	discovery.docker "dd_logs" {
 		host             = "unix:///var/run/docker.sock"
-		refresh_interval = "60s"
+		refresh_interval = "30s"
 
 		filter {
 			name   = "status"
@@ -99,41 +99,24 @@ declare "labels_scrape" {
 			regex = "^(" + argument.tenant.value + ")$"
 		}
 
-		// set a default job label to be the namespace/service_name
 		rule {
 			action        = "replace"
-			source_labels = [
-				"__meta_docker_container_label_com_docker_compose_service",
-			]
-			regex        = "^(?:;*)?([^;]+).*$"
-			replacement  = argument.namespace.value + "/$1"
-			target_label = "job"
+			source_labels = ["__meta_docker_container_id"]
+			replacement   = "integrations/docker-desktop"
+			target_label  = "job"
 		}
 
 		rule {
 			action        = "replace"
-			source_labels = [
-				"__meta_docker_container_label_com_docker_compose_service",
-			]
-			regex        = "^(?:;*)?([^;]+).*$"
-			replacement  = "$1"
-			target_label = "pod"
-		}
-
-		rule {
-			action        = "replace"
-			source_labels = [
-				"__meta_docker_container_label_com_docker_compose_service",
-			]
-			regex        = "^(?:;*)?([^;]+).*$"
-			replacement  = "$1"
-			target_label = "container"
+			source_labels = ["__meta_docker_container_id"]
+			replacement   = constants.hostname
+			target_label  = "instance"
 		}
 
 		rule {
 			source_labels = ["__meta_docker_container_name"]
 			regex         = "/(.*)"
-			target_label  = "container_name"
+			target_label  = "container"
 		}
 
 		rule {
