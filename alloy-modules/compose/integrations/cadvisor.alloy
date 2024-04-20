@@ -13,7 +13,7 @@ declare "component_cadvisor" {
 
 	argument "job_label" {
 		optional = true
-		default  = "integrations/cadvisor"
+		default  = "integrations/docker/cadvisor"
 	}
 
 	argument "instance_name" {
@@ -60,8 +60,6 @@ declare "component_cadvisor" {
 		allowlisted_container_labels = [
 			"com.docker.compose.project",
 			"com.docker.compose.service",
-			"metrics.grafana.com/job",
-			"prometheus.io/job",
 		]
 
 		// only show stats for docker containers
@@ -123,29 +121,17 @@ declare "component_cadvisor" {
 	prometheus.relabel "integrations_cadvisor" {
 		forward_to = argument.forward_to.value
 
-		// drop unused metric label
-		rule {
-			action = "labeldrop"
-			regex  = "id"
-		}
+		// rule {
+		// 	action = "labeldrop"
+		// 	regex  = "id"
+		// }
 
-		// keep only metrics that match the keep_metrics regex
-		rule {
-			source_labels = ["__name__"]
-			regex         = argument.keep_metrics.value
-			action        = "keep"
-		}
-
-		// set a default job label to be the namespace/service_name
-		rule {
-			action        = "replace"
-			source_labels = [
-				"container_label_com_docker_compose_service",
-			]
-			regex        = "^(?:;*)?([^;]+).*$"
-			replacement  = argument.namespace.value + "/$1"
-			target_label = "job"
-		}
+		// // keep only metrics that match the keep_metrics regex
+		// rule {
+		// 	source_labels = ["__name__"]
+		// 	regex         = argument.keep_metrics.value
+		// 	action        = "keep"
+		// }
 
 		rule {
 			action        = "replace"
@@ -165,19 +151,6 @@ declare "component_cadvisor" {
 			regex        = "^(?:;*)?([^;]+).*$"
 			replacement  = "$1"
 			target_label = "container"
-		}
-
-		// allow resources to declare their the job label value to use when collecting their metrics, the default value is "",
-		rule {
-			action        = "replace"
-			source_labels = [
-				"container_label_metrics_agent_grafana_com_job",
-				"container_label_prometheus_io_job",
-			]
-			separator    = ";"
-			regex        = "^(?:;*)?([^;]+).*$"
-			replacement  = "$1"
-			target_label = "job"
 		}
 	}
 }
