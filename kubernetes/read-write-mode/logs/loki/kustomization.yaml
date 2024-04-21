@@ -1,33 +1,27 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 namespace: logging-system
-
 helmCharts:
 - name: loki
-  version: 6.1.0
+  version: 6.3.3
   repo: https://grafana.github.io/helm-charts
   releaseName: loki
   namespace: logging-system
   includeCRDs: false
-#  valuesMerge: override # merge, override, (default), or replace
+  #  valuesMerge: override # merge, override, (default), or replace
   additionalValuesFiles:
   - values-k3d-k3s.yaml
-
 resources:
 - namespace.yaml
-
 secretGenerator:
 - name: loki-env
   literals:
   - LOKI_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
-
 configMapGenerator:
 - name: loki-config
   namespace: logging-system
   files:
   - config.yaml=configs/loki.yaml
-
 # Move the configMapGenerator, as a plugin, under generators because kustomize runs plugins after built-in fields
 generators:
 - |-

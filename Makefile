@@ -10,6 +10,16 @@ install-build-deps: ## Install dependencies tools
 	@echo ">> building bingo and setup dependencies tools"
 	@go install github.com/bwplotka/bingo@v0.9.0
 
+.PHONY: update-helm-charts
+update-helm-charts: ## Update helm charts dependencies
+update-helm-charts: update-common-charts update-lgtmp-stack-charts
+
+update-common-charts: $(UPDATECLI)
+	@$(UPDATECLI) apply --config .github/updatecli.d/common-charts.yaml > /dev/null 2>&1
+
+update-lgtmp-stack-charts: $(UPDATECLI)
+	@$(UPDATECLI) apply --config .github/updatecli.d/lgtmp-stack-charts.yaml > /dev/null 2>&1
+
 ##@ Lint & fmt
 
 .PHONY: copyright

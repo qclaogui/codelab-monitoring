@@ -1,32 +1,26 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 namespace: monitoring-system
-
 helmCharts:
 - name: grafana
   repo: https://grafana.github.io/helm-charts
-  version: 7.3.7
+  version: 7.3.9
   releaseName: grafana
   namespace: monitoring-system
   includeCRDs: false
   skipTests: true
   valuesFile: values-k3d-k3s.yaml
-
 images:
 - name: docker.io/grafana/grafana
   newTag: 10.4.1
 - name: quay.io/kiwigrid/k8s-sidecar
   newTag: 1.26.1
-
 resources:
 - namespace.yaml
-
 configMapGenerator:
 - name: grafana
   files:
   - configs/grafana.ini
-
 - name: grafana-datasources
   options:
     immutable: true
@@ -34,7 +28,6 @@ configMapGenerator:
       grafana_datasource: "1"
   files:
   - configs/datasources.yaml
-
 - name: minio-dashboard.json
   options:
     labels:
@@ -43,7 +36,6 @@ configMapGenerator:
       grafana_dashboard_folder: "/dashboards"
   files:
   - configs/minio-dashboard.json
-
 secretGenerator:
 - name: grafana-secret
   literals:
