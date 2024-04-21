@@ -1,5 +1,5 @@
 ---
-name: "Updatecli: Check for dependency updates"
+name: "Check dependency(helm chart) updates"
 
 on:
     workflow_dispatch:
@@ -36,8 +36,16 @@ jobs:
                 updatecli apply --config ${UPDATECLI_CONFIG_DIR}/deps-charts.yaml > changelog.out 2>&1
                 if ! git diff --exit-code > /dev/null; then
                   echo "changed=true" >> "${GITHUB_OUTPUT}"
-                  echo "body=$(cat changelog.out | awk 'NR >= 22')" >> "${GITHUB_OUTPUT}"
                 fi
+            - 
+              name: Copy updatecli apply changelog
+              if: steps.updatecli-apply.outputs.changed == 'true'
+              id: updatecli-apply-changelog
+              run: |
+                echo "body<<EOF" >> ${GITHUB_OUTPUT}
+                # here we can place the command that will generate multi-line text
+                echo "$(cat changelog.out | awk 'NR >= 28')" >> "${GITHUB_OUTPUT}"
+                echo "EOF" >> ${GITHUB_OUTPUT}
             - 
               name: Create pull request
               if: steps.updatecli-apply.outputs.changed == 'true'
@@ -55,7 +63,7 @@ jobs:
                   <summary> FULL CHANGELOG </summary>
                   <blockquote>
 
-                  ${{ steps.updatecli-apply.outputs.body }}
+                  ${{ steps.updatecli-apply-changelog.outputs.body }}
 
                   </blockquote>
                   </details>
