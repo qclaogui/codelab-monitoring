@@ -1,0 +1,54 @@
+name: Bump dependency Helm charts version
+sources:
+    grafana:
+        name: Get latest "grafana" Helm chart version
+        kind: helmchart
+        spec:
+            name: grafana
+            url: https://grafana.github.io/helm-charts
+            versionfilter:
+                kind: semver
+                pattern: '*'
+    alloy:
+        name: Get latest "alloy" Helm chart version
+        kind: helmchart
+        spec:
+            name: alloy
+            url: https://grafana.github.io/helm-charts
+            versionfilter:
+                kind: semver
+                pattern: '*'
+
+conditions:
+    grafana:
+        name: Ensure Helm chart dependency "grafana" is specified
+        kind: yaml
+        spec:
+            file: kubernetes/common/grafana/kustomization.yaml
+            key: $.helmCharts[0].name
+            value: grafana
+        disablesourceinput: true
+    alloy:
+        name: Ensure Helm chart dependency "alloy" is specified
+        kind: yaml
+        spec:
+            file: kubernetes/common/alloy/kustomization.yaml
+            key: $.helmCharts[0].name
+            value: alloy
+        disablesourceinput: true
+
+targets:
+    grafana:
+        name: Bump "grafana" Helm chart version
+        kind: yaml
+        spec:
+            file: kubernetes/common/grafana/kustomization.yaml
+            key: $.helmCharts[0].version
+        sourceid: grafana
+    alloy:
+        name: Bump "alloy" Helm chart version
+        kind: yaml
+        spec:
+            file: kubernetes/common/alloy/kustomization.yaml
+            key: $.helmCharts[0].version
+        sourceid: alloy
