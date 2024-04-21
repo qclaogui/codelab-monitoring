@@ -32,28 +32,39 @@ declare "integrations_scrape" {
 	/*****************************************************************
 	* Import Integrations Components
 	*****************************************************************/
-	// integrate components local files
-	import.file "integrate" {
+	// integrations components local files
+	import.file "integrations" {
 		filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/kubernetes/integrations"
 	}
 
-	// // integrate components kubernetes configmap
+	// // integrations components kubernetes configmap
 	// remote.kubernetes.configmap "integrations" {
 	// 	name      = argument.name.value
 	// 	namespace = argument.namespace.value
 	// }
-	// import.string "integrate" {
+	// import.string "integrations" {
 	// 	content = remote.kubernetes.configmap.integrations.data["memcached.alloy"]
 	// }
 
 	/*****************************************************************
 	* Memcached Integrations
 	*****************************************************************/
-	integrate.component_memcached "primary" {
+	integrations.component_memcached "primary" {
 		forward_to = argument.forward_to.value
 
 		instance_name     = "primary"
 		memcached_address = "memcached.memcached-system.svc.cluster.local:11211"
 		memcached_timeout = "5s"
 	}
+
+	// /*****************************************************************
+	// * Mysql Integrations
+	// *****************************************************************/
+	// integrations.component_mysql "primary" {
+	// 	forward_to = argument.forward_to.value
+
+	// 	instance_name = "primary"
+	// 	name          = "alloy-integrations-mysql"
+	// 	namespace     = "monitoring-system"
+	// }
 }

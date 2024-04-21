@@ -1,0 +1,113 @@
+/*
+Module Components: component_mysql
+*/
+
+declare "component_mysql" {
+
+	/*****************************************************************
+	* ARGUMENTS
+	*****************************************************************/
+	argument "forward_to" {
+		comment = "Must be a list(MetricssReceiver) where collected metrics should be forwarded to"
+	}
+
+	argument "job_label" {
+		optional = true
+		default  = "integrations/kubernetes/mysql"
+	}
+
+	argument "namespace" {
+		optional = true
+		default  = "monitoring-system"
+	}
+
+	argument "name" {
+		optional = true
+		default  = "alloy-integrations-mysql"
+	}
+
+	argument "instance_name" {
+		optional = true
+	}
+
+	argument "keep_metrics" {
+		optional = true
+		default  = "(up|instance:mysql_heartbeat_lag_seconds|instance:mysql_slave_lag_seconds|mysql_global_status_aborted_clients|mysql_global_status_aborted_connects|mysql_global_status_buffer_pool_pages|mysql_global_status_bytes_received|mysql_global_status_bytes_sent|mysql_global_status_commands_total|mysql_global_status_created_tmp_disk_tables|mysql_global_status_created_tmp_files|mysql_global_status_created_tmp_tables|mysql_global_status_handlers_total|mysql_global_status_innodb_log_waits|mysql_global_status_innodb_mem_adaptive_hash|mysql_global_status_innodb_mem_dictionary|mysql_global_status_innodb_num_open_files|mysql_global_status_innodb_page_size|mysql_global_status_max_used_connections|mysql_global_status_open_files|mysql_global_status_open_table_definitions|mysql_global_status_open_tables|mysql_global_status_opened_files|mysql_global_status_opened_table_definitions|mysql_global_status_opened_tables|mysql_global_status_qcache_free_memory|mysql_global_status_qcache_hits|mysql_global_status_qcache_inserts|mysql_global_status_qcache_lowmem_prunes|mysql_global_status_qcache_not_cached|mysql_global_status_qcache_queries_in_cache|mysql_global_status_queries|mysql_global_status_questions|mysql_global_status_select_full_join|mysql_global_status_select_full_range_join|mysql_global_status_select_range|mysql_global_status_select_range_check|mysql_global_status_select_scan|mysql_global_status_slow_queries|mysql_global_status_sort_merge_passes|mysql_global_status_sort_range|mysql_global_status_sort_rows|mysql_global_status_sort_scan|mysql_global_status_table_locks_immediate|mysql_global_status_table_locks_waited|mysql_global_status_table_open_cache_hits|mysql_global_status_table_open_cache_misses|mysql_global_status_table_open_cache_overflows|mysql_global_status_threads_cached|mysql_global_status_threads_connected|mysql_global_status_threads_created|mysql_global_status_threads_running|mysql_global_status_uptime|mysql_global_status_wsrep_local_recv_queue|mysql_global_status_wsrep_local_state|mysql_global_status_wsrep_ready|mysql_global_variables_innodb_additional_mem_pool_size|mysql_global_variables_innodb_buffer_pool_size|mysql_global_variables_innodb_log_buffer_size|mysql_global_variables_key_buffer_size|mysql_global_variables_max_connections|mysql_global_variables_open_files_limit|mysql_global_variables_query_cache_size|mysql_global_variables_table_definition_cache|mysql_global_variables_table_open_cache|mysql_global_variables_thread_cache_size|mysql_global_variables_tokudb_cache_size|mysql_global_variables_wsrep_desync|mysql_heartbeat_now_timestamp_seconds|mysql_heartbeat_stored_timestamp_seconds|mysql_info_schema_processlist_threads|mysql_slave_status_seconds_behind_master|mysql_slave_status_slave_io_running|mysql_slave_status_slave_sql_running|mysql_slave_status_sql_delay|mysql_up)"
+	}
+
+	argument "scrape_interval" {
+		comment  = "How often to scrape metrics from the targets (default: 60s)"
+		optional = true
+		default  = "60s"
+	}
+
+	argument "scrape_timeout" {
+		comment  = "How long before a scrape times out (default: 10s)"
+		optional = true
+		default  = "10s"
+	}
+
+	remote.kubernetes.secret "mysql" {
+		name      = argument.name.value
+		namespace = argument.namespace.value
+	}
+
+	/***************************************************************
+	* Integrations Mysql
+	****************************************************************/
+	prometheus.exporter.mysql "integrations_mysqld_exporter" {
+		data_source_name = nonsensitive(remote.kubernetes.secret.mysql.data["mysql-username"]) + ":" + nonsensitive(remote.kubernetes.secret.mysql.data["mysql-password"]) + "@(" + nonsensitive(remote.kubernetes.secret.mysql.data["mysql-host"]) + ")/"
+	}
+
+	/***************************************************************
+	* Discovery Relabelings (pre-scrape)
+	****************************************************************/
+	discovery.relabel "integrations_mysqld_exporter" {
+		targets = prometheus.exporter.mysql.integrations_mysqld_exporter.targets
+
+		rule {
+			target_label = "job"
+			replacement  = argument.job_label.value
+		}
+
+		rule {
+			target_label = "instance"
+			replacement  = coalesce(argument.instance_name.value, constants.hostname)
+		}
+	}
+
+	/***************************************************************
+	* Prometheus Scrape Integrations Targets
+	****************************************************************/
+	prometheus.scrape "integrations_mysqld_exporter" {
+		targets = concat(
+			discovery.relabel.integrations_mysqld_exporter.output,
+		)
+
+		enable_protobuf_negotiation = true
+		scrape_classic_histograms   = true
+
+		scrape_interval = argument.scrape_interval.value
+		scrape_timeout  = argument.scrape_timeout.value
+
+		clustering {
+			enabled = true
+		}
+
+		forward_to = [prometheus.relabel.integrations_mysqld_exporter.receiver]
+	}
+
+	/***************************************************************
+	* Prometheus Metric Relabelings (post-scrape)
+	****************************************************************/
+	prometheus.relabel "integrations_mysqld_exporter" {
+		forward_to = argument.forward_to.value
+
+		// keep only metrics that match the keep_metrics regex
+		rule {
+			source_labels = ["__name__"]
+			regex         = argument.keep_metrics.value
+			action        = "keep"
+		}
+	}
+}

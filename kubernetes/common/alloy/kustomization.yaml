@@ -28,7 +28,10 @@ configMapGenerator:
 - name: alloy-modules-kubernetes-integrations
   namespace: monitoring-system
   files:
+  - configs/kubernetes/integrations/k8s-events.alloy
   - configs/kubernetes/integrations/memcached.alloy
+  - configs/kubernetes/integrations/mysql.alloy
+  - configs/kubernetes/integrations/redis.alloy
 - name: alloy-modules-kubernetes-logs
   namespace: monitoring-system
   files:
@@ -42,7 +45,6 @@ configMapGenerator:
   namespace: monitoring-system
   files:
   - configs/kubernetes/profiles/annotations-scrape.alloy
-
 
 # # Agent Integrations Config
 # - name: agent-integrations
@@ -58,31 +60,28 @@ configMapGenerator:
 #   - integrations/memcached.river
 #   - integrations/redis.river
 
-
-# secretGenerator:
-# # integrations mysql credentials
-# - name: integrations-mysql
-#   namespace: monitoring-system
-#   options:
-#     disableNameSuffixHash: true
-#   literals:
-#   - mysql-host=mysql.mysql-system.svc.cluster.local
-#   - mysql-username=lgtmp
-#   - mysql-password=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
-
-# # integrations memcached credentials
-# - name: integrations-memcached
-#   namespace: monitoring-system
-#   options:
-#     disableNameSuffixHash: true
-#   literals:
-#   - memcached-address=memcached.memcached-system.svc.cluster.local:11211
-
-# # integrations redis credentials
-# - name: integrations-redis
-#   namespace: monitoring-system
-#   options:
-#     disableNameSuffixHash: true
-#   literals:
-#   - redis-addr=redis-master.redis-system.svc.cluster.local:6379
-#   - redis-password=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
+secretGenerator:
+# integrations mysql credentials
+- name: alloy-integrations-mysql
+  namespace: monitoring-system
+  options:
+    disableNameSuffixHash: true
+  literals:
+  - mysql-host=mysql.mysql-system.svc.cluster.local
+  - mysql-username=lgtmp
+  - mysql-password=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
+# integrations redis credentials
+- name: alloy-integrations-redis
+  namespace: monitoring-system
+  options:
+    disableNameSuffixHash: true
+  literals:
+  - redis-addr=redis-master.redis-system.svc.cluster.local:6379
+  - redis-password=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
+# integrations memcached credentials
+- name: alloy-integrations-memcached
+  namespace: monitoring-system
+  options:
+    disableNameSuffixHash: true
+  literals:
+  - memcached-address=memcached.memcached-system.svc.cluster.local:11211

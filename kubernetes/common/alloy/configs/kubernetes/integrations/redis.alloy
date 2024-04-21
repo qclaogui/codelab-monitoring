@@ -1,8 +1,8 @@
 /*
-Module Components: component_memcached
+Module Components: component_redis_exporter
 */
 
-declare "component_memcached" {
+declare "component_redis_exporter" {
 
 	/*****************************************************************
 	* ARGUMENTS
@@ -13,27 +13,26 @@ declare "component_memcached" {
 
 	argument "job_label" {
 		optional = true
-		default  = "integrations/kubernetes/memcached"
+		default  = "integrations/kubernetes/redis_exporter"
 	}
 
-	argument "memcached_address" {
+	argument "namespace" {
 		optional = true
-		default  = "memcached:11211"
+		default  = "monitoring-system"
 	}
 
-	argument "memcached_timeout" {
+	argument "name" {
 		optional = true
-		default  = "5s"
+		default  = "alloy-integrations-redis"
 	}
 
 	argument "instance_name" {
-		comment  = "instance of the Memcached"
 		optional = true
 	}
 
 	argument "keep_metrics" {
 		optional = true
-		default  = "(up|memcached_commands_total|memcached_connections_total|memcached_current_bytes|memcached_current_connections|memcached_current_items|memcached_items_evicted_total|memcached_items_total|memcached_max_connections|memcached_read_bytes_total|memcached_up|memcached_uptime_seconds|memcached_version|memcached_written_bytes_total)"
+		default  = "(up|redis_blocked_clients|redis_cluster_slots_fail|redis_cluster_slots_pfail|redis_cluster_state|redis_commands_duration_seconds_total|redis_commands_total|redis_connected_clients|redis_connected_slaves|redis_db_keys|redis_db_keys_expiring|redis_evicted_keys_total|redis_keyspace_hits_total|redis_keyspace_misses_total|redis_master_last_io_seconds_ago|redis_memory_fragmentation_ratio|redis_memory_max_bytes|redis_memory_used_bytes|redis_memory_used_rss_bytes|redis_total_system_memory_bytes|redis_up)"
 	}
 
 	argument "scrape_interval" {
@@ -48,20 +47,24 @@ declare "component_memcached" {
 		default  = "10s"
 	}
 
+	remote.kubernetes.secret "redis" {
+		name      = argument.name.value
+		namespace = argument.namespace.value
+	}
+
 	/***************************************************************
-	* Integrations Memcached
+	* Integrations Redis
 	****************************************************************/
-	// https://grafana.com/docs/alloy/latest/reference/components/prometheus.exporter.memcached/
-	prometheus.exporter.memcached "integrations_memcached_exporter" {
-		address = argument.memcached_address.value
-		timeout = argument.memcached_timeout.value
+	prometheus.exporter.redis "integrations_redis_exporter" {
+		redis_addr     = nonsensitive(remote.kubernetes.secret.redis.data["redis-addr"])
+		redis_password = nonsensitive(remote.kubernetes.secret.redis.data["redis-password"])
 	}
 
 	/***************************************************************
 	* Discovery Relabelings (pre-scrape)
 	****************************************************************/
-	discovery.relabel "integrations_memcached_exporter" {
-		targets = prometheus.exporter.memcached.integrations_memcached_exporter.targets
+	discovery.relabel "integrations_redis_exporter" {
+		targets = prometheus.exporter.memcached.integrations_redis_exporter.targets
 
 		rule {
 			target_label = "job"
@@ -77,9 +80,9 @@ declare "component_memcached" {
 	/***************************************************************
 	* Prometheus Scrape Integrations Targets
 	****************************************************************/
-	prometheus.scrape "integrations_memcached_exporter" {
+	prometheus.scrape "integrations_redis_exporter" {
 		targets = concat(
-			discovery.relabel.integrations_memcached_exporter.output,
+			discovery.relabel.integrations_redis_exporter.output,
 		)
 
 		enable_protobuf_negotiation = true
@@ -92,13 +95,13 @@ declare "component_memcached" {
 			enabled = true
 		}
 
-		forward_to = [prometheus.relabel.integrations_memcached_exporter.receiver]
+		forward_to = [prometheus.relabel.integrations_redis_exporter.receiver]
 	}
 
 	/***************************************************************
 	* Prometheus Metric Relabelings (post-scrape)
 	****************************************************************/
-	prometheus.relabel "integrations_memcached_exporter" {
+	prometheus.relabel "integrations_redis_exporter" {
 		forward_to = argument.forward_to.value
 
 		// keep only metrics that match the keep_metrics regex
