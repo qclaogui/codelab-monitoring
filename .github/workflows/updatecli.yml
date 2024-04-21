@@ -1,5 +1,5 @@
 ---
-name: "Updatecli: Check for dependency updates"
+name: "Check dependency(helm chart) updates"
 
 on:
     workflow_dispatch:
@@ -36,26 +36,34 @@ jobs:
                 updatecli apply --config ${UPDATECLI_CONFIG_DIR}/deps-charts.yaml > changelog.out 2>&1
                 if ! git diff --exit-code > /dev/null; then
                   echo "changed=true" >> "${GITHUB_OUTPUT}"
-                  echo "body=$(cat changelog.out | awk 'NR >= 22')" >> "${GITHUB_OUTPUT}"
                 fi
+            - 
+              name: Copy updatecli apply changelog
+              if: steps.updatecli-apply.outputs.changed == 'true'
+              id: updatecli-apply-changelog
+              run: |
+                echo "body<<EOF" >> ${GITHUB_OUTPUT}
+                # here we can place the command that will generate multi-line text
+                echo "$(cat changelog.out | awk '/^TARGETS$/,0')" >> "${GITHUB_OUTPUT}"
+                echo "EOF" >> ${GITHUB_OUTPUT}
             - 
               name: Create pull request
               if: steps.updatecli-apply.outputs.changed == 'true'
               uses: peter-evans/create-pull-request@c55203cfde3e5c11a452d352b4393e68b85b4533 #v6.0.3
               with:
                 token: ${{ steps.app-token.outputs.token }}
-                title: "[updatecli] Bump dependency helm charts version to latest"
-                commit-message: Updates dependency helm charts
+                title: "[updatecli] Bump dependency helm charts version"
+                commit-message: Update dependency helm charts
                 committer: 🤖QC Owl App[bot] <165384878+qc-owl-app[bot]@users.noreply.github.com>
                 signoff: true
                 body: |
-                  🤖 Updates Dependency Helm Charts
+                  🤖 Update dependency helm charts
 
                   <details>
-                  <summary> FULL CHANGELOG </summary>
+                  <summary> FULL TARGETS CHANGELOG </summary>
                   <blockquote>
 
-                  ${{ steps.updatecli-apply.outputs.body }}
+                  ${{ steps.updatecli-apply-changelog.outputs.body }}
 
                   </blockquote>
                   </details>
