@@ -12,7 +12,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki
   namespace: logging-system
 ---
@@ -150,7 +150,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-clusterrole
 rules:
 - apiGroups:
@@ -190,7 +190,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-clusterrolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -358,7 +358,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-runtime
   namespace: logging-system
 ---
@@ -1094,7 +1094,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-backend
   namespace: logging-system
 spec:
@@ -1149,7 +1149,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-memberlist
   namespace: logging-system
 spec:
@@ -1169,12 +1169,40 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/name: loki
+    prometheus.io/service-monitor: "false"
+  name: loki-query-scheduler-discovery
+  namespace: logging-system
+spec:
+  clusterIP: None
+  ports:
+  - name: http-metrics
+    port: 3100
+    protocol: TCP
+    targetPort: http-metrics
+  - name: grpc
+    port: 9095
+    protocol: TCP
+    targetPort: grpc
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/instance: loki
+    app.kubernetes.io/name: loki
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
     app.kubernetes.io/component: read
     app.kubernetes.io/instance: loki
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-read
   namespace: logging-system
 spec:
@@ -1231,7 +1259,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-write
   namespace: logging-system
 spec:
@@ -1275,34 +1303,6 @@ spec:
     targetPort: grpc
   selector:
     app.kubernetes.io/component: write
-    app.kubernetes.io/instance: loki
-    app.kubernetes.io/name: loki
-  type: ClusterIP
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    app.kubernetes.io/component: backend
-    app.kubernetes.io/instance: loki
-    app.kubernetes.io/name: loki
-    prometheus.io/service-monitor: "false"
-  name: query-scheduler-discovery
-  namespace: logging-system
-spec:
-  clusterIP: None
-  ports:
-  - name: http-metrics
-    port: 3100
-    protocol: TCP
-    targetPort: http-metrics
-  - name: grpc
-    port: 9095
-    protocol: TCP
-    targetPort: grpc
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/component: backend
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
   type: ClusterIP
@@ -1444,7 +1444,7 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-read
   namespace: logging-system
 spec:
@@ -1640,7 +1640,7 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-backend
   namespace: logging-system
 spec:
@@ -1775,7 +1775,7 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-write
   namespace: logging-system
 spec:
@@ -2004,7 +2004,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-backend
   namespace: logging-system
 spec:
@@ -2024,7 +2024,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-read
   namespace: logging-system
 spec:
@@ -2044,7 +2044,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-write
   namespace: logging-system
 spec:

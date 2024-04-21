@@ -12,7 +12,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki
   namespace: logging-system
 ---
@@ -325,7 +325,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-runtime
   namespace: logging-system
 ---
@@ -1056,12 +1056,38 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
+    app.kubernetes.io/component: bloom-gateway
+    app.kubernetes.io/instance: loki-distributed
+    app.kubernetes.io/name: loki
+  name: loki-distributed-bloom-gateway-headless
+  namespace: logging-system
+spec:
+  clusterIP: None
+  ports:
+  - name: http-metrics
+    port: 3100
+    protocol: TCP
+    targetPort: http-metrics
+  - name: grpc
+    port: 9095
+    protocol: TCP
+    targetPort: grpc
+  selector:
+    app.kubernetes.io/component: bloom-gateway
+    app.kubernetes.io/instance: loki-distributed
+    app.kubernetes.io/name: loki
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
     app.kubernetes.io/component: compactor
     app.kubernetes.io/instance: loki-distributed
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-distributed-compactor
   namespace: logging-system
 spec:
@@ -1089,7 +1115,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-distributed-distributor
   namespace: logging-system
 spec:
@@ -1145,7 +1171,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-distributed-index-gateway
   namespace: logging-system
 spec:
@@ -1200,7 +1226,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-distributed-ingester
   namespace: logging-system
 spec:
@@ -1255,7 +1281,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-distributed-querier
   namespace: logging-system
 spec:
@@ -1283,7 +1309,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-distributed-query-frontend
   namespace: logging-system
 spec:
@@ -1316,7 +1342,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
     prometheus.io/service-monitor: "false"
   name: loki-distributed-query-frontend-headless
   namespace: logging-system
@@ -1351,7 +1377,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-distributed-query-scheduler
   namespace: logging-system
 spec:
@@ -1406,7 +1432,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-memberlist
   namespace: logging-system
 spec:
@@ -1559,7 +1585,7 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-distributed-distributor
   namespace: logging-system
 spec:
@@ -1659,7 +1685,7 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-distributed-querier
   namespace: logging-system
 spec:
@@ -1769,7 +1795,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-distributed-query-frontend
   namespace: logging-system
 spec:
@@ -1867,7 +1893,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-distributed-query-scheduler
   namespace: logging-system
 spec:
@@ -2051,7 +2077,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-distributed-bloom-compactor
   namespace: logging-system
 spec:
@@ -2159,7 +2185,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-distributed-bloom-gateway
   namespace: logging-system
 spec:
@@ -2268,7 +2294,7 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-distributed-compactor
   namespace: logging-system
 spec:
@@ -2374,7 +2400,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-distributed-index-gateway
   namespace: logging-system
 spec:
@@ -2478,7 +2504,7 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-distributed-ingester
   namespace: logging-system
 spec:
@@ -2587,7 +2613,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-distributed-pattern-ingester
   namespace: logging-system
 spec:
@@ -2694,7 +2720,7 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-distributed-ruler
   namespace: logging-system
 spec:
@@ -2921,7 +2947,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-distributed-distributor
   namespace: logging-system
 spec:
@@ -2941,7 +2967,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-distributed-ingester
   namespace: logging-system
 spec:
@@ -2966,7 +2992,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-    helm.sh/chart: loki-6.1.0
+    helm.sh/chart: loki-6.3.3
   name: loki-distributed-querier
   namespace: logging-system
 spec:
