@@ -1,7 +1,7 @@
 name: Bump LGTMP stack dependency Helm charts
 sources:
     loki:
-        name: Get latest "loki" Helm chart version
+        name: Get latest Helm chart version
         kind: helmchart
         spec:
             name: loki
@@ -10,7 +10,7 @@ sources:
                 kind: semver
                 pattern: '*'
     grafana:
-        name: Get latest "grafana" Helm chart version
+        name: Get latest Helm chart version
         kind: helmchart
         spec:
             name: grafana
@@ -19,7 +19,7 @@ sources:
                 kind: semver
                 pattern: '*'
     tempo:
-        name: Get latest "tempo" Helm chart version
+        name: Get latest Helm chart version
         kind: helmchart
         spec:
             name: tempo
@@ -28,7 +28,7 @@ sources:
                 kind: semver
                 pattern: '*'
     tempo-distributed:
-        name: Get latest "tempo-distributed" Helm chart version
+        name: Get latest Helm chart version
         kind: helmchart
         spec:
             name: tempo-distributed
@@ -37,7 +37,7 @@ sources:
                 kind: semver
                 pattern: '*'
     mimir-distributed:
-        name: Get latest "mimir-distributed" Helm chart version
+        name: Get latest Helm chart version
         kind: helmchart
         spec:
             name: mimir-distributed
@@ -46,7 +46,7 @@ sources:
                 kind: semver
                 pattern: '*'
     pyroscope:
-        name: Get latest "pyroscope" Helm chart version
+        name: Get latest Helm chart version
         kind: helmchart
         spec:
             name: pyroscope
@@ -57,7 +57,7 @@ sources:
 
 conditions:
     loki-in-microservices-mode:
-        name: Ensure Helm chart dependency "loki"(microservices-mode) is specified
+        name: Ensure Helm chart "loki" is specified
         kind: yaml
         spec:
             file: kubernetes/microservices-mode/logs/loki/kustomization.yaml
@@ -65,7 +65,7 @@ conditions:
             value: loki
         disablesourceinput: true
     loki-in-read-write-mode:
-        name: Ensure Helm chart dependency "loki"(read-write-mode) is specified
+        name: Ensure Helm chart "loki" is specified
         kind: yaml
         spec:
             file: kubernetes/read-write-mode/logs/loki/kustomization.yaml
@@ -73,7 +73,7 @@ conditions:
             value: loki
         disablesourceinput: true
     grafana:
-        name: Ensure Helm chart dependency "grafana" is specified
+        name: Ensure Helm chart "grafana" is specified
         kind: yaml
         spec:
             file: kubernetes/common/grafana/kustomization.yaml
@@ -81,7 +81,7 @@ conditions:
             value: grafana
         disablesourceinput: true
     tempo-in-microservices-mode:
-        name: Ensure Helm chart dependency "tempo-distributed"(microservices-mode) is specified
+        name: Ensure Helm chart "tempo-distributed" is specified
         kind: yaml
         spec:
             file: kubernetes/microservices-mode/traces/tempo-distributed/kustomization.yaml
@@ -89,7 +89,7 @@ conditions:
             value: tempo-distributed
         disablesourceinput: true
     tempo-in-monolithic-mode:
-        name: Ensure Helm chart dependency "tempo"(monolithic-mode) is specified
+        name: Ensure Helm chart "tempo" is specified
         kind: yaml
         spec:
             file: kubernetes/monolithic-mode/traces/tempo/kustomization.yaml
@@ -97,7 +97,7 @@ conditions:
             value: tempo
         disablesourceinput: true
     mimir-in-microservices-mode:
-        name: Ensure Helm chart dependency "mimir"(microservices-mode) is specified
+        name: Ensure Helm chart "mimir-distributed" is specified
         kind: yaml
         spec:
             file: kubernetes/microservices-mode/metrics/mimir-distributed/kustomization.yaml
@@ -105,7 +105,7 @@ conditions:
             value: mimir-distributed
         disablesourceinput: true
     pyroscope-in-microservices-mode:
-        name: Ensure Helm chart dependency "pyroscope"(microservices-mode) is specified
+        name: Ensure Helm chart "pyroscope" is specified
         kind: yaml
         spec:
             file: kubernetes/microservices-mode/profiles/pyroscope/kustomization.yaml
@@ -113,7 +113,7 @@ conditions:
             value: pyroscope
         disablesourceinput: true
     pyroscope-in-monolithic-mode:
-        name: Ensure Helm chart dependency "pyroscope"(monolithic-mode) is specified
+        name: Ensure Helm chart "pyroscope" is specified
         kind: yaml
         spec:
             file: kubernetes/monolithic-mode/profiles/pyroscope/kustomization.yaml
@@ -123,56 +123,56 @@ conditions:
 
 targets:
     loki-in-microservices-mode:
-        name: Bump "loki"(microservices-mode) Helm chart version
+        name: Bump "loki" Helm chart version to {{ source "loki" }}
         kind: yaml
         spec:
             file: kubernetes/microservices-mode/logs/loki/kustomization.yaml
             key: $.helmCharts[0].version
         sourceid: loki
     loki-in-read-write-mode:
-        name: Bump "loki"(read-write-mode) Helm chart version
+        name: Bump "loki" Helm chart version to {{ source "loki" }}
         kind: yaml
         spec:
             file: kubernetes/read-write-mode/logs/loki/kustomization.yaml
             key: $.helmCharts[0].version
         sourceid: loki
     grafana:
-        name: Bump "grafana" Helm chart version
+        name: Bump "grafana" Helm chart version to {{ source "grafana" }}
         kind: yaml
         spec:
             file: kubernetes/common/grafana/kustomization.yaml
             key: $.helmCharts[0].version
         sourceid: grafana
     tempo-in-microservices-mode:
-        name: Bump "tempo-distributed"(microservices-mode) Helm chart version
+        name: Bump "tempo-distributed" Helm chart version to {{ source "tempo-distributed" }}
         kind: yaml
         spec:
             file: kubernetes/microservices-mode/traces/tempo-distributed/kustomization.yaml
             key: $.helmCharts[0].version
         sourceid: tempo-distributed
     tempo-in-monolithic-mode:
-        name: Bump "tempo"(monolithic-mode) Helm chart version
+        name: Bump "tempo" Helm chart version to {{ source "tempo" }}
         kind: yaml
         spec:
             file: kubernetes/monolithic-mode/traces/tempo/kustomization.yaml
             key: $.helmCharts[0].version
         sourceid: tempo
     mimir-in-microservices-mode:
-        name: Bump "mimir-distributed"(microservices-mode) Helm chart version
+        name: Bump "mimir-distributed" Helm chart version to {{ source "mimir-distributed" }}
         kind: yaml
         spec:
             file: kubernetes/microservices-mode/metrics/mimir-distributed/kustomization.yaml
             key: $.helmCharts[0].version
         sourceid: mimir-distributed
     pyroscope-in-microservices-mode:
-        name: Bump "pyroscope"(microservices-mode) Helm chart version
+        name: Bump "pyroscope" Helm chart version to {{ source "pyroscope" }}
         kind: yaml
         spec:
             file: kubernetes/microservices-mode/profiles/pyroscope/kustomization.yaml
             key: $.helmCharts[0].version
         sourceid: pyroscope
     pyroscope-in-monolithic-mode:
-        name: Bump "pyroscope"(monolithic-mode) Helm chart version
+        name: Bump "pyroscope" Helm chart version to {{ source "pyroscope" }}
         kind: yaml
         spec:
             file: kubernetes/monolithic-mode/profiles/pyroscope/kustomization.yaml
