@@ -20,51 +20,60 @@ declare "integrations_scrape" {
 	argument "name" {
 		comment  = "Name of the integrations config"
 		optional = true
-		default  = "alloy-integrations"
 	}
 
 	argument "namespace" {
 		comment  = "Namespace of the integrations config"
 		optional = true
-		default  = "default"
 	}
 
 	/*****************************************************************
 	* Import Integrations Components
 	*****************************************************************/
-	// integrations components local files
-	import.file "integrations" {
-		filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/kubernetes/integrations"
+	remote.kubernetes.configmap "integrations" {
+		namespace = coalesce(argument.namespace.value, "monitoring-system")
+		name      = coalesce(argument.name.value, "alloy-integrations")
 	}
-
-	// // integrations components kubernetes configmap
-	// remote.kubernetes.configmap "integrations" {
-	// 	name      = argument.name.value
-	// 	namespace = argument.namespace.value
-	// }
-	// import.string "integrations" {
-	// 	content = remote.kubernetes.configmap.integrations.data["memcached.alloy"]
-	// }
 
 	/*****************************************************************
 	* Memcached Integrations
 	*****************************************************************/
-	integrations.component_memcached "primary" {
+	import.string "memcached" {
+		content = remote.kubernetes.configmap.integrations.data["memcached.alloy"]
+	}
+
+	memcached.component_memcached "instance" {
 		forward_to = argument.forward_to.value
 
-		instance_name     = "primary"
-		memcached_address = "memcached.memcached-system.svc.cluster.local:11211"
-		memcached_timeout = "5s"
+		namespace = argument.namespace.value
+		name      = remote.kubernetes.configmap.integrations.data["MEMCACHED_K8S_SECRET_NAME"]
 	}
+
+	// /*****************************************************************
+	// * Redis Integrations
+	// *****************************************************************/
+	// import.string "redis" {
+	// 	content = remote.kubernetes.configmap.integrations.data["redis.alloy"]
+	// }
+
+	// redis.component_redis_exporter "instance" {
+	// 	forward_to = argument.forward_to.value
+
+	// 	namespace = argument.namespace.value
+	// 	name      = remote.kubernetes.configmap.integrations.data["REDIS_K8S_SECRET_NAME"]
+	// }
 
 	// /*****************************************************************
 	// * Mysql Integrations
 	// *****************************************************************/
-	// integrations.component_mysql "primary" {
+	// import.string "mysql" {
+	// 	content = remote.kubernetes.configmap.integrations.data["mysql.alloy"]
+	// }
+
+	// mysql.component_mysql "instance" {
 	// 	forward_to = argument.forward_to.value
 
-	// 	instance_name = "primary"
-	// 	name          = "alloy-integrations-mysql"
-	// 	namespace     = "monitoring-system"
+	// 	namespace = argument.namespace.value
+	// 	name      = remote.kubernetes.configmap.integrations.data["MYSQL_K8S_SECRET_NAME"]
 	// }
 }

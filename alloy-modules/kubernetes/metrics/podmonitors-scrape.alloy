@@ -13,11 +13,26 @@ declare "podmonitors_scrape" {
 		optional = false
 	}
 
+	argument "scrape_interval" {
+		comment  = "How often to scrape metrics from the targets (default: 60s)"
+		optional = true
+	}
+
+	argument "scrape_timeout" {
+		comment  = "How long before a scrape times out (default: 10s)"
+		optional = true
+	}
+
 	/*****************************************************************
 	* Kubernetes Auto Scrape PodMonitors
 	*****************************************************************/
 	prometheus.operator.podmonitors "scrape" {
 		forward_to = argument.forward_to.value
+
+		scrape {
+			default_scrape_interval = coalesce(argument.scrape_interval.value, "60s")
+			default_scrape_timeout  = coalesce(argument.scrape_timeout.value, "10s")
+		}
 
 		clustering {
 			enabled = true

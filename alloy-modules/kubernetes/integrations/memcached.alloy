@@ -11,20 +11,18 @@ declare "component_memcached" {
 		comment = "Must be a list(MetricssReceiver) where collected metrics should be forwarded to"
 	}
 
-	argument "memcached_address" {
-		comment  = "address of the Memcached"
+	argument "job_label" {
+		comment  = "job label (default: integrations/kubernetes/memcached)"
 		optional = true
-		default  = "memcached:11211"
 	}
 
-	argument "memcached_timeout" {
-		comment  = "timeout of the Memcached"
+	argument "namespace" {
+		comment  = "kubernetes secret name (default: monitoring-system)"
 		optional = true
-		default  = "5s"
 	}
 
-	argument "instance_name" {
-		comment  = "instance of the Memcached"
+	argument "name" {
+		comment  = "kubernetes secret name (default: alloy-integrations-redis)"
 		optional = true
 	}
 
@@ -36,13 +34,16 @@ declare "component_memcached" {
 	argument "scrape_interval" {
 		comment  = "How often to scrape metrics from the targets (default: 60s)"
 		optional = true
-		default  = "60s"
 	}
 
 	argument "scrape_timeout" {
 		comment  = "How long before a scrape times out (default: 10s)"
 		optional = true
-		default  = "10s"
+	}
+
+	remote.kubernetes.secret "memcached" {
+		namespace = coalesce(argument.namespace.value, "monitoring-system")
+		name      = coalesce(argument.name.value, "alloy-integrations-memcached")
 	}
 
 	/***************************************************************
@@ -50,8 +51,8 @@ declare "component_memcached" {
 	****************************************************************/
 	// https://grafana.com/docs/alloy/latest/reference/components/prometheus.exporter.memcached/
 	prometheus.exporter.memcached "integrations_memcached_exporter" {
-		address = argument.memcached_address.value
-		timeout = argument.memcached_timeout.value
+		address = nonsensitive(remote.kubernetes.secret.memcached.data["instance-address"])
+		timeout = nonsensitive(remote.kubernetes.secret.memcached.data["instance-timeout"])
 	}
 
 	/***************************************************************
@@ -62,12 +63,12 @@ declare "component_memcached" {
 
 		rule {
 			target_label = "job"
-			replacement  = "integrations/kubernetes/memcached"
+			replacement  = coalesce(argument.job_label.value, "integrations/kubernetes/memcached")
 		}
 
 		rule {
 			target_label = "instance"
-			replacement  = coalesce(argument.instance_name.value, constants.hostname)
+			replacement  = coalesce(nonsensitive(remote.kubernetes.secret.memcached.data["instance-name"]), constants.hostname)
 		}
 	}
 
@@ -82,8 +83,8 @@ declare "component_memcached" {
 		enable_protobuf_negotiation = true
 		scrape_classic_histograms   = true
 
-		scrape_interval = argument.scrape_interval.value
-		scrape_timeout  = argument.scrape_timeout.value
+		scrape_interval = coalesce(argument.scrape_interval.value, "60s")
+		scrape_timeout  = coalesce(argument.scrape_timeout.value, "10s")
 
 		clustering {
 			enabled = true
