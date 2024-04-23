@@ -25,6 +25,11 @@ import.file "logs" {
 	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/kubernetes/logs"
 }
 
+logs.kubernetes_cluster_events "kubernetes" {
+	cluster    = "k3d-k3s-codelab"
+	forward_to = [logs.keep_labels.kubernetes.receiver]
+}
+
 logs.annotations_scrape "kubernetes" {
 	annotation_prefix = "logs.grafana.com"
 	forward_to        = [logs.keep_labels.kubernetes.receiver]
@@ -41,13 +46,6 @@ import.file "metrics" {
 	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/kubernetes/metrics"
 }
 
-metrics.integrations_scrape "kubernetes" {
-	forward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]
-
-	namespace = "monitoring-system"
-	name      = "alloy-integrations"
-}
-
 metrics.podmonitors_scrape "kubernetes" {
 	forward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]
 }
@@ -55,3 +53,47 @@ metrics.podmonitors_scrape "kubernetes" {
 metrics.servicemonitors_scrape "kubernetes" {
 	forward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]
 }
+
+/*****************************************************************
+* Alloy Integrations
+*****************************************************************/
+remote.kubernetes.configmap "integrations" {
+	namespace = "monitoring-system"
+	name      = "alloy-integrations"
+}
+
+// Memcached Integrations
+import.string "memcached" {
+	content = remote.kubernetes.configmap.integrations.data["memcached.alloy"]
+}
+
+memcached.memcached_metrics_scrape "instance" {
+	forward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]
+
+	namespace = "monitoring-system"
+	name      = remote.kubernetes.configmap.integrations.data["MEMCACHED_K8S_SECRET_NAME"]
+}
+
+// // Redis Integrations
+// import.string "redis" {
+// 	content = remote.kubernetes.configmap.integrations.data["redis.alloy"]
+// }
+
+// redis.redis_exporter_metrics_scrape "instance" {
+// 	forward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]
+
+// 	namespace = "monitoring-system"
+// 	name      = remote.kubernetes.configmap.integrations.data["REDIS_K8S_SECRET_NAME"]
+// }
+
+// // Mysql Integrations
+// import.string "mysql" {
+// 	content = remote.kubernetes.configmap.integrations.data["mysql.alloy"]
+// }
+
+// mysql.mysql_metrics_scrape "instance" {
+// 	forward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]
+
+// 	namespace = "monitoring-system"
+// 	name      = remote.kubernetes.configmap.integrations.data["MYSQL_K8S_SECRET_NAME"]
+// }

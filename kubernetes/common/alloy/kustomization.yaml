@@ -22,17 +22,13 @@ configMapGenerator:
 - name: alloy-modules-kubernetes-metrics
   namespace: monitoring-system
   files:
-  - configs/kubernetes/metrics/integrations-scrape.alloy
   - configs/kubernetes/metrics/podmonitors-scrape.alloy
   - configs/kubernetes/metrics/servicemonitors-scrape.alloy
-- name: alloy-modules-kubernetes-integrations
-  namespace: monitoring-system
-  files:
-  - configs/kubernetes/integrations/k8s-events.alloy
 - name: alloy-modules-kubernetes-logs
   namespace: monitoring-system
   files:
   - configs/kubernetes/logs/annotations-scrape.alloy
+  - configs/kubernetes/logs/k8s-events.alloy
   - configs/kubernetes/logs/keep-labels.alloy
 - name: alloy-modules-kubernetes-traces
   namespace: monitoring-system
@@ -43,49 +39,7 @@ configMapGenerator:
   files:
   - configs/kubernetes/profiles/annotations-scrape.alloy
 
-# Agent Integrations Config
-- name: alloy-integrations
-  namespace: monitoring-system
-  options:
-    disableNameSuffixHash: true
-  literals:
-  - MEMCACHED_K8S_SECRET_NAME=alloy-integrations-memcached
-  # - REDIS_K8S_SECRET_NAME=alloy-integrations-redis
-  # - MYSQL_K8S_SECRET_NAME=alloy-integrations-mysql
-  files:
-  - configs/kubernetes/integrations/memcached.alloy
-  # - configs/kubernetes/integrations/redis.alloy
-  # - configs/kubernetes/integrations/mysql.alloy
-
 secretGenerator:
 - name: alloy-env
   literals:
   - ALLOY_LOG_LEVEL=warn
-# integrations memcached credentials
-- name: alloy-integrations-memcached
-  namespace: monitoring-system
-  options:
-    disableNameSuffixHash: true
-  literals:
-  - instance-name=primary
-  - instance-address=memcached.memcached-system.svc.cluster.local:11211
-  - instance-timeout=5s
-# # integrations redis credentials
-# - name: alloy-integrations-redis
-#   namespace: monitoring-system
-#   options:
-#     disableNameSuffixHash: true
-#   literals:
-#   - instance-name=primary
-#   - instance-address=redis-master.redis-system.svc.cluster.local:6379
-#   - instance-password=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
-# # integrations mysql credentials
-# - name: alloy-integrations-mysql
-#   namespace: monitoring-system
-#   options:
-#     disableNameSuffixHash: true
-#   literals:
-#   - instance-name=primary
-#   - mysql-host=mysql.mysql-system.svc.cluster.local
-#   - mysql-username=lgtmp
-#   - mysql-password=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm

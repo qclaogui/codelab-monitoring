@@ -27,10 +27,6 @@ import.file "metrics" {
 	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/kubernetes/metrics"
 }
 
-metrics.integrations_scrape "kubernetes" {
-	forward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]
-}
-
 metrics.podmonitors_scrape "kubernetes" {
 	forward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]
 }
@@ -87,4 +83,24 @@ import.file "profiles" {
 profiles.annotations_scrape "kubernetes" {
 	forward_to = [provider.self_hosted_stack.kubernetes.profiles_receiver]
 	// annotation_prefix = "profiles.grafana.com"
+}
+
+/*****************************************************************
+* Alloy Integrations
+*****************************************************************/
+remote.kubernetes.configmap "integrations" {
+	namespace = "monitoring-system"
+	name      = "alloy-integrations"
+}
+
+// Memcached Integrations
+import.string "memcached" {
+	content = remote.kubernetes.configmap.integrations.data["memcached.alloy"]
+}
+
+memcached.memcached_metrics_scrape "instance" {
+	forward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]
+
+	namespace = "monitoring-system"
+	name      = remote.kubernetes.configmap.integrations.data["MEMCACHED_K8S_SECRET_NAME"]
 }

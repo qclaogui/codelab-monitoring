@@ -232,83 +232,12 @@ data:
     Forward Alloy internal spans to traces process.\n\twrite_to = [traces.process_and_transform.kubernetes.alloy_traces_input]\n}\n\n/********************************************\n
     * Metrics\n ********************************************/\nimport.file \"metrics\"
     {\n\tfilename = coalesce(env(\"ALLOY_MODULES_FOLDER\"), \"/etc/alloy/modules\")
-    + \"/kubernetes/metrics\"\n}\n\nmetrics.integrations_scrape \"kubernetes\" {\n\tforward_to
-    = [provider.self_hosted_stack.kubernetes.metrics_receiver]\n}\n\nmetrics.podmonitors_scrape
-    \"kubernetes\" {\n\tforward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]\n}\n\nmetrics.servicemonitors_scrape
+    + \"/kubernetes/metrics\"\n}\n\nmetrics.podmonitors_scrape \"kubernetes\" {\n\tforward_to
+    = [provider.self_hosted_stack.kubernetes.metrics_receiver]\n}\n\nmetrics.servicemonitors_scrape
     \"kubernetes\" {\n\tforward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]\n}\n"
 kind: ConfigMap
 metadata:
-  name: alloy-config-gt2k68744f
-  namespace: monitoring-system
----
-apiVersion: v1
-data:
-  MEMCACHED_K8S_SECRET_NAME: alloy-integrations-memcached
-  memcached.alloy: "/*\nModule Components: component_memcached\n*/\n\ndeclare \"component_memcached\"
-    {\n\n\t/*****************************************************************\n\t*
-    ARGUMENTS\n\t*****************************************************************/\n\targument
-    \"forward_to\" {\n\t\tcomment = \"Must be a list(MetricssReceiver) where collected
-    metrics should be forwarded to\"\n\t}\n\n\targument \"job_label\" {\n\t\tcomment
-    \ = \"job label (default: integrations/kubernetes/memcached)\"\n\t\toptional =
-    true\n\t}\n\n\targument \"namespace\" {\n\t\tcomment  = \"kubernetes secret name
-    (default: monitoring-system)\"\n\t\toptional = true\n\t}\n\n\targument \"name\"
-    {\n\t\tcomment  = \"kubernetes secret name (default: alloy-integrations-redis)\"\n\t\toptional
-    = true\n\t}\n\n\targument \"keep_metrics\" {\n\t\toptional = true\n\t\tdefault
-    \ = \"(up|memcached_commands_total|memcached_connections_total|memcached_current_bytes|memcached_current_connections|memcached_current_items|memcached_items_evicted_total|memcached_items_total|memcached_max_connections|memcached_read_bytes_total|memcached_up|memcached_uptime_seconds|memcached_version|memcached_written_bytes_total)\"\n\t}\n\n\targument
-    \"scrape_interval\" {\n\t\tcomment  = \"How often to scrape metrics from the targets
-    (default: 60s)\"\n\t\toptional = true\n\t}\n\n\targument \"scrape_timeout\" {\n\t\tcomment
-    \ = \"How long before a scrape times out (default: 10s)\"\n\t\toptional = true\n\t}\n\n\tremote.kubernetes.secret
-    \"memcached\" {\n\t\tnamespace = coalesce(argument.namespace.value, \"monitoring-system\")\n\t\tname
-    \     = coalesce(argument.name.value, \"alloy-integrations-memcached\")\n\t}\n\n\t/***************************************************************\n\t*
-    Integrations Memcached\n\t****************************************************************/\n\t//
-    https://grafana.com/docs/alloy/latest/reference/components/prometheus.exporter.memcached/\n\tprometheus.exporter.memcached
-    \"integrations_memcached_exporter\" {\n\t\taddress = nonsensitive(remote.kubernetes.secret.memcached.data[\"instance-address\"])\n\t\ttimeout
-    = nonsensitive(remote.kubernetes.secret.memcached.data[\"instance-timeout\"])\n\t}\n\n\t/***************************************************************\n\t*
-    Discovery Relabelings (pre-scrape)\n\t****************************************************************/\n\tdiscovery.relabel
-    \"integrations_memcached_exporter\" {\n\t\ttargets = prometheus.exporter.memcached.integrations_memcached_exporter.targets\n\n\t\trule
-    {\n\t\t\ttarget_label = \"job\"\n\t\t\treplacement  = coalesce(argument.job_label.value,
-    \"integrations/kubernetes/memcached\")\n\t\t}\n\n\t\trule {\n\t\t\ttarget_label
-    = \"instance\"\n\t\t\treplacement  = coalesce(nonsensitive(remote.kubernetes.secret.memcached.data[\"instance-name\"]),
-    constants.hostname)\n\t\t}\n\t}\n\n\t/***************************************************************\n\t*
-    Prometheus Scrape Integrations Targets\n\t****************************************************************/\n\tprometheus.scrape
-    \"integrations_memcached_exporter\" {\n\t\ttargets = concat(\n\t\t\tdiscovery.relabel.integrations_memcached_exporter.output,\n\t\t)\n\n\t\tenable_protobuf_negotiation
-    = true\n\t\tscrape_classic_histograms   = true\n\n\t\tscrape_interval = coalesce(argument.scrape_interval.value,
-    \"60s\")\n\t\tscrape_timeout  = coalesce(argument.scrape_timeout.value, \"10s\")\n\n\t\tclustering
-    {\n\t\t\tenabled = true\n\t\t}\n\n\t\tforward_to = [prometheus.relabel.integrations_memcached_exporter.receiver]\n\t}\n\n\t/***************************************************************\n\t*
-    Prometheus Metric Relabelings (post-scrape)\n\t****************************************************************/\n\tprometheus.relabel
-    \"integrations_memcached_exporter\" {\n\t\tforward_to = argument.forward_to.value\n\n\t\t//
-    keep only metrics that match the keep_metrics regex\n\t\trule {\n\t\t\tsource_labels
-    = [\"__name__\"]\n\t\t\tregex         = argument.keep_metrics.value\n\t\t\taction
-    \       = \"keep\"\n\t\t}\n\t}\n}\n"
-kind: ConfigMap
-metadata:
-  name: alloy-integrations
-  namespace: monitoring-system
----
-apiVersion: v1
-data:
-  k8s-events.alloy: "/*\nModule Components: component_cluster_events\n*/\n\ndeclare
-    \"component_cluster_events\" {\n\n\t/*****************************************************************\n\t*
-    ARGUMENTS\n\t*****************************************************************/\n\targument
-    \"forward_to\" {\n\t\tcomment = \"Must be a list(LogsReceiver) where collected
-    logs should be forwarded to\"\n\t}\n\n\targument \"job_label\" {\n\t\toptional
-    = true\n\t\tdefault  = \"integrations/kubernetes/eventhandler\"\n\t}\n\n\targument
-    \"cluster\" {\n\t\toptional = true\n\t\tdefault  = \"k3d\"\n\t}\n\n\tloki.source.kubernetes_events
-    \"cluster_events\" {\n\t\tjob_name   = argument.job_label.value\n\t\tlog_format
-    = \"logfmt\"\n\t\tforward_to = [loki.process.logs_service.receiver]\n\t}\n\n\tloki.process
-    \"logs_service\" {\n\t\tstage.static_labels {\n\t\t\tvalues = {\n\t\t\t\tcluster
-    = argument.cluster.value,\n\t\t\t}\n\t\t}\n\t\tforward_to = argument.forward_to.value\n\t}\n\n\t//
-    // Logs Service\n\t// remote.kubernetes.secret \"logs_service\" {\n\t// \tname
-    \     = \"loki-k8s-monitoring\"\n\t// \tnamespace = \"k8s-monitoring\"\n\t// }\n\t//
-    // Loki\n\t// loki.write \"logs_service\" {\n\t// \tendpoint {\n\t// \t\turl       =
-    nonsensitive(remote.kubernetes.secret.logs_service.data[\"host\"]) + \"/loki/api/v1/push\"\n\t//
-    \t\ttenant_id = nonsensitive(remote.kubernetes.secret.logs_service.data[\"tenantId\"])\n\n\t//
-    \t\tbasic_auth {\n\t// \t\t\tusername = nonsensitive(remote.kubernetes.secret.logs_service.data[\"username\"])\n\t//
-    \t\t\tpassword = remote.kubernetes.secret.logs_service.data[\"password\"]\n\t//
-    \t\t}\n\t// \t}\n\t// }\n}\n"
-kind: ConfigMap
-metadata:
-  name: alloy-modules-kubernetes-integrations-mb46d6kmf6
+  name: alloy-config-t69dk2g68h
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -405,6 +334,17 @@ data:
     = {\n\t\t\t\t\tstream = \"\",\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\t// drop the temporary
     container runtime label as it is no longer needed\n\t\tstage.label_drop {\n\t\t\tvalues
     = [\"tmp_container_runtime\"]\n\t\t}\n\t}\n}\n"
+  k8s-events.alloy: "/*\nModule Components: component_cluster_events\n*/\n\ndeclare
+    \"kubernetes_cluster_events\" {\n\n\t/*****************************************************************\n\t*
+    ARGUMENTS\n\t*****************************************************************/\n\targument
+    \"forward_to\" {\n\t\tcomment = \"Must be a list(LogsReceiver) where collected
+    logs should be forwarded to\"\n\t}\n\n\targument \"job_label\" {\n\t\toptional
+    = true\n\t}\n\n\targument \"cluster\" {\n\t\toptional = true\n\t}\n\n\tloki.source.kubernetes_events
+    \"cluster_events\" {\n\t\tjob_name   = coalesce(argument.job_label.value, \"integrations/kubernetes/eventhandler\")\n\t\tlog_format
+    = \"logfmt\"\n\t\tforward_to = [loki.process.logs_service.receiver]\n\t}\n\n\tloki.process
+    \"logs_service\" {\n\t\tstage.static_labels {\n\t\t\tvalues = {\n\t\t\t\tcluster
+    = coalesce(argument.cluster.value, \"k3d\"),\n\t\t\t}\n\t\t}\n\t\tforward_to =
+    argument.forward_to.value\n\t}\n}\n"
   keep-labels.alloy: "/*\nModule Components: keep_labels\nDescription: Pre-defined
     set of labels to keep, this stage should always be in-place as the previous relabeing\n
     \            stages make every pod label and annotation a label in the pipeline,
@@ -428,42 +368,11 @@ data:
     \"receiver\" {\n\t\tvalue = loki.process.keep_labels.receiver\n\t}\n}\n"
 kind: ConfigMap
 metadata:
-  name: alloy-modules-kubernetes-logs-d7c756mt2f
+  name: alloy-modules-kubernetes-logs-gd277tmt9h
   namespace: monitoring-system
 ---
 apiVersion: v1
 data:
-  integrations-scrape.alloy: "/*\nModule Components: integrations_scrape\nDescription:
-    Integrations Module Components Scrape\n\nNote: Every argument except for \"forward_to\"
-    is optional, and does have a defined default value.  However, the values for these\n
-    \     arguments are not defined using the default = \" ... \" argument syntax,
-    but rather using the coalesce(argument.value, \" ... \").\n      This is because
-    if the argument passed in from another consuming module is set to null, the default
-    = \" ... \" syntax will\n      does not override the value passed in, where coalesce()
-    will return the first non-null value.\n*/\n\ndeclare \"integrations_scrape\" {\n\n\t/*****************************************************************\n\t*
-    ARGUMENTS\n\t*****************************************************************/\n\targument
-    \"forward_to\" {\n\t\tcomment = \"Must be a list(MetricssReceiver) where collected
-    metrics should be forwarded to\"\n\t}\n\n\targument \"name\" {\n\t\tcomment  =
-    \"Name of the integrations config\"\n\t\toptional = true\n\t}\n\n\targument \"namespace\"
-    {\n\t\tcomment  = \"Namespace of the integrations config\"\n\t\toptional = true\n\t}\n\n\t/*****************************************************************\n\t*
-    Import Integrations Components\n\t*****************************************************************/\n\tremote.kubernetes.configmap
-    \"integrations\" {\n\t\tnamespace = coalesce(argument.namespace.value, \"monitoring-system\")\n\t\tname
-    \     = coalesce(argument.name.value, \"alloy-integrations\")\n\t}\n\n\t/*****************************************************************\n\t*
-    Memcached Integrations\n\t*****************************************************************/\n\timport.string
-    \"memcached\" {\n\t\tcontent = remote.kubernetes.configmap.integrations.data[\"memcached.alloy\"]\n\t}\n\n\tmemcached.component_memcached
-    \"instance\" {\n\t\tforward_to = argument.forward_to.value\n\n\t\tnamespace =
-    argument.namespace.value\n\t\tname      = remote.kubernetes.configmap.integrations.data[\"MEMCACHED_K8S_SECRET_NAME\"]\n\t}\n\n\t//
-    /*****************************************************************\n\t// * Redis
-    Integrations\n\t// *****************************************************************/\n\t//
-    import.string \"redis\" {\n\t// \tcontent = remote.kubernetes.configmap.integrations.data[\"redis.alloy\"]\n\t//
-    }\n\n\t// redis.component_redis_exporter \"instance\" {\n\t// \tforward_to = argument.forward_to.value\n\n\t//
-    \tnamespace = argument.namespace.value\n\t// \tname      = remote.kubernetes.configmap.integrations.data[\"REDIS_K8S_SECRET_NAME\"]\n\t//
-    }\n\n\t// /*****************************************************************\n\t//
-    * Mysql Integrations\n\t// *****************************************************************/\n\t//
-    import.string \"mysql\" {\n\t// \tcontent = remote.kubernetes.configmap.integrations.data[\"mysql.alloy\"]\n\t//
-    }\n\n\t// mysql.component_mysql \"instance\" {\n\t// \tforward_to = argument.forward_to.value\n\n\t//
-    \tnamespace = argument.namespace.value\n\t// \tname      = remote.kubernetes.configmap.integrations.data[\"MYSQL_K8S_SECRET_NAME\"]\n\t//
-    }\n}\n"
   podmonitors-scrape.alloy: "/*\nModule Components: podmonitors_scrape\nDescription:
     Scrapes targets for metrics based on prometheus.operator.podmonitors\n*/\n\ndeclare
     \"podmonitors_scrape\" {\n\n\t/*****************************************************************\n\t*
@@ -496,7 +405,7 @@ data:
     {\n\t\t\tenabled = true\n\t\t}\n\t}\n}\n"
 kind: ConfigMap
 metadata:
-  name: alloy-modules-kubernetes-metrics-5g24522dhc
+  name: alloy-modules-kubernetes-metrics-44gc54b647
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -1104,17 +1013,6 @@ type: Opaque
 ---
 apiVersion: v1
 data:
-  instance-address: bWVtY2FjaGVkLm1lbWNhY2hlZC1zeXN0ZW0uc3ZjLmNsdXN0ZXIubG9jYWw6MTEyMTE=
-  instance-name: cHJpbWFyeQ==
-  instance-timeout: NXM=
-kind: Secret
-metadata:
-  name: alloy-integrations-memcached
-  namespace: monitoring-system
-type: Opaque
----
-apiVersion: v1
-data:
   MIMIR_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:
@@ -1447,7 +1345,6 @@ spec:
       annotations:
         kubectl.kubernetes.io/default-container: alloy
         logs.agent.grafana.com/scrape: "true"
-        logs.agent.grafana.com/scrub-level: debug
         profiles.grafana.com/cpu.port_name: http-metrics
         profiles.grafana.com/cpu.scrape: "false"
         profiles.grafana.com/goroutine.port_name: http-metrics
@@ -1511,8 +1408,6 @@ spec:
           name: config
         - mountPath: /etc/alloy/modules/kubernetes/metrics
           name: modules-kubernetes-metrics
-        - mountPath: /etc/alloy/modules/kubernetes/integrations
-          name: modules-kubernetes-integrations
         - mountPath: /etc/alloy/modules/kubernetes/logs
           name: modules-kubernetes-logs
         - mountPath: /etc/alloy/modules/kubernetes/traces
@@ -1525,16 +1420,13 @@ spec:
       serviceAccountName: alloy
       volumes:
       - configMap:
-          name: alloy-config-gt2k68744f
+          name: alloy-config-t69dk2g68h
         name: config
       - configMap:
-          name: alloy-modules-kubernetes-metrics-5g24522dhc
+          name: alloy-modules-kubernetes-metrics-44gc54b647
         name: modules-kubernetes-metrics
       - configMap:
-          name: alloy-modules-kubernetes-integrations-mb46d6kmf6
-        name: modules-kubernetes-integrations
-      - configMap:
-          name: alloy-modules-kubernetes-logs-d7c756mt2f
+          name: alloy-modules-kubernetes-logs-gd277tmt9h
         name: modules-kubernetes-logs
       - configMap:
           name: alloy-modules-kubernetes-traces-8mgm8th9m5

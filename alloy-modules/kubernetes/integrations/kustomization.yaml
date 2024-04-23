@@ -1,0 +1,53 @@
+# ============================================================================ #
+#                  Alloy Integrations Components
+# ============================================================================ #
+
+# ----------------------------------------------------
+# apiVersion and kind of Kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Alloy Integrations Configs
+configMapGenerator:
+- name: alloy-integrations
+  namespace: monitoring-system
+  options:
+    disableNameSuffixHash: true
+  literals:
+  - MEMCACHED_K8S_SECRET_NAME=alloy-integrations-memcached
+  - REDIS_K8S_SECRET_NAME=alloy-integrations-redis
+  - MYSQL_K8S_SECRET_NAME=alloy-integrations-mysql
+  files:
+  - memcached.alloy
+  - redis.alloy
+  - mysql.alloy
+
+secretGenerator:
+# integrations memcached credentials
+- name: alloy-integrations-memcached
+  namespace: monitoring-system
+  options:
+    disableNameSuffixHash: true
+  literals:
+  - instance-name=primary
+  - instance-address=memcached.memcached-system.svc.cluster.local:11211
+  - instance-timeout=5s
+# integrations redis credentials
+- name: alloy-integrations-redis
+  namespace: monitoring-system
+  options:
+    disableNameSuffixHash: true
+  literals:
+  - instance-name=primary
+  - instance-address=redis-master.redis-system.svc.cluster.local:6379
+  - instance-password=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
+# integrations mysql credentials
+- name: alloy-integrations-mysql
+  namespace: monitoring-system
+  options:
+    disableNameSuffixHash: true
+  literals:
+  - instance-name=primary
+  - mysql-host=mysql.mysql-system.svc.cluster.local
+  - mysql-username=lgtmp
+  - mysql-password=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
