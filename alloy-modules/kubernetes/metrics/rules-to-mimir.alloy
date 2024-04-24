@@ -1,0 +1,40 @@
+/*
+Module Components: rules_to_mimir
+Description: Auto discovers PrometheusRule Kubernetes resources and loads them into a Mimir instance.
+*/
+
+declare "rules_to_mimir" {
+
+	/*****************************************************************
+	* ARGUMENTS
+	*****************************************************************/
+	argument "address" {
+		comment  = "URL of the Mimir ruler. (default: http://nginx.gateway.svc:8080)"
+		optional = true
+	}
+
+	argument "tenant" {
+		comment  = "Mimir tenant ID. (default: anonymous)"
+		optional = true
+	}
+
+	/********************************************
+	* Kubernetes Prometheus Rules To Mimir
+	********************************************/
+	mimir.rules.kubernetes "rules_to_mimir" {
+		address   = coalesce(argument.address.value, "http://nginx.gateway.svc:8080")
+		tenant_id = coalesce(argument.tenant.value, "anonymous")
+
+		// rule_namespace_selector {
+		// 	match_labels = {
+		// 		auto_rules_to_mimir= "true",
+		// 	}
+		// }
+
+		// rule_selector {
+		// 	match_labels = {
+		// 		auto_rules_to_mimir= "true",
+		// 	}
+		// }
+	}
+}

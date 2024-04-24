@@ -26,7 +26,8 @@ import.file "profiles" {
 }
 
 profiles.annotations_scrape "kubernetes" {
-	// annotation_prefix = "profiles.grafana.com"
+	cluster = "k3d-k3s-codelab"
+
 	forward_to = [provider.self_hosted_stack.kubernetes.profiles_receiver]
 }
 
@@ -37,10 +38,16 @@ import.file "metrics" {
 	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/kubernetes/metrics"
 }
 
-metrics.podmonitors_scrape "kubernetes" {
+metrics.annotations_scrape "kubernetes" {
+	cluster         = coalesce(env("CLUSTER_NAME"), "k3d-k3s-codelab")
+	scrape_interval = "15s"
+
 	forward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]
 }
 
 metrics.servicemonitors_scrape "kubernetes" {
+	cluster         = coalesce(env("CLUSTER_NAME"), "k3d-k3s-codelab")
+	scrape_interval = "15s"
+
 	forward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]
 }

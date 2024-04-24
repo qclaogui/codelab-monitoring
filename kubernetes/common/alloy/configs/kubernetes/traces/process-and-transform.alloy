@@ -14,17 +14,14 @@ declare "process_and_transform" {
 		comment = "Must be a list(TracesReceiver) where collected traces should be forwarded to"
 	}
 
+	argument "cluster" { }
+
 	argument "logs_forward_to" {
 		comment = "Must be a list(LogsReceiver) where collected logs should be forwarded to"
 	}
 
 	argument "metrics_forward_to" {
 		comment = "Must be a list(MetricsReceiver) where collected metrics should be forwarded to"
-	}
-
-	argument "cluster" {
-		optional = true
-		default  = "k3d-k3s-codelab"
 	}
 
 	argument "otlp_http_endpoint" {
@@ -60,9 +57,7 @@ declare "process_and_transform" {
 		}
 
 		output {
-			metrics = [otelcol.processor.batch.default.input]
-			logs    = [otelcol.processor.resourcedetection.default.input]
-			traces  = [otelcol.processor.resourcedetection.default.input]
+			traces = [otelcol.processor.k8sattributes.default.input]
 		}
 	}
 
@@ -70,6 +65,10 @@ declare "process_and_transform" {
 	* Otelcol for Metrics Logs Traces
 	*****************************************************************/
 	otelcol.receiver.otlp "default" {
+		debug_metrics {
+			disable_high_cardinality_metrics = true
+		}
+
 		grpc {
 			endpoint = argument.otlp_grpc_endpoint.value
 		}
@@ -79,7 +78,7 @@ declare "process_and_transform" {
 		}
 
 		output {
-			metrics = [otelcol.processor.batch.default.input]
+			metrics = [otelcol.processor.resourcedetection.default.input]
 			logs    = [otelcol.processor.resourcedetection.default.input]
 			traces  = [
 				otelcol.processor.resourcedetection.default.input,
@@ -89,11 +88,33 @@ declare "process_and_transform" {
 	}
 
 	otelcol.processor.resourcedetection "default" {
-		detectors = ["env"]
+		detectors = ["env", "system"]
+
+		system {
+			hostname_sources = ["os"]
+		}
 
 		output {
+			metrics = [otelcol.processor.transform.add_metric_datapoint_attributes.input]
+
 			logs   = [otelcol.processor.k8sattributes.default.input]
 			traces = [otelcol.processor.k8sattributes.default.input]
+		}
+	}
+
+	otelcol.processor.transform "add_metric_datapoint_attributes" {
+		error_mode = "ignore"
+
+		metric_statements {
+			context    = "datapoint"
+			statements = [
+				"set(attributes[\"deployment.environment\"], resource.attributes[\"deployment.environment\"])",
+				"set(attributes[\"service.version\"], resource.attributes[\"service.version\"])",
+			]
+		}
+
+		output {
+			metrics = [otelcol.processor.k8sattributes.default.input]
 		}
 	}
 
@@ -120,13 +141,43 @@ declare "process_and_transform" {
 		}
 
 		output {
-			logs   = [otelcol.processor.transform.add_resource_attributes.input]
-			traces = [otelcol.processor.transform.add_resource_attributes.input]
+			metrics = [otelcol.processor.transform.default.input]
+			logs    = [otelcol.processor.transform.default.input]
+			traces  = [
+				otelcol.processor.transform.default.input,
+				otelcol.connector.host_info.default.input,
+			]
 		}
 	}
 
-	otelcol.processor.transform "add_resource_attributes" {
+	otelcol.connector.host_info "default" {
+		host_identifiers = ["k8s.node.name"]
+
+		output {
+			metrics = [otelcol.processor.batch.host_info_batch.input]
+		}
+	}
+
+	otelcol.processor.batch "host_info_batch" {
+		output {
+			metrics = [otelcol.exporter.prometheus.host_info_metrics.input]
+		}
+	}
+
+	otelcol.exporter.prometheus "host_info_metrics" {
+		add_metric_suffixes = false
+		forward_to          = argument.metrics_forward_to.value
+	}
+
+	otelcol.processor.transform "default" {
 		error_mode = "ignore"
+
+		metric_statements {
+			context    = "resource"
+			statements = [
+				`set(attributes["k8s.cluster.name"], "k3d-k3s-codelab") where attributes["k8s.cluster.name"] == nil`,
+			]
+		}
 
 		log_statements {
 			context    = "resource"
@@ -141,22 +192,42 @@ declare "process_and_transform" {
 		trace_statements {
 			context    = "resource"
 			statements = [
+				`limit(attributes, 100, [])`,
+				`truncate_all(attributes, 4096)`,
 				`set(attributes["k8s.cluster.name"], "k3d-k3s-codelab") where attributes["k8s.cluster.name"] == nil`,
 			]
 		}
 
+		trace_statements {
+			context    = "span"
+			statements = [
+				`limit(attributes, 100, [])`,
+				`truncate_all(attributes, 4096)`,
+			]
+		}
+
 		output {
-			logs   = [otelcol.processor.filter.default.input]
-			traces = [otelcol.processor.filter.default.input]
+			metrics = [otelcol.processor.filter.default.input]
+			logs    = [otelcol.processor.filter.default.input]
+			traces  = [otelcol.processor.filter.default.input]
 		}
 	}
 
 	otelcol.processor.filter "default" {
 		error_mode = "ignore"
 
+		traces {
+			span = [
+				"attributes[\"http.route\"] == \"/live\"",
+				"attributes[\"http.route\"] == \"/healthy\"",
+				"attributes[\"http.route\"] == \"/ready\"",
+			]
+		}
+
 		output {
-			logs   = [otelcol.processor.batch.default.input]
-			traces = [otelcol.processor.batch.default.input]
+			metrics = [otelcol.processor.batch.default.input]
+			logs    = [otelcol.processor.batch.default.input]
+			traces  = [otelcol.processor.batch.default.input]
 		}
 	}
 

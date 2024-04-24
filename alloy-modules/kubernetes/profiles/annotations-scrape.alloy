@@ -13,6 +13,8 @@ declare "annotations_scrape" {
 		comment = "Must be a list(ProfilessReceiver) where collected logs should be forwarded to"
 	}
 
+	argument "cluster" { }
+
 	discovery.kubernetes "pyroscope_kubernetes" {
 		role = "pod"
 	}
@@ -45,6 +47,13 @@ declare "annotations_scrape" {
 		rule {
 			action = "labelmap"
 			regex  = "__meta_kubernetes_pod_label_(.+)"
+		}
+
+		// set the cluster label
+		rule {
+			action       = "replace"
+			replacement  = argument.cluster.value
+			target_label = "cluster"
 		}
 
 		rule {

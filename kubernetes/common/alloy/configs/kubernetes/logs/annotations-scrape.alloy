@@ -3,7 +3,7 @@ Module Components: annotations_scrape
 Description: Scrapes targets for logs based on kubernetes Pod annotations
 
   Annotations:
-    logs.grafana.com/ingest: true
+    logs.grafana.com/scrape: true
     logs.grafana.com/tenant: "primary"
 */
 
@@ -22,11 +22,7 @@ declare "annotations_scrape" {
 		default  = ".*"
 	}
 
-	// arguments for kubernetes discovery
-	argument "namespaces" {
-		comment  = "The namespaces to look for targets in (default: [\"kube-system\"] is all namespaces)"
-		optional = true
-	}
+	argument "cluster" { }
 
 	argument "annotation_prefix" {
 		comment  = "The annotation_prefix to use (default: logs.grafana.com)"
@@ -43,10 +39,6 @@ declare "annotations_scrape" {
 	// find all pods
 	discovery.kubernetes "annotation_logs" {
 		role = "pod"
-
-		namespaces {
-			names = coalesce(argument.namespaces.value, [])
-		}
 	}
 
 	// filter logs by kubernetes annotations
@@ -54,7 +46,7 @@ declare "annotations_scrape" {
 		targets = discovery.kubernetes.annotation_logs.targets
 
 		// allow pods to declare their logs to be ingested or not, the default is true
-		//   i.e. logs.grafana.com/ingest: false
+		//   i.e. logs.grafana.com/scrape: false
 		rule {
 			action        = "keep"
 			source_labels = [
@@ -78,6 +70,13 @@ declare "annotations_scrape" {
 			action        = "replace"
 			source_labels = ["__meta_kubernetes_pod_node_name"]
 			target_label  = "instance"
+		}
+
+		// set the cluster label
+		rule {
+			action       = "replace"
+			replacement  = argument.cluster.value
+			target_label = "cluster"
 		}
 
 		// set the namespace label

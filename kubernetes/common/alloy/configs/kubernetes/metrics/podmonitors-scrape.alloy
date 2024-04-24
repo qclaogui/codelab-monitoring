@@ -13,6 +13,18 @@ declare "podmonitors_scrape" {
 		optional = false
 	}
 
+	argument "cluster" { }
+
+	argument "keep_metrics" {
+		comment  = "A regex of metrics to keep (default: (.+))"
+		optional = true
+	}
+
+	argument "drop_metrics" {
+		comment  = "A regex of metrics to drop (default: \"\")"
+		optional = true
+	}
+
 	argument "scrape_interval" {
 		comment  = "How often to scrape metrics from the targets (default: 60s)"
 		optional = true
@@ -27,7 +39,7 @@ declare "podmonitors_scrape" {
 	* Kubernetes Auto Scrape PodMonitors
 	*****************************************************************/
 	prometheus.operator.podmonitors "scrape" {
-		forward_to = argument.forward_to.value
+		forward_to = [prometheus.relabel.podmonitors.receiver]
 
 		scrape {
 			default_scrape_interval = coalesce(argument.scrape_interval.value, "60s")
@@ -45,5 +57,34 @@ declare "podmonitors_scrape" {
 		// 		values   = ["team-infra"]
 		// 	}
 		// }
+	}
+
+	/*****************************************************************
+	* Prometheus Metric Relabelings (post-scrape)
+	*****************************************************************/
+	// perform generic relabeling using keep_metrics and drop_metrics
+	prometheus.relabel "podmonitors" {
+		forward_to = argument.forward_to.value
+
+		// set the cluster label
+		rule {
+			action       = "replace"
+			replacement  = argument.cluster.value
+			target_label = "cluster"
+		}
+
+		// keep only metrics that match the keep_metrics regex
+		rule {
+			action        = "keep"
+			source_labels = ["__name__"]
+			regex         = coalesce(argument.keep_metrics.value, "(.+)")
+		}
+
+		// drop metrics that match the drop_metrics regex
+		rule {
+			action        = "drop"
+			source_labels = ["__name__"]
+			regex         = coalesce(argument.drop_metrics.value, "")
+		}
 	}
 }

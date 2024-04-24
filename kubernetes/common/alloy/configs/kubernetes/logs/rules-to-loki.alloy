@@ -1,0 +1,40 @@
+/*
+Module Components: rules_to_loki
+Description: Auto discovers PrometheusRule Kubernetes resources and loads them into a Loki instance.
+*/
+
+declare "rules_to_loki" {
+
+	/*****************************************************************
+	* ARGUMENTS
+	*****************************************************************/
+	argument "address" {
+		comment  = "URL of the Loki ruler. (default: http://nginx.gateway.svc:3100)"
+		optional = true
+	}
+
+	argument "tenant" {
+		comment  = "Mimir tenant ID. (default: fake)"
+		optional = true
+	}
+
+	/********************************************
+	* Kubernetes Prometheus Rules To Loki
+	********************************************/
+	loki.rules.kubernetes "rules_to_loki" {
+		address   = coalesce(argument.address.value, "http://nginx.gateway.svc:3100")
+		tenant_id = coalesce(argument.tenant.value, "anonymous")
+
+		// rule_namespace_selector {
+		// 	match_labels = {
+		// 		auto_rules_to_loki= "true",
+		// 	}
+		// }
+
+		rule_selector {
+			match_labels = {
+				auto_rules_to_loki = "true",
+			}
+		}
+	}
+}

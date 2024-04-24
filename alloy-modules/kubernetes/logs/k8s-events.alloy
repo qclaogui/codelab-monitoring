@@ -15,9 +15,7 @@ declare "kubernetes_cluster_events" {
 		optional = true
 	}
 
-	argument "cluster" {
-		optional = true
-	}
+	argument "cluster" { }
 
 	loki.source.kubernetes_events "cluster_events" {
 		job_name   = coalesce(argument.job_label.value, "integrations/kubernetes/eventhandler")
@@ -28,7 +26,7 @@ declare "kubernetes_cluster_events" {
 	loki.process "logs_service" {
 		stage.static_labels {
 			values = {
-				cluster = coalesce(argument.cluster.value, "k3d"),
+				cluster = argument.cluster.value,
 			}
 		}
 		forward_to = argument.forward_to.value
