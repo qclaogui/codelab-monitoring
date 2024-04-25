@@ -33,19 +33,14 @@ jobs:
               name: Run Updatecli
               id: updatecli-apply
               run: |
-                updatecli apply --config ${UPDATECLI_CONFIG_DIR}/common-charts.yaml > changelog.out 2>&1
+                CHANGELOG=$(updatecli apply --config ${UPDATECLI_CONFIG_DIR}/common-charts.yaml 2>&1)
                 if ! git diff --exit-code > /dev/null; then
                   echo "changed=true" >> "${GITHUB_OUTPUT}"
+                  echo "body<<EOF" >> ${GITHUB_OUTPUT}
+                  # here we can place the command that will generate multi-line text
+                  echo "${CHANGELOG}" | awk '/^TARGETS$/,0' >> "${GITHUB_OUTPUT}"
+                  echo "EOF" >> ${GITHUB_OUTPUT}
                 fi
-            - 
-              name: Copy updatecli apply changelog
-              if: steps.updatecli-apply.outputs.changed == 'true'
-              id: updatecli-apply-changelog
-              run: |
-                echo "body<<EOF" >> ${GITHUB_OUTPUT}
-                # here we can place the command that will generate multi-line text
-                echo "$(cat changelog.out | awk '/^TARGETS$/,0')" >> "${GITHUB_OUTPUT}"
-                echo "EOF" >> ${GITHUB_OUTPUT}
             - 
               name: Create pull request
               if: steps.updatecli-apply.outputs.changed == 'true'
@@ -63,7 +58,7 @@ jobs:
                   <summary> FULL TARGETS CHANGELOG </summary>
                   <blockquote>
 
-                  ${{ steps.updatecli-apply-changelog.outputs.body }}
+                  ${{ steps.updatecli-apply.outputs.body }}
 
                   </blockquote>
                   </details>
@@ -97,19 +92,14 @@ jobs:
               name: Run Updatecli
               id: updatecli-apply
               run: |
-                updatecli apply --config ${UPDATECLI_CONFIG_DIR}/lgtmp-stack-charts.yaml > changelog.out 2>&1
+                CHANGELOG=$(updatecli apply --config ${UPDATECLI_CONFIG_DIR}/lgtmp-stack-charts.yaml 2>&1)
                 if ! git diff --exit-code > /dev/null; then
                   echo "changed=true" >> "${GITHUB_OUTPUT}"
+                  echo "body<<EOF" >> ${GITHUB_OUTPUT}
+                  # here we can place the command that will generate multi-line text
+                  echo "${CHANGELOG}" | awk '/^TARGETS$/,0' >> "${GITHUB_OUTPUT}"
+                  echo "EOF" >> ${GITHUB_OUTPUT}
                 fi
-            - 
-              name: Copy updatecli apply changelog
-              if: steps.updatecli-apply.outputs.changed == 'true'
-              id: updatecli-apply-changelog
-              run: |
-                echo "body<<EOF" >> ${GITHUB_OUTPUT}
-                # here we can place the command that will generate multi-line text
-                echo "$(cat changelog.out | awk '/^TARGETS$/,0')" >> "${GITHUB_OUTPUT}"
-                echo "EOF" >> ${GITHUB_OUTPUT}
             - 
               name: Create pull request
               if: steps.updatecli-apply.outputs.changed == 'true'
@@ -127,7 +117,7 @@ jobs:
                   <summary> FULL TARGETS CHANGELOG </summary>
                   <blockquote>
 
-                  ${{ steps.updatecli-apply-changelog.outputs.body }}
+                  ${{ steps.updatecli-apply.outputs.body }}
 
                   </blockquote>
                   </details>
