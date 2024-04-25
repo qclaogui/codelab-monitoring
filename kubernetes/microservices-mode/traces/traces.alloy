@@ -63,3 +63,33 @@ metrics.servicemonitors_scrape "kubernetes" {
 
 	forward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]
 }
+
+// Jobs metrics
+import.file "jobs" {
+	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/kubernetes/jobs"
+}
+
+jobs.kubelet_metrics_scrape "kubernetes" {
+	cluster         = coalesce(env("CLUSTER_NAME"), "k3d-k3s-codelab")
+	scrape_interval = "30s"
+
+	forward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]
+}
+
+// Alloy integration metrics
+remote.kubernetes.configmap "integrations" {
+	namespace = "monitoring-system"
+	name      = "alloy-integrations"
+}
+
+// Memcached Integrations
+import.string "memcached" {
+	content = remote.kubernetes.configmap.integrations.data["memcached.alloy"]
+}
+
+memcached.memcached_metrics_scrape "instance" {
+	namespace = "monitoring-system"
+	name      = remote.kubernetes.configmap.integrations.data["MEMCACHED_K8S_SECRET_NAME"]
+
+	forward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]
+}

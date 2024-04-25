@@ -12,6 +12,9 @@ helmCharts:
   includeCRDs: false
   valuesFile: values-k3d-k3s.yaml
 
+resources:
+- ../../../monitoring-mixins/alloy-mixin/deploy
+
 configMapGenerator:
 - name: alloy-config
   namespace: monitoring-system
@@ -41,6 +44,13 @@ configMapGenerator:
   namespace: monitoring-system
   files:
   - configs/kubernetes/profiles/annotations-scrape.alloy
+- name: alloy-modules-kubernetes-jobs
+  namespace: monitoring-system
+  files:
+  - configs/kubernetes/jobs/apiserver.alloy
+  - configs/kubernetes/jobs/kube-state-metrics.alloy
+  - configs/kubernetes/jobs/kubelet.alloy
+  - configs/kubernetes/jobs/node-exporter.alloy
 
 secretGenerator:
 - name: alloy-env

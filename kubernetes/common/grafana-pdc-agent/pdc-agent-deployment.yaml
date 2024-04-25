@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana-pdc-agent
+  namespace: monitoring-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: grafana-pdc-agent
+  template:
+    spec:
+      containers:
+      - name: grafana-pdc-agent
+        envFrom:
+        - secretRef:
+            name: grafana-pdc-agent-env
+            optional: true
+        args:
+        - -cluster
+        - $(CLUSTER)
+        - -token
+        - $(TOKEN)
+        - -gcloud-hosted-grafana-id
+        - "$(HOSTED_GRAFANA_ID)"
+        image: docker.io/grafana/pdc-agent
+        imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: 999m
+            memory: 1Gi
+          requests:
+            cpu: 50m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          privileged: false
+          runAsNonRoot: true
+          capabilities:
+            drop:
+              - all
+      securityContext:
+        runAsUser: 30000
+        runAsGroup: 30000
+        fsGroup: 30000

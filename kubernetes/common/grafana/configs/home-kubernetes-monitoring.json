@@ -1,0 +1,676 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "uid": "${lokids}"
+        },
+        "enable": true,
+        "expr": "{job=\"integrations/kubernetes/eventhandler\", cluster=\"$cluster\"} |= \"sourcecomponent=kubelet\" |~ \"sourcehost=$instance\" |~ \"reason=(Created|Killing|BackOff|SystemOOM|Started)\" | logfmt",
+        "iconColor": "blue",
+        "name": "K8s events",
+        "tagKeys": "reason,type",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "textFormat": "{{kind}}: {{name}} in namespace: {{namespace}} on node: {{sourcehost}}",
+        "titleFormat": "{{msg}}"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 43,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-prom"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "<div style=\"padding: 10px;\">\n  <div style=\"margin-bottom: 30px;display: flex; flex-direction: row; align-items: center; margin-top: 10px;\">\n    <img style=\"height: 40px; width: 40px; margin-right: 10px;\" src=\"https://storage.googleapis.com/grafanalabs-integration-logos/kubernetes.svg\" />\n    <h2 style=\"margin-top: 5px;\">Kubernetes Monitoring</h2>\n  </div>\n  <div style=\"display: flex; width: 100%;\">\n    <div style=\"width: 50%;\">\n      <div style=\"margin: 0 0 10px 0;display: flex; \">\n        <img style=\"margin-right: 20px; margin-top: 10px; height: 25px;\" src=\"https://storage.googleapis.com/k8s-integration-icons/compass.png\" alt=\"\">\n        <p style=\"width: 80%; margin-top: 5px;\">Visualize and query cAdvisor, Kubelet and kube-state-metrics for your K8s cluster(s)</p>\n      </div>\n      <!-- <div style=\"margin: 10px 0 10px 0;display: flex; \">\n        <img style=\"margin-right: 20px; margin-top: 10px; height: 25px;\" src=\"https://storage.googleapis.com/k8s-integration-icons/dash.png\" alt=\"\">\n        <p style=\"width: 80%; margin-top: 5px;\">Access premade dashboards for visibility into resource consumption and cluster operations</p>\n      </div> -->\n    </div>\n    <div style=\"width: 50%; margin-top: 0;\">\n      <div style=\"margin: 0 0 10px 0; display: flex; \">\n        <img style=\"margin-right: 20px; margin-top: 10px; height: 25px;\" src=\"https://storage.googleapis.com/k8s-integration-icons/dash.png\" alt=\"\">\n        <p style=\"width: 80%; margin-top: 5px;\">Access premade dashboards for visibility into resource consumption and cluster operations</p>\n      </div>\n      <!-- <div style=\"margin: 0 0 10px 0; display: flex; \">\n        <img style=\"margin-right: 20px; margin-top: 10px; height: 25px;\" src=\"https://storage.googleapis.com/k8s-integration-icons/loki.svg\" alt=\"\">\n        <p style=\"width: 80%; margin-top: 5px;\">Collect Cluster Events and Pod logs to Loki.</p>\n      </div> -->\n    </div>\n  </div>\n</div>",
+        "mode": "html"
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "grafanacloud-prom"
+          },
+          "refId": "A"
+        }
+      ],
+      "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Mixed --"
+      },
+      "description": "Red = Missing, Amber = Duplicate, Green = OK",
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "dark-red",
+                  "index": 1
+                },
+                "1": {
+                  "color": "green",
+                  "index": 0
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 17,
+      "links": [
+        {
+          "targetBlank": true,
+          "title": "Kubernetes Integration Docs",
+          "url": "https://grafana.com/docs/grafana-cloud/kubernetes/integration-kubernetes/"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "valueSize": 20
+        },
+        "textMode": "name",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "${datasource}"
+          },
+          "exemplar": false,
+          "expr": "max by (cluster) (\n    count by (cluster, node) (kubelet_node_name{cluster=\"$cluster\"}) > 1 OR\n    topk(1, kubelet_node_name{cluster=\"$cluster\"}) OR\n    1-absent(kubelet_node_name{cluster=\"$cluster\"})\n)",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "Kubelet",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "uid": "${datasource}"
+          },
+          "exemplar": false,
+          "expr": "max by (cluster) (\n    count by (cluster, node) (kube_node_info{cluster=\"$cluster\"}) > 1 OR\n    topk(1, kube_node_info{cluster=\"$cluster\"}) OR\n    1-absent(kube_node_info{cluster=\"$cluster\"})\n)",
+          "hide": false,
+          "instant": true,
+          "interval": "",
+          "legendFormat": "Kube State Metrics",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "uid": "${datasource}"
+          },
+          "exemplar": false,
+          "expr": "max by (cluster) (\n    count by (cluster, instance) (machine_memory_bytes{cluster=\"$cluster\"} /\n        machine_memory_bytes{cluster=\"$cluster\"}) > 1 OR\n    topk(1, machine_memory_bytes{cluster=\"$cluster\"} /\n        machine_memory_bytes{cluster=\"$cluster\"}) OR\n    1-absent(machine_memory_bytes{cluster=\"$cluster\"})\n)",
+          "hide": false,
+          "instant": true,
+          "interval": "",
+          "legendFormat": "cAdvisor",
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "uid": "${datasource}"
+          },
+          "exemplar": false,
+          "expr": "max by (cluster) (\n    count by (cluster, instance) (node_cpu_seconds_total{cpu=\"0\", mode=\"idle\", cluster=\"$cluster\"} /\n        node_cpu_seconds_total{cpu=\"0\", mode=\"idle\", cluster=\"$cluster\"}) > 1 OR\n    topk(1, node_cpu_seconds_total{cpu=\"0\", mode=\"idle\", cluster=\"$cluster\"} /\n        node_cpu_seconds_total{cpu=\"0\", mode=\"idle\", cluster=\"$cluster\"}) OR\n    1-absent(node_cpu_seconds_total{cpu=\"0\", mode=\"idle\", cluster=\"$cluster\"})\n)",
+          "hide": false,
+          "instant": true,
+          "interval": "",
+          "legendFormat": "Node Exporter",
+          "refId": "D"
+        }
+      ],
+      "title": "Configuration status",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 12,
+        "y": 3
+      },
+      "id": 23,
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "${datasource}"
+          },
+          "exemplar": true,
+          "expr": "sum(kubelet_running_pods{cluster=\"$cluster\", job!=\"\", instance=~\"$instance\"}) OR sum(kubelet_running_pod_count{cluster=\"$cluster\", job!=\"\", instance=~\"$instance\"})",
+          "interval": "",
+          "legendFormat": "{{ instance }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Running pods",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 18,
+        "y": 3
+      },
+      "id": 25,
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "uid": "${datasource}"
+          },
+          "exemplar": true,
+          "expr": "sum(kubelet_running_containers{cluster=\"$cluster\", job!=\"\", instance=~\"$instance\"}) OR sum(kubelet_running_container_count{cluster=\"$cluster\", job!=\"\", instance=~\"$instance\"})",
+          "interval": "",
+          "legendFormat": "{{ instance }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Running containers",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 6
+      },
+      "id": 21,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "uid": "${datasource}"
+          },
+          "exemplar": true,
+          "expr": "sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{cluster=\"$cluster\"}) by (namespace)",
+          "interval": "",
+          "legendFormat": "{{namespace}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Cluster CPU usage (by Namespace)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 6
+      },
+      "id": 28,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "exemplar": true,
+          "expr": "sum(node_namespace_pod_container:container_memory_working_set_bytes{cluster=\"$cluster\"}) by (namespace)",
+          "interval": "",
+          "legendFormat": "{{namespace}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Cluster Memory usage (by Namespace)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${lokids}"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 14
+      },
+      "id": 27,
+      "links": [
+        {
+          "title": "K8s Events Integration Docs",
+          "url": "https://grafana.com/docs/grafana-cloud/kubernetes/integration-kubernetes/events/"
+        }
+      ],
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokids}"
+          },
+          "expr": "{job=\"integrations/kubernetes/eventhandler\", cluster=\"$cluster\"} | logfmt | line_format \"{{.kind}} {{.name}}: {{.msg}}\"",
+          "refId": "A"
+        }
+      ],
+      "title": "Events",
+      "type": "logs"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": [
+    "Start Here"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": false,
+          "text": "Metrics",
+          "value": "metrics"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Data Source",
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "(?!grafanacloud-usage|grafanacloud-ml-metrics).+",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "k3d-k3s-codelab",
+          "value": "k3d-k3s-codelab"
+        },
+        "datasource": {
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(up{job!=\"\"}, cluster)",
+        "hide": 0,
+        "includeAll": false,
+        "label": "cluster",
+        "multi": false,
+        "name": "cluster",
+        "options": [],
+        "query": {
+          "query": "label_values(up{job!=\"\"}, cluster)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(kubelet_runtime_operations_total{cluster=\"$cluster\", job!=\"\"}, instance)",
+        "hide": 0,
+        "includeAll": true,
+        "multi": false,
+        "name": "instance",
+        "options": [],
+        "query": {
+          "query": "label_values(kubelet_runtime_operations_total{cluster=\"$cluster\", job!=\"\"}, instance)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "Logs",
+          "value": "logs"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Events Data Source",
+        "multi": false,
+        "name": "lokids",
+        "options": [],
+        "query": "loki",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-3h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Kubernetes Monitoring",
+  "uid": "lAoEVhD7z",
+  "version": 1,
+  "weekStart": ""
+}

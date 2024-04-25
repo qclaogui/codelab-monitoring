@@ -213,6 +213,858 @@ metadata:
 ---
 apiVersion: v1
 data:
+  alloy-cluster-node.json: |-
+    {
+          "annotations": {
+             "list": [
+                {
+                   "datasource": "$loki_datasource",
+                   "enable": true,
+                   "expr": "{cluster=\"$cluster\", container=\"kube-diff-logger\"} | json | namespace_extracted=\"alloy\" | name_extracted=~\"alloy.*\"",
+                   "iconColor": "rgba(0, 211, 255, 1)",
+                   "instant": false,
+                   "name": "Deployments",
+                   "titleFormat": "{{cluster}}/{{namespace}}"
+                }
+             ]
+          },
+          "graphTooltip": 1,
+          "links": [
+             {
+                "icon": "doc",
+                "targetBlank": true,
+                "title": "Documentation",
+                "tooltip": "Clustering documentation",
+                "type": "link",
+                "url": "https://grafana.com/docs/alloy/latest/reference/cli/run/#clustered-mode"
+             },
+             {
+                "asDropdown": true,
+                "icon": "external link",
+                "includeVars": true,
+                "keepTime": true,
+                "tags": [
+                   "alloy-mixin"
+                ],
+                "targetBlank": false,
+                "title": "Dashboards",
+                "type": "dashboards"
+             }
+          ],
+          "panels": [
+             {
+                "datasource": "${datasource}",
+                "gridPos": {
+                   "h": 1,
+                   "w": 24,
+                   "x": 0,
+                   "y": 0
+                },
+                "title": "Node Info",
+                "type": "row"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Information about a specific cluster node.\n\n* Lamport clock time: The observed Lamport time on the specific node's clock used to provide partial ordering around gossip messages. Nodes should ideally be observing roughly the same time, meaning they are up-to-date on the cluster state. If a node is falling behind, it means that it has not recently processed the same number of messages and may have an outdated view of its peers.\n\n* Internal cluster state observers: The number of Observer functions that are registered to run whenever the node detects a cluster change.\n\n* Gossip health score: A health score assigned to this node by the memberlist implementation. The lower, the better.\n\n* Gossip protocol version: The protocol version used by nodes to communicate with one another. It should match across all nodes.\n",
+                "gridPos": {
+                   "h": 8,
+                   "w": 12,
+                   "x": 0,
+                   "y": 1
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum(cluster_node_lamport_time{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"})",
+                      "format": "table",
+                      "instant": true,
+                      "legendFormat": "__auto",
+                      "range": false,
+                      "refId": "Lamport clock time"
+                   },
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum(cluster_node_update_observers{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"})",
+                      "format": "table",
+                      "instant": true,
+                      "legendFormat": "__auto",
+                      "range": false,
+                      "refId": "Internal cluster state observers"
+                   },
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum(cluster_node_gossip_health_score{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"})",
+                      "format": "table",
+                      "instant": true,
+                      "legendFormat": "__auto",
+                      "range": false,
+                      "refId": "Gossip health score"
+                   },
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum(cluster_node_gossip_proto_version{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"})",
+                      "format": "table",
+                      "instant": true,
+                      "legendFormat": "__auto",
+                      "range": false,
+                      "refId": "Gossip protocol version"
+                   }
+                ],
+                "title": "Node Info",
+                "transformations": [
+                   {
+                      "id": "renameByRegex",
+                      "options": {
+                         "regex": "Value #(.*)",
+                         "renamePattern": "$1"
+                      }
+                   },
+                   {
+                      "id": "reduce",
+                      "options": { }
+                   },
+                   {
+                      "id": "organize",
+                      "options": {
+                         "excludeByName": { },
+                         "indexByName": { },
+                         "renameByName": {
+                            "Field": "Metric",
+                            "Max": "Value"
+                         }
+                      }
+                   }
+                ],
+                "type": "table"
+             },
+             {
+                "datasource": "${datasource}",
+                "gridPos": {
+                   "h": 8,
+                   "w": 12,
+                   "x": 12,
+                   "y": 1
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "rate(cluster_node_gossip_received_events_total{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval])",
+                      "instant": false,
+                      "legendFormat": "{{event}}",
+                      "range": true
+                   }
+                ],
+                "title": "Gossip ops/s",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Known peers to the node (including the local node).\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "suffix:peers"
+                   }
+                },
+                "gridPos": {
+                   "h": 8,
+                   "w": 12,
+                   "x": 0,
+                   "y": 9
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum(cluster_node_peers{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"})",
+                      "instant": false,
+                      "legendFormat": "__auto",
+                      "range": true
+                   }
+                ],
+                "title": "Known peers",
+                "type": "stat"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Known peers to the node by state (including the local node).\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "suffix:nodes"
+                   }
+                },
+                "gridPos": {
+                   "h": 8,
+                   "w": 12,
+                   "x": 12,
+                   "y": 9
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "cluster_node_peers{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}",
+                      "instant": false,
+                      "legendFormat": "{{state}}",
+                      "range": true
+                   }
+                ],
+                "title": "Peers by state",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "gridPos": {
+                   "h": 1,
+                   "w": 24,
+                   "x": 0,
+                   "y": 17
+                },
+                "title": "Gossip Transport",
+                "type": "row"
+             },
+             {
+                "datasource": "${datasource}",
+                "fieldConfig": {
+                   "defaults": {
+                      "custom": {
+                         "axisCenteredZero": true
+                      },
+                      "unit": "Bps"
+                   }
+                },
+                "gridPos": {
+                   "h": 8,
+                   "w": 8,
+                   "x": 0,
+                   "y": 18
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "rate(cluster_transport_rx_bytes_total{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval])",
+                      "instant": false,
+                      "legendFormat": "rx",
+                      "range": true
+                   },
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "-1 * rate(cluster_transport_tx_bytes_total{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval])",
+                      "instant": false,
+                      "legendFormat": "tx",
+                      "range": true
+                   }
+                ],
+                "title": "Transport bandwidth",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "percentunit"
+                   }
+                },
+                "gridPos": {
+                   "h": 8,
+                   "w": 8,
+                   "x": 8,
+                   "y": 18
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "1 - (\nrate(cluster_transport_tx_packets_failed_total{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]) /\nrate(cluster_transport_tx_packets_total{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval])\n)\n",
+                      "instant": false,
+                      "legendFormat": "Tx success %",
+                      "range": true
+                   },
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "1 - (\n  rate(cluster_transport_rx_packets_failed_total{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]) /\n  rate(cluster_transport_rx_packets_total{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval])\n  )\n",
+                      "instant": false,
+                      "legendFormat": "Rx success %",
+                      "range": true
+                   }
+                ],
+                "title": "Packet write success rate",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "The number of packets enqueued currently to be decoded or encoded and sent during communication with other nodes.\n\nThe incoming and outgoing packet queue should be as empty as possible; a growing queue means that Alloy cannot keep up with the number of messages required to have all nodes informed of cluster changes, and the nodes may not converge in a timely fashion.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "pkts"
+                   }
+                },
+                "gridPos": {
+                   "h": 8,
+                   "w": 8,
+                   "x": 16,
+                   "y": 18
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "cluster_transport_tx_packet_queue_length{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}",
+                      "instant": false,
+                      "legendFormat": "tx queue",
+                      "range": true
+                   },
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "cluster_transport_rx_packet_queue_length{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}",
+                      "instant": false,
+                      "legendFormat": "rx queue",
+                      "range": true
+                   }
+                ],
+                "title": "Pending packet queue",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "fieldConfig": {
+                   "defaults": {
+                      "custom": {
+                         "axisCenteredZero": true
+                      },
+                      "unit": "Bps"
+                   }
+                },
+                "gridPos": {
+                   "h": 8,
+                   "w": 8,
+                   "x": 0,
+                   "y": 26
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "rate(cluster_transport_stream_rx_bytes_total{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval])",
+                      "instant": false,
+                      "legendFormat": "rx",
+                      "range": true
+                   },
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "-1 * rate(cluster_transport_stream_tx_bytes_total{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval])",
+                      "instant": false,
+                      "legendFormat": "tx",
+                      "range": true
+                   }
+                ],
+                "title": "Stream bandwidth",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "percentunit"
+                   }
+                },
+                "gridPos": {
+                   "h": 8,
+                   "w": 8,
+                   "x": 8,
+                   "y": 26
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "1 - (\n  rate(cluster_transport_stream_tx_packets_failed_total{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]) /\n  rate(cluster_transport_stream_tx_packets_total{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval])\n  )\n",
+                      "instant": false,
+                      "legendFormat": "Tx success %",
+                      "range": true
+                   },
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "1 - (\n  rate(cluster_transport_stream_rx_packets_failed_total{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]) /\n  rate(cluster_transport_stream_rx_packets_total{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval])\n  )\n",
+                      "instant": false,
+                      "legendFormat": "Rx success %",
+                      "range": true
+                   }
+                ],
+                "title": "Stream write success rate",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "The number of open connections from this node to its peers.\n\nEach node picks up a subset of its peers to continuously gossip messages around cluster status using streaming HTTP/2 connections. This panel can be used to detect networking failures that result in cluster communication being disrupted and convergence taking longer than expected or outright failing.\n",
+                "gridPos": {
+                   "h": 8,
+                   "w": 8,
+                   "x": 16,
+                   "y": 26
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "cluster_transport_streams{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}",
+                      "instant": false,
+                      "legendFormat": "Open streams",
+                      "range": true
+                   }
+                ],
+                "title": "Open transport streams",
+                "type": "timeseries"
+             }
+          ],
+          "refresh": "10s",
+          "schemaVersion": 36,
+          "tags": [
+             "alloy-mixin"
+          ],
+          "templating": {
+             "list": [
+                {
+                   "label": "Data Source",
+                   "name": "datasource",
+                   "query": "prometheus",
+                   "refresh": 1,
+                   "sort": 2,
+                   "type": "datasource"
+                },
+                {
+                   "label": "Loki Data Source",
+                   "name": "loki_datasource",
+                   "query": "loki",
+                   "refresh": 1,
+                   "sort": 2,
+                   "type": "datasource"
+                },
+                {
+                   "datasource": "${datasource}",
+                   "label": "cluster",
+                   "name": "cluster",
+                   "query": {
+                      "query": "label_values(alloy_component_controller_running_components, cluster)\n",
+                      "refId": "cluster"
+                   },
+                   "refresh": 2,
+                   "sort": 2,
+                   "type": "query"
+                },
+                {
+                   "datasource": "${datasource}",
+                   "label": "namespace",
+                   "name": "namespace",
+                   "query": {
+                      "query": "label_values(alloy_component_controller_running_components{cluster=\"$cluster\"}, namespace)\n",
+                      "refId": "namespace"
+                   },
+                   "refresh": 2,
+                   "sort": 2,
+                   "type": "query"
+                },
+                {
+                   "datasource": "${datasource}",
+                   "label": "instance",
+                   "name": "instance",
+                   "query": {
+                      "query": "label_values(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\"}, instance)\n",
+                      "refId": "instance"
+                   },
+                   "refresh": 2,
+                   "sort": 2,
+                   "type": "query"
+                }
+             ]
+          },
+          "time": {
+             "from": "now-1h",
+             "to": "now"
+          },
+          "timepicker": {
+             "refresh_intervals": [
+                "5s",
+                "10s",
+                "30s",
+                "1m",
+                "5m",
+                "15m",
+                "30m",
+                "1h",
+                "2h",
+                "1d"
+             ],
+             "time_options": [
+                "5m",
+                "15m",
+                "1h",
+                "6h",
+                "12h",
+                "24h",
+                "2d",
+                "7d",
+                "30d",
+                "90d"
+             ]
+          },
+          "timezone": "utc",
+          "title": "Alloy / Cluster Node",
+          "uid": "4047e755d822da63c8158cde32ae4dce"
+       }
+kind: ConfigMap
+metadata:
+  annotations:
+    grafana_dashboard_folder: /dashboards/Alloy Mixin
+  labels:
+    grafana_dashboard: "1"
+  name: alloy-cluster-node.json
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  alloy-cluster-overview.json: |-
+    {
+          "annotations": {
+             "list": [
+                {
+                   "datasource": "$loki_datasource",
+                   "enable": true,
+                   "expr": "{cluster=\"$cluster\", container=\"kube-diff-logger\"} | json | namespace_extracted=\"alloy\" | name_extracted=~\"alloy.*\"",
+                   "iconColor": "rgba(0, 211, 255, 1)",
+                   "instant": false,
+                   "name": "Deployments",
+                   "titleFormat": "{{cluster}}/{{namespace}}"
+                }
+             ]
+          },
+          "graphTooltip": 1,
+          "links": [
+             {
+                "icon": "doc",
+                "targetBlank": true,
+                "title": "Documentation",
+                "tooltip": "Clustering documentation",
+                "type": "link",
+                "url": "https://grafana.com/docs/alloy/latest/reference/cli/run/#clustered-mode"
+             },
+             {
+                "asDropdown": true,
+                "icon": "external link",
+                "includeVars": true,
+                "keepTime": true,
+                "tags": [
+                   "alloy-mixin"
+                ],
+                "targetBlank": false,
+                "title": "Dashboards",
+                "type": "dashboards"
+             }
+          ],
+          "panels": [
+             {
+                "datasource": "${datasource}",
+                "gridPos": {
+                   "h": 9,
+                   "w": 8,
+                   "x": 0,
+                   "y": 0
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "count(cluster_node_info{cluster=\"$cluster\", namespace=\"$namespace\"})",
+                      "instant": true,
+                      "legendFormat": "__auto",
+                      "range": false
+                   }
+                ],
+                "title": "Nodes",
+                "type": "stat"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Nodes info.\n",
+                "fieldConfig": {
+                   "overrides": [
+                      {
+                         "matcher": {
+                            "id": "byName",
+                            "options": "Dashboard"
+                         },
+                         "properties": [
+                            {
+                               "id": "mappings",
+                               "value": [
+                                  {
+                                     "options": {
+                                        "1": {
+                                           "index": 0,
+                                           "text": "Link"
+                                        }
+                                     },
+                                     "type": "value"
+                                  }
+                               ]
+                            },
+                            {
+                               "id": "links",
+                               "value": [
+                                  {
+                                     "targetBlank": false,
+                                     "title": "Detail dashboard for node",
+                                     "url": "/d/4047e755d822da63c8158cde32ae4dce/alloy-cluster-node?var-instance=${__data.fields.instance}&var-datasource=${datasource}&var-loki_datasource=${loki_datasource}&var-cluster=${cluster}&var-namespace=${namespace}"
+                                  }
+                               ]
+                            }
+                         ]
+                      }
+                   ]
+                },
+                "gridPos": {
+                   "h": 9,
+                   "w": 16,
+                   "x": 8,
+                   "y": 0
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "cluster_node_info{cluster=\"$cluster\", namespace=\"$namespace\"}",
+                      "format": "table",
+                      "instant": true,
+                      "legendFormat": "__auto",
+                      "range": false
+                   }
+                ],
+                "title": "Node table",
+                "transformations": [
+                   {
+                      "id": "organize",
+                      "options": {
+                         "excludeByName": {
+                            "Time": true,
+                            "Value": false,
+                            "__name__": true,
+                            "cluster": true,
+                            "namespace": true,
+                            "state": false
+                         },
+                         "indexByName": { },
+                         "renameByName": {
+                            "Value": "Dashboard",
+                            "instance": "",
+                            "state": ""
+                         }
+                      }
+                   }
+                ],
+                "type": "table"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Whether the cluster state has converged.\n\nIt is normal for the cluster state to be diverged briefly as gossip events propagate. It is not normal for the cluster state to be diverged for a long period of time.\n\nThis will show one of the following:\n\n* Converged: Nodes are aware of all other nodes, with the correct states.\n* Not converged: A subset of nodes aren't aware of their peers, or don't have an updated view of peer states.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "mappings": [
+                         {
+                            "options": {
+                               "1": {
+                                  "color": "red",
+                                  "index": 1,
+                                  "text": "Not converged"
+                               }
+                            },
+                            "type": "value"
+                         },
+                         {
+                            "options": {
+                               "match": "null",
+                               "result": {
+                                  "color": "green",
+                                  "index": 0,
+                                  "text": "Converged"
+                               }
+                            },
+                            "type": "special"
+                         }
+                      ],
+                      "unit": "suffix:nodes"
+                   }
+                },
+                "gridPos": {
+                   "h": 9,
+                   "w": 8,
+                   "x": 0,
+                   "y": 9
+                },
+                "options": {
+                   "colorMode": "background",
+                   "graphMode": "none",
+                   "justifyMode": "auto",
+                   "orientation": "auto",
+                   "reduceOptions": {
+                      "calcs": [
+                         "lastNotNull"
+                      ],
+                      "fields": "",
+                      "values": false
+                   },
+                   "textMode": "auto"
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "clamp((\n  sum(stddev by (state) (cluster_node_peers{cluster=\"$cluster\", namespace=\"$namespace\"}) != 0) or\n  (sum(abs(sum without (state) (cluster_node_peers{cluster=\"$cluster\", namespace=\"$namespace\"})) - scalar(count(cluster_node_info{cluster=\"$cluster\", namespace=\"$namespace\"})) != 0))\n  ),\n  1, 1\n)\n",
+                      "format": "time_series",
+                      "instant": true,
+                      "legendFormat": "__auto",
+                      "range": false
+                   }
+                ],
+                "title": "Convergance state",
+                "type": "stat"
+             },
+             {
+                "datasource": "${datasource}",
+                "fieldConfig": {
+                   "defaults": {
+                      "custom": {
+                         "fillOpacity": 80,
+                         "spanNulls": true
+                      },
+                      "mappings": [
+                         {
+                            "options": {
+                               "0": {
+                                  "color": "green",
+                                  "text": "Yes"
+                               }
+                            },
+                            "type": "value"
+                         },
+                         {
+                            "options": {
+                               "1": {
+                                  "color": "red",
+                                  "text": "No"
+                               }
+                            },
+                            "type": "value"
+                         }
+                      ],
+                      "max": 1,
+                      "noValue": 0
+                   }
+                },
+                "gridPos": {
+                   "h": 9,
+                   "w": 16,
+                   "x": 8,
+                   "y": 9
+                },
+                "options": {
+                   "mergeValues": true
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "ceil(clamp((\n  sum(stddev by (state) (cluster_node_peers{cluster=\"$cluster\", namespace=\"$namespace\"})) or\n  (sum(abs(sum without (state) (cluster_node_peers{cluster=\"$cluster\", namespace=\"$namespace\"})) - scalar(count(cluster_node_info{cluster=\"$cluster\", namespace=\"$namespace\"}))))\n  ),\n  0, 1\n))\n",
+                      "instant": false,
+                      "legendFormat": "Converged",
+                      "range": true
+                   }
+                ],
+                "title": "Convergance state timeline",
+                "type": "state-timeline"
+             }
+          ],
+          "refresh": "10s",
+          "schemaVersion": 36,
+          "tags": [
+             "alloy-mixin"
+          ],
+          "templating": {
+             "list": [
+                {
+                   "label": "Data Source",
+                   "name": "datasource",
+                   "query": "prometheus",
+                   "refresh": 1,
+                   "sort": 2,
+                   "type": "datasource"
+                },
+                {
+                   "label": "Loki Data Source",
+                   "name": "loki_datasource",
+                   "query": "loki",
+                   "refresh": 1,
+                   "sort": 2,
+                   "type": "datasource"
+                },
+                {
+                   "datasource": "${datasource}",
+                   "label": "cluster",
+                   "name": "cluster",
+                   "query": {
+                      "query": "label_values(alloy_component_controller_running_components, cluster)\n",
+                      "refId": "cluster"
+                   },
+                   "refresh": 2,
+                   "sort": 2,
+                   "type": "query"
+                },
+                {
+                   "datasource": "${datasource}",
+                   "label": "namespace",
+                   "name": "namespace",
+                   "query": {
+                      "query": "label_values(alloy_component_controller_running_components{cluster=\"$cluster\"}, namespace)\n",
+                      "refId": "namespace"
+                   },
+                   "refresh": 2,
+                   "sort": 2,
+                   "type": "query"
+                }
+             ]
+          },
+          "time": {
+             "from": "now-1h",
+             "to": "now"
+          },
+          "timepicker": {
+             "refresh_intervals": [
+                "5s",
+                "10s",
+                "30s",
+                "1m",
+                "5m",
+                "15m",
+                "30m",
+                "1h",
+                "2h",
+                "1d"
+             ],
+             "time_options": [
+                "5m",
+                "15m",
+                "1h",
+                "6h",
+                "12h",
+                "24h",
+                "2d",
+                "7d",
+                "30d",
+                "90d"
+             ]
+          },
+          "timezone": "utc",
+          "title": "Alloy / Cluster Overview",
+          "uid": "3a6b7020692f53d8e53b49196f7637dd"
+       }
+kind: ConfigMap
+metadata:
+  annotations:
+    grafana_dashboard_folder: /dashboards/Alloy Mixin
+  labels:
+    grafana_dashboard: "1"
+  name: alloy-cluster-overview.json
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
   config.alloy: "logging {\n\tlevel  = coalesce(env(\"ALLOY_LOG_LEVEL\"), \"info\")\n\tformat
     = \"logfmt\"\n}\n\n/********************************************\n * Grafana LGTMP
     Stack Receiver Provider\n ********************************************/\nimport.git
@@ -237,10 +1089,868 @@ data:
     \        = coalesce(env(\"CLUSTER_NAME\"), \"k3d-k3s-codelab\")\n\tscrape_interval
     = \"15s\"\n\n\tforward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]\n}\n\nmetrics.servicemonitors_scrape
     \"kubernetes\" {\n\tcluster         = coalesce(env(\"CLUSTER_NAME\"), \"k3d-k3s-codelab\")\n\tscrape_interval
-    = \"15s\"\n\n\tforward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]\n}\n"
+    = \"15s\"\n\n\tforward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]\n}\n\n//
+    Jobs metrics\nimport.file \"jobs\" {\n\tfilename = coalesce(env(\"ALLOY_MODULES_FOLDER\"),
+    \"/etc/alloy/modules\") + \"/kubernetes/jobs\"\n}\n\njobs.kubelet_metrics_scrape
+    \"kubernetes\" {\n\tcluster         = coalesce(env(\"CLUSTER_NAME\"), \"k3d-k3s-codelab\")\n\tscrape_interval
+    = \"30s\"\n\n\tforward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]\n}\n\n//
+    Alloy integration metrics\nremote.kubernetes.configmap \"integrations\" {\n\tnamespace
+    = \"monitoring-system\"\n\tname      = \"alloy-integrations\"\n}\n\n// Memcached
+    Integrations\nimport.string \"memcached\" {\n\tcontent = remote.kubernetes.configmap.integrations.data[\"memcached.alloy\"]\n}\n\nmemcached.memcached_metrics_scrape
+    \"instance\" {\n\tnamespace = \"monitoring-system\"\n\tname      = remote.kubernetes.configmap.integrations.data[\"MEMCACHED_K8S_SECRET_NAME\"]\n\n\tforward_to
+    = [provider.self_hosted_stack.kubernetes.metrics_receiver]\n}\n"
 kind: ConfigMap
 metadata:
-  name: alloy-config-284mhm8bfc
+  name: alloy-config-6k989hdmh5
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  alloy-controller.json: |-
+    {
+          "annotations": {
+             "list": [
+                {
+                   "datasource": "$loki_datasource",
+                   "enable": true,
+                   "expr": "{cluster=\"$cluster\", container=\"kube-diff-logger\"} | json | namespace_extracted=\"alloy\" | name_extracted=~\"alloy.*\"",
+                   "iconColor": "rgba(0, 211, 255, 1)",
+                   "instant": false,
+                   "name": "Deployments",
+                   "titleFormat": "{{cluster}}/{{namespace}}"
+                }
+             ]
+          },
+          "graphTooltip": 1,
+          "links": [
+             {
+                "icon": "doc",
+                "targetBlank": true,
+                "title": "Documentation",
+                "tooltip": "Component controller documentation",
+                "type": "link",
+                "url": "https://grafana.com/docs/alloy/latest/concepts/component_controller/"
+             },
+             {
+                "asDropdown": true,
+                "icon": "external link",
+                "includeVars": true,
+                "keepTime": true,
+                "tags": [
+                   "alloy-mixin"
+                ],
+                "targetBlank": false,
+                "title": "Dashboards",
+                "type": "dashboards"
+             }
+          ],
+          "panels": [
+             {
+                "datasource": "${datasource}",
+                "description": "The number of Alloy instances whose metrics are being sent and reported.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "instances"
+                   }
+                },
+                "gridPos": {
+                   "h": 4,
+                   "w": 10,
+                   "x": 0,
+                   "y": 0
+                },
+                "options": {
+                   "colorMode": "none",
+                   "graphMode": "none"
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "count(alloy_component_controller_evaluating{cluster=\"$cluster\", namespace=\"$namespace\"})",
+                      "instant": false,
+                      "legendFormat": "__auto",
+                      "range": true
+                   }
+                ],
+                "title": "Running instances",
+                "type": "stat"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "The number of running components across all running instances.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "components"
+                   }
+                },
+                "gridPos": {
+                   "h": 4,
+                   "w": 10,
+                   "x": 0,
+                   "y": 4
+                },
+                "options": {
+                   "colorMode": "none",
+                   "graphMode": "none"
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\"})",
+                      "instant": false,
+                      "legendFormat": "__auto",
+                      "range": true
+                   }
+                ],
+                "title": "Running components",
+                "type": "stat"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "The percentage of components which are in a healthy state.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "max": 1,
+                      "min": 0,
+                      "noValue": "No components",
+                      "unit": "percentunit"
+                   }
+                },
+                "gridPos": {
+                   "h": 4,
+                   "w": 10,
+                   "x": 0,
+                   "y": 8
+                },
+                "options": {
+                   "colorMode": "value",
+                   "graphMode": "area",
+                   "text": {
+                      "valueSize": 80
+                   }
+                },
+                "pluginVersion": "9.0.6",
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\",health_type=\"healthy\"}) /\nsum(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\"})\n",
+                      "instant": false,
+                      "legendFormat": "__auto",
+                      "range": true
+                   }
+                ],
+                "title": "Overall component health",
+                "type": "stat"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Breakdown of components by health across all running instances.\n\n* Healthy: components have been evaluated completely and are reporting themselves as healthy.\n* Unhealthy: Components either could not be evaluated or are reporting themselves as unhealthy.\n* Unknown: A component has been created but has not yet been started.\n* Exited: A component has exited. It will not return to the running state.\n\nMore information on a component's health state can be retrieved using\nthe Alloy UI.\n\nNote that components may be in a degraded state even if they report\nthemselves as healthy. Use component-specific dashboards and alerts\nto observe detailed information about the behavior of a component.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "min": 0,
+                      "thresholds": {
+                         "mode": "absolute",
+                         "steps": [
+                            {
+                               "color": "green",
+                               "value": null
+                            }
+                         ]
+                      }
+                   },
+                   "overrides": [
+                      {
+                         "matcher": {
+                            "id": "byName",
+                            "options": "Unhealthy"
+                         },
+                         "properties": [
+                            {
+                               "id": "thresholds",
+                               "value": {
+                                  "mode": "absolute",
+                                  "steps": [
+                                     {
+                                        "color": "green",
+                                        "value": null
+                                     },
+                                     {
+                                        "color": "red",
+                                        "value": 1
+                                     }
+                                  ]
+                               }
+                            }
+                         ]
+                      },
+                      {
+                         "matcher": {
+                            "id": "byName",
+                            "options": "Unknown"
+                         },
+                         "properties": [
+                            {
+                               "id": "thresholds",
+                               "value": {
+                                  "mode": "absolute",
+                                  "steps": [
+                                     {
+                                        "color": "green",
+                                        "value": null
+                                     },
+                                     {
+                                        "color": "blue",
+                                        "value": 1
+                                     }
+                                  ]
+                               }
+                            }
+                         ]
+                      },
+                      {
+                         "matcher": {
+                            "id": "byName",
+                            "options": "Exited"
+                         },
+                         "properties": [
+                            {
+                               "id": "thresholds",
+                               "value": {
+                                  "mode": "absolute",
+                                  "steps": [
+                                     {
+                                        "color": "green",
+                                        "value": null
+                                     },
+                                     {
+                                        "color": "orange",
+                                        "value": 1
+                                     }
+                                  ]
+                               }
+                            }
+                         ]
+                      }
+                   ]
+                },
+                "gridPos": {
+                   "h": 12,
+                   "w": 14,
+                   "x": 10,
+                   "y": 0
+                },
+                "options": {
+                   "orientation": "vertical",
+                   "showUnfilled": true
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\", health_type=\"healthy\"}) or vector(0)",
+                      "instant": true,
+                      "legendFormat": "Healthy",
+                      "range": false
+                   },
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\", health_type=\"unhealthy\"}) or vector(0)",
+                      "instant": true,
+                      "legendFormat": "Unhealthy",
+                      "range": false
+                   },
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\", health_type=\"unknown\"}) or vector(0)",
+                      "instant": true,
+                      "legendFormat": "Unknown",
+                      "range": false
+                   },
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\", health_type=\"exited\"}) or vector(0)",
+                      "instant": true,
+                      "legendFormat": "Exited",
+                      "range": false
+                   }
+                ],
+                "title": "Components by health",
+                "type": "bargauge"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "The frequency at which components get updated.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "custom": {
+                         "drawStyle": "points",
+                         "pointSize": 3
+                      },
+                      "unit": "ops"
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 8,
+                   "x": 0,
+                   "y": 12
+                },
+                "options": {
+                   "tooltip": {
+                      "mode": "multi"
+                   }
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum by (instance) (rate(alloy_component_evaluation_seconds_count{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]))",
+                      "instant": false,
+                      "legendFormat": "__auto",
+                      "range": true
+                   }
+                ],
+                "title": "Component evaluation rate",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "The percentiles for how long it takes to complete component evaluations.\n\nComponent evaluations must complete for components to have the latest\narguments. The longer the evaluations take, the slower it will be to\nreconcile the state of components.\n\nIf evaluation is taking too long, consider sharding your components to\ndeal with smaller amounts of data and reuse data as much as possible.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "s"
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 8,
+                   "x": 8,
+                   "y": 12
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "histogram_quantile(0.99, sum(rate(alloy_component_evaluation_seconds{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval])))\nor\nhistogram_quantile(0.99, sum by (le) (rate(alloy_component_evaluation_seconds_bucket{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval])))\n",
+                      "instant": false,
+                      "legendFormat": "99th percentile",
+                      "range": true
+                   },
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "histogram_quantile(0.50, sum(rate(alloy_component_evaluation_seconds{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval])))\nor\nhistogram_quantile(0.50, sum by (le) (rate(alloy_component_evaluation_seconds_bucket{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval])))\n",
+                      "instant": false,
+                      "legendFormat": "50th percentile",
+                      "range": true
+                   },
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "(\n  histogram_sum(sum(rate(alloy_component_evaluation_seconds{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval]))) /\n  histogram_count(sum(rate(alloy_component_evaluation_seconds{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval])))\n)\nor\n(\n  sum(rate(alloy_component_evaluation_seconds_sum{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval])) /\n  sum(rate(alloy_component_evaluation_seconds_count{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval]))\n)\n",
+                      "instant": false,
+                      "legendFormat": "Average",
+                      "range": true
+                   }
+                ],
+                "title": "Component evaluation time",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "The percentage of time spent evaluating 'slow' components - components that took longer than 1 minute to evaluate.\n\nIdeally, no component should take more than 1 minute to evaluate. The components displayed in this chart\nmay be a sign of a problem with the pipeline.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "percentunit"
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 8,
+                   "x": 16,
+                   "y": 12
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum by (component_path, component_id) (rate(alloy_component_evaluation_slow_seconds{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]))\n/ scalar(sum(rate(alloy_component_evaluation_seconds_sum{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval])))\n",
+                      "instant": false,
+                      "legendFormat": "{{component path}} {{component_id}}",
+                      "range": true
+                   }
+                ],
+                "title": "Slow components evaluation times",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Detailed histogram view of how long component evaluations take.\n\nThe goal is to design your config so that evaluations take as little\ntime as possible; under 100ms is a good goal.\n",
+                "gridPos": {
+                   "h": 10,
+                   "w": 8,
+                   "x": 0,
+                   "y": 22
+                },
+                "maxDataPoints": 30,
+                "options": {
+                   "calculate": false,
+                   "cellGap": 0,
+                   "color": {
+                      "scheme": "Spectral"
+                   },
+                   "exemplars": {
+                      "color": "rgba(255,0,255,0.7)"
+                   },
+                   "filterValues": {
+                      "le": 0.10000000000000001
+                   },
+                   "tooltip": {
+                      "show": true,
+                      "yHistogram": true
+                   },
+                   "yAxis": {
+                      "unit": "s"
+                   }
+                },
+                "pluginVersion": "9.0.6",
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum(increase(alloy_component_evaluation_seconds{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]))\nor ignoring (le)\nsum by (le) (increase(alloy_component_evaluation_seconds_bucket{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]))\n",
+                      "format": "heatmap",
+                      "instant": false,
+                      "legendFormat": "{{le}}",
+                      "range": true
+                   }
+                ],
+                "title": "Component evaluation histogram",
+                "type": "heatmap"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Detailed histogram of how long components wait to be evaluated after their dependency is updated.\n\nThe goal is to design your config so that most of the time components do not\nqueue for long; under 10ms is a good goal.\n",
+                "gridPos": {
+                   "h": 10,
+                   "w": 8,
+                   "x": 8,
+                   "y": 22
+                },
+                "maxDataPoints": 30,
+                "options": {
+                   "calculate": false,
+                   "cellGap": 0,
+                   "color": {
+                      "scheme": "Spectral"
+                   },
+                   "exemplars": {
+                      "color": "rgba(255,0,255,0.7)"
+                   },
+                   "filterValues": {
+                      "le": 0.10000000000000001
+                   },
+                   "tooltip": {
+                      "show": true,
+                      "yHistogram": true
+                   },
+                   "yAxis": {
+                      "unit": "s"
+                   }
+                },
+                "pluginVersion": "9.0.6",
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum(increase(alloy_component_dependencies_wait_seconds{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]))\nor ignoring (le)\nsum by (le) (increase(alloy_component_dependencies_wait_seconds_bucket{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]))\n",
+                      "format": "heatmap",
+                      "instant": false,
+                      "legendFormat": "{{le}}",
+                      "range": true
+                   }
+                ],
+                "title": "Component dependency wait histogram",
+                "type": "heatmap"
+             }
+          ],
+          "refresh": "10s",
+          "schemaVersion": 36,
+          "tags": [
+             "alloy-mixin"
+          ],
+          "templating": {
+             "list": [
+                {
+                   "label": "Data Source",
+                   "name": "datasource",
+                   "query": "prometheus",
+                   "refresh": 1,
+                   "sort": 2,
+                   "type": "datasource"
+                },
+                {
+                   "label": "Loki Data Source",
+                   "name": "loki_datasource",
+                   "query": "loki",
+                   "refresh": 1,
+                   "sort": 2,
+                   "type": "datasource"
+                },
+                {
+                   "datasource": "${datasource}",
+                   "label": "cluster",
+                   "name": "cluster",
+                   "query": {
+                      "query": "label_values(alloy_component_controller_running_components, cluster)\n",
+                      "refId": "cluster"
+                   },
+                   "refresh": 2,
+                   "sort": 2,
+                   "type": "query"
+                },
+                {
+                   "datasource": "${datasource}",
+                   "label": "namespace",
+                   "name": "namespace",
+                   "query": {
+                      "query": "label_values(alloy_component_controller_running_components{cluster=\"$cluster\"}, namespace)\n",
+                      "refId": "namespace"
+                   },
+                   "refresh": 2,
+                   "sort": 2,
+                   "type": "query"
+                }
+             ]
+          },
+          "time": {
+             "from": "now-1h",
+             "to": "now"
+          },
+          "timepicker": {
+             "refresh_intervals": [
+                "5s",
+                "10s",
+                "30s",
+                "1m",
+                "5m",
+                "15m",
+                "30m",
+                "1h",
+                "2h",
+                "1d"
+             ],
+             "time_options": [
+                "5m",
+                "15m",
+                "1h",
+                "6h",
+                "12h",
+                "24h",
+                "2d",
+                "7d",
+                "30d",
+                "90d"
+             ]
+          },
+          "timezone": "utc",
+          "title": "Alloy / Controller",
+          "uid": "bf9f456aad7108b2c808dbd9973e386f"
+       }
+kind: ConfigMap
+metadata:
+  annotations:
+    grafana_dashboard_folder: /dashboards/Alloy Mixin
+  labels:
+    grafana_dashboard: "1"
+  name: alloy-controller.json
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  apiserver.alloy: "/*\nModule Components: apiserver\nDescription: kubernetes Apiserver
+    Metrics Scrape\n\n*/\n\ndeclare \"apiserver_metrics_scrape\" {\n\n\t/********************************************\n\t*
+    ARGUMENTS\n\t********************************************/\n\targument \"forward_to\"
+    {\n\t\tcomment = \"Must be a list(MetricsReceiver) where collected metrics should
+    be forwarded to\"\n\t}\n\n\targument \"cluster\" { }\n\n\targument \"namespaces\"
+    {\n\t\tcomment  = \"The namespaces to look for targets in (default: default)\"\n\t\toptional
+    = true\n\t}\n\n\targument \"field_selectors\" {\n\t\t// Docs: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/\n\t\tcomment
+    \ = \"The label selectors to use to find matching targets (default: [\\\"metadata.name=kubernetes\\\"])\"\n\t\toptional
+    = true\n\t}\n\n\targument \"label_selectors\" {\n\t\t// Docs: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/\n\t\tcomment
+    \ = \"The label selectors to use to find matching targets (default: [])\"\n\t\toptional
+    = true\n\t}\n\n\targument \"port_name\" {\n\t\tcomment  = \"The value of the label
+    for the selector (default: https)\"\n\t\toptional = true\n\t}\n\n\targument \"job_label\"
+    {\n\t\tcomment  = \"The job label to add for all kube-apiserver metrics (default:
+    integrations/kubernetes/apiserver)\"\n\t\toptional = true\n\t}\n\n\targument \"keep_metrics\"
+    {\n\t\tcomment  = \"A regex of metrics to keep (default: see below)\"\n\t\toptional
+    = true\n\t}\n\n\t// drop metrics and les from kube-prometheus\n\t// https://github.com/prometheus-operator/kube-prometheus/blob/main/manifests/kubernetesControlPlane-serviceMonitorApiserver.yaml\n\targument
+    \"drop_metrics\" {\n\t\tcomment  = \"A regular expression of metrics to drop (default:
+    see below)\"\n\t\toptional = true\n\t}\n\n\targument \"drop_les\" {\n\t\tcomment
+    \ = \"Regular expression of metric les label values to drop (default: see below)\"\n\t\toptional
+    = true\n\t}\n\n\targument \"scrape_interval\" {\n\t\tcomment  = \"How often to
+    scrape metrics from the targets (default: 60s)\"\n\t\toptional = true\n\t}\n\n\targument
+    \"scrape_timeout\" {\n\t\tcomment  = \"How long before a scrape times out (default:
+    10s)\"\n\t\toptional = true\n\t}\n\n\targument \"max_cache_size\" {\n\t\tcomment
+    \ = \"The maximum number of elements to hold in the relabeling cache (default:
+    100000).  This should be at least 2x-5x your largest scrape target or samples
+    appended rate.\"\n\t\toptional = true\n\t}\n\n\t/*****************************************************************\n\t*
+    Targets From Docker Discovery\n\t*****************************************************************/\n\tdiscovery.kubernetes
+    \"apiserver\" {\n\t\trole = \"service\"\n\n\t\tselectors {\n\t\t\trole  = \"service\"\n\t\t\tfield
+    = join(coalesce(argument.field_selectors.value, [\"metadata.name=kubernetes\"]),
+    \",\")\n\t\t\tlabel = join(coalesce(argument.label_selectors.value, []), \",\")\n\t\t}\n\n\t\tnamespaces
+    {\n\t\t\tnames = coalesce(argument.namespaces.value, [\"default\"])\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
+    Discovery Relabelings (pre-scrape)\n\t*****************************************************************/\n\tdiscovery.relabel
+    \"apiserver\" {\n\t\ttargets = discovery.kubernetes.apiserver.targets\n\n\t\t//
+    only keep targets with a matching port name\n\t\trule {\n\t\t\tsource_labels =
+    [\"__meta_kubernetes_service_port_name\"]\n\t\t\tregex         = coalesce(argument.port_name.value,
+    \"https\")\n\t\t\taction        = \"keep\"\n\t\t}\n\n\t\t// set the namespace\n\t\trule
+    {\n\t\t\taction        = \"replace\"\n\t\t\tsource_labels = [\"__meta_kubernetes_namespace\"]\n\t\t\ttarget_label
+    \ = \"namespace\"\n\t\t}\n\n\t\t// set the service_name\n\t\trule {\n\t\t\taction
+    \       = \"replace\"\n\t\t\tsource_labels = [\"__meta_kubernetes_service_name\"]\n\t\t\ttarget_label
+    \ = \"service\"\n\t\t}\n\n\t\t// set the app name if specified as metadata labels
+    \"app:\" or \"app.kubernetes.io/name:\" or \"k8s-app:\"\n\t\trule {\n\t\t\taction
+    \       = \"replace\"\n\t\t\tsource_labels = [\n\t\t\t\t\"__meta_kubernetes_service_label_app_kubernetes_io_name\",\n\t\t\t\t\"__meta_kubernetes_service_label_k8s_app\",\n\t\t\t\t\"__meta_kubernetes_service_label_app\",\n\t\t\t]\n\t\t\tseparator
+    \   = \";\"\n\t\t\tregex        = \"^(?:;*)?([^;]+).*$\"\n\t\t\treplacement  =
+    \"$1\"\n\t\t\ttarget_label = \"app\"\n\t\t}\n\n\t\t// set the cluster label\n\t\trule
+    {\n\t\t\taction       = \"replace\"\n\t\t\treplacement  = argument.cluster.value\n\t\t\ttarget_label
+    = \"cluster\"\n\t\t}\n\n\t\t// set a source label\n\t\trule {\n\t\t\taction       =
+    \"replace\"\n\t\t\treplacement  = \"kubernetes\"\n\t\t\ttarget_label = \"source\"\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
+    Prometheus Scrape Labels Targets\n\t*****************************************************************/\n\tprometheus.scrape
+    \"apiserver\" {\n\t\ttargets = discovery.relabel.apiserver.output\n\n\t\tjob_name
+    \         = coalesce(argument.job_label.value, \"integrations/kubernetes/apiserver\")\n\t\tscheme
+    \           = \"https\"\n\t\tscrape_interval   = coalesce(argument.scrape_interval.value,
+    \"60s\")\n\t\tscrape_timeout    = coalesce(argument.scrape_timeout.value, \"10s\")\n\t\tbearer_token_file
+    = \"/var/run/secrets/kubernetes.io/serviceaccount/token\"\n\n\t\ttls_config {\n\t\t\tca_file
+    \             = \"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt\"\n\t\t\tinsecure_skip_verify
+    = false\n\t\t\tserver_name          = \"kubernetes\"\n\t\t}\n\n\t\tclustering
+    {\n\t\t\tenabled = true\n\t\t}\n\n\t\tforward_to = [prometheus.relabel.apiserver.receiver]\n\t}\n\n\t/********************************************\n\t*
+    Prometheus Metric Relabelings (post-scrape)\n\t********************************************/\n\tprometheus.relabel
+    \"apiserver\" {\n\t\tforward_to     = argument.forward_to.value\n\t\tmax_cache_size
+    = coalesce(argument.max_cache_size.value, 100000)\n\n\t\t// drop metrics that
+    match the drop_metrics regex\n\t\trule {\n\t\t\tsource_labels = [\"__name__\"]\n\t\t\tregex
+    \        = coalesce(argument.drop_metrics.value, \"(((go|process)_.+)|kubelet_node_name|kubelet_(pod_(worker|start)_latency_microseconds|cgroup_manager_latency_microseconds|pleg_relist_(latency|interval)_microseconds|runtime_operations(_latency_microseconds|_errors)?|eviction_stats_age_microseconds|device_plugin_(registration_count|alloc_latency_microseconds)|network_plugin_operations_latency_microseconds)|scheduler_(e2e_scheduling_latency_microseconds|scheduling_algorithm_(predicate|priority|preemption)_evaluation|scheduling_algorithm_latency_microseconds|binding_latency_microseconds|scheduling_latency_seconds)|apiserver_(request_(count|latencies(_summary)?)|dropped_requests|storage_(data_key_generation|transformation_(failures_total|latencies_microseconds))|proxy_tunnel_sync_latency_secs|longrunning_gauge|registered_watchers)|kubelet_docker_(operations(_latency_microseconds|_errors|_timeout)?)|reflector_(items_per_(list|watch)|list_duration_seconds|lists_total|short_watches_total|watch_duration_seconds|watches_total)|etcd_(helper_(cache_(hit|miss)_count|cache_entry_count|object_counts)|request_(cache_(get|add)_latencies_summary|latencies_summary)|debugging.*|disk.*|server.*)|transformation_(latencies_microseconds|failures_total)|(admission_quota_controller|APIServiceOpenAPIAggregationControllerQueue1|APIServiceRegistrationController|autoregister|AvailableConditionController|crd_(autoregistration_controller|Establishing|finalizer|naming_condition_controller|openapi_controller)|DiscoveryController|non_structural_schema_condition_controller|kubeproxy_sync_proxy_rules|rest_client_request_latency|storage_operation_(errors_total|status_count))(_.*)|apiserver_admission_(controller_admission|step_admission)_latencies_seconds_.*)\")\n\t\t\taction
+    \       = \"drop\"\n\t\t}\n\n\t\t// drop metrics whose name and le label match
+    the drop_les regex\n\t\trule {\n\t\t\tsource_labels = [\n\t\t\t\t\"__name__\",\n\t\t\t\t\"le\",\n\t\t\t]\n\t\t\tregex
+    \ = coalesce(argument.drop_les.value, \"apiserver_request_duration_seconds_bucket;(0.15|0.25|0.3|0.35|0.4|0.45|0.6|0.7|0.8|0.9|1.25|1.5|1.75|2.5|3|3.5|4.5|6|7|8|9|15|25|30|50)\")\n\t\t\taction
+    = \"drop\"\n\t\t}\n\n\t\t// keep only metrics that match the keep_metrics regex\n\t\trule
+    {\n\t\t\tsource_labels = [\"__name__\"]\n\t\t\tregex         = coalesce(argument.keep_metrics.value,
+    \"(.+)\")\n\t\t\taction        = \"keep\"\n\t\t}\n\t}\n}\n"
+  kube-state-metrics.alloy: "/*\nModule Components: kube_state_metrics\nDescription:
+    kubernetes kube_state_metrics Metrics Scrape\n\n*/\n\ndeclare \"kube_state_metrics_scrape\"
+    {\n\n\t/********************************************\n\t* ARGUMENTS\n\t********************************************/\n\targument
+    \"forward_to\" {\n\t\tcomment = \"Must be a list(MetricsReceiver) where collected
+    metrics should be forwarded to\"\n\t}\n\n\targument \"cluster\" { }\n\n\targument
+    \"namespaces\" {\n\t\tcomment  = \"The namespaces to look for targets in (default:
+    [] is all namespaces)\"\n\t\toptional = true\n\t}\n\n\targument \"field_selectors\"
+    {\n\t\t// Docs: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/\n\t\tcomment
+    \ = \"The label selectors to use to find matching targets (default: [])\"\n\t\toptional
+    = true\n\t}\n\n\targument \"label_selectors\" {\n\t\t// Docs: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/\n\t\tcomment
+    \ = \"The label selectors to use to find matching targets (default: [\\\"app.kubernetes.io/name=kube-state-metrics\\\"])\"\n\t\toptional
+    = true\n\t}\n\n\targument \"port_name\" {\n\t\tcomment  = \"The of the port to
+    scrape metrics from (default: http)\"\n\t\toptional = true\n\t}\n\n\targument
+    \"job_label\" {\n\t\tcomment  = \"The job label to add for all kube_state_metrics
+    metrics (default: integrations/kubernetes/kube-state-metrics)\"\n\t\toptional
+    = true\n\t}\n\n\targument \"keep_metrics\" {\n\t\tcomment  = \"A regex of metrics
+    to keep (default: see below)\"\n\t\toptional = true\n\t}\n\n\targument \"drop_metrics\"
+    {\n\t\tcomment  = \"A regular expression of metrics to drop (default: see below)\"\n\t\toptional
+    = true\n\t}\n\n\targument \"scrape_interval\" {\n\t\tcomment  = \"How often to
+    scrape metrics from the targets (default: 60s)\"\n\t\toptional = true\n\t}\n\n\targument
+    \"scrape_timeout\" {\n\t\tcomment  = \"How long before a scrape times out (default:
+    10s)\"\n\t\toptional = true\n\t}\n\n\targument \"max_cache_size\" {\n\t\tcomment
+    \ = \"The maximum number of elements to hold in the relabeling cache (default:
+    100000).  This should be at least 2x-5x your largest scrape target or samples
+    appended rate.\"\n\t\toptional = true\n\t}\n\n\t/*****************************************************************\n\t*
+    Targets From Service Discovery\n\t*****************************************************************/\n\tdiscovery.kubernetes
+    \"kube_state_metrics\" {\n\t\trole = \"service\"\n\n\t\tselectors {\n\t\t\trole
+    \ = \"service\"\n\t\t\tfield = join(coalesce(argument.field_selectors.value, []),
+    \",\")\n\t\t\tlabel = join(coalesce(argument.label_selectors.value, [\"app.kubernetes.io/name=kube-state-metrics\"]),
+    \",\")\n\t\t}\n\n\t\tnamespaces {\n\t\t\tnames = coalesce(argument.namespaces.value,
+    [])\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
+    Discovery Relabelings (pre-scrape)\n\t*****************************************************************/\n\tdiscovery.relabel
+    \"kube_state_metrics\" {\n\t\ttargets = discovery.kubernetes.kube_state_metrics.targets\n\n\t\t//
+    only keep targets with a matching port name\n\t\trule {\n\t\t\tsource_labels =
+    [\"__meta_kubernetes_service_port_name\"]\n\t\t\tregex         = coalesce(argument.port_name.value,
+    \"http\")\n\t\t\taction        = \"keep\"\n\t\t}\n\n\t\t// set the cluster label\n\t\trule
+    {\n\t\t\taction       = \"replace\"\n\t\t\treplacement  = argument.cluster.value\n\t\t\ttarget_label
+    = \"cluster\"\n\t\t}\n\n\t\t// set a source label\n\t\trule {\n\t\t\taction       =
+    \"replace\"\n\t\t\treplacement  = \"kubernetes\"\n\t\t\ttarget_label = \"source\"\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
+    Prometheus Scrape Labels Targets\n\t*****************************************************************/\n\tprometheus.scrape
+    \"kube_state_metrics\" {\n\t\ttargets = discovery.relabel.kube_state_metrics.output\n\n\t\tjob_name
+    \       = coalesce(argument.job_label.value, \"integrations/kubernetes/kube-state-metrics\")\n\t\tscrape_interval
+    = coalesce(argument.scrape_interval.value, \"60s\")\n\t\tscrape_timeout  = coalesce(argument.scrape_timeout.value,
+    \"10s\")\n\n\t\tclustering {\n\t\t\tenabled = true\n\t\t}\n\n\t\tforward_to =
+    [prometheus.relabel.kube_state_metrics.receiver]\n\t}\n\n\t/********************************************\n\t*
+    Prometheus Metric Relabelings (post-scrape)\n\t********************************************/\n\tprometheus.relabel
+    \"kube_state_metrics\" {\n\t\tforward_to     = argument.forward_to.value\n\t\tmax_cache_size
+    = coalesce(argument.max_cache_size.value, 100000)\n\n\t\t// drop metrics that
+    match the drop_metrics regex\n\t\trule {\n\t\t\tsource_labels = [\"__name__\"]\n\t\t\tregex
+    \        = coalesce(argument.drop_metrics.value, \"(^(go|process)_.+$)\")\n\t\t\taction
+    \       = \"drop\"\n\t\t}\n\n\t\t// keep only metrics that match the keep_metrics
+    regex\n\t\trule {\n\t\t\tsource_labels = [\"__name__\"]\n\t\t\tregex         =
+    coalesce(argument.keep_metrics.value, \"(up|kube_(daemonset.*|deployment_(metadata_generation|spec_replicas|status_(observed_generation|replicas_(available|updated)))|horizontalpodautoscaler_(spec_(max|min)_replicas|status_(current|desired)_replicas)|job.*|namespace_status_phase|node.*|persistentvolumeclaim_resource_requests_storage_bytes|pod_(container_(info|resource_(limits|requests)|status_(last_terminated_reason|restarts_total|waiting_reason))|info|owner|start_time|status_(phase|reason))|replicaset.*|resourcequota|statefulset.*))\")\n\t\t\taction
+    \       = \"keep\"\n\t\t}\n\t}\n}\n"
+  kubelet.alloy: "/*\nModule Components: kubelet\nDescription: kubernetes kubelet
+    Metrics Scrape\n\n*/\n\ndeclare \"kubelet_metrics_scrape\" {\n\n\t/********************************************\n\t*
+    ARGUMENTS\n\t********************************************/\n\targument \"forward_to\"
+    {\n\t\tcomment = \"Must be a list(MetricsReceiver) where collected metrics should
+    be forwarded to\"\n\t}\n\n\targument \"cluster\" { }\n\n\targument \"keep_metrics\"
+    {\n\t\tcomment  = \"A regex of metrics to keep (default: see below)\"\n\t\toptional
+    = true\n\t}\n\n\targument \"drop_metrics\" {\n\t\tcomment  = \"A regular expression
+    of metrics to drop (default: see below)\"\n\t\toptional = true\n\t}\n\n\targument
+    \"scrape_interval\" {\n\t\tcomment  = \"How often to scrape metrics from the targets
+    (default: 60s)\"\n\t\toptional = true\n\t}\n\n\targument \"scrape_timeout\" {\n\t\tcomment
+    \ = \"How long before a scrape times out (default: 10s)\"\n\t\toptional = true\n\t}\n\n\targument
+    \"max_cache_size\" {\n\t\tcomment  = \"The maximum number of elements to hold
+    in the relabeling cache (default: 100000).  This should be at least 2x-5x your
+    largest scrape target or samples appended rate.\"\n\t\toptional = true\n\t}\n\n\t/*****************************************************************\n\t*
+    Targets From Docker Discovery\n\t*****************************************************************/\n\tdiscovery.kubernetes
+    \"node\" {\n\t\trole = \"node\"\n\t}\n\n\t/*****************************************************************\n\t*
+    Discovery Relabelings (pre-scrape)\n\t*****************************************************************/\n\tdiscovery.relabel
+    \"node\" {\n\t\ttargets = discovery.kubernetes.node.targets\n\n\t\t// set the
+    address to use the kubernetes service dns name\n\t\trule {\n\t\t\ttarget_label
+    = \"__address__\"\n\t\t\treplacement  = \"kubernetes.default.svc.cluster.local:443\"\n\t\t}\n\n\t\t//
+    set the node label\n\t\trule {\n\t\t\tsource_labels = [\"__meta_kubernetes_node_name\"]\n\t\t\ttarget_label
+    \ = \"node\"\n\t\t}\n\n\t\t// set the app name if specified as metadata labels
+    \"app:\" or \"app.kubernetes.io/name:\" or \"k8s-app:\"\n\t\trule {\n\t\t\taction
+    \       = \"replace\"\n\t\t\tsource_labels = [\n\t\t\t\t\"__meta_kubernetes_service_label_app_kubernetes_io_name\",\n\t\t\t\t\"__meta_kubernetes_service_label_k8s_app\",\n\t\t\t\t\"__meta_kubernetes_service_label_app\",\n\t\t\t]\n\t\t\tseparator
+    \   = \";\"\n\t\t\tregex        = \"^(?:;*)?([^;]+).*$\"\n\t\t\treplacement  =
+    \"$1\"\n\t\t\ttarget_label = \"app\"\n\t\t}\n\n\t\t// set the cluster label\n\t\trule
+    {\n\t\t\taction       = \"replace\"\n\t\t\treplacement  = argument.cluster.value\n\t\t\ttarget_label
+    = \"cluster\"\n\t\t}\n\n\t\t// set a source label\n\t\trule {\n\t\t\taction       =
+    \"replace\"\n\t\t\treplacement  = \"kubernetes\"\n\t\t\ttarget_label = \"source\"\n\t\t}\n\t}\n\n\tdiscovery.relabel
+    \"kubelet\" {\n\t\ttargets = discovery.relabel.node.output\n\n\t\trule {\n\t\t\ttarget_label
+    = \"job\"\n\t\t\treplacement  = \"integrations/kubernetes/kubelet\"\n\t\t}\n\n\t\t//
+    set the metrics path to use the proxy path to the nodes kubelet metrics endpoint\n\t\trule
+    {\n\t\t\tsource_labels = [\"__meta_kubernetes_node_name\"]\n\t\t\tregex         =
+    \"(.+)\"\n\t\t\treplacement   = \"/api/v1/nodes/${1}/proxy/metrics\"\n\t\t\ttarget_label
+    \ = \"__metrics_path__\"\n\t\t}\n\t}\n\n\tdiscovery.relabel \"resources\" {\n\t\ttargets
+    = discovery.relabel.node.output\n\n\t\trule {\n\t\t\ttarget_label = \"job\"\n\t\t\treplacement
+    \ = \"integrations/kubernetes/kube-resources\"\n\t\t}\n\n\t\t// set the metrics
+    path to use the proxy path to the nodes kubelet metrics endpoint\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_node_name\"]\n\t\t\tregex         = \"(.+)\"\n\t\t\treplacement
+    \  = \"/api/v1/nodes/${1}/proxy/metrics/resource\"\n\t\t\ttarget_label  = \"__metrics_path__\"\n\t\t}\n\t}\n\n\tdiscovery.relabel
+    \"probes\" {\n\t\ttargets = discovery.relabel.node.output\n\n\t\trule {\n\t\t\ttarget_label
+    = \"job\"\n\t\t\treplacement  = \"integrations/kubernetes/kube-probes\"\n\t\t}\n\n\t\t//
+    set the metrics path to use the proxy path to the nodes kubelet metrics endpoint\n\t\trule
+    {\n\t\t\tsource_labels = [\"__meta_kubernetes_node_name\"]\n\t\t\tregex         =
+    \"(.+)\"\n\t\t\treplacement   = \"/api/v1/nodes/${1}/proxy/metrics/probes\"\n\t\t\ttarget_label
+    \ = \"__metrics_path__\"\n\t\t}\n\t}\n\n\tdiscovery.relabel \"cadvisor\" {\n\t\ttargets
+    = discovery.relabel.node.output\n\n\t\trule {\n\t\t\ttarget_label = \"job\"\n\t\t\treplacement
+    \ = \"integrations/kubernetes/cadvisor\"\n\t\t}\n\n\t\t// set the metrics path
+    to use the proxy path to the nodes kubelet metrics endpoint\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_node_name\"]\n\t\t\tregex         = \"(.+)\"\n\t\t\treplacement
+    \  = \"/api/v1/nodes/${1}/proxy/metrics/cadvisor\"\n\t\t\ttarget_label  = \"__metrics_path__\"\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
+    Prometheus Scrape Labels Targets\n\t*****************************************************************/\n\tprometheus.scrape
+    \"kubelet\" {\n\t\ttargets = concat(\n\t\t\tdiscovery.relabel.kubelet.output,\n\t\t\tdiscovery.relabel.resources.output,\n\t\t\tdiscovery.relabel.probes.output,\n\t\t\tdiscovery.relabel.cadvisor.output,\n\t\t)\n\n\t\tscheme
+    \           = \"https\"\n\t\tscrape_interval   = coalesce(argument.scrape_interval.value,
+    \"60s\")\n\t\tscrape_timeout    = coalesce(argument.scrape_timeout.value, \"10s\")\n\t\tbearer_token_file
+    = \"/var/run/secrets/kubernetes.io/serviceaccount/token\"\n\n\t\ttls_config {\n\t\t\tca_file
+    \             = \"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt\"\n\t\t\tinsecure_skip_verify
+    = false\n\t\t\tserver_name          = \"kubernetes\"\n\t\t}\n\n\t\tclustering
+    {\n\t\t\tenabled = true\n\t\t}\n\n\t\tforward_to = [prometheus.relabel.kubelet.receiver]\n\t}\n\n\t/********************************************\n\t*
+    Prometheus Metric Relabelings (post-scrape)\n\t********************************************/\n\tprometheus.relabel
+    \"kubelet\" {\n\t\tforward_to     = argument.forward_to.value\n\t\tmax_cache_size
+    = coalesce(argument.max_cache_size.value, 100000)\n\n\t\t// drop metrics that
+    match the drop_metrics regex\n\t\trule {\n\t\t\tsource_labels = [\"__name__\"]\n\t\t\tregex
+    \        = coalesce(argument.drop_metrics.value, \"(^(go|process)_.+$)\")\n\t\t\taction
+    \       = \"drop\"\n\t\t}\n\n\t\t// keep only metrics that match the keep_metrics
+    regex\n\t\trule {\n\t\t\tsource_labels = [\"__name__\"]\n\t\t\tregex         =
+    coalesce(argument.keep_metrics.value, \"(.+)\")\n\t\t\taction        = \"keep\"\n\t\t}\n\t\t//
+    Drop empty container labels, addressing https://github.com/google/cadvisor/issues/2688\n\t\trule
+    {\n\t\t\tsource_labels = [\"__name__\", \"container\"]\n\t\t\tseparator     =
+    \"@\"\n\t\t\tregex         = \"(container_cpu_.*|container_fs_.*|container_memory_.*)@\"\n\t\t\taction
+    \       = \"drop\"\n\t\t}\n\n\t\t// Drop empty image labels, addressing https://github.com/google/cadvisor/issues/2688\n\t\trule
+    {\n\t\t\tsource_labels = [\"__name__\", \"image\"]\n\t\t\tseparator     = \"@\"\n\t\t\tregex
+    \        = \"(container_cpu_.*|container_fs_.*|container_memory_.*|container_network_.*)@\"\n\t\t\taction
+    \       = \"drop\"\n\t\t}\n\n\t\t// Normalizing unimportant labels (not deleting
+    to continue satisfying <label>!=\"\" checks)\n\t\trule {\n\t\t\tsource_labels
+    = [\"__name__\", \"boot_id\"]\n\t\t\tseparator     = \"@\"\n\t\t\tregex         =
+    \"machine_memory_bytes@.*\"\n\t\t\ttarget_label  = \"boot_id\"\n\t\t\treplacement
+    \  = \"NA\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels = [\"__name__\", \"system_uuid\"]\n\t\t\tseparator
+    \    = \"@\"\n\t\t\tregex         = \"machine_memory_bytes@.*\"\n\t\t\ttarget_label
+    \ = \"system_uuid\"\n\t\t\treplacement   = \"NA\"\n\t\t}\n\n\t\t// Filter out
+    non-physical devices/interfaces\n\t\trule {\n\t\t\tsource_labels = [\"__name__\",
+    \"device\"]\n\t\t\tseparator     = \"@\"\n\t\t\tregex         = \"container_fs_.*@(/dev/)?(mmcblk.p.+|nvme.+|rbd.+|sd.+|vd.+|xvd.+|dasd.+)\"\n\t\t\ttarget_label
+    \ = \"__keepme\"\n\t\t\treplacement   = \"1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__name__\", \"__keepme\"]\n\t\t\tseparator     = \"@\"\n\t\t\tregex         =
+    \"container_fs_.*@\"\n\t\t\taction        = \"drop\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__name__\"]\n\t\t\tregex         = \"container_fs_.*\"\n\t\t\ttarget_label
+    \ = \"__keepme\"\n\t\t\treplacement   = \"\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__name__\", \"interface\"]\n\t\t\tseparator     = \"@\"\n\t\t\tregex         =
+    \"container_network_.*@(en[ospx][0-9].*|wlan[0-9].*|eth[0-9].*)\"\n\t\t\ttarget_label
+    \ = \"__keepme\"\n\t\t\treplacement   = \"1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__name__\", \"__keepme\"]\n\t\t\tseparator     = \"@\"\n\t\t\tregex         =
+    \"container_network_.*@\"\n\t\t\taction        = \"drop\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
+    = [\"__name__\"]\n\t\t\tregex         = \"container_network_.*\"\n\t\t\ttarget_label
+    \ = \"__keepme\"\n\t\t\treplacement   = \"\"\n\t\t}\n\t}\n}\n"
+  node-exporter.alloy: "/*\nModule Components: node_exporter\nDescription: kubernetes
+    node_exporter Metrics Scrape\n\n*/\n\ndeclare \"node_exporter_metrics_scrape\"
+    {\n\n\t/********************************************\n\t* ARGUMENTS\n\t********************************************/\n\targument
+    \"forward_to\" {\n\t\tcomment = \"Must be a list(MetricsReceiver) where collected
+    metrics should be forwarded to\"\n\t}\n\n\targument \"cluster\" { }\n\n\targument
+    \"namespaces\" {\n\t\tcomment  = \"The namespaces to look for targets in (default:
+    [] is all namespaces)\"\n\t\toptional = true\n\t}\n\n\targument \"field_selectors\"
+    {\n\t\t// Docs: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/\n\t\tcomment
+    \ = \"The label selectors to use to find matching targets (default: [])\"\n\t\toptional
+    = true\n\t}\n\n\targument \"label_selectors\" {\n\t\t// Docs: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/\n\t\tcomment
+    \ = \"The label selectors to use to find matching targets (default: [\\\"app.kubernetes.io/name=prometheus-node-exporter\\\"])\"\n\t\toptional
+    = true\n\t}\n\n\targument \"port_name\" {\n\t\tcomment  = \"The of the port to
+    scrape metrics from (default: metrics)\"\n\t\toptional = true\n\t}\n\n\targument
+    \"job_label\" {\n\t\tcomment  = \"The job label to add for all node-exporter metrics
+    (default: integrations/kubernetes/node-exporter)\"\n\t\toptional = true\n\t}\n\n\targument
+    \"keep_metrics\" {\n\t\tcomment  = \"A regex of metrics to keep (default: see
+    below)\"\n\t\toptional = true\n\t}\n\n\targument \"drop_metrics\" {\n\t\tcomment
+    \ = \"A regular expression of metrics to drop (default: see below)\"\n\t\toptional
+    = true\n\t}\n\n\targument \"scrape_interval\" {\n\t\tcomment  = \"How often to
+    scrape metrics from the targets (default: 60s)\"\n\t\toptional = true\n\t}\n\n\targument
+    \"scrape_timeout\" {\n\t\tcomment  = \"How long before a scrape times out (default:
+    10s)\"\n\t\toptional = true\n\t}\n\n\targument \"max_cache_size\" {\n\t\tcomment
+    \ = \"The maximum number of elements to hold in the relabeling cache (default:
+    100000).  This should be at least 2x-5x your largest scrape target or samples
+    appended rate.\"\n\t\toptional = true\n\t}\n\n\t/*****************************************************************\n\t*
+    Targets From Service Discovery\n\t*****************************************************************/\n\tdiscovery.kubernetes
+    \"node_exporter\" {\n\t\trole = \"pod\"\n\n\t\tselectors {\n\t\t\trole  = \"pod\"\n\t\t\tfield
+    = join(coalesce(argument.field_selectors.value, []), \",\")\n\t\t\tlabel = join(coalesce(argument.label_selectors.value,
+    [\"app.kubernetes.io/name=prometheus-node-exporter\"]), \",\")\n\t\t}\n\n\t\tnamespaces
+    {\n\t\t\tnames = coalesce(argument.namespaces.value, [])\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
+    Discovery Relabelings (pre-scrape)\n\t*****************************************************************/\n\tdiscovery.relabel
+    \"node_exporter\" {\n\t\ttargets = discovery.kubernetes.node_exporter.targets\n\n\t\t//
+    keep only the specified metrics port name, and pods that are Running and ready\n\t\trule
+    {\n\t\t\tsource_labels = [\n\t\t\t\t\"__meta_kubernetes_pod_container_port_name\",\n\t\t\t\t\"__meta_kubernetes_pod_phase\",\n\t\t\t\t\"__meta_kubernetes_pod_ready\",\n\t\t\t\t\"__meta_kubernetes_pod_container_init\",\n\t\t\t]\n\t\t\tseparator
+    = \"@\"\n\t\t\tregex     = coalesce(argument.port_name.value, \"metrics\") + \"@Running@true@false\"\n\t\t\taction
+    \   = \"keep\"\n\t\t}\n\n\t\t// set the namespace label\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_namespace\"]\n\t\t\ttarget_label  = \"namespace\"\n\t\t}\n\n\t\t//
+    set the pod label\n\t\trule {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_name\"]\n\t\t\ttarget_label
+    \ = \"pod\"\n\t\t}\n\n\t\t// set the container label\n\t\trule {\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_container_name\"]\n\t\t\ttarget_label  = \"container\"\n\t\t}\n\n\t\t//
+    set a workload label\n\t\trule {\n\t\t\tsource_labels = [\n\t\t\t\t\"__meta_kubernetes_pod_controller_kind\",\n\t\t\t\t\"__meta_kubernetes_pod_controller_name\",\n\t\t\t]\n\t\t\tseparator
+    \   = \"/\"\n\t\t\ttarget_label = \"workload\"\n\t\t}\n\t\t// remove the hash
+    from the ReplicaSet\n\t\trule {\n\t\t\tsource_labels = [\"workload\"]\n\t\t\tregex
+    \        = \"(ReplicaSet/.+)-.+\"\n\t\t\ttarget_label  = \"workload\"\n\t\t}\n\n\t\t//
+    set the app name if specified as metadata labels \"app:\" or \"app.kubernetes.io/name:\"
+    or \"k8s-app:\"\n\t\trule {\n\t\t\taction        = \"replace\"\n\t\t\tsource_labels
+    = [\n\t\t\t\t\"__meta_kubernetes_pod_label_app_kubernetes_io_name\",\n\t\t\t\t\"__meta_kubernetes_pod_label_k8s_app\",\n\t\t\t\t\"__meta_kubernetes_pod_label_app\",\n\t\t\t]\n\t\t\tseparator
+    \   = \";\"\n\t\t\tregex        = \"^(?:;*)?([^;]+).*$\"\n\t\t\treplacement  =
+    \"$1\"\n\t\t\ttarget_label = \"app\"\n\t\t}\n\n\t\t// set the component if specified
+    as metadata labels \"component:\" or \"app.kubernetes.io/component:\" or \"k8s-component:\"\n\t\trule
+    {\n\t\t\taction        = \"replace\"\n\t\t\tsource_labels = [\n\t\t\t\t\"__meta_kubernetes_pod_label_app_kubernetes_io_component\",\n\t\t\t\t\"__meta_kubernetes_pod_label_k8s_component\",\n\t\t\t\t\"__meta_kubernetes_pod_label_component\",\n\t\t\t]\n\t\t\tregex
+    \       = \"^(?:;*)?([^;]+).*$\"\n\t\t\treplacement  = \"$1\"\n\t\t\ttarget_label
+    = \"component\"\n\t\t}\n\n\t\t// set the cluster label\n\t\trule {\n\t\t\taction
+    \      = \"replace\"\n\t\t\treplacement  = argument.cluster.value\n\t\t\ttarget_label
+    = \"cluster\"\n\t\t}\n\n\t\t// set a source label\n\t\trule {\n\t\t\taction       =
+    \"replace\"\n\t\t\treplacement  = \"kubernetes\"\n\t\t\ttarget_label = \"source\"\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
+    Prometheus Scrape Labels Targets\n\t*****************************************************************/\n\tprometheus.scrape
+    \"node_exporter\" {\n\t\ttargets = discovery.relabel.node_exporter.output\n\n\t\tjob_name
+    \       = coalesce(argument.job_label.value, \"integrations/kubernetes/node-exporter\")\n\t\tscrape_interval
+    = coalesce(argument.scrape_interval.value, \"60s\")\n\t\tscrape_timeout  = coalesce(argument.scrape_timeout.value,
+    \"10s\")\n\n\t\tclustering {\n\t\t\tenabled = true\n\t\t}\n\n\t\tforward_to =
+    [prometheus.relabel.node_exporter.receiver]\n\t}\n\n\t/********************************************\n\t*
+    Prometheus Metric Relabelings (post-scrape)\n\t********************************************/\n\tprometheus.relabel
+    \"node_exporter\" {\n\t\tforward_to     = argument.forward_to.value\n\t\tmax_cache_size
+    = coalesce(argument.max_cache_size.value, 100000)\n\n\t\t// drop metrics that
+    match the drop_metrics regex\n\t\trule {\n\t\t\tsource_labels = [\"__name__\"]\n\t\t\tregex
+    \        = coalesce(argument.drop_metrics.value, \"(^(go)_.+$)\")\n\t\t\taction
+    \       = \"drop\"\n\t\t}\n\n\t\t// keep only metrics that match the keep_metrics
+    regex\n\t\trule {\n\t\t\tsource_labels = [\"__name__\"]\n\t\t\tregex         =
+    coalesce(argument.keep_metrics.value, \"(up|node_exporter_build_info|scrape_(duration_seconds|series_added|samples_(post_metric_relabeling|scraped))|node_(arp_entries|boot_time_seconds|context_switches_total|cpu_seconds_total|disk_(io_time_seconds_total|io_time_weighted_seconds_total|read_(bytes_total|time_seconds_total)|reads_completed_total|write_time_seconds_total|writes_completed_total|written_bytes_total)|file(fd_(allocated|maximum)|system_(avail_bytes|device_error|files(_free)?|readonly|size_bytes))|intr_total|load(1|15|5)|md_disks(_required)?|memory_(Active_(anon_bytes|bytes|file_bytes)|Anon(HugePages_bytes|Pages_bytes)|Bounce_bytes|Buffers_bytes|Cached_bytes|CommitLimit_bytes|Committed_AS_bytes|DirectMap(1G|2M|4k)_bytes|Dirty_bytes|HugePages_(Free|Rsvd|Surp|Total)|Hugepagesize_bytes|Inactive_(anon_bytes|bytes|file_bytes)|Mapped_bytes|Mem(Available|Free|Total)_bytes|S(Reclaimable|Unreclaim)_bytes|Shmem(HugePages_bytes|PmdMapped_bytes|_bytes)|Slab_bytes|SwapTotal_bytes|Vmalloc(Chunk|Total|Used)_bytes|Writeback(Tmp|)_bytes)|netstat_(Icmp6_(InErrors|InMsgs|OutMsgs)|Icmp_(InErrors|InMsgs|OutMsgs)|IpExt_(InOctets|OutOctets)|TcpExt_(Listen(Drops|Overflows)|TCPSynRetrans)|Tcp_(InErrs|InSegs|OutRsts|OutSegs|RetransSegs)|Udp6_(InDatagrams|InErrors|NoPorts|OutDatagrams|RcvbufErrors|SndbufErrors)|Udp(Lite|)_(InDatagrams|InErrors|NoPorts|OutDatagrams|RcvbufErrors|SndbufErrors))|network_(carrier|info|mtu_bytes|receive_(bytes_total|compressed_total|drop_total|errs_total|fifo_total|multicast_total|packets_total)|speed_bytes|transmit_(bytes_total|compressed_total|drop_total|errs_total|fifo_total|multicast_total|packets_total|queue_length)|up)|nf_conntrack_(entries(_limit)?|limit)|os_info|sockstat_(FRAG6|FRAG|RAW6|RAW|TCP6|TCP_(alloc|inuse|mem(_bytes)?|orphan|tw)|UDP6|UDPLITE6|UDPLITE|UDP_(inuse|mem(_bytes)?)|sockets_used)|softnet_(dropped_total|processed_total|times_squeezed_total)|systemd_unit_state|textfile_scrape_error|time_zone_offset_seconds|timex_(estimated_error_seconds|maxerror_seconds|offset_seconds|sync_status)|uname_info|vmstat_(oom_kill|pgfault|pgmajfault|pgpgin|pgpgout|pswpin|pswpout)|process_(max_fds|open_fds)))\")\n\t\t\taction
+    \       = \"keep\"\n\t\t}\n\n\t\t// Drop metrics for certain file systems\n\t\trule
+    {\n\t\t\tsource_labels = [\"__name__\", \"fstype\"]\n\t\t\tseparator     = \"@\"\n\t\t\tregex
+    \        = \"node_filesystem.*@(tempfs)\"\n\t\t\taction        = \"drop\"\n\t\t}\n\t}\n}\n"
+kind: ConfigMap
+metadata:
+  name: alloy-modules-kubernetes-jobs-749kdbk475
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -355,7 +2065,7 @@ data:
     \"forward_to\" {\n\t\tcomment = \"Must be a list(LogsReceiver) where collected
     logs should be forwarded to\"\n\t}\n\n\targument \"keep_labels\" {\n\t\toptional
     = true\n\t\tcomment  = \"List of labels to keep before the log message is written
-    to Loki\"\n\t\tdefault  = [\n\t\t\t\"app\",\n\t\t\t\"cluster\",\n\t\t\t\"component\",\n\t\t\t\"container\",\n\t\t\t\"env\",\n\t\t\t\"job\",\n\t\t\t\"level\",\n\t\t\t\"namespace\",\n\t\t\t\"region\",\n\t\t\t\"service\",\n\t\t\t\"squad\",\n\t\t\t\"team\",\n\t\t\t\"workload\",\n\t\t]\n\t}\n\n\t/*****************************************************************\n\t*
+    to Loki\"\n\t\tdefault  = [\n\t\t\t\"app\",\n\t\t\t\"job\",\n\t\t\t\"region\",\n\t\t\t\"cluster\",\n\t\t\t\"namespace\",\n\t\t\t\"pod\",\n\t\t\t\"container\",\n\t\t\t\"component\",\n\t\t\t\"env\",\n\t\t\t\"level\",\n\t\t\t\"service\",\n\t\t\t\"squad\",\n\t\t\t\"team\",\n\t\t\t\"workload\",\n\t\t]\n\t}\n\n\t/*****************************************************************\n\t*
     LOKI PROCESS\n\t*****************************************************************/\n\tloki.process
     \"keep_labels\" {\n\t\tforward_to = argument.forward_to.value\n\n\t\t/*\n\t\tAs
     all of the pod labels and annotations we transformed into labels in the previous
@@ -382,7 +2092,7 @@ data:
     = \"true\",\n\t\t\t}\n\t\t}\n\t}\n}\n"
 kind: ConfigMap
 metadata:
-  name: alloy-modules-kubernetes-logs-kd42m6dc8k
+  name: alloy-modules-kubernetes-logs-f7t5kfmddf
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -1097,6 +2807,1446 @@ metadata:
 ---
 apiVersion: v1
 data:
+  alloy-opentelemetry.json: |-
+    {
+          "graphTooltip": 1,
+          "links": [
+             {
+                "asDropdown": true,
+                "icon": "external link",
+                "includeVars": true,
+                "keepTime": true,
+                "tags": [
+                   "alloy-mixin"
+                ],
+                "targetBlank": false,
+                "title": "Dashboards",
+                "type": "dashboards"
+             }
+          ],
+          "panels": [
+             {
+                "datasource": "${datasource}",
+                "gridPos": {
+                   "h": 1,
+                   "w": 24,
+                   "x": 0,
+                   "y": 0
+                },
+                "title": "Receivers for traces [otelcol.receiver]",
+                "type": "row"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Number of spans successfully pushed into the pipeline.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "custom": {
+                         "fillOpacity": 20,
+                         "gradientMode": "hue",
+                         "stacking": {
+                            "mode": "normal"
+                         }
+                      }
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 8,
+                   "x": 0,
+                   "y": 0
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "rate(receiver_accepted_spans_ratio_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\"}[$__rate_interval])\n",
+                      "instant": false,
+                      "legendFormat": "{{ pod }} / {{ transport }}",
+                      "range": true
+                   }
+                ],
+                "title": "Accepted spans",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Number of spans that could not be pushed into the pipeline.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "custom": {
+                         "fillOpacity": 20,
+                         "gradientMode": "hue",
+                         "stacking": {
+                            "mode": "normal"
+                         }
+                      }
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 8,
+                   "x": 8,
+                   "y": 0
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "rate(receiver_refused_spans_ratio_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\"}[$__rate_interval])\n",
+                      "instant": false,
+                      "legendFormat": "{{ pod }} / {{ transport }}",
+                      "range": true
+                   }
+                ],
+                "title": "Refused spans",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "The duration of inbound RPCs.\n",
+                "gridPos": {
+                   "h": 10,
+                   "w": 8,
+                   "x": 16,
+                   "y": 0
+                },
+                "maxDataPoints": 30,
+                "options": {
+                   "calculate": false,
+                   "color": {
+                      "exponent": 0.5,
+                      "fill": "dark-orange",
+                      "mode": "scheme",
+                      "scale": "exponential",
+                      "scheme": "Oranges",
+                      "steps": 65
+                   },
+                   "exemplars": {
+                      "color": "rgba(255,0,255,0.7)"
+                   },
+                   "filterValues": {
+                      "le": 1.0000000000000001e-09
+                   },
+                   "tooltip": {
+                      "show": true,
+                      "yHistogram": true
+                   },
+                   "yAxis": {
+                      "unit": "ms"
+                   }
+                },
+                "pluginVersion": "9.0.6",
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum by (le) (increase(rpc_server_duration_milliseconds_bucket{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", rpc_service=\"opentelemetry.proto.collector.trace.v1.TraceService\"}[$__rate_interval]))",
+                      "format": "heatmap",
+                      "instant": false,
+                      "legendFormat": "{{le}}",
+                      "range": true
+                   }
+                ],
+                "title": "RPC server duration",
+                "type": "heatmap"
+             },
+             {
+                "datasource": "${datasource}",
+                "gridPos": {
+                   "h": 1,
+                   "w": 24,
+                   "x": 0,
+                   "y": 10
+                },
+                "title": "Batching of logs, metrics, and traces [otelcol.processor.batch]",
+                "type": "row"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Number of spans, metric datapoints, or log lines in a batch\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "short"
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 8,
+                   "x": 0,
+                   "y": 10
+                },
+                "maxDataPoints": 30,
+                "options": {
+                   "calculate": false,
+                   "color": {
+                      "exponent": 0.5,
+                      "fill": "dark-orange",
+                      "mode": "scheme",
+                      "scale": "exponential",
+                      "scheme": "Oranges",
+                      "steps": 65
+                   },
+                   "exemplars": {
+                      "color": "rgba(255,0,255,0.7)"
+                   },
+                   "filterValues": {
+                      "le": 1.0000000000000001e-09
+                   },
+                   "tooltip": {
+                      "show": true,
+                      "yHistogram": true
+                   },
+                   "yAxis": {
+                      "unit": "short"
+                   }
+                },
+                "pluginVersion": "9.0.6",
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum by (le) (increase(processor_batch_batch_send_size_ratio_bucket{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\"}[$__rate_interval]))",
+                      "format": "heatmap",
+                      "instant": false,
+                      "legendFormat": "{{le}}",
+                      "range": true
+                   }
+                ],
+                "title": "Number of units in the batch",
+                "type": "heatmap"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Number of distinct metadata value combinations being processed\n",
+                "gridPos": {
+                   "h": 10,
+                   "w": 8,
+                   "x": 8,
+                   "y": 10
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "processor_batch_metadata_cardinality_ratio{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\"}\n",
+                      "instant": false,
+                      "legendFormat": "{{ pod }}",
+                      "range": true
+                   }
+                ],
+                "title": "Distinct metadata values",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Number of times the batch was sent due to a timeout trigger\n",
+                "gridPos": {
+                   "h": 10,
+                   "w": 8,
+                   "x": 16,
+                   "y": 10
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "rate(processor_batch_timeout_trigger_send_ratio_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\"}[$__rate_interval])\n",
+                      "instant": false,
+                      "legendFormat": "{{ pod }}",
+                      "range": true
+                   }
+                ],
+                "title": "Timeout trigger",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "gridPos": {
+                   "h": 1,
+                   "w": 24,
+                   "x": 0,
+                   "y": 20
+                },
+                "title": "Exporters for traces [otelcol.exporter]",
+                "type": "row"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Number of spans successfully sent to destination.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "custom": {
+                         "fillOpacity": 20,
+                         "gradientMode": "hue",
+                         "stacking": {
+                            "mode": "normal"
+                         }
+                      }
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 8,
+                   "x": 0,
+                   "y": 20
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "rate(exporter_sent_spans_ratio_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\"}[$__rate_interval])\n",
+                      "instant": false,
+                      "legendFormat": "{{ pod }}",
+                      "range": true
+                   }
+                ],
+                "title": "Exported sent spans",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Number of spans in failed attempts to send to destination.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "custom": {
+                         "fillOpacity": 20,
+                         "gradientMode": "hue",
+                         "stacking": {
+                            "mode": "normal"
+                         }
+                      }
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 8,
+                   "x": 8,
+                   "y": 20
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "rate(exporter_send_failed_spans_ratio_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\"}[$__rate_interval])\n",
+                      "instant": false,
+                      "legendFormat": "{{ pod }}",
+                      "range": true
+                   }
+                ],
+                "title": "Exported failed spans",
+                "type": "timeseries"
+             }
+          ],
+          "refresh": "10s",
+          "schemaVersion": 36,
+          "tags": [
+             "alloy-mixin"
+          ],
+          "templating": {
+             "list": [
+                {
+                   "label": "Data Source",
+                   "name": "datasource",
+                   "query": "prometheus",
+                   "refresh": 1,
+                   "sort": 2,
+                   "type": "datasource"
+                },
+                {
+                   "label": "Loki Data Source",
+                   "name": "loki_datasource",
+                   "query": "loki",
+                   "refresh": 1,
+                   "sort": 2,
+                   "type": "datasource"
+                },
+                {
+                   "datasource": "${datasource}",
+                   "label": "cluster",
+                   "name": "cluster",
+                   "query": {
+                      "query": "label_values(alloy_component_controller_running_components, cluster)\n",
+                      "refId": "cluster"
+                   },
+                   "refresh": 2,
+                   "sort": 2,
+                   "type": "query"
+                },
+                {
+                   "datasource": "${datasource}",
+                   "label": "namespace",
+                   "name": "namespace",
+                   "query": {
+                      "query": "label_values(alloy_component_controller_running_components{cluster=\"$cluster\"}, namespace)\n",
+                      "refId": "namespace"
+                   },
+                   "refresh": 2,
+                   "sort": 2,
+                   "type": "query"
+                },
+                {
+                   "allValue": ".*",
+                   "datasource": "${datasource}",
+                   "includeAll": true,
+                   "label": "instance",
+                   "multi": true,
+                   "name": "instance",
+                   "query": {
+                      "query": "label_values(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\"}, instance)\n",
+                      "refId": "instance"
+                   },
+                   "refresh": 2,
+                   "sort": 2,
+                   "type": "query"
+                }
+             ]
+          },
+          "time": {
+             "from": "now-1h",
+             "to": "now"
+          },
+          "timepicker": {
+             "refresh_intervals": [
+                "5s",
+                "10s",
+                "30s",
+                "1m",
+                "5m",
+                "15m",
+                "30m",
+                "1h",
+                "2h",
+                "1d"
+             ],
+             "time_options": [
+                "5m",
+                "15m",
+                "1h",
+                "6h",
+                "12h",
+                "24h",
+                "2d",
+                "7d",
+                "30d",
+                "90d"
+             ]
+          },
+          "timezone": "utc",
+          "title": "Alloy / OpenTelemetry",
+          "uid": "9b6d37c8603e19e8922133984faad93d"
+       }
+kind: ConfigMap
+metadata:
+  annotations:
+    grafana_dashboard_folder: /dashboards/Alloy Mixin
+  labels:
+    grafana_dashboard: "1"
+  name: alloy-opentelemetry.json
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  alloy-prometheus-remote-write.json: |-
+    {
+          "annotations": {
+             "list": [
+                {
+                   "datasource": "$loki_datasource",
+                   "enable": true,
+                   "expr": "{cluster=\"$cluster\", container=\"kube-diff-logger\"} | json | namespace_extracted=\"alloy\" | name_extracted=~\"alloy.*\"",
+                   "iconColor": "rgba(0, 211, 255, 1)",
+                   "instant": false,
+                   "name": "Deployments",
+                   "titleFormat": "{{cluster}}/{{namespace}}"
+                }
+             ]
+          },
+          "graphTooltip": 1,
+          "links": [
+             {
+                "icon": "doc",
+                "targetBlank": true,
+                "title": "Documentation",
+                "tooltip": "Component documentation",
+                "type": "link",
+                "url": "https://grafana.com/docs/alloy/latest/reference/components/prometheus.remote_write/"
+             },
+             {
+                "asDropdown": true,
+                "icon": "external link",
+                "includeVars": true,
+                "keepTime": true,
+                "tags": [
+                   "alloy-mixin"
+                ],
+                "targetBlank": false,
+                "title": "Dashboards",
+                "type": "dashboards"
+             }
+          ],
+          "panels": [
+             {
+                "collapsed": false,
+                "datasource": "${datasource}",
+                "gridPos": {
+                   "h": 1,
+                   "w": 24,
+                   "x": 0,
+                   "y": 0
+                },
+                "title": "prometheus.scrape",
+                "type": "row"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Percentage of targets successfully scraped by prometheus.scrape\ncomponents.\n\nThis metric is calculated by dividing the number of targets\nsuccessfully scraped by the total number of targets scraped,\nacross all the namespaces in the selected cluster.\n\nLow success rates can indicate a problem with scrape targets,\nstale service discovery, or Alloy misconfiguration.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "percentunit"
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 12,
+                   "x": 0,
+                   "y": 1
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum(up{cluster=\"$cluster\"})\n/\ncount (up{cluster=\"$cluster\"})\n",
+                      "instant": false,
+                      "legendFormat": "% of targets successfully scraped",
+                      "range": true
+                   }
+                ],
+                "title": "Scrape success rate in $cluster",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Duration of successful scrapes by prometheus.scrape components,\nacross all the namespaces in the selected cluster.\n\nThis metric should be below your configured scrape interval.\nHigh durations can indicate a problem with a scrape target or\na performance issue with Alloy.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "s"
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 12,
+                   "x": 12,
+                   "y": 1
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "quantile(0.99, scrape_duration_seconds{cluster=\"$cluster\"})\n",
+                      "instant": false,
+                      "legendFormat": "p99",
+                      "range": true
+                   },
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "quantile(0.95, scrape_duration_seconds{cluster=\"$cluster\"})\n",
+                      "instant": false,
+                      "legendFormat": "p95",
+                      "range": true
+                   },
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "quantile(0.50, scrape_duration_seconds{cluster=\"$cluster\"})\n",
+                      "instant": false,
+                      "legendFormat": "p50",
+                      "range": true
+                   }
+                ],
+                "title": "Scrape duration in $cluster",
+                "type": "timeseries"
+             },
+             {
+                "collapsed": false,
+                "datasource": "${datasource}",
+                "gridPos": {
+                   "h": 1,
+                   "w": 24,
+                   "x": 0,
+                   "y": 11
+                },
+                "title": "prometheus.remote_write",
+                "type": "row"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "How far behind prometheus.remote_write from samples recently written\nto the WAL.\n\nEach endpoint prometheus.remote_write is configured to send metrics\nhas its own delay. The time shown here is the sum across all\nendpoints for the given component.\n\nIt is normal for the WAL delay to be within 1-3 scrape intervals. If\nthe WAL delay continues to increase beyond that amount, try\nincreasing the number of maximum shards.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "s"
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 6,
+                   "x": 0,
+                   "y": 12
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum by (instance, component_path, component_id) (\n  prometheus_remote_storage_highest_timestamp_in_seconds{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\"}\n  - ignoring(url, remote_name) group_right(instance)\n  prometheus_remote_storage_queue_highest_sent_timestamp_seconds{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}\n)\n",
+                      "instant": false,
+                      "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
+                      "range": true
+                   }
+                ],
+                "title": "WAL delay",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Rate of data containing samples and metadata sent by\nprometheus.remote_write.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "custom": {
+                         "fillOpacity": 20,
+                         "gradientMode": "hue",
+                         "stacking": {
+                            "mode": "normal"
+                         }
+                      },
+                      "unit": "Bps"
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 6,
+                   "x": 6,
+                   "y": 12
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum without (remote_name, url) (\n    rate(prometheus_remote_storage_bytes_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval]) +\n    rate(prometheus_remote_storage_metadata_bytes_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
+                      "instant": false,
+                      "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
+                      "range": true
+                   }
+                ],
+                "title": "Data write throughput",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Latency of writes to the remote system made by\nprometheus.remote_write.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "s"
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 6,
+                   "x": 12,
+                   "y": 12
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "histogram_quantile(0.99, sum by (le) (\n  rate(prometheus_remote_storage_sent_batch_duration_seconds_bucket{cluster=\"$cluster\",namespace=\"$namespace\",instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n))\n",
+                      "instant": false,
+                      "legendFormat": "99th percentile",
+                      "range": true
+                   },
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "histogram_quantile(0.50, sum by (le) (\n  rate(prometheus_remote_storage_sent_batch_duration_seconds_bucket{cluster=\"$cluster\",namespace=\"$namespace\",instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n))\n",
+                      "instant": false,
+                      "legendFormat": "50th percentile",
+                      "range": true
+                   },
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum(rate(prometheus_remote_storage_sent_batch_duration_seconds_sum{cluster=\"$cluster\",namespace=\"$namespace\",instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\"}[$__rate_interval])) /\nsum(rate(prometheus_remote_storage_sent_batch_duration_seconds_count{cluster=\"$cluster\",namespace=\"$namespace\",instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\"}[$__rate_interval]))\n",
+                      "instant": false,
+                      "legendFormat": "Average",
+                      "range": true
+                   }
+                ],
+                "title": "Write latency",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Total number of shards which are concurrently sending samples read\nfrom the Write-Ahead Log.\n\nShards are bound to a minimum and maximum, displayed on the graph.\nThe lowest minimum and the highest maximum across all clients is\nshown.\n\nEach client has its own set of shards, minimum shards, and maximum\nshards; filter to a specific URL to display more granular\ninformation.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "none"
+                   },
+                   "overrides": [
+                      {
+                         "matcher": {
+                            "id": "byName",
+                            "options": "Minimum"
+                         },
+                         "properties": [
+                            {
+                               "id": "custom.lineStyle",
+                               "value": {
+                                  "dash": [
+                                     10,
+                                     15
+                                  ],
+                                  "fill": "dash"
+                               }
+                            },
+                            {
+                               "id": "custom.showPoints",
+                               "value": "never"
+                            },
+                            {
+                               "id": "custom.hideFrom",
+                               "value": {
+                                  "legend": true,
+                                  "tooltip": false,
+                                  "viz": false
+                               }
+                            }
+                         ]
+                      },
+                      {
+                         "matcher": {
+                            "id": "byName",
+                            "options": "Maximum"
+                         },
+                         "properties": [
+                            {
+                               "id": "custom.lineStyle",
+                               "value": {
+                                  "dash": [
+                                     10,
+                                     15
+                                  ],
+                                  "fill": "dash"
+                               }
+                            },
+                            {
+                               "id": "custom.showPoints",
+                               "value": "never"
+                            },
+                            {
+                               "id": "custom.hideFrom",
+                               "value": {
+                                  "legend": true,
+                                  "tooltip": false,
+                                  "viz": false
+                               }
+                            }
+                         ]
+                      }
+                   ]
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 6,
+                   "x": 18,
+                   "y": 12
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum without (remote_name, url) (\n    prometheus_remote_storage_shards{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}\n)\n",
+                      "instant": false,
+                      "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
+                      "range": true
+                   },
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "min (\n    prometheus_remote_storage_shards_min{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}\n)\n",
+                      "instant": false,
+                      "legendFormat": "Minimum",
+                      "range": true
+                   },
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "max (\n    prometheus_remote_storage_shards_max{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}\n)\n",
+                      "instant": false,
+                      "legendFormat": "Maximum",
+                      "range": true
+                   }
+                ],
+                "title": "Shards",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Total outgoing samples sent by prometheus.remote_write.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "custom": {
+                         "fillOpacity": 20,
+                         "gradientMode": "hue",
+                         "stacking": {
+                            "mode": "normal"
+                         }
+                      },
+                      "unit": "cps"
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 8,
+                   "x": 0,
+                   "y": 22
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum without (url, remote_name) (\n  rate(prometheus_remote_storage_samples_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
+                      "instant": false,
+                      "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
+                      "range": true
+                   }
+                ],
+                "title": "Sent samples / second",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Rate of samples which prometheus.remote_write could not send due to\nnon-recoverable errors.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "custom": {
+                         "fillOpacity": 20,
+                         "gradientMode": "hue",
+                         "stacking": {
+                            "mode": "normal"
+                         }
+                      },
+                      "unit": "cps"
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 8,
+                   "x": 8,
+                   "y": 22
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum without (url,remote_name) (\n  rate(prometheus_remote_storage_samples_failed_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
+                      "instant": false,
+                      "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
+                      "range": true
+                   }
+                ],
+                "title": "Failed samples / second",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Rate of samples which prometheus.remote_write attempted to resend\nafter receiving a recoverable error.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "custom": {
+                         "fillOpacity": 20,
+                         "gradientMode": "hue",
+                         "stacking": {
+                            "mode": "normal"
+                         }
+                      },
+                      "unit": "cps"
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 8,
+                   "x": 16,
+                   "y": 22
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum without (url,remote_name) (\n  rate(prometheus_remote_storage_samples_retried_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
+                      "instant": false,
+                      "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
+                      "range": true
+                   }
+                ],
+                "title": "Retried samples / second",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Total number of active series across all components.\n\nAn \"active series\" is a series that prometheus.remote_write recently\nreceived a sample for. Active series are garbage collected whenever a\ntruncation of the WAL occurs.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "short"
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 8,
+                   "x": 0,
+                   "y": 32
+                },
+                "options": {
+                   "legend": {
+                      "showLegend": false
+                   }
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum(prometheus_remote_write_wal_storage_active_series{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"})\n",
+                      "instant": false,
+                      "legendFormat": "Series",
+                      "range": true
+                   }
+                ],
+                "title": "Active series (total)",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Total number of active series which are currently being tracked by\nprometheus.remote_write components, with separate lines for each Alloy instance.\n\nAn \"active series\" is a series that prometheus.remote_write recently\nreceived a sample for. Active series are garbage collected whenever a\ntruncation of the WAL occurs.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "short"
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 8,
+                   "x": 8,
+                   "y": 32
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "prometheus_remote_write_wal_storage_active_series{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_id!=\"\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}\n",
+                      "instant": false,
+                      "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
+                      "range": true
+                   }
+                ],
+                "title": "Active series (by instance/component)",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Total number of active series which are currently being tracked by\nprometheus.remote_write components, aggregated across all instances.\n\nAn \"active series\" is a series that prometheus.remote_write recently\nreceived a sample for. Active series are garbage collected whenever a\ntruncation of the WAL occurs.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "short"
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 8,
+                   "x": 16,
+                   "y": 32
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum by (component_path, component_id) (prometheus_remote_write_wal_storage_active_series{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_id!=\"\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"})\n",
+                      "instant": false,
+                      "legendFormat": "{{component_path}} {{component_id}}",
+                      "range": true
+                   }
+                ],
+                "title": "Active series (by component)",
+                "type": "timeseries"
+             }
+          ],
+          "refresh": "10s",
+          "schemaVersion": 36,
+          "tags": [
+             "alloy-mixin"
+          ],
+          "templating": {
+             "list": [
+                {
+                   "label": "Data Source",
+                   "name": "datasource",
+                   "query": "prometheus",
+                   "refresh": 1,
+                   "sort": 2,
+                   "type": "datasource"
+                },
+                {
+                   "label": "Loki Data Source",
+                   "name": "loki_datasource",
+                   "query": "loki",
+                   "refresh": 1,
+                   "sort": 2,
+                   "type": "datasource"
+                },
+                {
+                   "datasource": "${datasource}",
+                   "label": "cluster",
+                   "name": "cluster",
+                   "query": {
+                      "query": "label_values(alloy_component_controller_running_components, cluster)\n",
+                      "refId": "cluster"
+                   },
+                   "refresh": 2,
+                   "sort": 2,
+                   "type": "query"
+                },
+                {
+                   "datasource": "${datasource}",
+                   "label": "namespace",
+                   "name": "namespace",
+                   "query": {
+                      "query": "label_values(alloy_component_controller_running_components{cluster=\"$cluster\"}, namespace)\n",
+                      "refId": "namespace"
+                   },
+                   "refresh": 2,
+                   "sort": 2,
+                   "type": "query"
+                },
+                {
+                   "allValue": ".*",
+                   "datasource": "${datasource}",
+                   "includeAll": true,
+                   "label": "instance",
+                   "multi": true,
+                   "name": "instance",
+                   "query": {
+                      "query": "label_values(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\"}, instance)\n",
+                      "refId": "instance"
+                   },
+                   "refresh": 2,
+                   "sort": 2,
+                   "type": "query"
+                },
+                {
+                   "allValue": ".*",
+                   "datasource": "${datasource}",
+                   "includeAll": true,
+                   "label": "component_path",
+                   "multi": true,
+                   "name": "component_path",
+                   "query": {
+                      "query": "label_values(prometheus_remote_write_wal_samples_appended_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_id=~\"prometheus\\\\.remote_write\\\\..*\", component_path=~\".*\"}, component_path)\n",
+                      "refId": "component_path"
+                   },
+                   "refresh": 2,
+                   "sort": 2,
+                   "type": "query"
+                },
+                {
+                   "allValue": ".*",
+                   "datasource": "${datasource}",
+                   "includeAll": true,
+                   "label": "component",
+                   "multi": true,
+                   "name": "component",
+                   "query": {
+                      "query": "label_values(prometheus_remote_write_wal_samples_appended_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_id=~\"prometheus\\\\.remote_write\\\\..*\"}, component_id)\n",
+                      "refId": "component"
+                   },
+                   "refresh": 2,
+                   "sort": 2,
+                   "type": "query"
+                },
+                {
+                   "allValue": ".*",
+                   "datasource": "${datasource}",
+                   "includeAll": true,
+                   "label": "url",
+                   "multi": true,
+                   "name": "url",
+                   "query": {
+                      "query": "label_values(prometheus_remote_storage_sent_batch_duration_seconds_sum{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_id=~\"$component\"}, url)\n",
+                      "refId": "url"
+                   },
+                   "refresh": 2,
+                   "sort": 2,
+                   "type": "query"
+                }
+             ]
+          },
+          "time": {
+             "from": "now-1h",
+             "to": "now"
+          },
+          "timepicker": {
+             "refresh_intervals": [
+                "5s",
+                "10s",
+                "30s",
+                "1m",
+                "5m",
+                "15m",
+                "30m",
+                "1h",
+                "2h",
+                "1d"
+             ],
+             "time_options": [
+                "5m",
+                "15m",
+                "1h",
+                "6h",
+                "12h",
+                "24h",
+                "2d",
+                "7d",
+                "30d",
+                "90d"
+             ]
+          },
+          "timezone": "utc",
+          "title": "Alloy / Prometheus Components",
+          "uid": "e324cc55567d7f3a8e32860ff8e6d0d9"
+       }
+kind: ConfigMap
+metadata:
+  annotations:
+    grafana_dashboard_folder: /dashboards/Alloy Mixin
+  labels:
+    grafana_dashboard: "1"
+  name: alloy-prometheus-remote-write.json
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  alloy-resources.json: |-
+    {
+          "annotations": {
+             "list": [
+                {
+                   "datasource": "$loki_datasource",
+                   "enable": true,
+                   "expr": "{cluster=\"$cluster\", container=\"kube-diff-logger\"} | json | namespace_extracted=\"alloy\" | name_extracted=~\"alloy.*\"",
+                   "iconColor": "rgba(0, 211, 255, 1)",
+                   "instant": false,
+                   "name": "Deployments",
+                   "titleFormat": "{{cluster}}/{{namespace}}"
+                }
+             ]
+          },
+          "graphTooltip": 1,
+          "links": [
+             {
+                "asDropdown": true,
+                "icon": "external link",
+                "includeVars": true,
+                "keepTime": true,
+                "tags": [
+                   "alloy-mixin"
+                ],
+                "targetBlank": false,
+                "title": "Dashboards",
+                "type": "dashboards"
+             }
+          ],
+          "panels": [
+             {
+                "datasource": "${datasource}",
+                "description": "CPU usage of the Alloy process relative to 1 CPU core.\n\nFor example, 100% means using one entire CPU core.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "percentunit"
+                   }
+                },
+                "gridPos": {
+                   "h": 8,
+                   "w": 12,
+                   "x": 0,
+                   "y": 0
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "rate(alloy_resources_process_cpu_seconds_total{cluster=\"$cluster\",namespace=\"$namespace\",instance=~\"$instance\"}[$__rate_interval])",
+                      "instant": false,
+                      "legendFormat": "{{instance}}",
+                      "range": true
+                   }
+                ],
+                "title": "CPU usage",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Resident memory size of the Alloy process.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "decbytes"
+                   }
+                },
+                "gridPos": {
+                   "h": 8,
+                   "w": 12,
+                   "x": 12,
+                   "y": 0
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "alloy_resources_process_resident_memory_bytes{cluster=\"$cluster\",namespace=\"$namespace\",instance=~\"$instance\"}",
+                      "instant": false,
+                      "legendFormat": "{{instance}}",
+                      "range": true
+                   }
+                ],
+                "title": "Memory (RSS)",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Rate at which the Alloy process performs garbage collections.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "custom": {
+                         "drawStyle": "points",
+                         "pointSize": 3
+                      },
+                      "unit": "ops"
+                   }
+                },
+                "gridPos": {
+                   "h": 8,
+                   "w": 8,
+                   "x": 0,
+                   "y": 8
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "rate(go_gc_duration_seconds_count{cluster=\"$cluster\",namespace=\"$namespace\",instance=~\"$instance\"}[5m])\nand on(instance)\nalloy_build_info{cluster=\"$cluster\",namespace=\"$namespace\",instance=~\"$instance\"}\n",
+                      "instant": false,
+                      "legendFormat": "{{instance}}",
+                      "range": true
+                   }
+                ],
+                "title": "Garbage collections",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Number of goroutines which are running in parallel. An infinitely\ngrowing number of these indicates a goroutine leak.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "none"
+                   }
+                },
+                "gridPos": {
+                   "h": 8,
+                   "w": 8,
+                   "x": 8,
+                   "y": 8
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "go_goroutines{cluster=\"$cluster\",namespace=\"$namespace\",instance=~\"$instance\"}\nand on(instance)\nalloy_build_info{cluster=\"$cluster\",namespace=\"$namespace\",instance=~\"$instance\"}\n",
+                      "instant": false,
+                      "legendFormat": "{{instance}}",
+                      "range": true
+                   }
+                ],
+                "title": "Goroutines",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Heap memory currently in use by the Alloy process.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "decbytes"
+                   }
+                },
+                "gridPos": {
+                   "h": 8,
+                   "w": 8,
+                   "x": 16,
+                   "y": 8
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "go_memstats_heap_inuse_bytes{cluster=\"$cluster\",namespace=\"$namespace\",instance=~\"$instance\"}\nand on(instance)\nalloy_build_info{cluster=\"$cluster\",namespace=\"$namespace\",instance=~\"$instance\"}\n",
+                      "instant": false,
+                      "legendFormat": "{{instance}}",
+                      "range": true
+                   }
+                ],
+                "title": "Memory (heap inuse)",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Rate of data received across all network interfaces for the machine\nAlloy is running on.\n\nData shown here is across all running processes and not exclusive to\nthe running Alloy process.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "custom": {
+                         "fillOpacity": 30,
+                         "gradientMode": "none",
+                         "stacking": {
+                            "mode": "normal"
+                         }
+                      },
+                      "unit": "Bps"
+                   }
+                },
+                "gridPos": {
+                   "h": 8,
+                   "w": 12,
+                   "x": 0,
+                   "y": 16
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "rate(alloy_resources_machine_rx_bytes_total{cluster=\"$cluster\",namespace=\"$namespace\",instance=~\"$instance\"}[$__rate_interval])\n",
+                      "instant": false,
+                      "legendFormat": "{{instance}}",
+                      "range": true
+                   }
+                ],
+                "title": "Network receive bandwidth",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Rate of data sent across all network interfaces for the machine\nAlloy is running on.\n\nData shown here is across all running processes and not exclusive to\nthe running Alloy process.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "custom": {
+                         "fillOpacity": 30,
+                         "gradientMode": "none",
+                         "stacking": {
+                            "mode": "normal"
+                         }
+                      },
+                      "unit": "Bps"
+                   }
+                },
+                "gridPos": {
+                   "h": 8,
+                   "w": 12,
+                   "x": 12,
+                   "y": 16
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "rate(alloy_resources_machine_tx_bytes_total{cluster=\"$cluster\",namespace=\"$namespace\",instance=~\"$instance\"}[$__rate_interval])\n",
+                      "instant": false,
+                      "legendFormat": "{{instance}}",
+                      "range": true
+                   }
+                ],
+                "title": "Network send bandwidth",
+                "type": "timeseries"
+             }
+          ],
+          "refresh": "10s",
+          "schemaVersion": 36,
+          "tags": [
+             "alloy-mixin"
+          ],
+          "templating": {
+             "list": [
+                {
+                   "label": "Data Source",
+                   "name": "datasource",
+                   "query": "prometheus",
+                   "refresh": 1,
+                   "sort": 2,
+                   "type": "datasource"
+                },
+                {
+                   "label": "Loki Data Source",
+                   "name": "loki_datasource",
+                   "query": "loki",
+                   "refresh": 1,
+                   "sort": 2,
+                   "type": "datasource"
+                },
+                {
+                   "datasource": "${datasource}",
+                   "label": "cluster",
+                   "name": "cluster",
+                   "query": {
+                      "query": "label_values(alloy_component_controller_running_components, cluster)\n",
+                      "refId": "cluster"
+                   },
+                   "refresh": 2,
+                   "sort": 2,
+                   "type": "query"
+                },
+                {
+                   "datasource": "${datasource}",
+                   "label": "namespace",
+                   "name": "namespace",
+                   "query": {
+                      "query": "label_values(alloy_component_controller_running_components{cluster=\"$cluster\"}, namespace)\n",
+                      "refId": "namespace"
+                   },
+                   "refresh": 2,
+                   "sort": 2,
+                   "type": "query"
+                },
+                {
+                   "allValue": ".*",
+                   "datasource": "${datasource}",
+                   "includeAll": true,
+                   "label": "instance",
+                   "multi": true,
+                   "name": "instance",
+                   "query": {
+                      "query": "label_values(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\"}, instance)\n",
+                      "refId": "instance"
+                   },
+                   "refresh": 2,
+                   "sort": 2,
+                   "type": "query"
+                }
+             ]
+          },
+          "time": {
+             "from": "now-1h",
+             "to": "now"
+          },
+          "timepicker": {
+             "refresh_intervals": [
+                "5s",
+                "10s",
+                "30s",
+                "1m",
+                "5m",
+                "15m",
+                "30m",
+                "1h",
+                "2h",
+                "1d"
+             ],
+             "time_options": [
+                "5m",
+                "15m",
+                "1h",
+                "6h",
+                "12h",
+                "24h",
+                "2d",
+                "7d",
+                "30d",
+                "90d"
+             ]
+          },
+          "timezone": "utc",
+          "title": "Alloy / Resources",
+          "uid": "d6a8574c31f3d7cb8f1345ec84d15a67"
+       }
+kind: ConfigMap
+metadata:
+  annotations:
+    grafana_dashboard_folder: /dashboards/Alloy Mixin
+  labels:
+    grafana_dashboard: "1"
+  name: alloy-resources.json
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
   alertmanager_fallback_config.yaml: |
     route:
       group_wait: 0s
@@ -1781,19 +4931,21 @@ spec:
           name: modules-kubernetes-traces
         - mountPath: /etc/alloy/modules/kubernetes/profiles
           name: modules-kubernetes-profiles
+        - mountPath: /etc/alloy/modules/kubernetes/jobs
+          name: modules-kubernetes-jobs
       dnsPolicy: ClusterFirst
       nodeSelector:
         kubernetes.io/os: linux
       serviceAccountName: alloy
       volumes:
       - configMap:
-          name: alloy-config-284mhm8bfc
+          name: alloy-config-6k989hdmh5
         name: config
       - configMap:
           name: alloy-modules-kubernetes-metrics-db96446m8f
         name: modules-kubernetes-metrics
       - configMap:
-          name: alloy-modules-kubernetes-logs-kd42m6dc8k
+          name: alloy-modules-kubernetes-logs-f7t5kfmddf
         name: modules-kubernetes-logs
       - configMap:
           name: alloy-modules-kubernetes-traces-4h9946thb4
@@ -1801,6 +4953,9 @@ spec:
       - configMap:
           name: alloy-modules-kubernetes-profiles-8hhkt7m7k9
         name: modules-kubernetes-profiles
+      - configMap:
+          name: alloy-modules-kubernetes-jobs-749kdbk475
+        name: modules-kubernetes-jobs
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -1891,6 +5046,86 @@ spec:
         name: tmp
   updateStrategy:
     type: RollingUpdate
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: alloy-mixin-alerts
+  namespace: monitoring-system
+spec:
+  groups:
+  - name: clustering
+    rules:
+    - alert: ClusterNotConverging
+      annotations:
+        message: 'Cluster is not converging: nodes report different number of peers
+          in the cluster.'
+      expr: stddev by (cluster, namespace) (sum without (state) (cluster_node_peers))
+        != 0
+      for: 10m
+    - alert: ClusterNodeCountMismatch
+      annotations:
+        message: Nodes report different number of peers vs. the count of observed
+          Alloy metrics. Some Alloy metrics may be missing or the cluster is in a
+          split brain state.
+      expr: |
+        sum without (state) (cluster_node_peers) !=
+        on (cluster, namespace) group_left
+        count by (cluster, namespace) (cluster_node_info)
+      for: 15m
+    - alert: ClusterNodeUnhealthy
+      annotations:
+        message: Cluster node is reporting a gossip protocol health score > 0.
+      expr: |
+        cluster_node_gossip_health_score > 0
+      for: 10m
+    - alert: ClusterNodeNameConflict
+      annotations:
+        message: A node tried to join the cluster with a name conflicting with an
+          existing peer.
+      expr: sum by (cluster, namespace) (rate(cluster_node_gossip_received_events_total{event="node_conflict"}[2m]))
+        > 0
+      for: 10m
+    - alert: ClusterNodeStuckTerminating
+      annotations:
+        message: Cluster node stuck in Terminating state.
+      expr: sum by (cluster, namespace, instance) (cluster_node_peers{state="terminating"})
+        > 0
+      for: 10m
+    - alert: ClusterConfigurationDrift
+      annotations:
+        message: Cluster nodes are not using the same configuration file.
+      expr: |
+        count without (sha256) (
+            max by (cluster, namespace, sha256) (alloy_config_hash and on(cluster, namespace) cluster_node_info)
+        ) > 1
+      for: 5m
+  - name: alloy_controller
+    rules:
+    - alert: SlowComponentEvaluations
+      annotations:
+        message: Component evaluations are taking too long.
+      expr: sum by (cluster, namespace, component_path, component_id) (rate(alloy_component_evaluation_slow_seconds[10m]))
+        > 0
+      for: 15m
+    - alert: UnhealthyComponents
+      annotations:
+        message: Unhealthy components detected.
+      expr: sum by (cluster, namespace) (alloy_component_controller_running_components{health_type!="healthy"})
+        > 0
+      for: 15m
+  - name: otelcol
+    rules:
+    - alert: OtelcolReceiverRefusedSpans
+      annotations:
+        message: The receiver could not push some spans to the pipeline.
+      expr: sum(rate(receiver_refused_spans_ratio_total{}[1m])) > 0
+      for: 5m
+    - alert: OtelcolExporterFailedSpans
+      annotations:
+        message: The exporter failed to send spans to their destination.
+      expr: sum(rate(exporter_send_failed_spans_ratio_total{}[1m])) > 0
+      for: 5m
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor

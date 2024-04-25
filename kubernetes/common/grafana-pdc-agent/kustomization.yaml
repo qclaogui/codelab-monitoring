@@ -1,0 +1,30 @@
+# ----------------------------------------------------
+# apiVersion and kind of Kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# https://github.com/grafana/pdc-agent
+
+labels:
+- includeSelectors: true
+  pairs:
+    app.kubernetes.io/name: grafana-pdc-agent
+- includeSelectors: false
+  pairs:
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/version: 0.0.29
+
+resources:
+- pdc-agent-deployment.yaml
+
+images:
+- name: docker.io/grafana/pdc-agent
+  newTag: 0.0.29
+
+# secretGenerator:
+# - name: grafana-pdc-agent-env
+#   namespace: monitoring-system
+#   literals:
+#   - TOKEN=xxx
+#   - HOSTED_GRAFANA_ID=xxx
+#   - CLUSTER=prod-us-central-0
