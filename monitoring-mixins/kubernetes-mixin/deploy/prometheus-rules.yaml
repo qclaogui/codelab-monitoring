@@ -664,26 +664,26 @@ spec:
           record: 'node_namespace_pod:kube_pod_info:'
         - expr: |
             count by (cluster, node) (
-              node_cpu_seconds_total{mode="idle",job="integrations/node_exporter"}
+              node_cpu_seconds_total{mode="idle",job="integrations/kubernetes/node-exporter"}
               * on (cluster, namespace, pod) group_left(node)
               topk by(cluster, namespace, pod) (1, node_namespace_pod:kube_pod_info:)
             )
           record: node:node_num_cpu:sum
         - expr: |
             sum(
-              node_memory_MemAvailable_bytes{job="integrations/node_exporter"} or
+              node_memory_MemAvailable_bytes{job="integrations/kubernetes/node-exporter"} or
               (
-                node_memory_Buffers_bytes{job="integrations/node_exporter"} +
-                node_memory_Cached_bytes{job="integrations/node_exporter"} +
-                node_memory_MemFree_bytes{job="integrations/node_exporter"} +
-                node_memory_Slab_bytes{job="integrations/node_exporter"}
+                node_memory_Buffers_bytes{job="integrations/kubernetes/node-exporter"} +
+                node_memory_Cached_bytes{job="integrations/kubernetes/node-exporter"} +
+                node_memory_MemFree_bytes{job="integrations/kubernetes/node-exporter"} +
+                node_memory_Slab_bytes{job="integrations/kubernetes/node-exporter"}
               )
             ) by (cluster)
           record: :node_memory_MemAvailable_bytes:sum
         - expr: |
             avg by (cluster, node) (
               sum without (mode) (
-                rate(node_cpu_seconds_total{mode!="idle",mode!="iowait",mode!="steal",job="integrations/node_exporter"}[5m])
+                rate(node_cpu_seconds_total{mode!="idle",mode!="iowait",mode!="steal",job="integrations/kubernetes/node-exporter"}[5m])
               )
             )
           record: node:node_cpu_utilization:ratio_rate5m

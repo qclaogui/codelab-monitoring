@@ -43,6 +43,32 @@ metrics.servicemonitors_scrape "kubernetes" {
 	forward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]
 }
 
+// Jobs metrics
+import.file "jobs" {
+	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/kubernetes/jobs"
+}
+
+jobs.kubelet_metrics_scrape "kubernetes" {
+	cluster         = coalesce(env("CLUSTER_NAME"), "k3d-k3s-codelab")
+	scrape_interval = "30s"
+
+	forward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]
+}
+
+jobs.kube_state_metrics_scrape "kubernetes" {
+	cluster         = coalesce(env("CLUSTER_NAME"), "k3d-k3s-codelab")
+	scrape_interval = "30s"
+
+	forward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]
+}
+
+jobs.node_exporter_metrics_scrape "kubernetes" {
+	cluster         = coalesce(env("CLUSTER_NAME"), "k3d-k3s-codelab")
+	scrape_interval = "30s"
+
+	forward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]
+}
+
 /********************************************
  * Logs
  ********************************************/
@@ -105,9 +131,7 @@ profiles.annotations_scrape "kubernetes" {
 	forward_to = [provider.self_hosted_stack.kubernetes.profiles_receiver]
 }
 
-/*****************************************************************
-* Alloy Integrations
-*****************************************************************/
+// Alloy integration metrics
 remote.kubernetes.configmap "integrations" {
 	namespace = "monitoring-system"
 	name      = "alloy-integrations"
