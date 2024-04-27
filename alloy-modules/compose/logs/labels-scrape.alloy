@@ -20,11 +20,6 @@ declare "labels_scrape" {
 		comment = "Must be a list(LogsReceiver) where collected logs should be forwarded to"
 	}
 
-	argument "job_label" {
-		optional = true
-		default  = "integrations/docker/cadvisor"
-	}
-
 	argument "instance_name" {
 		optional = true
 	}
@@ -104,18 +99,33 @@ declare "labels_scrape" {
 			regex = "^(" + argument.tenant.value + ")$"
 		}
 
+		// set a default job label to be the namespace/service_name
 		rule {
 			action        = "replace"
-			source_labels = ["__meta_docker_container_id"]
-			replacement   = argument.job_label.value
-			target_label  = "job"
+			source_labels = [
+				"__meta_docker_container_label_com_docker_compose_service",
+			]
+			regex        = "^(?:;*)?([^;]+).*$"
+			replacement  = argument.namespace.value + "/$1"
+			target_label = "job"
+		}
+
+		// allow resources to declare their the job label value to use when collecting their logs, the default value is "",
+		rule {
+			action        = "replace"
+			source_labels = [
+				"__meta_docker_container_label_" + argument.__sd_label.value + "_job",
+			]
+			separator    = ";"
+			regex        = "^(?:;*)?([^;]+).*$"
+			replacement  = "$1"
+			target_label = "job"
 		}
 
 		rule {
-			action        = "replace"
-			source_labels = ["__meta_docker_container_id"]
-			replacement   = coalesce(argument.instance_name.value, constants.hostname)
-			target_label  = "instance"
+			source_labels = ["__meta_docker_container_name"]
+			regex         = "/(.*)"
+			target_label  = "pod"
 		}
 
 		rule {
