@@ -8,10 +8,6 @@ This example enabled local LGTMP Stack meta monitoring by setting `loki`,`tempo`
 
 ```yaml
 include:
-# # use git remote
-# - path: https://github.com/qclaogui/codelab-monitoring.git#main:docker-compose/monolithic-mode/all-in-one/compose.yaml
-
-# # use local path
 - path: ../../docker-compose/monolithic-mode/all-in-one/compose.yaml
 
 ```

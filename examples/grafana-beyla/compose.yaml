@@ -1,0 +1,35 @@
+# ============================================================================ #
+#                           Grafana Beyla                                     
+# ============================================================================ #
+
+# Usage:
+#   COMPOSE_EXPERIMENTAL_GIT_REMOTE=true docker compose up -d --remove-orphans
+#   COMPOSE_EXPERIMENTAL_GIT_REMOTE=true docker compose down
+
+# Note:
+# include is available in Docker Compose version 2.20 and later, and Docker Desktop version 4.22 and later.
+# docs: https://docs.docker.com/compose/multiple-compose-files/include/#include-and-overrides
+include:
+# # use git remote
+# - path: https://github.com/qclaogui/codelab-monitoring.git#main:docker-compose/monolithic-mode/traces/compose.yaml
+
+# # use local path
+- path: ../../docker-compose/monolithic-mode/traces/compose.yaml
+
+services:
+  # Beyla for NGINX gateway
+  gateway-beyla:
+    depends_on: { gateway: { condition: service_started } }
+    image: grafana/beyla:1.5.2
+    volumes:
+      - ./beyla/beyla-config.yml/:/configs/beyla-config.yml
+      - ./sys-kernel-security:/sys/kernel/security
+    privileged: true 
+    network_mode: "service:gateway"
+    pid: "service:gateway"
+    environment:
+      BEYLA_CONFIG_PATH: "/configs/beyla-config.yml"
+      BEYLA_OPEN_PORT: "8080,3100,3200"
+      BEYLA_SERVICE_NAMESPACE: "monitoring-system"
+      OTEL_SERVICE_NAME: "gateway"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://alloy:4318"

@@ -1,0 +1,40 @@
+log_level: DEBUG
+print_traces: true
+
+routes:
+  ignored_patterns:
+    - /metrics
+  patterns:
+    - /api/v1/push
+    - /prometheus
+    - /prometheus/api/v1/series
+    - /prometheus/api/v1/query_range
+    - /prometheus/api/v1/query_exemplars
+    - /loki/api/v1/push
+    - /loki/api/v1/query_range
+    - /loki/api/v1/labels
+    - /otlp/v1/traces
+    - /otlp/v1/metrics
+    - /api/traces/{trace_id}
+  unmatched: path
+
+otel_metrics_export:
+  report_target: true
+  report_peer: true
+  features:
+    - application
+    - application_service_graph
+    - application_span
+    - network
+
+network:
+  enable: true
+  allowed_attributes:
+    - beyla.ip
+    - transport
+    - src.address
+    - dst.address
+    - src.port
+    - dst.port
+    - src.name
+    - dst.name
