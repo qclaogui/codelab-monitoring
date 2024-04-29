@@ -154,3 +154,19 @@ services:
     environment:
       <<: *jaeger-environment
       JAEGER_TAGS: app=compactor
+
+  metrics-generator:
+    depends_on: { minio: { condition: service_healthy } }
+    image: *tempoImage
+    configs:
+      - source: tempo_config_file
+        target: /etc/tempo/config.yaml
+    volumes:
+      - ../../common/config/tempo:/etc/tempo/configs
+    command:
+      - -config.file=/etc/tempo/config.yaml
+      - -target=metrics-generator
+      - -config.expand-env=true
+    environment:
+      <<: *jaeger-environment
+      JAEGER_TAGS: app=metrics-generator
