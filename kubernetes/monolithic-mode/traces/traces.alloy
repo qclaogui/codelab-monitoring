@@ -1,5 +1,5 @@
 logging {
-	level  = coalesce(env("ALLOY_LOG_LEVEL"), "info")
+	level  = coalesce(env("ALLOY_LOG_LEVEL"), "warn")
 	format = "logfmt"
 }
 
@@ -18,6 +18,58 @@ provider.self_hosted_stack "kubernetes" {
 	logs_endpoint_url    = coalesce(env("SELF_HOSTED_LOGS_ENDPOINT_URL"), "http://nginx.gateway.svc:3100/loki/api/v1/push")
 	traces_endpoint_url  = coalesce(env("SELF_HOSTED_TRACES_ENDPOINT_URL"), "http://nginx.gateway.svc:4318")
 }
+
+/********************************************
+ * Beyla ebpf
+ ********************************************/
+// beyla.ebpf "default" {
+// 	attributes {
+// 		kubernetes {
+// 			enable = "true"
+// 		}
+// 	}
+
+// 	routes {
+// 		patterns = [
+// 			"/api/v1/push",
+// 			"/prometheus",
+// 			"/prometheus/api/v1/series",
+// 			"/prometheus/api/v1/query_range",
+// 			"/prometheus/api/v1/query_exemplars",
+// 			"/loki/api/v1/push",
+// 			"/loki/api/v1/query_range",
+// 			"/loki/api/v1/labels",
+// 			"/otlp/v1/traces",
+// 			"/otlp/v1/metrics",
+// 			"/api/traces/{trace_id}",
+// 		]
+// 		unmatched = "path"
+// 	}
+
+// 	discovery {
+// 		services {
+// 			namespace  = "gateway"
+// 			// name       = "nginx"
+// 			exe_path   = "nginx"
+// 			open_ports = "8080,3100,3200,4318"
+// 		}
+// 	}
+
+// 	output {
+// 		traces = [otelcol.exporter.logging.traces.input, traces.process_and_transform.kubernetes.alloy_traces_input]
+// 	}
+// }
+
+// otelcol.exporter.logging "traces" {
+//     verbosity           = "detailed"
+//     sampling_initial    = 1
+//     sampling_thereafter = 1
+// }
+
+// prometheus.scrape "beyla" {
+// 	targets    = beyla.ebpf.default.targets
+// 	forward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]
+// }
 
 /********************************************
  * Traces
@@ -41,6 +93,31 @@ tracing {
 
 	// Forward Alloy internal spans to traces process.
 	write_to = [traces.process_and_transform.kubernetes.alloy_traces_input]
+}
+
+/********************************************
+ * Logs
+ ********************************************/
+import.file "logs" {
+	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/kubernetes/logs"
+}
+
+logs.rules_to_loki "kubernetes" { }
+
+logs.kubernetes_cluster_events "kubernetes" {
+	cluster = coalesce(env("CLUSTER_NAME"), "k3d-k3s-codelab")
+
+	forward_to = [logs.keep_labels.kubernetes.receiver]
+}
+
+logs.annotations_scrape "kubernetes" {
+	cluster = "k3d-k3s-codelab"
+
+	forward_to = [logs.keep_labels.kubernetes.receiver]
+}
+
+logs.keep_labels "kubernetes" {
+	forward_to = [provider.self_hosted_stack.kubernetes.logs_receiver]
 }
 
 /********************************************

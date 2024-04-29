@@ -1734,7 +1734,7 @@ metadata:
 ---
 apiVersion: v1
 data:
-  config.alloy: "logging {\n\tlevel  = coalesce(env(\"ALLOY_LOG_LEVEL\"), \"info\")\n\tformat
+  config.alloy: "logging {\n\tlevel  = coalesce(env(\"ALLOY_LOG_LEVEL\"), \"warn\")\n\tformat
     = \"logfmt\"\n}\n\n/********************************************\n * Grafana LGTMP
     Stack Receiver Provider\n ********************************************/\nimport.git
     \"provider\" {\n\trepository     = \"https://github.com/qclaogui/codelab-monitoring.git\"\n\trevision
@@ -1793,7 +1793,7 @@ data:
     \tforward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]\n// }\n"
 kind: ConfigMap
 metadata:
-  name: alloy-config-dmg2hdb585
+  name: alloy-config-mt4f8cf687
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -5396,15 +5396,6 @@ type: Opaque
 ---
 apiVersion: v1
 data:
-  ALLOY_LOG_LEVEL: d2Fybg==
-kind: Secret
-metadata:
-  name: alloy-env-f7k229g955
-  namespace: monitoring-system
-type: Opaque
----
-apiVersion: v1
-data:
   instance-address: bWVtY2FjaGVkLm1lbWNhY2hlZC1zeXN0ZW0uc3ZjLmNsdXN0ZXIubG9jYWw6MTEyMTE=
   instance-name: cHJpbWFyeQ==
   instance-timeout: NXM=
@@ -6206,7 +6197,7 @@ spec:
               fieldPath: spec.nodeName
         envFrom:
         - secretRef:
-            name: alloy-env-f7k229g955
+            name: alloy-env
             optional: true
         image: docker.io/grafana/alloy:v1.0.0
         imagePullPolicy: IfNotPresent
@@ -6233,6 +6224,8 @@ spec:
             scheme: HTTP
           initialDelaySeconds: 10
           timeoutSeconds: 1
+        securityContext:
+          privileged: true
         volumeMounts:
         - mountPath: /etc/alloy
           name: config
@@ -6252,7 +6245,7 @@ spec:
       serviceAccountName: alloy
       volumes:
       - configMap:
-          name: alloy-config-dmg2hdb585
+          name: alloy-config-mt4f8cf687
         name: config
       - configMap:
           name: alloy-modules-kubernetes-metrics-db96446m8f

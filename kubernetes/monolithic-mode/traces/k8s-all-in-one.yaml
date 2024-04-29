@@ -1,7 +1,31 @@
 apiVersion: v1
 kind: Namespace
 metadata:
+  labels:
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 3.0.0
+  name: logging-system
+---
+apiVersion: v1
+kind: Namespace
+metadata:
   name: tracing-system
+---
+apiVersion: v1
+automountServiceAccountToken: true
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 3.0.0
+  name: loki
+  namespace: logging-system
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -143,6 +167,27 @@ rules:
   - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 3.0.0
+  name: loki-clusterrole
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  verbs:
+  - get
+  - watch
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
@@ -161,8 +206,136 @@ subjects:
   name: alloy
   namespace: monitoring-system
 ---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 3.0.0
+  name: loki-clusterrolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: loki-clusterrole
+subjects:
+- kind: ServiceAccount
+  name: loki
+  namespace: logging-system
+---
 apiVersion: v1
 data:
+  gateway_loki.conf.template: |-
+    server {
+        listen 3100;
+        listen [::]:3100;
+
+        location = / {
+          return 200 'OK';
+          auth_basic off;
+          access_log off;
+        }
+
+        proxy_set_header X-Scope-OrgID $ensured_x_scope_orgid;
+
+        # Distributor endpoints
+        location = /api/prom/push {
+          proxy_pass      http://${LOKI_DISTRIBUTOR_HOST}:3100$request_uri;
+        }
+        location = /loki/api/v1/push {
+          proxy_pass      http://${LOKI_DISTRIBUTOR_HOST}:3100$request_uri;
+        }
+        location = /distributor/ring {
+          proxy_pass      http://${LOKI_DISTRIBUTOR_HOST}:3100$request_uri;
+        }
+
+        # Ingester endpoints
+        location /flush {
+          proxy_pass      http://${LOKI_INGESTER_HOST}:3100$request_uri;
+        }
+        location ^~ /ingester/ {
+          proxy_pass      http://${LOKI_INGESTER_HOST}:3100$request_uri;
+        }
+        location = /ingester {
+          internal;        # to suppress 301
+        }
+
+        # Ring
+        location = /ring {
+          proxy_pass http://${LOKI_INGESTER_HOST}:3100$request_uri;
+        }
+
+        # MemberListKV
+        location = /memberlist {
+          proxy_pass http://${LOKI_INGESTER_HOST}:3100$request_uri;
+        }
+
+
+        # Ruler endpoints
+        location = /ruler/ring {
+          proxy_pass      http://${LOKI_RULER_HOST}:3100$request_uri;
+        }
+        location ~ /api/prom/rules.* {
+          proxy_pass      http://${LOKI_RULER_HOST}:3100$request_uri;
+        }
+        location ~ /api/prom/alerts.* {
+          proxy_pass      http://${LOKI_RULER_HOST}:3100$request_uri;
+        }
+        location ~ /loki/api/v1/rules.* {
+          proxy_pass      http://${LOKI_RULER_HOST}:3100$request_uri;
+        }
+        location ~ /loki/api/v1/alerts.* {
+          proxy_pass      http://${LOKI_RULER_HOST}:3100$request_uri;
+        }
+        location ~ /prometheus/api/v1/alerts.* {
+          proxy_pass      http://${LOKI_RULER_HOST}:3100$request_uri;
+        }
+        location ~ /prometheus/api/v1/rules.* {
+          proxy_pass      http://${LOKI_RULER_HOST}:3100$request_uri;
+        }
+
+
+        # Compactor endpoints
+        location = /compactor/ring {
+          proxy_pass      http://${LOKI_COMPACTOR_HOST}:3100$request_uri;
+        }
+        location = /loki/api/v1/delete {
+          proxy_pass      http://${LOKI_COMPACTOR_HOST}:3100$request_uri;
+        }
+        location = /loki/api/v1/cache/generation_numbers {
+          proxy_pass      http://${LOKI_COMPACTOR_HOST}:3100$request_uri;
+        }
+
+        # IndexGateway endpoints
+        location = /indexgateway/ring {
+          proxy_pass      http://${LOKI_COMPACTOR_HOST}:3100$request_uri;
+        }
+
+        # Config endpoints
+        location = /config {
+          proxy_pass      http://${LOKI_COMPACTOR_HOST}:3100$request_uri;
+        }
+
+        # QueryFrontend, Querier endpoints
+        location = /api/prom/tail {
+          proxy_pass      http://${LOKI_QUERY_FRONTEND_HOST}:3100$request_uri;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection "upgrade";
+        }
+        location = /loki/api/v1/tail {
+          proxy_pass      http://${LOKI_QUERIER_HOST}:3100$request_uri;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection "upgrade";
+        }
+        location ~ /api/prom/.* {
+          proxy_pass      http://${LOKI_QUERY_FRONTEND_HOST}:3100$request_uri;
+        }
+        location ~ /loki/api/v1.* {
+          proxy_pass      http://${LOKI_QUERY_FRONTEND_HOST}:3100$request_uri;
+        }
+      }
   gateway_mimir.conf.template: "server {\n    listen 8080;\n    listen [::]:8080;\n\n
     \   location = / {\n      return 200 'OK';\n      auth_basic off;\n      access_log
     off;\n    }\n\n    proxy_set_header X-Scope-OrgID $ensured_x_scope_orgid;\n\n
@@ -210,6 +383,154 @@ kind: ConfigMap
 metadata:
   name: nginx-templates
   namespace: gateway
+---
+apiVersion: v1
+data:
+  config.yaml: |2
+
+    auth_enabled: false
+
+    # -reporting.enabled=false
+    analytics:
+     reporting_enabled: false
+
+    server:
+      http_listen_port: 3100
+      grpc_listen_port: 9095
+      log_level: info
+      log_format: json
+
+    # https://grafana.com/docs/loki/latest/configure/#use-environment-variables-in-the-configuration
+    common:
+      compactor_address: http://loki.logging-system.svc.cluster.local:3100
+      path_prefix: /var/loki
+      replication_factor: 1
+      storage:
+        s3:
+          bucketnames: loki-data
+          endpoint: ${LOKI_S3_ENDPOINT:-minio.minio-system.svc.cluster.local:443}
+          access_key_id: ${LOKI_S3_ACCESS_KEY_ID:-lgtmp}
+          secret_access_key: ${LOKI_S3_SECRET_ACCESS_KEY:-supersecret}
+          insecure: ${LOKI_S3_INSECURE:-false}
+          s3forcepathstyle: true
+          http_config:
+            insecure_skip_verify: true
+
+    bloom_gateway:
+      enabled: true
+      client:
+        addresses: "dns+loki.logging-system.svc.cluster.local:9095"
+        cache_results: true
+        results_cache:
+          cache:
+            memcached_client:
+              addresses: "dns+memcached.memcached-system.svc.cluster.local:11211"
+
+    bloom_compactor:
+      enabled: true
+      ring:
+        kvstore:
+          store: memberlist
+
+    index_gateway:
+      mode: simple
+
+    compactor:
+      working_directory: /tmp/compactor
+
+    memberlist:
+      join_members:
+      - loki-memberlist.logging-system.svc.cluster.local:7946
+
+    # https://github.com/grafana/loki/blob/main/docs/sources/configure/_index.md#query_range
+    query_range:
+      align_queries_with_step: true
+
+      cache_results: true
+      results_cache:
+        cache:
+          memcached_client:
+            addresses: "dns+memcached.memcached-system.svc.cluster.local:11211"
+
+      cache_index_stats_results: true
+      index_stats_results_cache:
+        cache:
+          memcached_client:
+            addresses: "dns+memcached.memcached-system.svc.cluster.local:11211"
+
+    pattern_ingester:
+      enabled: true
+
+    limits_config:
+      max_global_streams_per_user: 0
+      ingestion_rate_mb: 50000
+      ingestion_burst_size_mb: 50000
+      volume_enabled: true
+
+    ruler:
+      storage:
+        s3:
+          bucketnames: loki-ruler
+        type: s3
+
+    runtime_config:
+      file: /etc/loki/runtime-config/runtime-config.yaml
+
+    schema_config:
+      configs:
+      - from: "2024-04-08"
+        index:
+          period: 24h
+          prefix: loki_index_
+        object_store: s3
+        schema: v13
+        store: tsdb
+
+    storage_config:
+      tsdb_shipper:
+        active_index_directory: /var/loki/index
+        cache_location: /var/loki/cache
+        index_gateway_client:
+          server_address: "dns+loki.logging-system.svc.cluster.local:9095"
+
+    chunk_store_config:
+      chunk_cache_config:
+        memcached_client:
+          addresses: "dns+memcached.memcached-system.svc.cluster.local:11211"
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 3.0.0
+  name: loki-config-5468cb29k9
+  namespace: logging-system
+---
+apiVersion: v1
+data:
+  runtime-config.yaml: |
+    # This file can be used to set overrides or other runtime config.
+    overrides:
+      "fake": # limits for anonymous that the whole cluster enforces
+        ingestion_rate_mb: 1500000
+        max_streams_per_user: 100000
+        max_chunks_per_query: 100000
+      "anonymous": # limits for anonymous that the whole cluster enforces
+        ingestion_rate_mb: 1500000
+        max_streams_per_user: 100000
+        max_chunks_per_query: 100000
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 3.0.0
+  name: loki-runtime-9599m5k6h2
+  namespace: logging-system
 ---
 apiVersion: v1
 data:
@@ -1065,7 +1386,7 @@ metadata:
 ---
 apiVersion: v1
 data:
-  config.alloy: "logging {\n\tlevel  = coalesce(env(\"ALLOY_LOG_LEVEL\"), \"info\")\n\tformat
+  config.alloy: "logging {\n\tlevel  = coalesce(env(\"ALLOY_LOG_LEVEL\"), \"warn\")\n\tformat
     = \"logfmt\"\n}\n\n/********************************************\n * Grafana LGTMP
     Stack Receiver Provider\n ********************************************/\nimport.git
     \"provider\" {\n\trepository     = \"https://github.com/qclaogui/codelab-monitoring.git\"\n\trevision
@@ -1074,6 +1395,21 @@ data:
     = coalesce(env(\"SELF_HOSTED_METRICS_ENDPOINT_URL\"), \"http://nginx.gateway.svc:8080/api/v1/push\")\n\tlogs_endpoint_url
     \   = coalesce(env(\"SELF_HOSTED_LOGS_ENDPOINT_URL\"), \"http://nginx.gateway.svc:3100/loki/api/v1/push\")\n\ttraces_endpoint_url
     \ = coalesce(env(\"SELF_HOSTED_TRACES_ENDPOINT_URL\"), \"http://nginx.gateway.svc:4318\")\n}\n\n/********************************************\n
+    * Beyla ebpf\n ********************************************/\n// beyla.ebpf \"default\"
+    {\n// \tattributes {\n// \t\tkubernetes {\n// \t\t\tenable = \"true\"\n// \t\t}\n//
+    \t}\n\n// \troutes {\n// \t\tpatterns = [\n// \t\t\t\"/api/v1/push\",\n// \t\t\t\"/prometheus\",\n//
+    \t\t\t\"/prometheus/api/v1/series\",\n// \t\t\t\"/prometheus/api/v1/query_range\",\n//
+    \t\t\t\"/prometheus/api/v1/query_exemplars\",\n// \t\t\t\"/loki/api/v1/push\",\n//
+    \t\t\t\"/loki/api/v1/query_range\",\n// \t\t\t\"/loki/api/v1/labels\",\n// \t\t\t\"/otlp/v1/traces\",\n//
+    \t\t\t\"/otlp/v1/metrics\",\n// \t\t\t\"/api/traces/{trace_id}\",\n// \t\t]\n//
+    \t\tunmatched = \"path\"\n// \t}\n\n// \tdiscovery {\n// \t\tservices {\n// \t\t\tnamespace
+    \ = \"gateway\"\n// \t\t\t// name       = \"nginx\"\n// \t\t\texe_path   = \"nginx\"\n//
+    \t\t\topen_ports = \"8080,3100,3200,4318\"\n// \t\t}\n// \t}\n\n// \toutput {\n//
+    \t\ttraces = [otelcol.exporter.logging.traces.input, traces.process_and_transform.kubernetes.alloy_traces_input]\n//
+    \t}\n// }\n\n// otelcol.exporter.logging \"traces\" {\n//     verbosity           =
+    \"detailed\"\n//     sampling_initial    = 1\n//     sampling_thereafter = 1\n//
+    }\n\n// prometheus.scrape \"beyla\" {\n// \ttargets    = beyla.ebpf.default.targets\n//
+    \tforward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]\n// }\n\n/********************************************\n
     * Traces\n ********************************************/\nimport.file \"traces\"
     {\n\tfilename = coalesce(env(\"ALLOY_MODULES_FOLDER\"), \"/etc/alloy/modules\")
     + \"/kubernetes/traces\"\n}\n\n// traces Processing And Transformation process_and_transform\ntraces.process_and_transform
@@ -1083,6 +1419,12 @@ data:
     \ = [provider.self_hosted_stack.kubernetes.traces_receiver]\n}\n\ntracing {\n\t//
     Write all spans. Don't do this in production!\n\tsampling_fraction = 1\n\n\t//
     Forward Alloy internal spans to traces process.\n\twrite_to = [traces.process_and_transform.kubernetes.alloy_traces_input]\n}\n\n/********************************************\n
+    * Logs\n ********************************************/\nimport.file \"logs\" {\n\tfilename
+    = coalesce(env(\"ALLOY_MODULES_FOLDER\"), \"/etc/alloy/modules\") + \"/kubernetes/logs\"\n}\n\nlogs.rules_to_loki
+    \"kubernetes\" { }\n\nlogs.kubernetes_cluster_events \"kubernetes\" {\n\tcluster
+    = coalesce(env(\"CLUSTER_NAME\"), \"k3d-k3s-codelab\")\n\n\tforward_to = [logs.keep_labels.kubernetes.receiver]\n}\n\nlogs.annotations_scrape
+    \"kubernetes\" {\n\tcluster = \"k3d-k3s-codelab\"\n\n\tforward_to = [logs.keep_labels.kubernetes.receiver]\n}\n\nlogs.keep_labels
+    \"kubernetes\" {\n\tforward_to = [provider.self_hosted_stack.kubernetes.logs_receiver]\n}\n\n/********************************************\n
     * Metrics\n ********************************************/\nimport.file \"metrics\"
     {\n\tfilename = coalesce(env(\"ALLOY_MODULES_FOLDER\"), \"/etc/alloy/modules\")
     + \"/kubernetes/metrics\"\n}\n\nmetrics.annotations_scrape \"kubernetes\" {\n\tcluster
@@ -1101,7 +1443,7 @@ data:
     = [provider.self_hosted_stack.kubernetes.metrics_receiver]\n}\n"
 kind: ConfigMap
 metadata:
-  name: alloy-config-6k989hdmh5
+  name: alloy-config-77k9mhg2cb
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -1656,6 +1998,126 @@ metadata:
   labels:
     grafana_dashboard: "1"
   name: alloy-controller.json
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  MEMCACHED_K8S_SECRET_NAME: alloy-integrations-memcached
+  MYSQL_K8S_SECRET_NAME: alloy-integrations-mysql
+  REDIS_K8S_SECRET_NAME: alloy-integrations-redis
+  memcached.alloy: "/*\nModule Components: component_memcached\n*/\n\ndeclare \"memcached_metrics_scrape\"
+    {\n\n\t/*****************************************************************\n\t*
+    ARGUMENTS\n\t*****************************************************************/\n\targument
+    \"forward_to\" {\n\t\tcomment = \"Must be a list(MetricssReceiver) where collected
+    metrics should be forwarded to\"\n\t}\n\n\targument \"job_label\" {\n\t\tcomment
+    \ = \"job label (default: integrations/kubernetes/memcached)\"\n\t\toptional =
+    true\n\t}\n\n\targument \"namespace\" {\n\t\tcomment  = \"kubernetes secret name
+    (default: monitoring-system)\"\n\t\toptional = true\n\t}\n\n\targument \"name\"
+    {\n\t\tcomment  = \"kubernetes secret name (default: alloy-integrations-redis)\"\n\t\toptional
+    = true\n\t}\n\n\targument \"keep_metrics\" {\n\t\toptional = true\n\t\tdefault
+    \ = \"(up|memcached_commands_total|memcached_connections_total|memcached_current_bytes|memcached_current_connections|memcached_current_items|memcached_items_evicted_total|memcached_items_total|memcached_max_connections|memcached_read_bytes_total|memcached_up|memcached_uptime_seconds|memcached_version|memcached_written_bytes_total)\"\n\t}\n\n\targument
+    \"scrape_interval\" {\n\t\tcomment  = \"How often to scrape metrics from the targets
+    (default: 60s)\"\n\t\toptional = true\n\t}\n\n\targument \"scrape_timeout\" {\n\t\tcomment
+    \ = \"How long before a scrape times out (default: 10s)\"\n\t\toptional = true\n\t}\n\n\tremote.kubernetes.secret
+    \"memcached\" {\n\t\tnamespace = coalesce(argument.namespace.value, \"monitoring-system\")\n\t\tname
+    \     = coalesce(argument.name.value, \"alloy-integrations-memcached\")\n\t}\n\n\t/***************************************************************\n\t*
+    Integrations Memcached\n\t****************************************************************/\n\t//
+    https://grafana.com/docs/alloy/latest/reference/components/prometheus.exporter.memcached/\n\tprometheus.exporter.memcached
+    \"integrations_memcached_exporter\" {\n\t\taddress = nonsensitive(remote.kubernetes.secret.memcached.data[\"instance-address\"])\n\t\ttimeout
+    = nonsensitive(remote.kubernetes.secret.memcached.data[\"instance-timeout\"])\n\t}\n\n\t/***************************************************************\n\t*
+    Discovery Relabelings (pre-scrape)\n\t****************************************************************/\n\tdiscovery.relabel
+    \"integrations_memcached_exporter\" {\n\t\ttargets = prometheus.exporter.memcached.integrations_memcached_exporter.targets\n\n\t\trule
+    {\n\t\t\ttarget_label = \"job\"\n\t\t\treplacement  = coalesce(argument.job_label.value,
+    \"integrations/kubernetes/memcached\")\n\t\t}\n\n\t\trule {\n\t\t\ttarget_label
+    = \"instance\"\n\t\t\treplacement  = coalesce(nonsensitive(remote.kubernetes.secret.memcached.data[\"instance-name\"]),
+    constants.hostname)\n\t\t}\n\t}\n\n\t/***************************************************************\n\t*
+    Prometheus Scrape Integrations Targets\n\t****************************************************************/\n\tprometheus.scrape
+    \"integrations_memcached_exporter\" {\n\t\ttargets = concat(\n\t\t\tdiscovery.relabel.integrations_memcached_exporter.output,\n\t\t)\n\n\t\tenable_protobuf_negotiation
+    = true\n\t\tscrape_classic_histograms   = true\n\n\t\tscrape_interval = coalesce(argument.scrape_interval.value,
+    \"60s\")\n\t\tscrape_timeout  = coalesce(argument.scrape_timeout.value, \"10s\")\n\n\t\tclustering
+    {\n\t\t\tenabled = true\n\t\t}\n\n\t\tforward_to = [prometheus.relabel.integrations_memcached_exporter.receiver]\n\t}\n\n\t/***************************************************************\n\t*
+    Prometheus Metric Relabelings (post-scrape)\n\t****************************************************************/\n\tprometheus.relabel
+    \"integrations_memcached_exporter\" {\n\t\tforward_to = argument.forward_to.value\n\n\t\t//
+    keep only metrics that match the keep_metrics regex\n\t\trule {\n\t\t\tsource_labels
+    = [\"__name__\"]\n\t\t\tregex         = argument.keep_metrics.value\n\t\t\taction
+    \       = \"keep\"\n\t\t}\n\t}\n}\n"
+  mysql.alloy: "/*\nModule Components: component_mysql\n*/\n\ndeclare \"mysql_metrics_scrape\"
+    {\n\n\t/*****************************************************************\n\t*
+    ARGUMENTS\n\t*****************************************************************/\n\targument
+    \"forward_to\" {\n\t\tcomment = \"Must be a list(MetricssReceiver) where collected
+    metrics should be forwarded to\"\n\t}\n\n\targument \"job_label\" {\n\t\tcomment
+    \ = \"job label (default: integrations/kubernetes/mysql)\"\n\t\toptional = true\n\t}\n\n\targument
+    \"namespace\" {\n\t\tcomment  = \"kubernetes secret namespace (default: monitoring-system)\"\n\t\toptional
+    = true\n\t}\n\n\targument \"name\" {\n\t\tcomment  = \"kubernetes secret name
+    (default: alloy-integrations-mysql)\"\n\t\toptional = true\n\t}\n\n\targument
+    \"keep_metrics\" {\n\t\tcomment  = \"A regex of metrics to keep (default: see
+    below)\"\n\t\toptional = true\n\t}\n\n\targument \"scrape_interval\" {\n\t\tcomment
+    \ = \"How often to scrape metrics from the targets (default: 60s)\"\n\t\toptional
+    = true\n\t}\n\n\targument \"scrape_timeout\" {\n\t\tcomment  = \"How long before
+    a scrape times out (default: 10s)\"\n\t\toptional = true\n\t}\n\n\tremote.kubernetes.secret
+    \"mysql\" {\n\t\tname      = coalesce(argument.name.value, \"alloy-integrations-mysql\")\n\t\tnamespace
+    = coalesce(argument.namespace.value, \"monitoring-system\")\n\t}\n\n\t/***************************************************************\n\t*
+    Integrations Mysql\n\t****************************************************************/\n\tprometheus.exporter.mysql
+    \"integrations_mysqld_exporter\" {\n\t\tdata_source_name = nonsensitive(remote.kubernetes.secret.mysql.data[\"mysql-username\"])
+    + \":\" + nonsensitive(remote.kubernetes.secret.mysql.data[\"mysql-password\"])
+    + \"@(\" + nonsensitive(remote.kubernetes.secret.mysql.data[\"mysql-host\"]) +
+    \")/\"\n\t}\n\n\t/***************************************************************\n\t*
+    Discovery Relabelings (pre-scrape)\n\t****************************************************************/\n\tdiscovery.relabel
+    \"integrations_mysqld_exporter\" {\n\t\ttargets = prometheus.exporter.mysql.integrations_mysqld_exporter.targets\n\n\t\trule
+    {\n\t\t\ttarget_label = \"job\"\n\t\t\treplacement  = coalesce(argument.job_label.value,
+    \"integrations/kubernetes/mysql\")\n\t\t}\n\n\t\trule {\n\t\t\ttarget_label =
+    \"instance\"\n\t\t\treplacement  = coalesce(nonsensitive(remote.kubernetes.secret.mysql.data[\"instance-name\"]),
+    constants.hostname)\n\t\t}\n\t}\n\n\t/***************************************************************\n\t*
+    Prometheus Scrape Integrations Targets\n\t****************************************************************/\n\tprometheus.scrape
+    \"integrations_mysqld_exporter\" {\n\t\ttargets = concat(\n\t\t\tdiscovery.relabel.integrations_mysqld_exporter.output,\n\t\t)\n\n\t\tenable_protobuf_negotiation
+    = true\n\t\tscrape_classic_histograms   = true\n\n\t\tscrape_interval = coalesce(argument.scrape_interval.value,
+    \"60s\")\n\t\tscrape_timeout  = coalesce(argument.scrape_timeout.value, \"10s\")\n\n\t\tclustering
+    {\n\t\t\tenabled = true\n\t\t}\n\n\t\tforward_to = [prometheus.relabel.integrations_mysqld_exporter.receiver]\n\t}\n\n\t/***************************************************************\n\t*
+    Prometheus Metric Relabelings (post-scrape)\n\t****************************************************************/\n\tprometheus.relabel
+    \"integrations_mysqld_exporter\" {\n\t\tforward_to = argument.forward_to.value\n\n\t\t//
+    keep only metrics that match the keep_metrics regex\n\t\trule {\n\t\t\tsource_labels
+    = [\"__name__\"]\n\t\t\tregex         = coalesce(argument.keep_metrics.value,
+    \"(up|instance:mysql_heartbeat_lag_seconds|instance:mysql_slave_lag_seconds|mysql_global_status_aborted_clients|mysql_global_status_aborted_connects|mysql_global_status_buffer_pool_pages|mysql_global_status_bytes_received|mysql_global_status_bytes_sent|mysql_global_status_commands_total|mysql_global_status_created_tmp_disk_tables|mysql_global_status_created_tmp_files|mysql_global_status_created_tmp_tables|mysql_global_status_handlers_total|mysql_global_status_innodb_log_waits|mysql_global_status_innodb_mem_adaptive_hash|mysql_global_status_innodb_mem_dictionary|mysql_global_status_innodb_num_open_files|mysql_global_status_innodb_page_size|mysql_global_status_max_used_connections|mysql_global_status_open_files|mysql_global_status_open_table_definitions|mysql_global_status_open_tables|mysql_global_status_opened_files|mysql_global_status_opened_table_definitions|mysql_global_status_opened_tables|mysql_global_status_qcache_free_memory|mysql_global_status_qcache_hits|mysql_global_status_qcache_inserts|mysql_global_status_qcache_lowmem_prunes|mysql_global_status_qcache_not_cached|mysql_global_status_qcache_queries_in_cache|mysql_global_status_queries|mysql_global_status_questions|mysql_global_status_select_full_join|mysql_global_status_select_full_range_join|mysql_global_status_select_range|mysql_global_status_select_range_check|mysql_global_status_select_scan|mysql_global_status_slow_queries|mysql_global_status_sort_merge_passes|mysql_global_status_sort_range|mysql_global_status_sort_rows|mysql_global_status_sort_scan|mysql_global_status_table_locks_immediate|mysql_global_status_table_locks_waited|mysql_global_status_table_open_cache_hits|mysql_global_status_table_open_cache_misses|mysql_global_status_table_open_cache_overflows|mysql_global_status_threads_cached|mysql_global_status_threads_connected|mysql_global_status_threads_created|mysql_global_status_threads_running|mysql_global_status_uptime|mysql_global_status_wsrep_local_recv_queue|mysql_global_status_wsrep_local_state|mysql_global_status_wsrep_ready|mysql_global_variables_innodb_additional_mem_pool_size|mysql_global_variables_innodb_buffer_pool_size|mysql_global_variables_innodb_log_buffer_size|mysql_global_variables_key_buffer_size|mysql_global_variables_max_connections|mysql_global_variables_open_files_limit|mysql_global_variables_query_cache_size|mysql_global_variables_table_definition_cache|mysql_global_variables_table_open_cache|mysql_global_variables_thread_cache_size|mysql_global_variables_tokudb_cache_size|mysql_global_variables_wsrep_desync|mysql_heartbeat_now_timestamp_seconds|mysql_heartbeat_stored_timestamp_seconds|mysql_info_schema_processlist_threads|mysql_slave_status_seconds_behind_master|mysql_slave_status_slave_io_running|mysql_slave_status_slave_sql_running|mysql_slave_status_sql_delay|mysql_up)\")\n\t\t\taction
+    \       = \"keep\"\n\t\t}\n\t}\n}\n"
+  redis.alloy: "/*\nModule Components: component_redis_exporter\n*/\n\ndeclare \"redis_exporter_metrics_scrape\"
+    {\n\n\t/*****************************************************************\n\t*
+    ARGUMENTS\n\t*****************************************************************/\n\targument
+    \"forward_to\" {\n\t\tcomment = \"Must be a list(MetricssReceiver) where collected
+    metrics should be forwarded to\"\n\t}\n\n\targument \"job_label\" {\n\t\tcomment
+    \ = \"job label (default: integrations/kubernetes/redis_exporter)\"\n\t\toptional
+    = true\n\t}\n\n\targument \"namespace\" {\n\t\tcomment  = \"kubernetes secret
+    name (default: monitoring-system)\"\n\t\toptional = true\n\t}\n\n\targument \"name\"
+    {\n\t\tcomment  = \"kubernetes secret name (default: alloy-integrations-redis)\"\n\t\toptional
+    = true\n\t}\n\n\targument \"keep_metrics\" {\n\t\toptional = true\n\t\tdefault
+    \ = \"(up|redis_blocked_clients|redis_cluster_slots_fail|redis_cluster_slots_pfail|redis_cluster_state|redis_commands_duration_seconds_total|redis_commands_total|redis_connected_clients|redis_connected_slaves|redis_db_keys|redis_db_keys_expiring|redis_evicted_keys_total|redis_keyspace_hits_total|redis_keyspace_misses_total|redis_master_last_io_seconds_ago|redis_memory_fragmentation_ratio|redis_memory_max_bytes|redis_memory_used_bytes|redis_memory_used_rss_bytes|redis_total_system_memory_bytes|redis_up)\"\n\t}\n\n\targument
+    \"scrape_interval\" {\n\t\tcomment  = \"How often to scrape metrics from the targets
+    (default: 60s)\"\n\t\toptional = true\n\t\tdefault  = \"60s\"\n\t}\n\n\targument
+    \"scrape_timeout\" {\n\t\tcomment  = \"How long before a scrape times out (default:
+    10s)\"\n\t\toptional = true\n\t\tdefault  = \"10s\"\n\t}\n\n\tremote.kubernetes.secret
+    \"redis\" {\n\t\tnamespace = coalesce(argument.namespace.value, \"monitoring-system\")\n\t\tname
+    \     = coalesce(argument.name.value, \"alloy-integrations-redis\")\n\t}\n\n\t/***************************************************************\n\t*
+    Integrations Redis\n\t****************************************************************/\n\tprometheus.exporter.redis
+    \"integrations_redis_exporter\" {\n\t\tredis_addr     = nonsensitive(remote.kubernetes.secret.redis.data[\"instance-address\"])\n\t\tredis_password
+    = nonsensitive(remote.kubernetes.secret.redis.data[\"instance-password\"])\n\t}\n\n\t/***************************************************************\n\t*
+    Discovery Relabelings (pre-scrape)\n\t****************************************************************/\n\tdiscovery.relabel
+    \"integrations_redis_exporter\" {\n\t\ttargets = prometheus.exporter.redis.integrations_redis_exporter.targets\n\n\t\trule
+    {\n\t\t\ttarget_label = \"job\"\n\t\t\treplacement  = coalesce(argument.job_label.value,
+    \"integrations/kubernetes/redis_exporter\")\n\t\t}\n\n\t\trule {\n\t\t\ttarget_label
+    = \"instance\"\n\t\t\treplacement  = coalesce(nonsensitive(remote.kubernetes.secret.redis.data[\"instance-name\"]),
+    constants.hostname)\n\t\t}\n\t}\n\n\t/***************************************************************\n\t*
+    Prometheus Scrape Integrations Targets\n\t****************************************************************/\n\tprometheus.scrape
+    \"integrations_redis_exporter\" {\n\t\ttargets = concat(\n\t\t\tdiscovery.relabel.integrations_redis_exporter.output,\n\t\t)\n\n\t\tenable_protobuf_negotiation
+    = true\n\t\tscrape_classic_histograms   = true\n\n\t\tscrape_interval = argument.scrape_interval.value\n\t\tscrape_timeout
+    \ = argument.scrape_timeout.value\n\n\t\tclustering {\n\t\t\tenabled = true\n\t\t}\n\n\t\tforward_to
+    = [prometheus.relabel.integrations_redis_exporter.receiver]\n\t}\n\n\t/***************************************************************\n\t*
+    Prometheus Metric Relabelings (post-scrape)\n\t****************************************************************/\n\tprometheus.relabel
+    \"integrations_redis_exporter\" {\n\t\tforward_to = argument.forward_to.value\n\n\t\t//
+    keep only metrics that match the keep_metrics regex\n\t\trule {\n\t\t\tsource_labels
+    = [\"__name__\"]\n\t\t\tregex         = argument.keep_metrics.value\n\t\t\taction
+    \       = \"keep\"\n\t\t}\n\t}\n}\n"
+kind: ConfigMap
+metadata:
+  name: alloy-integrations
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -4521,10 +4983,59 @@ metadata:
 ---
 apiVersion: v1
 data:
-  ALLOY_LOG_LEVEL: d2Fybg==
+  LOKI_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:
-  name: alloy-env-f7k229g955
+  labels:
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 3.0.0
+  name: loki-env-58m52b99kc
+  namespace: logging-system
+type: Opaque
+---
+apiVersion: v1
+data:
+  ALLOY_LOG_LEVEL: aW5mbw==
+kind: Secret
+metadata:
+  name: alloy-env-7hg2fmmgdb
+  namespace: monitoring-system
+type: Opaque
+---
+apiVersion: v1
+data:
+  instance-address: bWVtY2FjaGVkLm1lbWNhY2hlZC1zeXN0ZW0uc3ZjLmNsdXN0ZXIubG9jYWw6MTEyMTE=
+  instance-name: cHJpbWFyeQ==
+  instance-timeout: NXM=
+kind: Secret
+metadata:
+  name: alloy-integrations-memcached
+  namespace: monitoring-system
+type: Opaque
+---
+apiVersion: v1
+data:
+  instance-name: cHJpbWFyeQ==
+  mysql-host: bXlzcWwubXlzcWwtc3lzdGVtLnN2Yy5jbHVzdGVyLmxvY2Fs
+  mysql-password: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
+  mysql-username: bGd0bXA=
+kind: Secret
+metadata:
+  name: alloy-integrations-mysql
+  namespace: monitoring-system
+type: Opaque
+---
+apiVersion: v1
+data:
+  instance-address: cmVkaXMtbWFzdGVyLnJlZGlzLXN5c3RlbS5zdmMuY2x1c3Rlci5sb2NhbDo2Mzc5
+  instance-name: cHJpbWFyeQ==
+  instance-password: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
+kind: Secret
+metadata:
+  name: alloy-integrations-redis
   namespace: monitoring-system
 type: Opaque
 ---
@@ -4556,6 +5067,75 @@ metadata:
   name: tempo-env-gk54k88t7g
   namespace: tracing-system
 type: Opaque
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 3.0.0
+  name: loki
+  namespace: logging-system
+spec:
+  ports:
+  - name: http-metrics
+    port: 3100
+  - appProtocol: grpc
+    name: grpc
+    port: 9095
+  selector:
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
+    app.kubernetes.io/name: loki
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 3.0.0
+    prometheus.io/service-monitor: "false"
+  name: loki-headless
+  namespace: logging-system
+spec:
+  clusterIP: None
+  ports:
+  - name: http-metrics
+    port: 3100
+  selector:
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
+    app.kubernetes.io/name: loki
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 3.0.0
+    prometheus.io/service-monitor: "false"
+  name: loki-memberlist
+  namespace: logging-system
+spec:
+  clusterIP: None
+  ports:
+  - name: tcp-gossip-ring
+    port: 7946
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/part-of: memberlist
 ---
 apiVersion: v1
 kind: Service
@@ -4837,6 +5417,128 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   labels:
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/part-of: memberlist
+    app.kubernetes.io/version: 3.0.0
+  name: loki
+  namespace: logging-system
+spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Delete
+    whenScaled: Delete
+  podManagementPolicy: Parallel
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: loki
+      app.kubernetes.io/instance: loki-monolithic-mode
+      app.kubernetes.io/name: loki
+      app.kubernetes.io/part-of: memberlist
+  serviceName: loki-headless
+  template:
+    metadata:
+      annotations:
+        profiles.grafana.com/cpu.port_name: http-metrics
+        profiles.grafana.com/cpu.scrape: "false"
+        profiles.grafana.com/goroutine.port_name: http-metrics
+        profiles.grafana.com/goroutine.scrape: "false"
+        profiles.grafana.com/memory.port_name: http-metrics
+        profiles.grafana.com/memory.scrape: "false"
+        pyroscope.io/service_name: loki
+      labels:
+        app.kubernetes.io/component: loki
+        app.kubernetes.io/instance: loki-monolithic-mode
+        app.kubernetes.io/name: loki
+        app.kubernetes.io/part-of: memberlist
+    spec:
+      automountServiceAccountToken: true
+      containers:
+      - args:
+        - -config.file=/etc/loki/config/config.yaml
+        - -target=all
+        - -config.expand-env=true
+        envFrom:
+        - secretRef:
+            name: loki-env-58m52b99kc
+        image: docker.io/grafana/loki:3.0.0
+        imagePullPolicy: IfNotPresent
+        name: loki
+        ports:
+        - containerPort: 3100
+          name: http-metrics
+          protocol: TCP
+        - containerPort: 9095
+          name: grpc
+          protocol: TCP
+        - containerPort: 7946
+          name: http-memberlist
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http-metrics
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp
+        - mountPath: /etc/loki/config
+          name: config
+        - mountPath: /etc/loki/runtime-config
+          name: runtime-config
+        - mountPath: /var/loki
+          name: storage
+      enableServiceLinks: true
+      securityContext:
+        fsGroup: 10001
+        runAsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+      serviceAccountName: loki
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir: {}
+        name: tmp
+      - configMap:
+          items:
+          - key: config.yaml
+            path: config.yaml
+          name: loki-config-5468cb29k9
+        name: config
+      - configMap:
+          name: loki-runtime-9599m5k6h2
+        name: runtime-config
+  updateStrategy:
+    rollingUpdate:
+      partition: 0
+  volumeClaimTemplates:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      labels:
+        app.kubernetes.io/component: loki
+        app.kubernetes.io/instance: loki-monolithic-mode
+        app.kubernetes.io/name: loki
+      name: storage
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 5Gi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
     app.kubernetes.io/instance: alloy
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
@@ -4892,7 +5594,7 @@ spec:
               fieldPath: spec.nodeName
         envFrom:
         - secretRef:
-            name: alloy-env-f7k229g955
+            name: alloy-env-7hg2fmmgdb
             optional: true
         image: docker.io/grafana/alloy:v1.0.0
         imagePullPolicy: IfNotPresent
@@ -4919,6 +5621,8 @@ spec:
             scheme: HTTP
           initialDelaySeconds: 10
           timeoutSeconds: 1
+        securityContext:
+          privileged: true
         volumeMounts:
         - mountPath: /etc/alloy
           name: config
@@ -4938,7 +5642,7 @@ spec:
       serviceAccountName: alloy
       volumes:
       - configMap:
-          name: alloy-config-6k989hdmh5
+          name: alloy-config-77k9mhg2cb
         name: config
       - configMap:
           name: alloy-modules-kubernetes-metrics-db96446m8f
@@ -5125,6 +5829,41 @@ spec:
         message: The exporter failed to send spans to their destination.
       expr: sum(rate(exporter_send_failed_spans_ratio_total{}[1m])) > 0
       for: 5m
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/instance: loki-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/version: 3.0.0
+  name: loki
+  namespace: logging-system
+spec:
+  endpoints:
+  - interval: 15s
+    port: http-metrics
+    relabelings:
+    - action: replace
+      replacement: logging-system/loki
+      sourceLabels:
+      - job
+      targetLabel: job
+    scheme: http
+  namespaceSelector:
+    matchNames:
+    - logging-system
+  selector:
+    matchExpressions:
+    - key: prometheus.io/service-monitor
+      operator: NotIn
+      values:
+      - "false"
+    matchLabels:
+      app.kubernetes.io/instance: loki
+      app.kubernetes.io/name: loki
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor

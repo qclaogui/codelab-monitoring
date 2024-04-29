@@ -985,11 +985,11 @@ metadata:
 ---
 apiVersion: v1
 data:
-  config.alloy: "logging {\n\tlevel  = coalesce(env(\"ALLOY_LOG_LEVEL\"), \"info\")\n\tformat
+  config.alloy: "logging {\n\tlevel  = coalesce(env(\"ALLOY_LOG_LEVEL\"), \"warn\")\n\tformat
     = \"logfmt\"\n}\n"
 kind: ConfigMap
 metadata:
-  name: alloy-config-ftt29f8k85
+  name: alloy-config-b664fd27t6
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -1544,6 +1544,126 @@ metadata:
   labels:
     grafana_dashboard: "1"
   name: alloy-controller.json
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  MEMCACHED_K8S_SECRET_NAME: alloy-integrations-memcached
+  MYSQL_K8S_SECRET_NAME: alloy-integrations-mysql
+  REDIS_K8S_SECRET_NAME: alloy-integrations-redis
+  memcached.alloy: "/*\nModule Components: component_memcached\n*/\n\ndeclare \"memcached_metrics_scrape\"
+    {\n\n\t/*****************************************************************\n\t*
+    ARGUMENTS\n\t*****************************************************************/\n\targument
+    \"forward_to\" {\n\t\tcomment = \"Must be a list(MetricssReceiver) where collected
+    metrics should be forwarded to\"\n\t}\n\n\targument \"job_label\" {\n\t\tcomment
+    \ = \"job label (default: integrations/kubernetes/memcached)\"\n\t\toptional =
+    true\n\t}\n\n\targument \"namespace\" {\n\t\tcomment  = \"kubernetes secret name
+    (default: monitoring-system)\"\n\t\toptional = true\n\t}\n\n\targument \"name\"
+    {\n\t\tcomment  = \"kubernetes secret name (default: alloy-integrations-redis)\"\n\t\toptional
+    = true\n\t}\n\n\targument \"keep_metrics\" {\n\t\toptional = true\n\t\tdefault
+    \ = \"(up|memcached_commands_total|memcached_connections_total|memcached_current_bytes|memcached_current_connections|memcached_current_items|memcached_items_evicted_total|memcached_items_total|memcached_max_connections|memcached_read_bytes_total|memcached_up|memcached_uptime_seconds|memcached_version|memcached_written_bytes_total)\"\n\t}\n\n\targument
+    \"scrape_interval\" {\n\t\tcomment  = \"How often to scrape metrics from the targets
+    (default: 60s)\"\n\t\toptional = true\n\t}\n\n\targument \"scrape_timeout\" {\n\t\tcomment
+    \ = \"How long before a scrape times out (default: 10s)\"\n\t\toptional = true\n\t}\n\n\tremote.kubernetes.secret
+    \"memcached\" {\n\t\tnamespace = coalesce(argument.namespace.value, \"monitoring-system\")\n\t\tname
+    \     = coalesce(argument.name.value, \"alloy-integrations-memcached\")\n\t}\n\n\t/***************************************************************\n\t*
+    Integrations Memcached\n\t****************************************************************/\n\t//
+    https://grafana.com/docs/alloy/latest/reference/components/prometheus.exporter.memcached/\n\tprometheus.exporter.memcached
+    \"integrations_memcached_exporter\" {\n\t\taddress = nonsensitive(remote.kubernetes.secret.memcached.data[\"instance-address\"])\n\t\ttimeout
+    = nonsensitive(remote.kubernetes.secret.memcached.data[\"instance-timeout\"])\n\t}\n\n\t/***************************************************************\n\t*
+    Discovery Relabelings (pre-scrape)\n\t****************************************************************/\n\tdiscovery.relabel
+    \"integrations_memcached_exporter\" {\n\t\ttargets = prometheus.exporter.memcached.integrations_memcached_exporter.targets\n\n\t\trule
+    {\n\t\t\ttarget_label = \"job\"\n\t\t\treplacement  = coalesce(argument.job_label.value,
+    \"integrations/kubernetes/memcached\")\n\t\t}\n\n\t\trule {\n\t\t\ttarget_label
+    = \"instance\"\n\t\t\treplacement  = coalesce(nonsensitive(remote.kubernetes.secret.memcached.data[\"instance-name\"]),
+    constants.hostname)\n\t\t}\n\t}\n\n\t/***************************************************************\n\t*
+    Prometheus Scrape Integrations Targets\n\t****************************************************************/\n\tprometheus.scrape
+    \"integrations_memcached_exporter\" {\n\t\ttargets = concat(\n\t\t\tdiscovery.relabel.integrations_memcached_exporter.output,\n\t\t)\n\n\t\tenable_protobuf_negotiation
+    = true\n\t\tscrape_classic_histograms   = true\n\n\t\tscrape_interval = coalesce(argument.scrape_interval.value,
+    \"60s\")\n\t\tscrape_timeout  = coalesce(argument.scrape_timeout.value, \"10s\")\n\n\t\tclustering
+    {\n\t\t\tenabled = true\n\t\t}\n\n\t\tforward_to = [prometheus.relabel.integrations_memcached_exporter.receiver]\n\t}\n\n\t/***************************************************************\n\t*
+    Prometheus Metric Relabelings (post-scrape)\n\t****************************************************************/\n\tprometheus.relabel
+    \"integrations_memcached_exporter\" {\n\t\tforward_to = argument.forward_to.value\n\n\t\t//
+    keep only metrics that match the keep_metrics regex\n\t\trule {\n\t\t\tsource_labels
+    = [\"__name__\"]\n\t\t\tregex         = argument.keep_metrics.value\n\t\t\taction
+    \       = \"keep\"\n\t\t}\n\t}\n}\n"
+  mysql.alloy: "/*\nModule Components: component_mysql\n*/\n\ndeclare \"mysql_metrics_scrape\"
+    {\n\n\t/*****************************************************************\n\t*
+    ARGUMENTS\n\t*****************************************************************/\n\targument
+    \"forward_to\" {\n\t\tcomment = \"Must be a list(MetricssReceiver) where collected
+    metrics should be forwarded to\"\n\t}\n\n\targument \"job_label\" {\n\t\tcomment
+    \ = \"job label (default: integrations/kubernetes/mysql)\"\n\t\toptional = true\n\t}\n\n\targument
+    \"namespace\" {\n\t\tcomment  = \"kubernetes secret namespace (default: monitoring-system)\"\n\t\toptional
+    = true\n\t}\n\n\targument \"name\" {\n\t\tcomment  = \"kubernetes secret name
+    (default: alloy-integrations-mysql)\"\n\t\toptional = true\n\t}\n\n\targument
+    \"keep_metrics\" {\n\t\tcomment  = \"A regex of metrics to keep (default: see
+    below)\"\n\t\toptional = true\n\t}\n\n\targument \"scrape_interval\" {\n\t\tcomment
+    \ = \"How often to scrape metrics from the targets (default: 60s)\"\n\t\toptional
+    = true\n\t}\n\n\targument \"scrape_timeout\" {\n\t\tcomment  = \"How long before
+    a scrape times out (default: 10s)\"\n\t\toptional = true\n\t}\n\n\tremote.kubernetes.secret
+    \"mysql\" {\n\t\tname      = coalesce(argument.name.value, \"alloy-integrations-mysql\")\n\t\tnamespace
+    = coalesce(argument.namespace.value, \"monitoring-system\")\n\t}\n\n\t/***************************************************************\n\t*
+    Integrations Mysql\n\t****************************************************************/\n\tprometheus.exporter.mysql
+    \"integrations_mysqld_exporter\" {\n\t\tdata_source_name = nonsensitive(remote.kubernetes.secret.mysql.data[\"mysql-username\"])
+    + \":\" + nonsensitive(remote.kubernetes.secret.mysql.data[\"mysql-password\"])
+    + \"@(\" + nonsensitive(remote.kubernetes.secret.mysql.data[\"mysql-host\"]) +
+    \")/\"\n\t}\n\n\t/***************************************************************\n\t*
+    Discovery Relabelings (pre-scrape)\n\t****************************************************************/\n\tdiscovery.relabel
+    \"integrations_mysqld_exporter\" {\n\t\ttargets = prometheus.exporter.mysql.integrations_mysqld_exporter.targets\n\n\t\trule
+    {\n\t\t\ttarget_label = \"job\"\n\t\t\treplacement  = coalesce(argument.job_label.value,
+    \"integrations/kubernetes/mysql\")\n\t\t}\n\n\t\trule {\n\t\t\ttarget_label =
+    \"instance\"\n\t\t\treplacement  = coalesce(nonsensitive(remote.kubernetes.secret.mysql.data[\"instance-name\"]),
+    constants.hostname)\n\t\t}\n\t}\n\n\t/***************************************************************\n\t*
+    Prometheus Scrape Integrations Targets\n\t****************************************************************/\n\tprometheus.scrape
+    \"integrations_mysqld_exporter\" {\n\t\ttargets = concat(\n\t\t\tdiscovery.relabel.integrations_mysqld_exporter.output,\n\t\t)\n\n\t\tenable_protobuf_negotiation
+    = true\n\t\tscrape_classic_histograms   = true\n\n\t\tscrape_interval = coalesce(argument.scrape_interval.value,
+    \"60s\")\n\t\tscrape_timeout  = coalesce(argument.scrape_timeout.value, \"10s\")\n\n\t\tclustering
+    {\n\t\t\tenabled = true\n\t\t}\n\n\t\tforward_to = [prometheus.relabel.integrations_mysqld_exporter.receiver]\n\t}\n\n\t/***************************************************************\n\t*
+    Prometheus Metric Relabelings (post-scrape)\n\t****************************************************************/\n\tprometheus.relabel
+    \"integrations_mysqld_exporter\" {\n\t\tforward_to = argument.forward_to.value\n\n\t\t//
+    keep only metrics that match the keep_metrics regex\n\t\trule {\n\t\t\tsource_labels
+    = [\"__name__\"]\n\t\t\tregex         = coalesce(argument.keep_metrics.value,
+    \"(up|instance:mysql_heartbeat_lag_seconds|instance:mysql_slave_lag_seconds|mysql_global_status_aborted_clients|mysql_global_status_aborted_connects|mysql_global_status_buffer_pool_pages|mysql_global_status_bytes_received|mysql_global_status_bytes_sent|mysql_global_status_commands_total|mysql_global_status_created_tmp_disk_tables|mysql_global_status_created_tmp_files|mysql_global_status_created_tmp_tables|mysql_global_status_handlers_total|mysql_global_status_innodb_log_waits|mysql_global_status_innodb_mem_adaptive_hash|mysql_global_status_innodb_mem_dictionary|mysql_global_status_innodb_num_open_files|mysql_global_status_innodb_page_size|mysql_global_status_max_used_connections|mysql_global_status_open_files|mysql_global_status_open_table_definitions|mysql_global_status_open_tables|mysql_global_status_opened_files|mysql_global_status_opened_table_definitions|mysql_global_status_opened_tables|mysql_global_status_qcache_free_memory|mysql_global_status_qcache_hits|mysql_global_status_qcache_inserts|mysql_global_status_qcache_lowmem_prunes|mysql_global_status_qcache_not_cached|mysql_global_status_qcache_queries_in_cache|mysql_global_status_queries|mysql_global_status_questions|mysql_global_status_select_full_join|mysql_global_status_select_full_range_join|mysql_global_status_select_range|mysql_global_status_select_range_check|mysql_global_status_select_scan|mysql_global_status_slow_queries|mysql_global_status_sort_merge_passes|mysql_global_status_sort_range|mysql_global_status_sort_rows|mysql_global_status_sort_scan|mysql_global_status_table_locks_immediate|mysql_global_status_table_locks_waited|mysql_global_status_table_open_cache_hits|mysql_global_status_table_open_cache_misses|mysql_global_status_table_open_cache_overflows|mysql_global_status_threads_cached|mysql_global_status_threads_connected|mysql_global_status_threads_created|mysql_global_status_threads_running|mysql_global_status_uptime|mysql_global_status_wsrep_local_recv_queue|mysql_global_status_wsrep_local_state|mysql_global_status_wsrep_ready|mysql_global_variables_innodb_additional_mem_pool_size|mysql_global_variables_innodb_buffer_pool_size|mysql_global_variables_innodb_log_buffer_size|mysql_global_variables_key_buffer_size|mysql_global_variables_max_connections|mysql_global_variables_open_files_limit|mysql_global_variables_query_cache_size|mysql_global_variables_table_definition_cache|mysql_global_variables_table_open_cache|mysql_global_variables_thread_cache_size|mysql_global_variables_tokudb_cache_size|mysql_global_variables_wsrep_desync|mysql_heartbeat_now_timestamp_seconds|mysql_heartbeat_stored_timestamp_seconds|mysql_info_schema_processlist_threads|mysql_slave_status_seconds_behind_master|mysql_slave_status_slave_io_running|mysql_slave_status_slave_sql_running|mysql_slave_status_sql_delay|mysql_up)\")\n\t\t\taction
+    \       = \"keep\"\n\t\t}\n\t}\n}\n"
+  redis.alloy: "/*\nModule Components: component_redis_exporter\n*/\n\ndeclare \"redis_exporter_metrics_scrape\"
+    {\n\n\t/*****************************************************************\n\t*
+    ARGUMENTS\n\t*****************************************************************/\n\targument
+    \"forward_to\" {\n\t\tcomment = \"Must be a list(MetricssReceiver) where collected
+    metrics should be forwarded to\"\n\t}\n\n\targument \"job_label\" {\n\t\tcomment
+    \ = \"job label (default: integrations/kubernetes/redis_exporter)\"\n\t\toptional
+    = true\n\t}\n\n\targument \"namespace\" {\n\t\tcomment  = \"kubernetes secret
+    name (default: monitoring-system)\"\n\t\toptional = true\n\t}\n\n\targument \"name\"
+    {\n\t\tcomment  = \"kubernetes secret name (default: alloy-integrations-redis)\"\n\t\toptional
+    = true\n\t}\n\n\targument \"keep_metrics\" {\n\t\toptional = true\n\t\tdefault
+    \ = \"(up|redis_blocked_clients|redis_cluster_slots_fail|redis_cluster_slots_pfail|redis_cluster_state|redis_commands_duration_seconds_total|redis_commands_total|redis_connected_clients|redis_connected_slaves|redis_db_keys|redis_db_keys_expiring|redis_evicted_keys_total|redis_keyspace_hits_total|redis_keyspace_misses_total|redis_master_last_io_seconds_ago|redis_memory_fragmentation_ratio|redis_memory_max_bytes|redis_memory_used_bytes|redis_memory_used_rss_bytes|redis_total_system_memory_bytes|redis_up)\"\n\t}\n\n\targument
+    \"scrape_interval\" {\n\t\tcomment  = \"How often to scrape metrics from the targets
+    (default: 60s)\"\n\t\toptional = true\n\t\tdefault  = \"60s\"\n\t}\n\n\targument
+    \"scrape_timeout\" {\n\t\tcomment  = \"How long before a scrape times out (default:
+    10s)\"\n\t\toptional = true\n\t\tdefault  = \"10s\"\n\t}\n\n\tremote.kubernetes.secret
+    \"redis\" {\n\t\tnamespace = coalesce(argument.namespace.value, \"monitoring-system\")\n\t\tname
+    \     = coalesce(argument.name.value, \"alloy-integrations-redis\")\n\t}\n\n\t/***************************************************************\n\t*
+    Integrations Redis\n\t****************************************************************/\n\tprometheus.exporter.redis
+    \"integrations_redis_exporter\" {\n\t\tredis_addr     = nonsensitive(remote.kubernetes.secret.redis.data[\"instance-address\"])\n\t\tredis_password
+    = nonsensitive(remote.kubernetes.secret.redis.data[\"instance-password\"])\n\t}\n\n\t/***************************************************************\n\t*
+    Discovery Relabelings (pre-scrape)\n\t****************************************************************/\n\tdiscovery.relabel
+    \"integrations_redis_exporter\" {\n\t\ttargets = prometheus.exporter.redis.integrations_redis_exporter.targets\n\n\t\trule
+    {\n\t\t\ttarget_label = \"job\"\n\t\t\treplacement  = coalesce(argument.job_label.value,
+    \"integrations/kubernetes/redis_exporter\")\n\t\t}\n\n\t\trule {\n\t\t\ttarget_label
+    = \"instance\"\n\t\t\treplacement  = coalesce(nonsensitive(remote.kubernetes.secret.redis.data[\"instance-name\"]),
+    constants.hostname)\n\t\t}\n\t}\n\n\t/***************************************************************\n\t*
+    Prometheus Scrape Integrations Targets\n\t****************************************************************/\n\tprometheus.scrape
+    \"integrations_redis_exporter\" {\n\t\ttargets = concat(\n\t\t\tdiscovery.relabel.integrations_redis_exporter.output,\n\t\t)\n\n\t\tenable_protobuf_negotiation
+    = true\n\t\tscrape_classic_histograms   = true\n\n\t\tscrape_interval = argument.scrape_interval.value\n\t\tscrape_timeout
+    \ = argument.scrape_timeout.value\n\n\t\tclustering {\n\t\t\tenabled = true\n\t\t}\n\n\t\tforward_to
+    = [prometheus.relabel.integrations_redis_exporter.receiver]\n\t}\n\n\t/***************************************************************\n\t*
+    Prometheus Metric Relabelings (post-scrape)\n\t****************************************************************/\n\tprometheus.relabel
+    \"integrations_redis_exporter\" {\n\t\tforward_to = argument.forward_to.value\n\n\t\t//
+    keep only metrics that match the keep_metrics regex\n\t\trule {\n\t\t\tsource_labels
+    = [\"__name__\"]\n\t\t\tregex         = argument.keep_metrics.value\n\t\t\taction
+    \       = \"keep\"\n\t\t}\n\t}\n}\n"
+kind: ConfigMap
+metadata:
+  name: alloy-integrations
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -4135,10 +4255,35 @@ metadata:
 ---
 apiVersion: v1
 data:
-  ALLOY_LOG_LEVEL: d2Fybg==
+  instance-address: bWVtY2FjaGVkLm1lbWNhY2hlZC1zeXN0ZW0uc3ZjLmNsdXN0ZXIubG9jYWw6MTEyMTE=
+  instance-name: cHJpbWFyeQ==
+  instance-timeout: NXM=
 kind: Secret
 metadata:
-  name: alloy-env-f7k229g955
+  name: alloy-integrations-memcached
+  namespace: monitoring-system
+type: Opaque
+---
+apiVersion: v1
+data:
+  instance-name: cHJpbWFyeQ==
+  mysql-host: bXlzcWwubXlzcWwtc3lzdGVtLnN2Yy5jbHVzdGVyLmxvY2Fs
+  mysql-password: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
+  mysql-username: bGd0bXA=
+kind: Secret
+metadata:
+  name: alloy-integrations-mysql
+  namespace: monitoring-system
+type: Opaque
+---
+apiVersion: v1
+data:
+  instance-address: cmVkaXMtbWFzdGVyLnJlZGlzLXN5c3RlbS5zdmMuY2x1c3Rlci5sb2NhbDo2Mzc5
+  instance-name: cHJpbWFyeQ==
+  instance-password: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
+kind: Secret
+metadata:
+  name: alloy-integrations-redis
   namespace: monitoring-system
 type: Opaque
 ---
@@ -4279,7 +4424,7 @@ spec:
               fieldPath: spec.nodeName
         envFrom:
         - secretRef:
-            name: alloy-env-f7k229g955
+            name: alloy-env
             optional: true
         image: docker.io/grafana/alloy:v1.0.0
         imagePullPolicy: IfNotPresent
@@ -4306,6 +4451,8 @@ spec:
             scheme: HTTP
           initialDelaySeconds: 10
           timeoutSeconds: 1
+        securityContext:
+          privileged: true
         volumeMounts:
         - mountPath: /etc/alloy
           name: config
@@ -4325,7 +4472,7 @@ spec:
       serviceAccountName: alloy
       volumes:
       - configMap:
-          name: alloy-config-ftt29f8k85
+          name: alloy-config-b664fd27t6
         name: config
       - configMap:
           name: alloy-modules-kubernetes-metrics-db96446m8f
