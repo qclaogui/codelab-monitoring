@@ -7,7 +7,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.13.0
+    controller-gen.kubebuilder.io/version: v0.14.0
+    operator.min.io/version: v5.0.14
   name: miniojobs.job.min.io
 spec:
   group: job.min.io
@@ -120,7 +121,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.13.0
+    controller-gen.kubebuilder.io/version: v0.14.0
+    operator.min.io/version: v5.0.14
   name: policybindings.sts.min.io
 spec:
   group: sts.min.io
@@ -195,7 +197,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.13.0
+    controller-gen.kubebuilder.io/version: v0.14.0
+    operator.min.io/version: v5.0.14
   name: tenants.minio.min.io
 spec:
   group: minio.min.io
@@ -2569,6 +2572,109 @@ spec:
                 required:
                 - kesSecret
                 type: object
+              lifecycle:
+                properties:
+                  postStart:
+                    properties:
+                      exec:
+                        properties:
+                          command:
+                            items:
+                              type: string
+                            type: array
+                        type: object
+                      httpGet:
+                        properties:
+                          host:
+                            type: string
+                          httpHeaders:
+                            items:
+                              properties:
+                                name:
+                                  type: string
+                                value:
+                                  type: string
+                              required:
+                              - name
+                              - value
+                              type: object
+                            type: array
+                          path:
+                            type: string
+                          port:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            x-kubernetes-int-or-string: true
+                          scheme:
+                            type: string
+                        required:
+                        - port
+                        type: object
+                      tcpSocket:
+                        properties:
+                          host:
+                            type: string
+                          port:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            x-kubernetes-int-or-string: true
+                        required:
+                        - port
+                        type: object
+                    type: object
+                  preStop:
+                    properties:
+                      exec:
+                        properties:
+                          command:
+                            items:
+                              type: string
+                            type: array
+                        type: object
+                      httpGet:
+                        properties:
+                          host:
+                            type: string
+                          httpHeaders:
+                            items:
+                              properties:
+                                name:
+                                  type: string
+                                value:
+                                  type: string
+                              required:
+                              - name
+                              - value
+                              type: object
+                            type: array
+                          path:
+                            type: string
+                          port:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            x-kubernetes-int-or-string: true
+                          scheme:
+                            type: string
+                        required:
+                        - port
+                        type: object
+                      tcpSocket:
+                        properties:
+                          host:
+                            type: string
+                          port:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            x-kubernetes-int-or-string: true
+                        required:
+                        - port
+                        type: object
+                    type: object
+                type: object
               liveness:
                 properties:
                   exec:
@@ -3245,6 +3351,9 @@ spec:
                     servers:
                       format: int32
                       type: integer
+                      x-kubernetes-validations:
+                      - message: servers is immutable
+                        rule: self == oldSelf
                     tolerations:
                       items:
                         properties:
@@ -3490,12 +3599,19 @@ spec:
                     volumesPerServer:
                       format: int32
                       type: integer
+                      x-kubernetes-validations:
+                      - message: volumesPerServer is immutable
+                        rule: self == oldSelf
                   required:
+                  - name
                   - servers
                   - volumeClaimTemplate
                   - volumesPerServer
                   type: object
                 type: array
+                x-kubernetes-list-map-keys:
+                - name
+                x-kubernetes-list-type: map
               priorityClassName:
                 type: string
               prometheusOperator:
@@ -5454,6 +5570,10 @@ spec:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/version: v5.0.15
+    helm.sh/chart: operator-5.0.15
   name: console-sa
   namespace: minio-system
 ---
@@ -5461,17 +5581,19 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
-    app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v5.0.14
-    helm.sh/chart: operator-5.0.14
+    app.kubernetes.io/version: v5.0.15
+    helm.sh/chart: operator-5.0.15
   name: minio-operator
   namespace: minio-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/version: v5.0.15
+    helm.sh/chart: operator-5.0.15
   name: console-sa-role
 rules:
 - apiGroups:
@@ -5480,9 +5602,9 @@ rules:
   - secrets
   verbs:
   - get
+  - list
   - watch
   - create
-  - list
   - patch
   - update
   - delete
@@ -5497,9 +5619,9 @@ rules:
   - nodes
   verbs:
   - get
+  - list
   - watch
   - create
-  - list
   - patch
 - apiGroups:
   - ""
@@ -5507,9 +5629,9 @@ rules:
   - pods
   verbs:
   - get
+  - list
   - watch
   - create
-  - list
   - patch
   - delete
   - deletecollection
@@ -5518,20 +5640,20 @@ rules:
   resources:
   - persistentvolumeclaims
   verbs:
-  - deletecollection
-  - list
   - get
+  - list
   - watch
   - update
+  - deletecollection
 - apiGroups:
   - storage.k8s.io
   resources:
   - storageclasses
   verbs:
   - get
+  - list
   - watch
   - create
-  - list
   - patch
 - apiGroups:
   - apps
@@ -5540,10 +5662,10 @@ rules:
   - deployments
   verbs:
   - get
-  - create
   - list
-  - patch
   - watch
+  - create
+  - patch
   - update
   - delete
 - apiGroups:
@@ -5552,10 +5674,10 @@ rules:
   - jobs
   verbs:
   - get
-  - create
   - list
-  - patch
   - watch
+  - create
+  - patch
   - update
   - delete
 - apiGroups:
@@ -5565,11 +5687,11 @@ rules:
   - certificatesigningrequests/approval
   - certificatesigningrequests/status
   verbs:
+  - get
+  - list
   - update
   - create
-  - get
   - delete
-  - list
 - apiGroups:
   - minio.min.io
   resources:
@@ -5581,7 +5703,9 @@ rules:
   resources:
   - '*'
   verbs:
-  - '*'
+  - get
+  - list
+  - watch
 - apiGroups:
   - ""
   resources:
@@ -5606,9 +5730,9 @@ rules:
   resources:
   - events
   verbs:
-  - create
   - list
   - watch
+  - create
   - update
   - patch
 - apiGroups:
@@ -5710,6 +5834,10 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/version: v5.0.15
+    helm.sh/chart: operator-5.0.15
   name: minio-operator-role
 rules:
 - apiGroups:
@@ -5891,6 +6019,10 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/version: v5.0.15
+    helm.sh/chart: operator-5.0.15
   name: console-sa-binding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -5904,6 +6036,10 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/version: v5.0.15
+    helm.sh/chart: operator-5.0.15
   name: minio-operator-binding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -5920,6 +6056,10 @@ data:
   CONSOLE_TLS_PORT: "9443"
 kind: ConfigMap
 metadata:
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/version: v5.0.15
+    helm.sh/chart: operator-5.0.15
   name: console-env
   namespace: minio-system
 ---
@@ -5928,6 +6068,10 @@ kind: Secret
 metadata:
   annotations:
     kubernetes.io/service-account.name: console-sa
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/version: v5.0.15
+    helm.sh/chart: operator-5.0.15
   name: console-sa-secret
   namespace: minio-system
 type: kubernetes.io/service-account-token
@@ -5936,11 +6080,9 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v5.0.14
-    helm.sh/chart: operator-5.0.14
+    app.kubernetes.io/version: v5.0.15
+    helm.sh/chart: operator-5.0.15
   name: console
   namespace: minio-system
 spec:
@@ -5957,11 +6099,9 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v5.0.14
-    helm.sh/chart: operator-5.0.14
+    app.kubernetes.io/version: v5.0.15
+    helm.sh/chart: operator-5.0.15
   name: operator
   namespace: minio-system
 spec:
@@ -5978,11 +6118,9 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v5.0.14
-    helm.sh/chart: operator-5.0.14
+    app.kubernetes.io/version: v5.0.15
+    helm.sh/chart: operator-5.0.15
   name: sts
   namespace: minio-system
 spec:
@@ -5998,11 +6136,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v5.0.14
-    helm.sh/chart: operator-5.0.14
+    app.kubernetes.io/version: v5.0.15
+    helm.sh/chart: operator-5.0.15
   name: console
   namespace: minio-system
 spec:
@@ -6015,7 +6151,10 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/instance: operator-console
+        app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: operator
+        app.kubernetes.io/version: v5.0.15
+        helm.sh/chart: operator-5.0.15
     spec:
       affinity:
         podAntiAffinity:
@@ -6031,7 +6170,7 @@ spec:
       - args:
         - ui
         - --certs-dir=/tmp/certs
-        image: quay.io/minio/operator:v5.0.14
+        image: quay.io/minio/operator:v5.0.15
         imagePullPolicy: IfNotPresent
         name: operator
         ports:
@@ -6047,13 +6186,21 @@ spec:
             cpu: 10m
             memory: 55Mi
         securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          runAsGroup: 1000
           runAsNonRoot: true
           runAsUser: 1000
+          seccompProfile:
+            type: RuntimeDefault
         volumeMounts:
         - mountPath: /tmp/certs/CAs
           name: tmp
           readOnly: false
       securityContext:
+        runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
       serviceAccountName: console-sa
@@ -6065,11 +6212,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v5.0.14
-    helm.sh/chart: operator-5.0.14
+    app.kubernetes.io/version: v5.0.15
+    helm.sh/chart: operator-5.0.15
   name: minio-operator
   namespace: minio-system
 spec:
@@ -6082,7 +6227,10 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/instance: operator
+        app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: operator
+        app.kubernetes.io/version: v5.0.15
+        helm.sh/chart: operator-5.0.15
     spec:
       affinity:
         podAntiAffinity:
@@ -6100,7 +6248,9 @@ spec:
         env:
         - name: OPERATOR_STS_ENABLED
           value: "on"
-        image: quay.io/minio/operator:v5.0.14
+        - name: MINIO_CONSOLE_TLS_ENABLE
+          value: "off"
+        image: quay.io/minio/operator:v5.0.15
         imagePullPolicy: IfNotPresent
         name: operator
         resources:
@@ -6112,9 +6262,15 @@ spec:
             ephemeral-storage: 128Mi
             memory: 55Mi
         securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
           runAsGroup: 1000
           runAsNonRoot: true
           runAsUser: 1000
+          seccompProfile:
+            type: RuntimeDefault
       securityContext:
         fsGroup: 1000
         runAsGroup: 1000
@@ -6136,6 +6292,6 @@ spec:
           service:
             name: console
             port:
-              name: http
+              number: 9090
         path: /
         pathType: Prefix
