@@ -1,27 +1,22 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 namespace: monitoring-system
-
 helmCharts:
 - name: alloy
   repo: https://grafana.github.io/helm-charts
-  version: 0.1.1
+  version: 0.2.0
   releaseName: alloy
   namespace: monitoring-system
   includeCRDs: false
   valuesFile: values-k3d-k3s.yaml
-
 resources:
 - configs/kubernetes/integrations
 - ../../../monitoring-mixins/alloy-mixin/deploy
-
 configMapGenerator:
 - name: alloy-config
   namespace: monitoring-system
   files:
   - configs/config.alloy
-
 # Alloy Modules local config files
 - name: alloy-modules-kubernetes-metrics
   namespace: monitoring-system
