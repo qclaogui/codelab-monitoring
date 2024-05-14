@@ -47,7 +47,7 @@ services:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
-    image: &oncallImage grafana/oncall:v1.4.3
+    image: &oncallImage grafana/oncall:v1.4.7
     restart: always
     ports:
       - "8080"
