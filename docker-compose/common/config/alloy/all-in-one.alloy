@@ -6,17 +6,17 @@ logging {
 /********************************************
  * Grafana LGTMP Stack Receiver Provider
  ********************************************/
-import.git "provider" {
-	repository     = "https://github.com/qclaogui/codelab-monitoring.git"
-	revision       = "main"
-	path           = "alloy-modules/provider"
-	pull_frequency = "24h"
-}
-
-// // local file
-// import.file "provider" {
-// 	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/provider"
+// import.git "provider" {
+// 	repository     = "https://github.com/qclaogui/codelab-monitoring.git"
+// 	revision       = "main"
+// 	path           = "alloy-modules/provider"
+// 	pull_frequency = "24h"
 // }
+
+// local file
+import.file "provider" {
+	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/provider"
+}
 
 provider.self_hosted_stack "compose" {
 	metrics_endpoint_url  = coalesce(env("SELF_HOSTED_METRICS_ENDPOINT_URL"), "http://gateway:8080/api/v1/push")
