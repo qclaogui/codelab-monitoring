@@ -255,8 +255,6 @@ data:
           access_log off;
         }
 
-        proxy_set_header X-Scope-OrgID $ensured_x_scope_orgid;
-
         # Distributor endpoints
         location = /api/prom/push {
           proxy_pass      http://${LOKI_DISTRIBUTOR_HOST}:3100$request_uri;
@@ -355,9 +353,9 @@ data:
       }
   gateway_mimir.conf.template: "server {\n    listen 8080;\n    listen [::]:8080;\n\n
     \   location = / {\n      return 200 'OK';\n      auth_basic off;\n      access_log
-    off;\n    }\n\n    proxy_set_header X-Scope-OrgID $ensured_x_scope_orgid;\n\n
-    \   # Distributor endpoints\n    location /distributor {\n      proxy_pass      http://${MIMIR_DISTRIBUTOR_HOST}:8080$request_uri;\n
-    \   }\n    location = /api/v1/push {\n      proxy_pass      http://${MIMIR_DISTRIBUTOR_HOST}:8080$request_uri;\n
+    off;\n    }\n\n    # Distributor endpoints\n    location /distributor {\n      proxy_pass
+    \     http://${MIMIR_DISTRIBUTOR_HOST}:8080$request_uri;\n    }\n    location
+    = /api/v1/push {\n      proxy_pass      http://${MIMIR_DISTRIBUTOR_HOST}:8080$request_uri;\n
     \   }\n    location /otlp/v1/metrics {\n      proxy_pass      http://${MIMIR_DISTRIBUTOR_HOST}:8080$request_uri;\n
     \   }\n\n    # Alertmanager endpoints\n    location /alertmanager {\n      proxy_pass
     \     http://${MIMIR_ALERT_MANAGER_HOST}:8080$request_uri;\n    }\n    location
@@ -383,9 +381,8 @@ data:
     {\n    listen 4318;\n\n    location / {\n      proxy_set_header X-Scope-OrgID
     $ensured_x_scope_orgid;\n      proxy_pass http://http_otlp_tempo;\n    }\n}\n\nserver
     {\n    listen 3200;\n    listen [::]:3200;\n\n    location = / {\n      return
-    200 'OK';\n      auth_basic off;\n      access_log off;\n    }\n\n    proxy_set_header
-    X-Scope-OrgID $ensured_x_scope_orgid;\n\n    # Distributor endpoints\n    location
-    = /jaeger/api/traces {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:14268/api/traces;\n
+    200 'OK';\n      auth_basic off;\n      access_log off;\n    }\n\n    # Distributor
+    endpoints\n    location = /jaeger/api/traces {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:14268/api/traces;\n
     \   }\n    location = /zipkin/spans {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:9411/spans;\n
     \   }\n    location = /otlp/v1/traces {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:4318/v1/traces;\n
     \   }\n\n    location = /distributor/ring {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:3100$request_uri;\n
@@ -403,9 +400,10 @@ metadata:
 ---
 apiVersion: v1
 data:
-  config.yaml: |2
-
-    auth_enabled: false
+  config.yaml: |
+    # Multi-tenant mode is set in the configuration with auth_enabled: true
+    # https://grafana.com/docs/loki/latest/operations/multi-tenancy/
+    auth_enabled: true
 
     # -reporting.enabled=false
     analytics:
@@ -522,7 +520,7 @@ metadata:
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.0.0
-  name: loki-config-5468cb29k9
+  name: loki-config-2mt25bhccf
   namespace: logging-system
 ---
 apiVersion: v1
@@ -4722,7 +4720,7 @@ data:
   mimir.yaml: |
     # Do not use this configuration in production.
     # It is for demonstration purposes only.
-    multitenancy_enabled: false
+    multitenancy_enabled: true
 
     # -usage-stats.enabled=false
     usage_stats:
@@ -4847,7 +4845,7 @@ metadata:
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: mimir
     app.kubernetes.io/version: 2.11.0
-  name: mimir-config-958c4gm5k9
+  name: mimir-config-mt42964996
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -4858,7 +4856,7 @@ data:
 
     stream_over_http_enabled: true
 
-    multitenancy_enabled: false
+    multitenancy_enabled: true
     usage_report:
       reporting_enabled: false
 
@@ -5684,7 +5682,7 @@ spec:
       terminationGracePeriodSeconds: 60
       volumes:
       - configMap:
-          name: mimir-config-958c4gm5k9
+          name: mimir-config-mt42964996
         name: config
       - emptyDir: {}
         name: storage
@@ -6414,7 +6412,7 @@ spec:
           items:
           - key: config.yaml
             path: config.yaml
-          name: loki-config-5468cb29k9
+          name: loki-config-2mt25bhccf
         name: config
       - configMap:
           name: loki-runtime-9599m5k6h2
