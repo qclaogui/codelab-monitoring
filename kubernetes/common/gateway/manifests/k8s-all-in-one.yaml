@@ -53,11 +53,13 @@ data:
         "" "anonymous";
       }
 
+      proxy_set_header X-Scope-OrgID $ensured_x_scope_orgid;
+
       include /etc/nginx/gateway_*.conf;
     }
 kind: ConfigMap
 metadata:
-  name: nginx-conf-d76dbg78td
+  name: nginx-conf-fbc5k874b5
   namespace: gateway
 ---
 apiVersion: v1
@@ -466,8 +468,6 @@ data:
           access_log off;
         }
 
-        proxy_set_header X-Scope-OrgID $ensured_x_scope_orgid;
-
         # Distributor endpoints
         location = /api/prom/push {
           proxy_pass      http://${LOKI_DISTRIBUTOR_HOST}:3100$request_uri;
@@ -569,9 +569,9 @@ data:
       }
   gateway_mimir.conf.template: "server {\n    listen 8080;\n    listen [::]:8080;\n\n
     \   location = / {\n      return 200 'OK';\n      auth_basic off;\n      access_log
-    off;\n    }\n\n    proxy_set_header X-Scope-OrgID $ensured_x_scope_orgid;\n\n
-    \   # Distributor endpoints\n    location /distributor {\n      proxy_pass      http://${MIMIR_DISTRIBUTOR_HOST}:8080$request_uri;\n
-    \   }\n    location = /api/v1/push {\n      proxy_pass      http://${MIMIR_DISTRIBUTOR_HOST}:8080$request_uri;\n
+    off;\n    }\n\n    # Distributor endpoints\n    location /distributor {\n      proxy_pass
+    \     http://${MIMIR_DISTRIBUTOR_HOST}:8080$request_uri;\n    }\n    location
+    = /api/v1/push {\n      proxy_pass      http://${MIMIR_DISTRIBUTOR_HOST}:8080$request_uri;\n
     \   }\n    location /otlp/v1/metrics {\n      proxy_pass      http://${MIMIR_DISTRIBUTOR_HOST}:8080$request_uri;\n
     \   }\n\n    # Alertmanager endpoints\n    location /alertmanager {\n      proxy_pass
     \     http://${MIMIR_ALERT_MANAGER_HOST}:8080$request_uri;\n    }\n    location
@@ -600,8 +600,6 @@ data:
           auth_basic off;
           access_log off;
         }
-
-        proxy_set_header X-Scope-OrgID $ensured_x_scope_orgid;
 
         # Distributor endpoints
         location /push.v1.PusherService {
@@ -709,7 +707,7 @@ spec:
         projected:
           sources:
           - configMap:
-              name: nginx-conf-d76dbg78td
+              name: nginx-conf-fbc5k874b5
           - configMap:
               name: nginx-templates
       - emptyDir: {}
