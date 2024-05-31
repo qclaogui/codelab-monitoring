@@ -7,8 +7,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.1.0
-    helm.sh/chart: alloy-0.3.1
+    app.kubernetes.io/version: v1.1.1
+    helm.sh/chart: alloy-0.3.2
   name: alloy
   namespace: monitoring-system
 ---
@@ -21,8 +21,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.1.0
-    helm.sh/chart: alloy-0.3.1
+    app.kubernetes.io/version: v1.1.1
+    helm.sh/chart: alloy-0.3.2
   name: alloy
 rules:
 - apiGroups:
@@ -125,8 +125,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.1.0
-    helm.sh/chart: alloy-0.3.1
+    app.kubernetes.io/version: v1.1.1
+    helm.sh/chart: alloy-0.3.2
   name: alloy
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -4490,8 +4490,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.1.0
-    helm.sh/chart: alloy-0.3.1
+    app.kubernetes.io/version: v1.1.1
+    helm.sh/chart: alloy-0.3.2
   name: alloy
   namespace: monitoring-system
 spec:
@@ -4531,8 +4531,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.1.0
-    helm.sh/chart: alloy-0.3.1
+    app.kubernetes.io/version: v1.1.1
+    helm.sh/chart: alloy-0.3.2
   name: alloy-cluster
   namespace: monitoring-system
 spec:
@@ -4884,8 +4884,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.1.0
-    helm.sh/chart: alloy-0.3.1
+    app.kubernetes.io/version: v1.1.1
+    helm.sh/chart: alloy-0.3.2
   name: alloy
   namespace: monitoring-system
 spec:
@@ -4938,7 +4938,7 @@ spec:
         - secretRef:
             name: alloy-env
             optional: true
-        image: docker.io/grafana/alloy:v1.1.0
+        image: docker.io/grafana/alloy:v1.1.1
         imagePullPolicy: IfNotPresent
         name: alloy
         ports:
@@ -5009,7 +5009,7 @@ metadata:
   namespace: monitoring-system
 spec:
   groups:
-  - name: clustering
+  - name: alloy_clustering
     rules:
     - alert: ClusterNotConverging
       annotations:
@@ -5025,8 +5025,8 @@ spec:
           split brain state.
       expr: |
         sum without (state) (cluster_node_peers) !=
-        on (cluster, namespace) group_left
-        count by (cluster, namespace) (cluster_node_info)
+        on (cluster, namespace, job) group_left
+        count by (cluster, namespace, job) (cluster_node_info)
       for: 15m
     - alert: ClusterNodeUnhealthy
       annotations:
@@ -5052,7 +5052,7 @@ spec:
         message: Cluster nodes are not using the same configuration file.
       expr: |
         count without (sha256) (
-            max by (cluster, namespace, sha256) (alloy_config_hash and on(cluster, namespace) cluster_node_info)
+            max by (cluster, namespace, sha256, job) (alloy_config_hash and on(cluster, namespace) cluster_node_info)
         ) > 1
       for: 5m
   - name: alloy_controller
@@ -5069,17 +5069,19 @@ spec:
       expr: sum by (cluster, namespace) (alloy_component_controller_running_components{health_type!="healthy"})
         > 0
       for: 15m
-  - name: otelcol
+  - name: alloy_otelcol
     rules:
     - alert: OtelcolReceiverRefusedSpans
       annotations:
         message: The receiver could not push some spans to the pipeline.
-      expr: sum(rate(receiver_refused_spans_ratio_total{}[1m])) > 0
+      expr: sum by (cluster, namespace) (rate(receiver_refused_spans_ratio_total{}[1m]))
+        > 0
       for: 5m
     - alert: OtelcolExporterFailedSpans
       annotations:
         message: The exporter failed to send spans to their destination.
-      expr: sum(rate(exporter_send_failed_spans_ratio_total{}[1m])) > 0
+      expr: sum by (cluster, namespace) (rate(exporter_send_failed_spans_ratio_total{}[1m]))
+        > 0
       for: 5m
 ---
 apiVersion: monitoring.coreos.com/v1
@@ -5091,8 +5093,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.1.0
-    helm.sh/chart: alloy-0.3.1
+    app.kubernetes.io/version: v1.1.1
+    helm.sh/chart: alloy-0.3.2
   name: alloy
   namespace: monitoring-system
 spec:
@@ -5213,8 +5215,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.1.0
-    helm.sh/chart: alloy-0.3.1
+    app.kubernetes.io/version: v1.1.1
+    helm.sh/chart: alloy-0.3.2
   name: alloy
   namespace: monitoring-system
 spec:
