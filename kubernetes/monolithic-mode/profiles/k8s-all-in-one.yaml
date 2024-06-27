@@ -1685,10 +1685,10 @@ data:
     = \"instance\"\n\t\t\treplacement  = coalesce(nonsensitive(remote.kubernetes.secret.memcached.data[\"instance-name\"]),
     constants.hostname)\n\t\t}\n\t}\n\n\t/***************************************************************\n\t*
     Prometheus Scrape Integrations Targets\n\t****************************************************************/\n\tprometheus.scrape
-    \"integrations_memcached_exporter\" {\n\t\ttargets = concat(\n\t\t\tdiscovery.relabel.integrations_memcached_exporter.output,\n\t\t)\n\n\t\tenable_protobuf_negotiation
-    = true\n\t\tscrape_classic_histograms   = true\n\n\t\tscrape_interval = coalesce(argument.scrape_interval.value,
-    \"60s\")\n\t\tscrape_timeout  = coalesce(argument.scrape_timeout.value, \"10s\")\n\n\t\tclustering
-    {\n\t\t\tenabled = true\n\t\t}\n\n\t\tforward_to = [prometheus.relabel.integrations_memcached_exporter.receiver]\n\t}\n\n\t/***************************************************************\n\t*
+    \"integrations_memcached_exporter\" {\n\t\ttargets = concat(\n\t\t\tdiscovery.relabel.integrations_memcached_exporter.output,\n\t\t)\n\n\t\tscrape_classic_histograms
+    = true\n\n\t\tscrape_interval = coalesce(argument.scrape_interval.value, \"60s\")\n\t\tscrape_timeout
+    \ = coalesce(argument.scrape_timeout.value, \"10s\")\n\n\t\tclustering {\n\t\t\tenabled
+    = true\n\t\t}\n\n\t\tforward_to = [prometheus.relabel.integrations_memcached_exporter.receiver]\n\t}\n\n\t/***************************************************************\n\t*
     Prometheus Metric Relabelings (post-scrape)\n\t****************************************************************/\n\tprometheus.relabel
     \"integrations_memcached_exporter\" {\n\t\tforward_to = argument.forward_to.value\n\n\t\t//
     keep only metrics that match the keep_metrics regex\n\t\trule {\n\t\t\tsource_labels
@@ -1722,10 +1722,10 @@ data:
     \"instance\"\n\t\t\treplacement  = coalesce(nonsensitive(remote.kubernetes.secret.mysql.data[\"instance-name\"]),
     constants.hostname)\n\t\t}\n\t}\n\n\t/***************************************************************\n\t*
     Prometheus Scrape Integrations Targets\n\t****************************************************************/\n\tprometheus.scrape
-    \"integrations_mysqld_exporter\" {\n\t\ttargets = concat(\n\t\t\tdiscovery.relabel.integrations_mysqld_exporter.output,\n\t\t)\n\n\t\tenable_protobuf_negotiation
-    = true\n\t\tscrape_classic_histograms   = true\n\n\t\tscrape_interval = coalesce(argument.scrape_interval.value,
-    \"60s\")\n\t\tscrape_timeout  = coalesce(argument.scrape_timeout.value, \"10s\")\n\n\t\tclustering
-    {\n\t\t\tenabled = true\n\t\t}\n\n\t\tforward_to = [prometheus.relabel.integrations_mysqld_exporter.receiver]\n\t}\n\n\t/***************************************************************\n\t*
+    \"integrations_mysqld_exporter\" {\n\t\ttargets = concat(\n\t\t\tdiscovery.relabel.integrations_mysqld_exporter.output,\n\t\t)\n\n\t\tscrape_classic_histograms
+    = true\n\n\t\tscrape_interval = coalesce(argument.scrape_interval.value, \"60s\")\n\t\tscrape_timeout
+    \ = coalesce(argument.scrape_timeout.value, \"10s\")\n\n\t\tclustering {\n\t\t\tenabled
+    = true\n\t\t}\n\n\t\tforward_to = [prometheus.relabel.integrations_mysqld_exporter.receiver]\n\t}\n\n\t/***************************************************************\n\t*
     Prometheus Metric Relabelings (post-scrape)\n\t****************************************************************/\n\tprometheus.relabel
     \"integrations_mysqld_exporter\" {\n\t\tforward_to = argument.forward_to.value\n\n\t\t//
     keep only metrics that match the keep_metrics regex\n\t\trule {\n\t\t\tsource_labels
@@ -1759,8 +1759,8 @@ data:
     = \"instance\"\n\t\t\treplacement  = coalesce(nonsensitive(remote.kubernetes.secret.redis.data[\"instance-name\"]),
     constants.hostname)\n\t\t}\n\t}\n\n\t/***************************************************************\n\t*
     Prometheus Scrape Integrations Targets\n\t****************************************************************/\n\tprometheus.scrape
-    \"integrations_redis_exporter\" {\n\t\ttargets = concat(\n\t\t\tdiscovery.relabel.integrations_redis_exporter.output,\n\t\t)\n\n\t\tenable_protobuf_negotiation
-    = true\n\t\tscrape_classic_histograms   = true\n\n\t\tscrape_interval = argument.scrape_interval.value\n\t\tscrape_timeout
+    \"integrations_redis_exporter\" {\n\t\ttargets = concat(\n\t\t\tdiscovery.relabel.integrations_redis_exporter.output,\n\t\t)\n\n\t\tscrape_classic_histograms
+    = true\n\n\t\tscrape_interval = argument.scrape_interval.value\n\t\tscrape_timeout
     \ = argument.scrape_timeout.value\n\n\t\tclustering {\n\t\t\tenabled = true\n\t\t}\n\n\t\tforward_to
     = [prometheus.relabel.integrations_redis_exporter.receiver]\n\t}\n\n\t/***************************************************************\n\t*
     Prometheus Metric Relabelings (post-scrape)\n\t****************************************************************/\n\tprometheus.relabel
@@ -2484,18 +2484,16 @@ data:
     scrape http only targtetsa\n\tprometheus.scrape \"http_annotations\" {\n\t\ttargets
     = discovery.relabel.http_annotations.output\n\n\t\tjob_name        = \"annotation-metrics-http\"\n\t\tscheme
     \         = \"http\"\n\t\tscrape_interval = coalesce(argument.scrape_interval.value,
-    \"60s\")\n\t\tscrape_timeout  = coalesce(argument.scrape_timeout.value, \"10s\")\n\n\t\tenable_protobuf_negotiation
-    = true\n\t\tscrape_classic_histograms   = true\n\n\t\tclustering {\n\t\t\tenabled
-    = true\n\t\t}\n\n\t\tforward_to = [prometheus.relabel.annotations.receiver]\n\t}\n\n\t//
+    \"60s\")\n\t\tscrape_timeout  = coalesce(argument.scrape_timeout.value, \"10s\")\n\n\t\tscrape_classic_histograms
+    = true\n\n\t\tclustering {\n\t\t\tenabled = true\n\t\t}\n\n\t\tforward_to = [prometheus.relabel.annotations.receiver]\n\t}\n\n\t//
     scrape https only targtets\n\tprometheus.scrape \"https_annotations\" {\n\t\ttargets
     = discovery.relabel.https_annotations.output\n\n\t\tjob_name          = \"annotation-metrics-https\"\n\t\tscheme
     \           = \"https\"\n\t\tscrape_interval   = coalesce(argument.scrape_interval.value,
     \"60s\")\n\t\tscrape_timeout    = coalesce(argument.scrape_timeout.value, \"10s\")\n\t\tbearer_token_file
     = \"/var/run/secrets/kubernetes.io/serviceaccount/token\"\n\n\t\ttls_config {\n\t\t\tca_file
     \             = \"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt\"\n\t\t\tinsecure_skip_verify
-    = false\n\t\t\tserver_name          = \"kubernetes\"\n\t\t}\n\n\t\tenable_protobuf_negotiation
-    = true\n\t\tscrape_classic_histograms   = true\n\n\t\tclustering {\n\t\t\tenabled
-    = true\n\t\t}\n\n\t\tforward_to = [prometheus.relabel.annotations.receiver]\n\t}\n\n\t/*****************************************************************\n\t*
+    = false\n\t\t\tserver_name          = \"kubernetes\"\n\t\t}\n\n\t\tscrape_classic_histograms
+    = true\n\n\t\tclustering {\n\t\t\tenabled = true\n\t\t}\n\n\t\tforward_to = [prometheus.relabel.annotations.receiver]\n\t}\n\n\t/*****************************************************************\n\t*
     Prometheus Metric Relabelings (post-scrape)\n\t*****************************************************************/\n\t//
     perform generic relabeling using keep_metrics and drop_metrics\n\tprometheus.relabel
     \"annotations\" {\n\t\tforward_to = argument.forward_to.value\n\t\t// keep only
@@ -2577,7 +2575,7 @@ data:
     \"\")\n\t\t}\n\t}\n}\n"
 kind: ConfigMap
 metadata:
-  name: alloy-modules-kubernetes-metrics-db96446m8f
+  name: alloy-modules-kubernetes-metrics-6g7hb9cd7g
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -5009,7 +5007,7 @@ spec:
           name: alloy-config-6h7tb697c9
         name: config
       - configMap:
-          name: alloy-modules-kubernetes-metrics-db96446m8f
+          name: alloy-modules-kubernetes-metrics-6g7hb9cd7g
         name: modules-kubernetes-metrics
       - configMap:
           name: alloy-modules-kubernetes-logs-7b5f7t9d8g
