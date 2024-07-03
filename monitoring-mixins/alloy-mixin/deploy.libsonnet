@@ -1,4 +1,8 @@
 (import 'mixin.libsonnet') + {
-  // Config overrides
   prometheusRules: {},
+
+  // Config overrides
+  _config+:: {
+    logsFilterSelector: 'app="alloy"',
+  }
 }
