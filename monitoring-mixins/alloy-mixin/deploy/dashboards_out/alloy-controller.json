@@ -57,7 +57,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "count(alloy_component_controller_evaluating{cluster=\"$cluster\", namespace=\"$namespace\"})",
+                  "expr": "count(alloy_component_controller_evaluating{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"})\n",
                   "instant": false,
                   "legendFormat": "__auto",
                   "range": true
@@ -87,7 +87,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "sum(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\"})",
+                  "expr": "sum(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"})\n",
                   "instant": false,
                   "legendFormat": "__auto",
                   "range": true
@@ -124,7 +124,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "sum(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\",health_type=\"healthy\"}) /\nsum(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\"})\n",
+                  "expr": "sum(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\",health_type=\"healthy\"}) /\nsum(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"})\n",
                   "instant": false,
                   "legendFormat": "__auto",
                   "range": true
@@ -237,28 +237,28 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "sum(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\", health_type=\"healthy\"}) or vector(0)",
+                  "expr": "sum(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", health_type=\"healthy\"}) or vector(0)\n",
                   "instant": true,
                   "legendFormat": "Healthy",
                   "range": false
                },
                {
                   "datasource": "${datasource}",
-                  "expr": "sum(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\", health_type=\"unhealthy\"}) or vector(0)",
+                  "expr": "sum(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", health_type=\"unhealthy\"}) or vector(0)\n",
                   "instant": true,
                   "legendFormat": "Unhealthy",
                   "range": false
                },
                {
                   "datasource": "${datasource}",
-                  "expr": "sum(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\", health_type=\"unknown\"}) or vector(0)",
+                  "expr": "sum(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", health_type=\"unknown\"}) or vector(0)\n",
                   "instant": true,
                   "legendFormat": "Unknown",
                   "range": false
                },
                {
                   "datasource": "${datasource}",
-                  "expr": "sum(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\", health_type=\"exited\"}) or vector(0)",
+                  "expr": "sum(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", health_type=\"exited\"}) or vector(0)\n",
                   "instant": true,
                   "legendFormat": "Exited",
                   "range": false
@@ -293,7 +293,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "sum by (instance) (rate(alloy_component_evaluation_seconds_count{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]))",
+                  "expr": "sum by (instance) (rate(alloy_component_evaluation_seconds_count{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval]))\n",
                   "instant": false,
                   "legendFormat": "__auto",
                   "range": true
@@ -319,21 +319,21 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "histogram_quantile(0.99, sum(rate(alloy_component_evaluation_seconds{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval])))\nor\nhistogram_quantile(0.99, sum by (le) (rate(alloy_component_evaluation_seconds_bucket{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval])))\n",
+                  "expr": "histogram_quantile(0.99, sum(rate(alloy_component_evaluation_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval])))\nor\nhistogram_quantile(0.99, sum by (le) (rate(alloy_component_evaluation_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval])))\n",
                   "instant": false,
                   "legendFormat": "99th percentile",
                   "range": true
                },
                {
                   "datasource": "${datasource}",
-                  "expr": "histogram_quantile(0.50, sum(rate(alloy_component_evaluation_seconds{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval])))\nor\nhistogram_quantile(0.50, sum by (le) (rate(alloy_component_evaluation_seconds_bucket{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval])))\n",
+                  "expr": "histogram_quantile(0.50, sum(rate(alloy_component_evaluation_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval])))\nor\nhistogram_quantile(0.50, sum by (le) (rate(alloy_component_evaluation_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval])))\n",
                   "instant": false,
                   "legendFormat": "50th percentile",
                   "range": true
                },
                {
                   "datasource": "${datasource}",
-                  "expr": "(\n  histogram_sum(sum(rate(alloy_component_evaluation_seconds{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval]))) /\n  histogram_count(sum(rate(alloy_component_evaluation_seconds{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval])))\n)\nor\n(\n  sum(rate(alloy_component_evaluation_seconds_sum{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval])) /\n  sum(rate(alloy_component_evaluation_seconds_count{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval]))\n)\n",
+                  "expr": "(\n  histogram_sum(sum(rate(alloy_component_evaluation_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval]))) /\n  histogram_count(sum(rate(alloy_component_evaluation_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval])))\n)\nor\n(\n  sum(rate(alloy_component_evaluation_seconds_sum{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval])) /\n  sum(rate(alloy_component_evaluation_seconds_count{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval]))\n)\n",
                   "instant": false,
                   "legendFormat": "Average",
                   "range": true
@@ -359,7 +359,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "sum by (component_path, component_id) (rate(alloy_component_evaluation_slow_seconds{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]))\n/ scalar(sum(rate(alloy_component_evaluation_seconds_sum{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval])))\n",
+                  "expr": "sum by (component_path, component_id) (rate(alloy_component_evaluation_slow_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval]))\n/ scalar(sum(rate(alloy_component_evaluation_seconds_sum{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval])))\n",
                   "instant": false,
                   "legendFormat": "{{component path}} {{component_id}}",
                   "range": true
@@ -402,7 +402,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "sum(increase(alloy_component_evaluation_seconds{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]))\nor ignoring (le)\nsum by (le) (increase(alloy_component_evaluation_seconds_bucket{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]))\n",
+                  "expr": "sum(increase(alloy_component_evaluation_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval]))\nor ignoring (le)\nsum by (le) (increase(alloy_component_evaluation_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval]))\n",
                   "format": "heatmap",
                   "instant": false,
                   "legendFormat": "{{le}}",
@@ -446,7 +446,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "sum(increase(alloy_component_dependencies_wait_seconds{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]))\nor ignoring (le)\nsum by (le) (increase(alloy_component_dependencies_wait_seconds_bucket{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]))\n",
+                  "expr": "sum(increase(alloy_component_dependencies_wait_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval]))\nor ignoring (le)\nsum by (le) (increase(alloy_component_dependencies_wait_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval]))\n",
                   "format": "heatmap",
                   "instant": false,
                   "legendFormat": "{{le}}",
@@ -497,8 +497,23 @@
                "label": "namespace",
                "name": "namespace",
                "query": {
-                  "query": "label_values(alloy_component_controller_running_components{cluster=\"$cluster\"}, namespace)\n",
+                  "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\"}, namespace)\n",
                   "refId": "namespace"
+               },
+               "refresh": 2,
+               "sort": 2,
+               "type": "query"
+            },
+            {
+               "allValue": ".*",
+               "datasource": "${datasource}",
+               "includeAll": true,
+               "label": "job",
+               "multi": true,
+               "name": "job",
+               "query": {
+                  "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\"}, job)\n",
+                  "refId": "job"
                },
                "refresh": 2,
                "sort": 2,

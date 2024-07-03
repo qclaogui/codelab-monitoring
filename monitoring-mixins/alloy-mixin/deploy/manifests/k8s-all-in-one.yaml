@@ -62,7 +62,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum(cluster_node_lamport_time{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"})",
+                      "expr": "sum(cluster_node_lamport_time{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}) \n",
                       "format": "table",
                       "instant": true,
                       "legendFormat": "__auto",
@@ -71,7 +71,7 @@ data:
                    },
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum(cluster_node_update_observers{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"})",
+                      "expr": "sum(cluster_node_update_observers{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"})\n",
                       "format": "table",
                       "instant": true,
                       "legendFormat": "__auto",
@@ -80,7 +80,7 @@ data:
                    },
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum(cluster_node_gossip_health_score{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"})",
+                      "expr": "sum(cluster_node_gossip_health_score{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"})\n",
                       "format": "table",
                       "instant": true,
                       "legendFormat": "__auto",
@@ -89,7 +89,7 @@ data:
                    },
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum(cluster_node_gossip_proto_version{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"})",
+                      "expr": "sum(cluster_node_gossip_proto_version{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"})\n",
                       "format": "table",
                       "instant": true,
                       "legendFormat": "__auto",
@@ -135,7 +135,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "rate(cluster_node_gossip_received_events_total{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval])",
+                      "expr": "rate(cluster_node_gossip_received_events_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
                       "instant": false,
                       "legendFormat": "{{event}}",
                       "range": true
@@ -161,7 +161,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum(cluster_node_peers{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"})",
+                      "expr": "sum(cluster_node_peers{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"})\n",
                       "instant": false,
                       "legendFormat": "__auto",
                       "range": true
@@ -187,7 +187,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "cluster_node_peers{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}",
+                      "expr": "cluster_node_peers{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}\n",
                       "instant": false,
                       "legendFormat": "{{state}}",
                       "range": true
@@ -226,14 +226,14 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "rate(cluster_transport_rx_bytes_total{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval])",
+                      "expr": "rate(cluster_transport_rx_bytes_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
                       "instant": false,
                       "legendFormat": "rx",
                       "range": true
                    },
                    {
                       "datasource": "${datasource}",
-                      "expr": "-1 * rate(cluster_transport_tx_bytes_total{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval])",
+                      "expr": "-1 * rate(cluster_transport_tx_bytes_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
                       "instant": false,
                       "legendFormat": "tx",
                       "range": true
@@ -258,14 +258,14 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "1 - (\nrate(cluster_transport_tx_packets_failed_total{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]) /\nrate(cluster_transport_tx_packets_total{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval])\n)\n",
+                      "expr": "1 - (\n  rate(cluster_transport_tx_packets_failed_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]) /\n  rate(cluster_transport_tx_packets_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n)\n",
                       "instant": false,
                       "legendFormat": "Tx success %",
                       "range": true
                    },
                    {
                       "datasource": "${datasource}",
-                      "expr": "1 - (\n  rate(cluster_transport_rx_packets_failed_total{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]) /\n  rate(cluster_transport_rx_packets_total{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval])\n  )\n",
+                      "expr": "1 - (\n  rate(cluster_transport_rx_packets_failed_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]) /\n  rate(cluster_transport_rx_packets_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n)\n",
                       "instant": false,
                       "legendFormat": "Rx success %",
                       "range": true
@@ -291,14 +291,14 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "cluster_transport_tx_packet_queue_length{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}",
+                      "expr": "cluster_transport_tx_packet_queue_length{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}\n",
                       "instant": false,
                       "legendFormat": "tx queue",
                       "range": true
                    },
                    {
                       "datasource": "${datasource}",
-                      "expr": "cluster_transport_rx_packet_queue_length{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}",
+                      "expr": "cluster_transport_rx_packet_queue_length{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}\n",
                       "instant": false,
                       "legendFormat": "rx queue",
                       "range": true
@@ -326,14 +326,14 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "rate(cluster_transport_stream_rx_bytes_total{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval])",
+                      "expr": "rate(cluster_transport_stream_rx_bytes_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
                       "instant": false,
                       "legendFormat": "rx",
                       "range": true
                    },
                    {
                       "datasource": "${datasource}",
-                      "expr": "-1 * rate(cluster_transport_stream_tx_bytes_total{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval])",
+                      "expr": "-1 * rate(cluster_transport_stream_tx_bytes_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
                       "instant": false,
                       "legendFormat": "tx",
                       "range": true
@@ -358,14 +358,14 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "1 - (\n  rate(cluster_transport_stream_tx_packets_failed_total{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]) /\n  rate(cluster_transport_stream_tx_packets_total{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval])\n  )\n",
+                      "expr": "1 - (\n  rate(cluster_transport_stream_tx_packets_failed_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]) /\n  rate(cluster_transport_stream_tx_packets_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n)\n",
                       "instant": false,
                       "legendFormat": "Tx success %",
                       "range": true
                    },
                    {
                       "datasource": "${datasource}",
-                      "expr": "1 - (\n  rate(cluster_transport_stream_rx_packets_failed_total{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]) /\n  rate(cluster_transport_stream_rx_packets_total{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval])\n  )\n",
+                      "expr": "1 - (\n  rate(cluster_transport_stream_rx_packets_failed_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]) /\n  rate(cluster_transport_stream_rx_packets_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n)\n",
                       "instant": false,
                       "legendFormat": "Rx success %",
                       "range": true
@@ -386,7 +386,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "cluster_transport_streams{instance=\"$instance\", cluster=\"$cluster\", namespace=\"$namespace\"}",
+                      "expr": "cluster_transport_streams{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}\n",
                       "instant": false,
                       "legendFormat": "Open streams",
                       "range": true
@@ -436,7 +436,7 @@ data:
                    "label": "namespace",
                    "name": "namespace",
                    "query": {
-                      "query": "label_values(alloy_component_controller_running_components{cluster=\"$cluster\"}, namespace)\n",
+                      "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\"}, namespace)\n",
                       "refId": "namespace"
                    },
                    "refresh": 2,
@@ -444,11 +444,29 @@ data:
                    "type": "query"
                 },
                 {
+                   "allValue": ".*",
                    "datasource": "${datasource}",
+                   "includeAll": true,
+                   "label": "job",
+                   "multi": true,
+                   "name": "job",
+                   "query": {
+                      "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\"}, job)\n",
+                      "refId": "job"
+                   },
+                   "refresh": 2,
+                   "sort": 2,
+                   "type": "query"
+                },
+                {
+                   "allValue": ".*",
+                   "datasource": "${datasource}",
+                   "includeAll": true,
                    "label": "instance",
+                   "multi": true,
                    "name": "instance",
                    "query": {
-                      "query": "label_values(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\"}, instance)\n",
+                      "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}, instance)\n",
                       "refId": "instance"
                    },
                    "refresh": 2,
@@ -552,7 +570,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "count(cluster_node_info{cluster=\"$cluster\", namespace=\"$namespace\"})",
+                      "expr": "count(cluster_node_info{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"})\n",
                       "instant": true,
                       "legendFormat": "__auto",
                       "range": false
@@ -592,7 +610,7 @@ data:
                                   {
                                      "targetBlank": false,
                                      "title": "Detail dashboard for node",
-                                     "url": "/d/4047e755d822da63c8158cde32ae4dce/alloy-cluster-node?var-instance=${__data.fields.instance}&var-datasource=${datasource}&var-loki_datasource=${loki_datasource}&var-cluster=${cluster}&var-namespace=${namespace}"
+                                     "url": "/d/4047e755d822da63c8158cde32ae4dce/alloy-cluster-node?var-instance=${__data.fields.instance}&var-datasource=${datasource}&var-loki_datasource=${loki_datasource}&var-job=${job}&var-cluster=${cluster}&var-namespace=${namespace}"
                                   }
                                ]
                             }
@@ -609,7 +627,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "cluster_node_info{cluster=\"$cluster\", namespace=\"$namespace\"}",
+                      "expr": "cluster_node_info{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}\n",
                       "format": "table",
                       "instant": true,
                       "legendFormat": "__auto",
@@ -694,7 +712,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "clamp((\n  sum(stddev by (state) (cluster_node_peers{cluster=\"$cluster\", namespace=\"$namespace\"}) != 0) or\n  (sum(abs(sum without (state) (cluster_node_peers{cluster=\"$cluster\", namespace=\"$namespace\"})) - scalar(count(cluster_node_info{cluster=\"$cluster\", namespace=\"$namespace\"})) != 0))\n  ),\n  1, 1\n)\n",
+                      "expr": "clamp((\n  sum(stddev by (state) (cluster_node_peers{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}) != 0) or\n  (sum(abs(sum without (state) (cluster_node_peers{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"})) - scalar(count(cluster_node_info{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"})) != 0))\n  ),\n  1, 1\n)\n",
                       "format": "time_series",
                       "instant": true,
                       "legendFormat": "__auto",
@@ -748,7 +766,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "ceil(clamp((\n  sum(stddev by (state) (cluster_node_peers{cluster=\"$cluster\", namespace=\"$namespace\"})) or\n  (sum(abs(sum without (state) (cluster_node_peers{cluster=\"$cluster\", namespace=\"$namespace\"})) - scalar(count(cluster_node_info{cluster=\"$cluster\", namespace=\"$namespace\"}))))\n  ),\n  0, 1\n))\n",
+                      "expr": "ceil(clamp((\n  sum(stddev by (state) (cluster_node_peers{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"})) or\n  (sum(abs(sum without (state) (cluster_node_peers{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"})) - scalar(count(cluster_node_info{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}))))\n  ),\n  0, 1\n))\n",
                       "instant": false,
                       "legendFormat": "Converged",
                       "range": true
@@ -798,8 +816,23 @@ data:
                    "label": "namespace",
                    "name": "namespace",
                    "query": {
-                      "query": "label_values(alloy_component_controller_running_components{cluster=\"$cluster\"}, namespace)\n",
+                      "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\"}, namespace)\n",
                       "refId": "namespace"
+                   },
+                   "refresh": 2,
+                   "sort": 2,
+                   "type": "query"
+                },
+                {
+                   "allValue": ".*",
+                   "datasource": "${datasource}",
+                   "includeAll": true,
+                   "label": "job",
+                   "multi": true,
+                   "name": "job",
+                   "query": {
+                      "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\"}, job)\n",
+                      "refId": "job"
                    },
                    "refresh": 2,
                    "sort": 2,
@@ -912,7 +945,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "count(alloy_component_controller_evaluating{cluster=\"$cluster\", namespace=\"$namespace\"})",
+                      "expr": "count(alloy_component_controller_evaluating{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"})\n",
                       "instant": false,
                       "legendFormat": "__auto",
                       "range": true
@@ -942,7 +975,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\"})",
+                      "expr": "sum(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"})\n",
                       "instant": false,
                       "legendFormat": "__auto",
                       "range": true
@@ -979,7 +1012,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\",health_type=\"healthy\"}) /\nsum(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\"})\n",
+                      "expr": "sum(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\",health_type=\"healthy\"}) /\nsum(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"})\n",
                       "instant": false,
                       "legendFormat": "__auto",
                       "range": true
@@ -1092,28 +1125,28 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\", health_type=\"healthy\"}) or vector(0)",
+                      "expr": "sum(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", health_type=\"healthy\"}) or vector(0)\n",
                       "instant": true,
                       "legendFormat": "Healthy",
                       "range": false
                    },
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\", health_type=\"unhealthy\"}) or vector(0)",
+                      "expr": "sum(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", health_type=\"unhealthy\"}) or vector(0)\n",
                       "instant": true,
                       "legendFormat": "Unhealthy",
                       "range": false
                    },
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\", health_type=\"unknown\"}) or vector(0)",
+                      "expr": "sum(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", health_type=\"unknown\"}) or vector(0)\n",
                       "instant": true,
                       "legendFormat": "Unknown",
                       "range": false
                    },
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\", health_type=\"exited\"}) or vector(0)",
+                      "expr": "sum(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", health_type=\"exited\"}) or vector(0)\n",
                       "instant": true,
                       "legendFormat": "Exited",
                       "range": false
@@ -1148,7 +1181,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by (instance) (rate(alloy_component_evaluation_seconds_count{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]))",
+                      "expr": "sum by (instance) (rate(alloy_component_evaluation_seconds_count{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval]))\n",
                       "instant": false,
                       "legendFormat": "__auto",
                       "range": true
@@ -1174,21 +1207,21 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "histogram_quantile(0.99, sum(rate(alloy_component_evaluation_seconds{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval])))\nor\nhistogram_quantile(0.99, sum by (le) (rate(alloy_component_evaluation_seconds_bucket{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval])))\n",
+                      "expr": "histogram_quantile(0.99, sum(rate(alloy_component_evaluation_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval])))\nor\nhistogram_quantile(0.99, sum by (le) (rate(alloy_component_evaluation_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval])))\n",
                       "instant": false,
                       "legendFormat": "99th percentile",
                       "range": true
                    },
                    {
                       "datasource": "${datasource}",
-                      "expr": "histogram_quantile(0.50, sum(rate(alloy_component_evaluation_seconds{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval])))\nor\nhistogram_quantile(0.50, sum by (le) (rate(alloy_component_evaluation_seconds_bucket{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval])))\n",
+                      "expr": "histogram_quantile(0.50, sum(rate(alloy_component_evaluation_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval])))\nor\nhistogram_quantile(0.50, sum by (le) (rate(alloy_component_evaluation_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval])))\n",
                       "instant": false,
                       "legendFormat": "50th percentile",
                       "range": true
                    },
                    {
                       "datasource": "${datasource}",
-                      "expr": "(\n  histogram_sum(sum(rate(alloy_component_evaluation_seconds{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval]))) /\n  histogram_count(sum(rate(alloy_component_evaluation_seconds{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval])))\n)\nor\n(\n  sum(rate(alloy_component_evaluation_seconds_sum{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval])) /\n  sum(rate(alloy_component_evaluation_seconds_count{cluster=\"$cluster\",namespace=\"$namespace\"}[$__rate_interval]))\n)\n",
+                      "expr": "(\n  histogram_sum(sum(rate(alloy_component_evaluation_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval]))) /\n  histogram_count(sum(rate(alloy_component_evaluation_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval])))\n)\nor\n(\n  sum(rate(alloy_component_evaluation_seconds_sum{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval])) /\n  sum(rate(alloy_component_evaluation_seconds_count{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval]))\n)\n",
                       "instant": false,
                       "legendFormat": "Average",
                       "range": true
@@ -1214,7 +1247,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by (component_path, component_id) (rate(alloy_component_evaluation_slow_seconds{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]))\n/ scalar(sum(rate(alloy_component_evaluation_seconds_sum{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval])))\n",
+                      "expr": "sum by (component_path, component_id) (rate(alloy_component_evaluation_slow_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval]))\n/ scalar(sum(rate(alloy_component_evaluation_seconds_sum{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval])))\n",
                       "instant": false,
                       "legendFormat": "{{component path}} {{component_id}}",
                       "range": true
@@ -1257,7 +1290,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum(increase(alloy_component_evaluation_seconds{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]))\nor ignoring (le)\nsum by (le) (increase(alloy_component_evaluation_seconds_bucket{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]))\n",
+                      "expr": "sum(increase(alloy_component_evaluation_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval]))\nor ignoring (le)\nsum by (le) (increase(alloy_component_evaluation_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval]))\n",
                       "format": "heatmap",
                       "instant": false,
                       "legendFormat": "{{le}}",
@@ -1301,7 +1334,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum(increase(alloy_component_dependencies_wait_seconds{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]))\nor ignoring (le)\nsum by (le) (increase(alloy_component_dependencies_wait_seconds_bucket{cluster=\"$cluster\", namespace=\"$namespace\"}[$__rate_interval]))\n",
+                      "expr": "sum(increase(alloy_component_dependencies_wait_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval]))\nor ignoring (le)\nsum by (le) (increase(alloy_component_dependencies_wait_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval]))\n",
                       "format": "heatmap",
                       "instant": false,
                       "legendFormat": "{{le}}",
@@ -1352,8 +1385,23 @@ data:
                    "label": "namespace",
                    "name": "namespace",
                    "query": {
-                      "query": "label_values(alloy_component_controller_running_components{cluster=\"$cluster\"}, namespace)\n",
+                      "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\"}, namespace)\n",
                       "refId": "namespace"
+                   },
+                   "refresh": 2,
+                   "sort": 2,
+                   "type": "query"
+                },
+                {
+                   "allValue": ".*",
+                   "datasource": "${datasource}",
+                   "includeAll": true,
+                   "label": "job",
+                   "multi": true,
+                   "name": "job",
+                   "query": {
+                      "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\"}, job)\n",
+                      "refId": "job"
                    },
                    "refresh": 2,
                    "sort": 2,
@@ -1458,7 +1506,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "rate(receiver_accepted_spans_ratio_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\"}[$__rate_interval])\n",
+                      "expr": "rate(receiver_accepted_spans_ratio_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
                       "instant": false,
                       "legendFormat": "{{ pod }} / {{ transport }}",
                       "range": true
@@ -1490,7 +1538,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "rate(receiver_refused_spans_ratio_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\"}[$__rate_interval])\n",
+                      "expr": "rate(receiver_refused_spans_ratio_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
                       "instant": false,
                       "legendFormat": "{{ pod }} / {{ transport }}",
                       "range": true
@@ -1537,7 +1585,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by (le) (increase(rpc_server_duration_milliseconds_bucket{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", rpc_service=\"opentelemetry.proto.collector.trace.v1.TraceService\"}[$__rate_interval]))",
+                      "expr": "sum by (le) (increase(rpc_server_duration_milliseconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", rpc_service=\"opentelemetry.proto.collector.trace.v1.TraceService\"}[$__rate_interval]))\n",
                       "format": "heatmap",
                       "instant": false,
                       "legendFormat": "{{le}}",
@@ -1601,7 +1649,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by (le) (increase(processor_batch_batch_send_size_ratio_bucket{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\"}[$__rate_interval]))",
+                      "expr": "sum by (le) (increase(processor_batch_batch_send_size_ratio_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
                       "format": "heatmap",
                       "instant": false,
                       "legendFormat": "{{le}}",
@@ -1623,7 +1671,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "processor_batch_metadata_cardinality_ratio{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\"}\n",
+                      "expr": "processor_batch_metadata_cardinality_ratio{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}\n",
                       "instant": false,
                       "legendFormat": "{{ pod }}",
                       "range": true
@@ -1644,7 +1692,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "rate(processor_batch_timeout_trigger_send_ratio_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\"}[$__rate_interval])\n",
+                      "expr": "rate(processor_batch_timeout_trigger_send_ratio_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
                       "instant": false,
                       "legendFormat": "{{ pod }}",
                       "range": true
@@ -1687,7 +1735,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "rate(exporter_sent_spans_ratio_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\"}[$__rate_interval])\n",
+                      "expr": "rate(exporter_sent_spans_ratio_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
                       "instant": false,
                       "legendFormat": "{{ pod }}",
                       "range": true
@@ -1719,7 +1767,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "rate(exporter_send_failed_spans_ratio_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\"}[$__rate_interval])\n",
+                      "expr": "rate(exporter_send_failed_spans_ratio_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
                       "instant": false,
                       "legendFormat": "{{ pod }}",
                       "range": true
@@ -1769,8 +1817,23 @@ data:
                    "label": "namespace",
                    "name": "namespace",
                    "query": {
-                      "query": "label_values(alloy_component_controller_running_components{cluster=\"$cluster\"}, namespace)\n",
+                      "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\"}, namespace)\n",
                       "refId": "namespace"
+                   },
+                   "refresh": 2,
+                   "sort": 2,
+                   "type": "query"
+                },
+                {
+                   "allValue": ".*",
+                   "datasource": "${datasource}",
+                   "includeAll": true,
+                   "label": "job",
+                   "multi": true,
+                   "name": "job",
+                   "query": {
+                      "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\"}, job)\n",
+                      "refId": "job"
                    },
                    "refresh": 2,
                    "sort": 2,
@@ -1784,7 +1847,7 @@ data:
                    "multi": true,
                    "name": "instance",
                    "query": {
-                      "query": "label_values(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\"}, instance)\n",
+                      "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}, instance)\n",
                       "refId": "instance"
                    },
                    "refresh": 2,
@@ -1845,7 +1908,7 @@ data:
                 {
                    "datasource": "$loki_datasource",
                    "enable": true,
-                   "expr": "{cluster=\"$cluster\", container=\"kube-diff-logger\"} | json | namespace_extracted=\"alloy\" | name_extracted=~\"alloy.*\"",
+                   "expr": "{cluster=~\"$cluster\", container=\"kube-diff-logger\"} | json | namespace_extracted=\"alloy\" | name_extracted=~\"alloy.*\"",
                    "iconColor": "rgba(0, 211, 255, 1)",
                    "instant": false,
                    "name": "Deployments",
@@ -1906,7 +1969,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum(up{cluster=\"$cluster\"})\n/\ncount (up{cluster=\"$cluster\"})\n",
+                      "expr": "sum(up{job=~\"$job\", cluster=~\"$cluster\"})\n/\ncount (up{job=~\"$job\", cluster=~\"$cluster\"})\n",
                       "instant": false,
                       "legendFormat": "% of targets successfully scraped",
                       "range": true
@@ -1932,21 +1995,21 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "quantile(0.99, scrape_duration_seconds{cluster=\"$cluster\"})\n",
+                      "expr": "quantile(0.99, scrape_duration_seconds{job=~\"$job\", cluster=~\"$cluster\"})\n",
                       "instant": false,
                       "legendFormat": "p99",
                       "range": true
                    },
                    {
                       "datasource": "${datasource}",
-                      "expr": "quantile(0.95, scrape_duration_seconds{cluster=\"$cluster\"})\n",
+                      "expr": "quantile(0.95, scrape_duration_seconds{job=~\"$job\", cluster=~\"$cluster\"})\n",
                       "instant": false,
                       "legendFormat": "p95",
                       "range": true
                    },
                    {
                       "datasource": "${datasource}",
-                      "expr": "quantile(0.50, scrape_duration_seconds{cluster=\"$cluster\"})\n",
+                      "expr": "quantile(0.50, scrape_duration_seconds{job=~\"$job\", cluster=~\"$cluster\"})\n",
                       "instant": false,
                       "legendFormat": "p50",
                       "range": true
@@ -1984,7 +2047,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by (instance, component_path, component_id) (\n  prometheus_remote_storage_highest_timestamp_in_seconds{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\"}\n  - ignoring(url, remote_name) group_right(instance)\n  prometheus_remote_storage_queue_highest_sent_timestamp_seconds{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}\n)\n",
+                      "expr": "sum by (instance, component_path, component_id) (\n  prometheus_remote_storage_highest_timestamp_in_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\"}\n  - ignoring(url, remote_name) group_right(instance)\n  prometheus_remote_storage_queue_highest_sent_timestamp_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}\n)\n",
                       "instant": false,
                       "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
                       "range": true
@@ -2017,7 +2080,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum without (remote_name, url) (\n    rate(prometheus_remote_storage_bytes_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval]) +\n    rate(prometheus_remote_storage_metadata_bytes_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
+                      "expr": "sum without (remote_name, url) (\n    rate(prometheus_remote_storage_bytes_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval]) +\n    rate(prometheus_remote_storage_metadata_bytes_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
                       "instant": false,
                       "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
                       "range": true
@@ -2043,21 +2106,21 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "histogram_quantile(0.99, sum by (le) (\n  rate(prometheus_remote_storage_sent_batch_duration_seconds_bucket{cluster=\"$cluster\",namespace=\"$namespace\",instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n))\n",
+                      "expr": "histogram_quantile(0.99, sum by (le) (\n  rate(prometheus_remote_storage_sent_batch_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n))\n",
                       "instant": false,
                       "legendFormat": "99th percentile",
                       "range": true
                    },
                    {
                       "datasource": "${datasource}",
-                      "expr": "histogram_quantile(0.50, sum by (le) (\n  rate(prometheus_remote_storage_sent_batch_duration_seconds_bucket{cluster=\"$cluster\",namespace=\"$namespace\",instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n))\n",
+                      "expr": "histogram_quantile(0.50, sum by (le) (\n  rate(prometheus_remote_storage_sent_batch_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n))\n",
                       "instant": false,
                       "legendFormat": "50th percentile",
                       "range": true
                    },
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum(rate(prometheus_remote_storage_sent_batch_duration_seconds_sum{cluster=\"$cluster\",namespace=\"$namespace\",instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\"}[$__rate_interval])) /\nsum(rate(prometheus_remote_storage_sent_batch_duration_seconds_count{cluster=\"$cluster\",namespace=\"$namespace\",instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\"}[$__rate_interval]))\n",
+                      "expr": "sum(rate(prometheus_remote_storage_sent_batch_duration_seconds_sum{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\"}[$__rate_interval])) /\nsum(rate(prometheus_remote_storage_sent_batch_duration_seconds_count{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\"}[$__rate_interval]))\n",
                       "instant": false,
                       "legendFormat": "Average",
                       "range": true
@@ -2145,21 +2208,21 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum without (remote_name, url) (\n    prometheus_remote_storage_shards{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}\n)\n",
+                      "expr": "sum without (remote_name, url) (\n    prometheus_remote_storage_shards{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}\n)\n",
                       "instant": false,
                       "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
                       "range": true
                    },
                    {
                       "datasource": "${datasource}",
-                      "expr": "min (\n    prometheus_remote_storage_shards_min{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}\n)\n",
+                      "expr": "min (\n    prometheus_remote_storage_shards_min{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}\n)\n",
                       "instant": false,
                       "legendFormat": "Minimum",
                       "range": true
                    },
                    {
                       "datasource": "${datasource}",
-                      "expr": "max (\n    prometheus_remote_storage_shards_max{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}\n)\n",
+                      "expr": "max (\n    prometheus_remote_storage_shards_max{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}\n)\n",
                       "instant": false,
                       "legendFormat": "Maximum",
                       "range": true
@@ -2192,7 +2255,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum without (url, remote_name) (\n  rate(prometheus_remote_storage_samples_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
+                      "expr": "sum without (url, remote_name) (\n  rate(prometheus_remote_storage_samples_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
                       "instant": false,
                       "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
                       "range": true
@@ -2225,7 +2288,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum without (url,remote_name) (\n  rate(prometheus_remote_storage_samples_failed_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
+                      "expr": "sum without (url,remote_name) (\n  rate(prometheus_remote_storage_samples_failed_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
                       "instant": false,
                       "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
                       "range": true
@@ -2258,7 +2321,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum without (url,remote_name) (\n  rate(prometheus_remote_storage_samples_retried_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
+                      "expr": "sum without (url,remote_name) (\n  rate(prometheus_remote_storage_samples_retried_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
                       "instant": false,
                       "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
                       "range": true
@@ -2289,7 +2352,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum(prometheus_remote_write_wal_storage_active_series{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"})\n",
+                      "expr": "sum(prometheus_remote_write_wal_storage_active_series{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"})\n",
                       "instant": false,
                       "legendFormat": "Series",
                       "range": true
@@ -2315,7 +2378,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "prometheus_remote_write_wal_storage_active_series{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_id!=\"\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}\n",
+                      "expr": "prometheus_remote_write_wal_storage_active_series{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_id!=\"\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}\n",
                       "instant": false,
                       "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
                       "range": true
@@ -2341,7 +2404,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by (component_path, component_id) (prometheus_remote_write_wal_storage_active_series{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_id!=\"\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"})\n",
+                      "expr": "sum by (component_path, component_id) (prometheus_remote_write_wal_storage_active_series{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_id!=\"\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"})\n",
                       "instant": false,
                       "legendFormat": "{{component_path}} {{component_id}}",
                       "range": true
@@ -2391,8 +2454,23 @@ data:
                    "label": "namespace",
                    "name": "namespace",
                    "query": {
-                      "query": "label_values(alloy_component_controller_running_components{cluster=\"$cluster\"}, namespace)\n",
+                      "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\"}, namespace)\n",
                       "refId": "namespace"
+                   },
+                   "refresh": 2,
+                   "sort": 2,
+                   "type": "query"
+                },
+                {
+                   "allValue": ".*",
+                   "datasource": "${datasource}",
+                   "includeAll": true,
+                   "label": "job",
+                   "multi": true,
+                   "name": "job",
+                   "query": {
+                      "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\"}, job)\n",
+                      "refId": "job"
                    },
                    "refresh": 2,
                    "sort": 2,
@@ -2406,7 +2484,7 @@ data:
                    "multi": true,
                    "name": "instance",
                    "query": {
-                      "query": "label_values(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\"}, instance)\n",
+                      "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}, instance)\n",
                       "refId": "instance"
                    },
                    "refresh": 2,
@@ -2421,7 +2499,7 @@ data:
                    "multi": true,
                    "name": "component_path",
                    "query": {
-                      "query": "label_values(prometheus_remote_write_wal_samples_appended_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_id=~\"prometheus\\\\.remote_write\\\\..*\", component_path=~\".*\"}, component_path)\n",
+                      "query": "label_values(prometheus_remote_write_wal_samples_appended_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_id=~\"prometheus.remote_write.*\", component_path=~\".*\"}, component_path)\n",
                       "refId": "component_path"
                    },
                    "refresh": 2,
@@ -2436,7 +2514,7 @@ data:
                    "multi": true,
                    "name": "component",
                    "query": {
-                      "query": "label_values(prometheus_remote_write_wal_samples_appended_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_id=~\"prometheus\\\\.remote_write\\\\..*\"}, component_id)\n",
+                      "query": "label_values(prometheus_remote_write_wal_samples_appended_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_id=~\"prometheus.remote_write.*\"}, component_id)\n",
                       "refId": "component"
                    },
                    "refresh": 2,
@@ -2451,7 +2529,7 @@ data:
                    "multi": true,
                    "name": "url",
                    "query": {
-                      "query": "label_values(prometheus_remote_storage_sent_batch_duration_seconds_sum{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", component_id=~\"$component\"}, url)\n",
+                      "query": "label_values(prometheus_remote_storage_sent_batch_duration_seconds_sum{cluster=~\"$cluster\", namespace=~\"$namespace\", job=\"$job\", instance=~\"$instance\", component_id=~\"$component\"}, url)\n",
                       "refId": "url"
                    },
                    "refresh": 2,
@@ -2553,7 +2631,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "rate(alloy_resources_process_cpu_seconds_total{cluster=\"$cluster\",namespace=\"$namespace\",instance=~\"$instance\"}[$__rate_interval])",
+                      "expr": "rate(alloy_resources_process_cpu_seconds_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
                       "instant": false,
                       "legendFormat": "{{instance}}",
                       "range": true
@@ -2579,7 +2657,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "alloy_resources_process_resident_memory_bytes{cluster=\"$cluster\",namespace=\"$namespace\",instance=~\"$instance\"}",
+                      "expr": "alloy_resources_process_resident_memory_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}\n",
                       "instant": false,
                       "legendFormat": "{{instance}}",
                       "range": true
@@ -2609,7 +2687,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "rate(go_gc_duration_seconds_count{cluster=\"$cluster\",namespace=\"$namespace\",instance=~\"$instance\"}[5m])\nand on(instance)\nalloy_build_info{cluster=\"$cluster\",namespace=\"$namespace\",instance=~\"$instance\"}\n",
+                      "expr": "rate(go_gc_duration_seconds_count{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[5m])\nand on(instance)\nalloy_build_info{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}\n",
                       "instant": false,
                       "legendFormat": "{{instance}}",
                       "range": true
@@ -2635,7 +2713,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "go_goroutines{cluster=\"$cluster\",namespace=\"$namespace\",instance=~\"$instance\"}\nand on(instance)\nalloy_build_info{cluster=\"$cluster\",namespace=\"$namespace\",instance=~\"$instance\"}\n",
+                      "expr": "go_goroutines{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}\nand on(instance)\nalloy_build_info{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}\n",
                       "instant": false,
                       "legendFormat": "{{instance}}",
                       "range": true
@@ -2661,7 +2739,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "go_memstats_heap_inuse_bytes{cluster=\"$cluster\",namespace=\"$namespace\",instance=~\"$instance\"}\nand on(instance)\nalloy_build_info{cluster=\"$cluster\",namespace=\"$namespace\",instance=~\"$instance\"}\n",
+                      "expr": "go_memstats_heap_inuse_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}\nand on(instance)\nalloy_build_info{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}\n",
                       "instant": false,
                       "legendFormat": "{{instance}}",
                       "range": true
@@ -2694,7 +2772,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "rate(alloy_resources_machine_rx_bytes_total{cluster=\"$cluster\",namespace=\"$namespace\",instance=~\"$instance\"}[$__rate_interval])\n",
+                      "expr": "rate(alloy_resources_machine_rx_bytes_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
                       "instant": false,
                       "legendFormat": "{{instance}}",
                       "range": true
@@ -2727,7 +2805,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "rate(alloy_resources_machine_tx_bytes_total{cluster=\"$cluster\",namespace=\"$namespace\",instance=~\"$instance\"}[$__rate_interval])\n",
+                      "expr": "rate(alloy_resources_machine_tx_bytes_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
                       "instant": false,
                       "legendFormat": "{{instance}}",
                       "range": true
@@ -2777,8 +2855,23 @@ data:
                    "label": "namespace",
                    "name": "namespace",
                    "query": {
-                      "query": "label_values(alloy_component_controller_running_components{cluster=\"$cluster\"}, namespace)\n",
+                      "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\"}, namespace)\n",
                       "refId": "namespace"
+                   },
+                   "refresh": 2,
+                   "sort": 2,
+                   "type": "query"
+                },
+                {
+                   "allValue": ".*",
+                   "datasource": "${datasource}",
+                   "includeAll": true,
+                   "label": "job",
+                   "multi": true,
+                   "name": "job",
+                   "query": {
+                      "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\"}, job)\n",
+                      "refId": "job"
                    },
                    "refresh": 2,
                    "sort": 2,
@@ -2792,7 +2885,7 @@ data:
                    "multi": true,
                    "name": "instance",
                    "query": {
-                      "query": "label_values(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\"}, instance)\n",
+                      "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}, instance)\n",
                       "refId": "instance"
                    },
                    "refresh": 2,
@@ -2857,7 +2950,7 @@ spec:
       annotations:
         message: 'Cluster is not converging: nodes report different number of peers
           in the cluster.'
-      expr: stddev by (cluster, namespace) (sum without (state) (cluster_node_peers))
+      expr: stddev by (cluster, namespace, job) (sum without (state) (cluster_node_peers))
         != 0
       for: 10m
     - alert: ClusterNodeCountMismatch
@@ -2880,13 +2973,13 @@ spec:
       annotations:
         message: A node tried to join the cluster with a name conflicting with an
           existing peer.
-      expr: sum by (cluster, namespace) (rate(cluster_node_gossip_received_events_total{event="node_conflict"}[2m]))
+      expr: sum by (cluster, namespace, job) (rate(cluster_node_gossip_received_events_total{event="node_conflict"}[2m]))
         > 0
       for: 10m
     - alert: ClusterNodeStuckTerminating
       annotations:
         message: Cluster node stuck in Terminating state.
-      expr: sum by (cluster, namespace, instance) (cluster_node_peers{state="terminating"})
+      expr: sum by (cluster, namespace, job, instance) (cluster_node_peers{state="terminating"})
         > 0
       for: 10m
     - alert: ClusterConfigurationDrift
@@ -2894,7 +2987,7 @@ spec:
         message: Cluster nodes are not using the same configuration file.
       expr: |
         count without (sha256) (
-            max by (cluster, namespace, sha256, job) (alloy_config_hash and on(cluster, namespace) cluster_node_info)
+            max by (cluster, namespace, sha256, job) (alloy_config_hash and on(cluster, namespace, job) cluster_node_info)
         ) > 1
       for: 5m
   - name: alloy_controller
@@ -2902,13 +2995,13 @@ spec:
     - alert: SlowComponentEvaluations
       annotations:
         message: Component evaluations are taking too long.
-      expr: sum by (cluster, namespace, component_path, component_id) (rate(alloy_component_evaluation_slow_seconds[10m]))
+      expr: sum by (cluster, namespace, job, component_path, component_id) (rate(alloy_component_evaluation_slow_seconds[10m]))
         > 0
       for: 15m
     - alert: UnhealthyComponents
       annotations:
         message: Unhealthy components detected.
-      expr: sum by (cluster, namespace) (alloy_component_controller_running_components{health_type!="healthy"})
+      expr: sum by (cluster, namespace, job) (alloy_component_controller_running_components{health_type!="healthy"})
         > 0
       for: 15m
   - name: alloy_otelcol
@@ -2916,12 +3009,12 @@ spec:
     - alert: OtelcolReceiverRefusedSpans
       annotations:
         message: The receiver could not push some spans to the pipeline.
-      expr: sum by (cluster, namespace) (rate(receiver_refused_spans_ratio_total{}[1m]))
+      expr: sum by (cluster, namespace, job) (rate(receiver_refused_spans_ratio_total{}[1m]))
         > 0
       for: 5m
     - alert: OtelcolExporterFailedSpans
       annotations:
         message: The exporter failed to send spans to their destination.
-      expr: sum by (cluster, namespace) (rate(exporter_send_failed_spans_ratio_total{}[1m]))
+      expr: sum by (cluster, namespace, job) (rate(exporter_send_failed_spans_ratio_total{}[1m]))
         > 0
       for: 5m

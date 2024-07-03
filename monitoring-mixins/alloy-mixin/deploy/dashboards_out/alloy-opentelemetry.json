@@ -49,7 +49,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "rate(receiver_accepted_spans_ratio_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\"}[$__rate_interval])\n",
+                  "expr": "rate(receiver_accepted_spans_ratio_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
                   "instant": false,
                   "legendFormat": "{{ pod }} / {{ transport }}",
                   "range": true
@@ -81,7 +81,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "rate(receiver_refused_spans_ratio_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\"}[$__rate_interval])\n",
+                  "expr": "rate(receiver_refused_spans_ratio_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
                   "instant": false,
                   "legendFormat": "{{ pod }} / {{ transport }}",
                   "range": true
@@ -128,7 +128,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "sum by (le) (increase(rpc_server_duration_milliseconds_bucket{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\", rpc_service=\"opentelemetry.proto.collector.trace.v1.TraceService\"}[$__rate_interval]))",
+                  "expr": "sum by (le) (increase(rpc_server_duration_milliseconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", rpc_service=\"opentelemetry.proto.collector.trace.v1.TraceService\"}[$__rate_interval]))\n",
                   "format": "heatmap",
                   "instant": false,
                   "legendFormat": "{{le}}",
@@ -192,7 +192,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "sum by (le) (increase(processor_batch_batch_send_size_ratio_bucket{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\"}[$__rate_interval]))",
+                  "expr": "sum by (le) (increase(processor_batch_batch_send_size_ratio_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
                   "format": "heatmap",
                   "instant": false,
                   "legendFormat": "{{le}}",
@@ -214,7 +214,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "processor_batch_metadata_cardinality_ratio{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\"}\n",
+                  "expr": "processor_batch_metadata_cardinality_ratio{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}\n",
                   "instant": false,
                   "legendFormat": "{{ pod }}",
                   "range": true
@@ -235,7 +235,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "rate(processor_batch_timeout_trigger_send_ratio_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\"}[$__rate_interval])\n",
+                  "expr": "rate(processor_batch_timeout_trigger_send_ratio_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
                   "instant": false,
                   "legendFormat": "{{ pod }}",
                   "range": true
@@ -278,7 +278,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "rate(exporter_sent_spans_ratio_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\"}[$__rate_interval])\n",
+                  "expr": "rate(exporter_sent_spans_ratio_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
                   "instant": false,
                   "legendFormat": "{{ pod }}",
                   "range": true
@@ -310,7 +310,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "rate(exporter_send_failed_spans_ratio_total{cluster=\"$cluster\", namespace=\"$namespace\", instance=~\"$instance\"}[$__rate_interval])\n",
+                  "expr": "rate(exporter_send_failed_spans_ratio_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
                   "instant": false,
                   "legendFormat": "{{ pod }}",
                   "range": true
@@ -360,8 +360,23 @@
                "label": "namespace",
                "name": "namespace",
                "query": {
-                  "query": "label_values(alloy_component_controller_running_components{cluster=\"$cluster\"}, namespace)\n",
+                  "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\"}, namespace)\n",
                   "refId": "namespace"
+               },
+               "refresh": 2,
+               "sort": 2,
+               "type": "query"
+            },
+            {
+               "allValue": ".*",
+               "datasource": "${datasource}",
+               "includeAll": true,
+               "label": "job",
+               "multi": true,
+               "name": "job",
+               "query": {
+                  "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\"}, job)\n",
+                  "refId": "job"
                },
                "refresh": 2,
                "sort": 2,
@@ -375,7 +390,7 @@
                "multi": true,
                "name": "instance",
                "query": {
-                  "query": "label_values(alloy_component_controller_running_components{cluster=\"$cluster\", namespace=\"$namespace\"}, instance)\n",
+                  "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}, instance)\n",
                   "refId": "instance"
                },
                "refresh": 2,
