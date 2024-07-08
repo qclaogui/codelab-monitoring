@@ -190,11 +190,11 @@ down-microservices-mode-profiles:
 
 
 .PHONY: cluster
-cluster: ## Create k3s cluster
-	k3d cluster create k3s-codelab --config kubernetes/k3d-k3s-config.yaml
+cluster: $(K3D) ## Create k3s cluster
+	$(K3D) cluster create k3s-codelab --config kubernetes/k3d-k3s-config.yaml
 
-clean: ## Clean cluster
-	k3d cluster delete k3s-codelab
+clean: $(K3D) ## Clean cluster
+	$(K3D) cluster delete k3s-codelab
 	@rm -rf bin dist .lgtmp .lgtmp.tar
 	@rm -rf kubernetes/common/*/charts/
 
@@ -276,7 +276,7 @@ deploy-gateway:
 	@kubectl rollout status -n gateway deployment/nginx --watch --timeout=600s
 
 .PHONY: deploy-grafana
-deploy-grafana: deploy-prometheus-operator-crds deploy-minio deploy-gateway
+deploy-grafana: deploy-minio deploy-gateway
 	$(info ******************** deploy grafana manifests ********************)
 	@kubectl apply -f kubernetes/common/grafana/manifests/k8s-all-in-one.yaml
 delete-grafana:
