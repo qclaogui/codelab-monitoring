@@ -234,7 +234,7 @@ Use "lgtmp [command] --help" for more information about a command.
 
 | Port-mapping | Component | Description |
 | --- | --- | --- |
-| `12345:12345`, `4317`, `4318`, `6831` | [Alloy][1] | Eexpose `12345` port so we can directly access `alloy` inside container |
+| `12345:12345`, `4317`, `4318`, `6831` | [Alloy][1] | Expose `12345` port so we can directly access `alloy` inside container |
 | `33100:3100` | [Loki][2] | Expose `33100` port so we can directly access `loki` inside container |
 | `3000:3000`, `6060` | [Grafana][3] | Expose `3000` port so we can directly access `grafana` inside container |
 | `33200:3200`, `4317`, `4318` | [Tempo][4] | Expose `33200` port so we can directly access `tempo` inside container |
