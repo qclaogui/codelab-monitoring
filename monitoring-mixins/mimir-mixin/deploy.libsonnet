@@ -71,6 +71,7 @@
       write: '(.*mimir-)?(mimir|distributor|ingester|mimir-write).*',
       read: '(.*mimir-)?(mimir|mimir-read|query-frontend|querier|ruler-query-frontend|ruler-querier).*',
       backend: '(.*mimir-)?(mimir|mimir-backend|query-scheduler|ruler-query-scheduler|ruler|store-gateway|compactor|alertmanager|overrides-exporter).*',
+      remote_ruler_read: '(.*mimir-)?(mimir|mimir-backend|ruler_query_frontend|ruler-query-scheduler|ruler|ruler_querier).*',
     },
   },
 }

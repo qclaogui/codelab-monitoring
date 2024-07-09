@@ -56,7 +56,7 @@ local filename = 'mimir-queries.json';
       )
     )
     .addRow(
-      $.row('Query-frontend - query splitting and results cache')
+      $.row('Query-frontend – query splitting and results cache')
       .addPanel(
         $.timeseriesPanel('Intervals per query') +
         $.queryPanel('sum(rate(cortex_frontend_split_queries_total{%s}[$__rate_interval])) / sum(rate(cortex_frontend_query_range_duration_seconds_count{%s, method="split_by_interval_and_results_cache"}[$__rate_interval]))' % [$.jobMatcher($._config.job_names.query_frontend), $.jobMatcher($._config.job_names.query_frontend)], 'splitting rate') +
@@ -120,7 +120,7 @@ local filename = 'mimir-queries.json';
       )
     )
     .addRow(
-      $.row('Query-frontend - query sharding')
+      $.row('Query-frontend – query sharding')
       .addPanel(
         $.timeseriesPanel('Sharded queries ratio') +
         $.queryPanel(|||
@@ -149,6 +149,33 @@ local filename = 'mimir-queries.json';
         ),
       )
     )
+    .addRowIf(
+      $._config.show_ingest_storage_panels,
+      $.row('Query-frontend – strong consistency (ingest storage)')
+      .addPanel(
+        $.timeseriesPanel('Queries with strong read consistency ratio') +
+        $.panelDescription(
+          'Queries with strong read consistency ratio',
+          |||
+            Ratio between queries with strong read consistency and all other queries on query-frontends.
+          |||
+        ) +
+        $.queryPanel(
+          [
+            |||
+              # Display the ratio by container so that it gives a quick visual clue whether requests are coming
+              # from user queries (query-frontend) or rule evaluations (ruler-query-frontend).
+              sum by(container) (rate(cortex_query_frontend_queries_consistency_total{%s,consistency="strong"}[$__rate_interval]))
+              /
+              sum by(container) (rate(cortex_query_frontend_queries_total{%s}[$__rate_interval]))
+            ||| % [$.namespaceMatcher(), $.namespaceMatcher()],
+          ],
+          ['{{container}}'],
+        )
+        + { fieldConfig+: { defaults+: { unit: 'percentunit', min: 0, max: 1 } } }
+        + $.stack
+      )
+    )
     .addRow(
       $.row('Ingester')
       .addPanel(
@@ -165,6 +192,160 @@ local filename = 'mimir-queries.json';
         $.timeseriesPanel('Exemplars per query') +
         $.latencyRecordingRulePanel('cortex_ingester_queried_exemplars', $.jobSelector($._config.job_names.ingester), multiplier=1) +
         { fieldConfig+: { defaults+: { unit: 'short' } } },
+      )
+    )
+    .addRowIf(
+      $._config.show_ingest_storage_panels,
+      ($.row('Ingester – strong consistency (ingest storage)'))
+      .addPanel(
+        $.timeseriesPanel('Requests with strong read consistency / sec') +
+        $.panelDescription(
+          'Requests with strong read consistency / sec',
+          |||
+            Shows rate of requests with strong read consistency, and rate of failed requests with strong read consistency.
+          |||
+        ) +
+        $.queryPanel(
+          [
+            |||
+              sum(rate(cortex_ingest_storage_strong_consistency_requests_total{%s}[$__rate_interval]))
+              -
+              sum(rate(cortex_ingest_storage_strong_consistency_failures_total{%s}[$__rate_interval]))
+            ||| % [$.jobMatcher($._config.job_names.ingester), $.jobMatcher($._config.job_names.ingester)],
+            |||
+              sum(rate(cortex_ingest_storage_strong_consistency_failures_total{%s}[$__rate_interval]))
+            ||| % [$.jobMatcher($._config.job_names.ingester)],
+          ],
+          [
+            'successful',
+            'failed',
+          ],
+        ) + {
+          fieldConfig+: {
+            defaults+: { unit: 'reqps' },
+          },
+        } + $.aliasColors({ successful: $._colors.success, failed: $._colors.failed }) + $.stack,
+      )
+      .addPanel(
+        $.timeseriesPanel('Requests with strong read consistency ratio') +
+        $.panelDescription(
+          'Requests with strong read consistency ratio',
+          |||
+            Ratio between requests with strong read consistency and all read requests on ingesters.
+          |||
+        ) +
+        $.queryPanel(
+          [
+            |||
+              (
+                sum(rate(cortex_ingest_storage_strong_consistency_requests_total{%s}[$__rate_interval]))
+                -
+                sum(rate(cortex_ingest_storage_strong_consistency_failures_total{%s}[$__rate_interval]))
+              )
+              /
+              sum(rate(cortex_request_duration_seconds_count{%s,route=~"%s"}[$__rate_interval]))
+            ||| % [$.jobMatcher($._config.job_names.ingester), $.jobMatcher($._config.job_names.ingester), $.jobMatcher($._config.job_names.ingester), $._config.ingester_read_path_routes_regex],
+            |||
+              sum(rate(cortex_ingest_storage_strong_consistency_failures_total{%s}[$__rate_interval]))
+              /
+              sum(rate(cortex_request_duration_seconds_count{%s,route=~"%s"}[$__rate_interval]))
+            ||| % [$.jobMatcher($._config.job_names.ingester), $.jobMatcher($._config.job_names.ingester), $._config.ingester_read_path_routes_regex],
+          ],
+          ['successful', 'failed'],
+        )
+        + $.aliasColors({ failed: $._colors.failed, successful: $._colors.success })
+        + { fieldConfig+: { defaults+: { unit: 'percentunit', min: 0, max: 1 } } }
+        + $.stack
+      )
+      .addPanel(
+        $.timeseriesPanel('Strong read consistency queries — wait latency') +
+        $.panelDescription(
+          'Strong read consistency queries — wait latency',
+          |||
+            How long does the request wait to guarantee strong read consistency.
+          |||
+        ) +
+        $.queryPanel(
+          [
+            'histogram_avg(sum(rate(cortex_ingest_storage_strong_consistency_wait_duration_seconds{%s}[$__rate_interval])))' % [$.jobMatcher($._config.job_names.ingester)],
+            'histogram_quantile(0.99, sum(rate(cortex_ingest_storage_strong_consistency_wait_duration_seconds{%s}[$__rate_interval])))' % [$.jobMatcher($._config.job_names.ingester)],
+            'histogram_quantile(0.999, sum(rate(cortex_ingest_storage_strong_consistency_wait_duration_seconds{%s}[$__rate_interval])))' % [$.jobMatcher($._config.job_names.ingester)],
+            'histogram_quantile(1.0, sum(rate(cortex_ingest_storage_strong_consistency_wait_duration_seconds{%s}[$__rate_interval])))' % [$.jobMatcher($._config.job_names.ingester)],
+          ],
+          [
+            'avg',
+            '99th percentile',
+            '99.9th percentile',
+            '100th percentile',
+          ],
+        ) + {
+          fieldConfig+: {
+            defaults+: { unit: 's' },
+          },
+        },
+      )
+    )
+    .addRowIf(
+      $._config.show_ingest_storage_panels,
+      $.row('')
+      .addPanel(
+        $.timeseriesPanel('Fetch last produced offset requests / sec') +
+        $.panelDescription(
+          'Rate of requests to fetch last produced offset for partition',
+          |||
+            Shows rate of requests to fetch last produced offset for partition, and rate of failed requests.
+          |||
+        ) +
+        $.queryPanel(
+          [
+            |||
+              sum(rate(cortex_ingest_storage_reader_last_produced_offset_requests_total{%s}[$__rate_interval]))
+              -
+              sum(rate(cortex_ingest_storage_reader_last_produced_offset_failures_total{%s}[$__rate_interval]))
+            ||| % [$.jobMatcher($._config.job_names.ingester), $.jobMatcher($._config.job_names.ingester)],
+            |||
+              sum(rate(cortex_ingest_storage_reader_last_produced_offset_failures_total{%s}[$__rate_interval]))
+            ||| % [$.jobMatcher($._config.job_names.ingester)],
+          ],
+          [
+            'successful',
+            'failed',
+          ],
+        ) + {
+          fieldConfig+: {
+            defaults+: { unit: 'reqps' },
+          },
+        } + $.aliasColors({ successful: $._colors.success, failed: $._colors.failed }) + $.stack,
+      )
+      .addPanel(
+        $.timeseriesPanel('Fetch last produced offset latency') +
+        $.panelDescription(
+          'Latency',
+          |||
+            How long does it take to fetch "last produced offset" of partition.
+          |||
+        ) +
+        $.queryPanel(
+          [
+            'histogram_avg(sum(rate(cortex_ingest_storage_reader_last_produced_offset_request_duration_seconds{%s}[$__rate_interval])))' % [$.jobMatcher($._config.job_names.ingester)],
+            'histogram_quantile(0.99, sum(rate(cortex_ingest_storage_reader_last_produced_offset_request_duration_seconds{%s}[$__rate_interval])))' % [$.jobMatcher($._config.job_names.ingester)],
+            'histogram_quantile(0.999, sum(rate(cortex_ingest_storage_reader_last_produced_offset_request_duration_seconds{%s}[$__rate_interval])))' % [$.jobMatcher($._config.job_names.ingester)],
+            'histogram_quantile(1.0, sum(rate(cortex_ingest_storage_reader_last_produced_offset_request_duration_seconds{%s}[$__rate_interval])))' % [$.jobMatcher($._config.job_names.ingester)],
+          ],
+          [
+            'avg',
+            '99th percentile',
+            '99.9th percentile',
+            '100th percentile',
+          ],
+        ) + {
+          fieldConfig+: {
+            defaults+: { unit: 's' },
+          },
+        },
+      )
+      .addPanel(
+        $.ingestStorageIngesterEndToEndLatencyWhenRunningPanel(),
       )
     )
     .addRow(
@@ -269,6 +450,7 @@ local filename = 'mimir-queries.json';
           '{{stage}}'
         ) +
         $.stack +
+        $.showAllTooltip +
         { fieldConfig+: { defaults+: { unit: 's' } } },
       )
       .addPanel(
@@ -280,6 +462,7 @@ local filename = 'mimir-queries.json';
           '{{stage}}'
         ) +
         $.stack +
+        $.showAllTooltip +
         { fieldConfig+: { defaults+: { unit: 's' } } },
       )
       .addPanel(

@@ -50,7 +50,7 @@ services:
 
   mimir-backend:
     depends_on: { minio: { condition: service_healthy } }
-    image: &mimirImage ${MIMIR_IMAGE:-docker.io/grafana/mimir:2.12.0}
+    image: &mimirImage ${MIMIR_IMAGE:-docker.io/grafana/mimir-alpine:2.13.0}
     configs:
       - source: mimir_config_file
         target: /etc/mimir/config.yaml
@@ -107,7 +107,7 @@ services:
   mimirtool:
     labels:
       metrics.grafana.com/scrape: false
-    image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:2.12.0}
+    image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:2.13.0}
     volumes:
       - ../../../monitoring-mixins/crontab:/etc/crontabs/root
       - ../../../monitoring-mixins/alloy-mixin/deploy/alloy-mixin-alerts.yaml:/rules/alloy-mixin-alerts.yaml
