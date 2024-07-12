@@ -7,8 +7,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.2.0
-    helm.sh/chart: alloy-0.5.0
+    app.kubernetes.io/version: v1.2.1
+    helm.sh/chart: alloy-0.5.1
   name: alloy
   namespace: monitoring-system
 ---
@@ -24,6 +24,68 @@ metadata:
   name: mimir-distributed
   namespace: monitoring-system
 ---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  annotations:
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: runtime/default
+  labels:
+    app.kubernetes.io/instance: mimir-distributed
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: mimir
+    app.kubernetes.io/version: 2.12.0
+    helm.sh/chart: mimir-distributed-5.3.0
+  name: mimir-distributed
+spec:
+  allowPrivilegeEscalation: false
+  fsGroup:
+    ranges:
+    - max: 65535
+      min: 1
+    rule: MustRunAs
+  hostIPC: false
+  hostNetwork: false
+  hostPID: false
+  privileged: false
+  readOnlyRootFilesystem: true
+  requiredDropCapabilities:
+  - ALL
+  runAsUser:
+    rule: MustRunAsNonRoot
+  seLinux:
+    rule: RunAsAny
+  supplementalGroups:
+    ranges:
+    - max: 65535
+      min: 1
+    rule: MustRunAs
+  volumes:
+  - configMap
+  - emptyDir
+  - persistentVolumeClaim
+  - secret
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/instance: mimir-distributed
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: mimir
+    app.kubernetes.io/version: 2.12.0
+    helm.sh/chart: mimir-distributed-5.3.0
+  name: mimir-distributed
+  namespace: monitoring-system
+rules:
+- apiGroups:
+  - extensions
+  resourceNames:
+  - mimir-distributed
+  resources:
+  - podsecuritypolicies
+  verbs:
+  - use
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -33,8 +95,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.2.0
-    helm.sh/chart: alloy-0.5.0
+    app.kubernetes.io/version: v1.2.1
+    helm.sh/chart: alloy-0.5.1
   name: alloy
 rules:
 - apiGroups:
@@ -129,6 +191,25 @@ rules:
   - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/instance: mimir-distributed
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: mimir
+    app.kubernetes.io/version: 2.12.0
+    helm.sh/chart: mimir-distributed-5.3.0
+  name: mimir-distributed
+  namespace: monitoring-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: mimir-distributed
+subjects:
+- kind: ServiceAccount
+  name: mimir-distributed
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
@@ -137,8 +218,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.2.0
-    helm.sh/chart: alloy-0.5.0
+    app.kubernetes.io/version: v1.2.1
+    helm.sh/chart: alloy-0.5.1
   name: alloy
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -4661,12 +4742,11 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.2.0
-    helm.sh/chart: alloy-0.5.0
+    app.kubernetes.io/version: v1.2.1
+    helm.sh/chart: alloy-0.5.1
   name: alloy
   namespace: monitoring-system
 spec:
-  internalTrafficPolicy: Cluster
   ports:
   - name: http-metrics
     port: 12345
@@ -4702,8 +4782,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.2.0
-    helm.sh/chart: alloy-0.5.0
+    app.kubernetes.io/version: v1.2.1
+    helm.sh/chart: alloy-0.5.1
   name: alloy-cluster
   namespace: monitoring-system
 spec:
@@ -5926,15 +6006,11 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.2.0
-    helm.sh/chart: alloy-0.5.0
+    app.kubernetes.io/version: v1.2.1
+    helm.sh/chart: alloy-0.5.1
   name: alloy
   namespace: monitoring-system
 spec:
-  minReadySeconds: 10
-  persistentVolumeClaimRetentionPolicy:
-    whenDeleted: Delete
-    whenScaled: Delete
   podManagementPolicy: Parallel
   replicas: 1
   selector:
@@ -5980,7 +6056,7 @@ spec:
         - secretRef:
             name: alloy-env
             optional: true
-        image: docker.io/grafana/alloy:v1.2.0
+        image: docker.io/grafana/alloy:v1.2.1
         imagePullPolicy: IfNotPresent
         name: alloy
         ports:
@@ -6563,7 +6639,7 @@ spec:
         requests:
           storage: 2Gi
 ---
-apiVersion: policy/v1
+apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
   labels:
@@ -6583,7 +6659,7 @@ spec:
       app.kubernetes.io/instance: mimir-distributed
       app.kubernetes.io/name: mimir
 ---
-apiVersion: policy/v1
+apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
   labels:
@@ -6603,7 +6679,7 @@ spec:
       app.kubernetes.io/instance: mimir-distributed
       app.kubernetes.io/name: mimir
 ---
-apiVersion: policy/v1
+apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
   labels:
@@ -6623,7 +6699,7 @@ spec:
       app.kubernetes.io/instance: mimir-distributed
       app.kubernetes.io/name: mimir
 ---
-apiVersion: policy/v1
+apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
   labels:
@@ -6643,7 +6719,7 @@ spec:
       app.kubernetes.io/instance: mimir-distributed
       app.kubernetes.io/name: mimir
 ---
-apiVersion: policy/v1
+apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
   labels:
@@ -6663,7 +6739,7 @@ spec:
       app.kubernetes.io/instance: mimir-distributed
       app.kubernetes.io/name: mimir
 ---
-apiVersion: policy/v1
+apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
   labels:
@@ -6683,7 +6759,7 @@ spec:
       app.kubernetes.io/instance: mimir-distributed
       app.kubernetes.io/name: mimir
 ---
-apiVersion: policy/v1
+apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
   labels:
@@ -6703,7 +6779,7 @@ spec:
       app.kubernetes.io/instance: mimir-distributed
       app.kubernetes.io/name: mimir
 ---
-apiVersion: policy/v1
+apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
   labels:
@@ -6723,7 +6799,7 @@ spec:
       app.kubernetes.io/instance: mimir-distributed
       app.kubernetes.io/name: mimir
 ---
-apiVersion: policy/v1
+apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
   labels:
@@ -6743,7 +6819,7 @@ spec:
       app.kubernetes.io/instance: mimir-distributed
       app.kubernetes.io/name: mimir
 ---
-apiVersion: policy/v1
+apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
   labels:
@@ -6854,8 +6930,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.2.0
-    helm.sh/chart: alloy-0.5.0
+    app.kubernetes.io/version: v1.2.1
+    helm.sh/chart: alloy-0.5.1
   name: alloy
   namespace: monitoring-system
 spec:
@@ -7254,8 +7330,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.2.0
-    helm.sh/chart: alloy-0.5.0
+    app.kubernetes.io/version: v1.2.1
+    helm.sh/chart: alloy-0.5.1
   name: alloy
   namespace: monitoring-system
 spec:

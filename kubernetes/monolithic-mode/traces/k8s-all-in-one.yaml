@@ -36,8 +36,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.2.0
-    helm.sh/chart: alloy-0.5.0
+    app.kubernetes.io/version: v1.2.1
+    helm.sh/chart: alloy-0.5.1
   name: alloy
   namespace: monitoring-system
 ---
@@ -62,7 +62,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.5.0
-    helm.sh/chart: tempo-1.10.0
+    helm.sh/chart: tempo-1.10.1
   name: tempo
   namespace: tracing-system
 ---
@@ -75,8 +75,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.2.0
-    helm.sh/chart: alloy-0.5.0
+    app.kubernetes.io/version: v1.2.1
+    helm.sh/chart: alloy-0.5.1
   name: alloy
 rules:
 - apiGroups:
@@ -200,8 +200,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.2.0
-    helm.sh/chart: alloy-0.5.0
+    app.kubernetes.io/version: v1.2.1
+    helm.sh/chart: alloy-0.5.1
   name: alloy
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -349,6 +349,11 @@ data:
     \   }\n\n    # Alertmanager endpoints\n    location /alertmanager {\n      proxy_pass
     \     http://${MIMIR_ALERT_MANAGER_HOST}:8080$request_uri;\n    }\n    location
     = /multitenant_alertmanager/status {\n      proxy_pass      http://${MIMIR_ALERT_MANAGER_HOST}:8080$request_uri;\n
+    \   }\n    location = /api/v1/alerts {\n      proxy_pass      http://${MIMIR_ALERT_MANAGER_HOST}:8080$request_uri;\n
+    \   }\n    location = /api/v1/grafana/config {\n      proxy_pass      http://${MIMIR_ALERT_MANAGER_HOST}:8080$request_uri;\n
+    \   }\n    location = /api/v1/grafana/state {\n      proxy_pass      http://${MIMIR_ALERT_MANAGER_HOST}:8080$request_uri;\n
+    \   }\n    location = /api/v1/grafana/receivers {\n      proxy_pass      http://${MIMIR_ALERT_MANAGER_HOST}:8080$request_uri;\n
+    \   }\n    location = /api/v1/grafana/templates/test {\n      proxy_pass      http://${MIMIR_ALERT_MANAGER_HOST}:8080$request_uri;\n
     \   }\n    # https://github.com/grafana/mimir/releases/tag/mimir-2.12.0\n    #
     Alertmanager deprecated the v1 API. All endpoints have a v2 equivalent.\n    location
     = /api/v2/alerts {\n      proxy_pass      http://${MIMIR_ALERT_MANAGER_HOST}:8080$request_uri;\n
@@ -5073,7 +5078,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.5.0
-    helm.sh/chart: tempo-1.10.0
+    helm.sh/chart: tempo-1.10.1
   name: tempo
   namespace: tracing-system
 ---
@@ -5242,12 +5247,11 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.2.0
-    helm.sh/chart: alloy-0.5.0
+    app.kubernetes.io/version: v1.2.1
+    helm.sh/chart: alloy-0.5.1
   name: alloy
   namespace: monitoring-system
 spec:
-  internalTrafficPolicy: Cluster
   ports:
   - name: http-metrics
     port: 12345
@@ -5283,8 +5287,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.2.0
-    helm.sh/chart: alloy-0.5.0
+    app.kubernetes.io/version: v1.2.1
+    helm.sh/chart: alloy-0.5.1
   name: alloy-cluster
   namespace: monitoring-system
 spec:
@@ -5372,7 +5376,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.5.0
-    helm.sh/chart: tempo-1.10.0
+    helm.sh/chart: tempo-1.10.1
   name: tempo
   namespace: tracing-system
 spec:
@@ -5643,15 +5647,11 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.2.0
-    helm.sh/chart: alloy-0.5.0
+    app.kubernetes.io/version: v1.2.1
+    helm.sh/chart: alloy-0.5.1
   name: alloy
   namespace: monitoring-system
 spec:
-  minReadySeconds: 10
-  persistentVolumeClaimRetentionPolicy:
-    whenDeleted: Delete
-    whenScaled: Delete
   podManagementPolicy: Parallel
   replicas: 1
   selector:
@@ -5697,7 +5697,7 @@ spec:
         - secretRef:
             name: alloy-env-7hg2fmmgdb
             optional: true
-        image: docker.io/grafana/alloy:v1.2.0
+        image: docker.io/grafana/alloy:v1.2.1
         imagePullPolicy: IfNotPresent
         name: alloy
         ports:
@@ -5769,7 +5769,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.5.0
-    helm.sh/chart: tempo-1.10.0
+    helm.sh/chart: tempo-1.10.1
   name: tempo
   namespace: tracing-system
 spec:
@@ -5782,7 +5782,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: e582c117f36fb207814ecebaa0505a1c5f6e97a03bc1a471c63fd8c3bbeb51d5
+        checksum/config: 98a74775dfbb3982db31c8711e1c5ddb1483041f1e9f8f88d2726f36d912fe14
         logs.grafana.com/scrape: "true"
         logs.grafana.com/scrub-level: info
         profiles.grafana.com/cpu.port_name: prom-metrics
@@ -5977,8 +5977,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.2.0
-    helm.sh/chart: alloy-0.5.0
+    app.kubernetes.io/version: v1.2.1
+    helm.sh/chart: alloy-0.5.1
   name: alloy
   namespace: monitoring-system
 spec:
@@ -6063,8 +6063,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.2.0
-    helm.sh/chart: alloy-0.5.0
+    app.kubernetes.io/version: v1.2.1
+    helm.sh/chart: alloy-0.5.1
   name: alloy
   namespace: monitoring-system
 spec:
