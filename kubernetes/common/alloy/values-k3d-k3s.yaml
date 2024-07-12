@@ -3,9 +3,6 @@ crds:
 configReloader:
   enabled: false
 alloy:
-  securityContext:
-    privileged: true
-  enableReporting: false
   configMap:
     create: false
     name: alloy-config
@@ -14,23 +11,11 @@ alloy:
     enabled: true
   stabilityLevel: experimental
   # storagePath: /tmp/alloy
+  enableReporting: false
   envFrom:
   - secretRef:
       name: alloy-env
       optional: true
-  mounts:
-    # TODO(qc) remove this by Alloy import.git
-    extra:
-    - name: modules-kubernetes-metrics
-      mountPath: /etc/alloy/modules/kubernetes/metrics
-    - name: modules-kubernetes-logs
-      mountPath: /etc/alloy/modules/kubernetes/logs
-    - name: modules-kubernetes-traces
-      mountPath: /etc/alloy/modules/kubernetes/traces
-    - name: modules-kubernetes-profiles
-      mountPath: /etc/alloy/modules/kubernetes/profiles
-    - name: modules-kubernetes-jobs
-      mountPath: /etc/alloy/modules/kubernetes/jobs
   extraPorts:
   - name: "grpc-otlp"
     port: 4317
@@ -48,6 +33,21 @@ alloy:
     port: 6831
     protocol: UDP
     targetPort: 6831
+  mounts:
+    # TODO(qc) remove this by Alloy import.git
+    extra:
+    - name: modules-kubernetes-metrics
+      mountPath: /etc/alloy/modules/kubernetes/metrics
+    - name: modules-kubernetes-logs
+      mountPath: /etc/alloy/modules/kubernetes/logs
+    - name: modules-kubernetes-traces
+      mountPath: /etc/alloy/modules/kubernetes/traces
+    - name: modules-kubernetes-profiles
+      mountPath: /etc/alloy/modules/kubernetes/profiles
+    - name: modules-kubernetes-jobs
+      mountPath: /etc/alloy/modules/kubernetes/jobs
+  securityContext:
+    privileged: true
 
 serviceMonitor:
   enabled: true
