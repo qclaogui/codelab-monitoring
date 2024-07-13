@@ -1048,10 +1048,11 @@ data:
     + \"/kubernetes/metrics\"\n}\n\nmetrics.annotations_scrape \"kubernetes\" {\n\tforward_to
     = [provider.self_hosted_stack.kubernetes.metrics_receiver]\n\n\tcluster         =
     coalesce(env(\"CLUSTER_NAME\"), \"k3d-k3s-codelab\")\n\tscrape_interval = \"15s\"\n}\n\nmetrics.servicemonitors_scrape
-    \"kubernetes\" {\n\tforward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]\n}\n\n//
-    Jobs metrics\nimport.file \"jobs\" {\n\tfilename = coalesce(env(\"ALLOY_MODULES_FOLDER\"),
-    \"/etc/alloy/modules\") + \"/kubernetes/jobs\"\n}\n\njobs.kubelet_metrics_scrape
-    \"kubernetes\" {\n\tcluster         = coalesce(env(\"CLUSTER_NAME\"), \"k3d-k3s-codelab\")\n\tscrape_interval
+    \"kubernetes\" {\n\tforward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]\n\n\tcluster
+    = coalesce(env(\"CLUSTER_NAME\"), \"k3d-k3s-codelab\")\n}\n\n// Jobs metrics\nimport.file
+    \"jobs\" {\n\tfilename = coalesce(env(\"ALLOY_MODULES_FOLDER\"), \"/etc/alloy/modules\")
+    + \"/kubernetes/jobs\"\n}\n\njobs.kubelet_metrics_scrape \"kubernetes\" {\n\tcluster
+    \        = coalesce(env(\"CLUSTER_NAME\"), \"k3d-k3s-codelab\")\n\tscrape_interval
     = \"30s\"\n\n\tforward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]\n}\n\n//
     Alloy integration metrics\nremote.kubernetes.configmap \"integrations\" {\n\tnamespace
     = \"monitoring-system\"\n\tname      = \"alloy-integrations\"\n}\n\n// Memcached
@@ -1060,7 +1061,7 @@ data:
     = [provider.self_hosted_stack.kubernetes.metrics_receiver]\n}\n"
 kind: ConfigMap
 metadata:
-  name: alloy-config-764m96t48b
+  name: alloy-config-6hb6cd855k
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -4891,7 +4892,7 @@ spec:
       serviceAccountName: alloy
       volumes:
       - configMap:
-          name: alloy-config-764m96t48b
+          name: alloy-config-6hb6cd855k
         name: config
       - configMap:
           name: alloy-modules-kubernetes-metrics-6g7hb9cd7g
