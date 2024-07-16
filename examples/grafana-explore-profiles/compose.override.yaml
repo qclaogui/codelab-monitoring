@@ -1,0 +1,20 @@
+
+services:
+  # override included service grafana environment
+  grafana:
+    labels:
+      profiles.grafana.com/cpu.scrape: true
+      profiles.grafana.com/memory.scrape: true
+      profiles.grafana.com/goroutine.scrape: true
+      profiles.grafana.com/service_name: grafana
+      profiles.grafana.com/port: 6060
+    image: ${GRAFANA_IMAGE:-docker.io/grafana/grafana:11.1.0}
+    volumes:
+      - ./grafana/provisioning/plugins/grafana-pyroscope-app.yaml:/etc/grafana/provisioning/plugins/grafana-pyroscope-app.yaml
+    environment:
+      GF_DIAGNOSTICS_PROFILING_ENABLED: true
+      GF_DIAGNOSTICS_PROFILING_ADDR: 0.0.0.0
+      GF_DIAGNOSTICS_PROFILING_PORT: 6060
+      GF_FEATURE_TOGGLES_ENABLE: accessControlOnCall
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: grafana-pyroscope-app
+      GF_INSTALL_PLUGINS: grafana-pyroscope-app

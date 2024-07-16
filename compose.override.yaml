@@ -38,14 +38,15 @@ services:
       - ./monitoring-mixins/mimir-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/mimir-mixin
       - ./monitoring-mixins/pyroscope-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/pyroscope-mixin
       - ./examples/grafana-explore-logs/grafana/provisioning/plugins/grafana-lokiexplore-app.yaml:/etc/grafana/provisioning/plugins/grafana-lokiexplore-app.yaml
+      - ./examples/grafana-explore-profiles/grafana/provisioning/plugins/grafana-pyroscope-app.yaml:/etc/grafana/provisioning/plugins/grafana-pyroscope-app.yaml
     environment:
       GF_LOG_LEVEL: ${GF_LOG_LEVEL:-warn}
       GF_DIAGNOSTICS_PROFILING_ENABLED: true
       GF_DIAGNOSTICS_PROFILING_ADDR: 0.0.0.0
       GF_DIAGNOSTICS_PROFILING_PORT: 6060
       GF_FEATURE_TOGGLES_ENABLE: accessControlOnCall lokiLogsDataplane
-      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: grafana-lokiexplore-app
-      GF_INSTALL_PLUGINS: https://storage.googleapis.com/integration-artifacts/grafana-lokiexplore-app/grafana-lokiexplore-app-latest.zip;grafana-lokiexplore-app
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: grafana-lokiexplore-app, grafana-pyroscope-app
+      GF_INSTALL_PLUGINS: https://storage.googleapis.com/integration-artifacts/grafana-lokiexplore-app/grafana-lokiexplore-app-latest.zip;grafana-lokiexplore-app, grafana-pyroscope-app
 
   # override compose.yaml included service tempo's labels and environment to enabled profiles and traces data collection
   tempo:
