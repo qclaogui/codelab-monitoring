@@ -72,6 +72,7 @@
     // docs/sources/mimir/manage/monitoring-grafana-mimir/requirements.md
     job_names: {
       ingester: ['ingester.*', 'cortex', 'mimir', 'mimir-write.*'],  // Match also custom and per-zone ingester deployments.
+      ingester_partition: ['ingester.*-partition'],  // Match exclusively temporarily partition ingesters run during the migration to ingest storage.
       distributor: ['distributor.*', 'cortex', 'mimir', 'mimir-write.*'],  // Match also per-zone distributor deployments.
       querier: ['querier.*', 'cortex', 'mimir', 'mimir-read.*'],  // Match also custom querier deployments.
       ruler_querier: ['ruler-querier.*'],  // Match also custom querier deployments.
@@ -178,6 +179,7 @@
     per_cluster_label: 'cluster',
     per_namespace_label: 'namespace',
     per_job_label: 'job',
+    per_component_loki_label: 'name',
 
     // Grouping labels, to uniquely identify and group by {jobs, clusters}
     job_labels: [$._config.per_cluster_label, $._config.per_namespace_label, $._config.per_job_label],
@@ -533,15 +535,8 @@
         disk_utilization:
           |||
             max by(persistentvolumeclaim) (
-              kubelet_volume_stats_used_bytes{%(namespaceMatcher)s} /
-              kubelet_volume_stats_capacity_bytes{%(namespaceMatcher)s}
-            )
-            and
-            count by(persistentvolumeclaim) (
-              kube_persistentvolumeclaim_labels{
-                %(namespaceMatcher)s,
-                %(containerMatcher)s
-              }
+              kubelet_volume_stats_used_bytes{%(namespaceMatcher)s, %(persistentVolumeClaimMatcher)s} /
+              kubelet_volume_stats_capacity_bytes{%(namespaceMatcher)s, %(persistentVolumeClaimMatcher)s}
             )
           |||,
       },
