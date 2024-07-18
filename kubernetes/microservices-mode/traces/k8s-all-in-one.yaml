@@ -5254,6 +5254,7 @@ metadata:
   name: alloy
   namespace: monitoring-system
 spec:
+  internalTrafficPolicy: Cluster
   ports:
   - name: http-metrics
     port: 12345
@@ -6546,6 +6547,10 @@ metadata:
   name: alloy
   namespace: monitoring-system
 spec:
+  minReadySeconds: 10
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Delete
+    whenScaled: Delete
   podManagementPolicy: Parallel
   replicas: 1
   selector:
@@ -6792,7 +6797,7 @@ spec:
     rollingUpdate:
       partition: 0
 ---
-apiVersion: policy/v1beta1
+apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   labels:
