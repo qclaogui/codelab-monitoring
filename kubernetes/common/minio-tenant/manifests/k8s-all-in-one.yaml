@@ -26,6 +26,24 @@ metadata:
   namespace: minio-system
 type: Opaque
 ---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: minio-system-cert
+  namespace: minio-system
+spec:
+  dnsNames:
+  - minio
+  - minio.minio-system
+  - minio.minio-system.svc
+  - minio.minio-system.svc.cluster.local
+  - '*.minio-system.svc.cluster.local'
+  - '*.codelab.minio-system.svc.cluster.local'
+  - '*.codelab-hl.minio-system.svc.cluster.local'
+  issuerRef:
+    name: minio-system-issuer
+  secretName: codelab-tls
+---
 apiVersion: minio.min.io/v2
 kind: Tenant
 metadata:
@@ -47,10 +65,13 @@ spec:
   exposeServices:
     console: false
     minio: false
+  externalCertSecret:
+  - name: codelab-tls
+    type: cert-manager.io/v1
   features:
     bucketDNS: false
     enableSFTP: false
-  image: quay.io/minio/minio:RELEASE.2024-05-01T01-11-10Z
+  image: quay.io/minio/minio:RELEASE.2024-07-13T01-46-15Z
   imagePullPolicy: IfNotPresent
   mountPath: /export
   podManagementPolicy: Parallel
@@ -66,10 +87,9 @@ spec:
         resources:
           requests:
             storage: 10Gi
-        storageClassName: null
     volumesPerServer: 1
   prometheusOperator: false
-  requestAutoCert: true
+  requestAutoCert: false
   subPath: /data
   users:
   - name: user-lgtmp

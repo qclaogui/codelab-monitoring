@@ -1,0 +1,28 @@
+# https://github.com/minio/operator/blob/master/docs/cert-manager.md#deploy-the-tenant
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: minio-system-cert
+  namespace: minio-system
+spec:
+  # If you see "Empty issuer DN not allowed in X509Certificates"
+  # You will need to add spec.subject.organizations or spec.commonName
+  # As documented in https://cert-manager.io/docs/usage/certificate/
+  # This specially if your other apps can't trust MinIO cert issued by cert-manager
+  # Example
+  #
+  # subject:
+  #   organizations:
+  #     - jetstack
+  # commonName: example.com
+  dnsNames:
+    - minio
+    - minio.minio-system
+    - minio.minio-system.svc
+    - minio.minio-system.svc.cluster.local
+    - '*.minio-system.svc.cluster.local'
+    - '*.codelab.minio-system.svc.cluster.local'
+    - '*.codelab-hl.minio-system.svc.cluster.local'
+  secretName: codelab-tls
+  issuerRef:
+    name: minio-system-issuer
