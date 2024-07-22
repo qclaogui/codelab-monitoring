@@ -7,16 +7,22 @@ GO     ?= $(shell which go)
 
 # Below generated variables ensure that every time a tool under each variable is invoked, the correct version
 # will be used; reinstalling only if needed.
-# For example for copyright variable:
+# For example for cmctl variable:
 #
 # In your main Makefile (for non array binaries):
 #
 #include .bingo/Variables.mk # Assuming -dir was set to .bingo .
 #
-#command: $(COPYRIGHT)
-#	@echo "Running copyright"
-#	@$(COPYRIGHT) <flags/args..>
+#command: $(CMCTL)
+#	@echo "Running cmctl"
+#	@$(CMCTL) <flags/args..>
 #
+CMCTL := $(GOBIN)/cmctl-v2.1.0
+$(CMCTL): $(BINGO_DIR)/cmctl.mod
+	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
+	@echo "(re)installing $(GOBIN)/cmctl-v2.1.0"
+	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=cmctl.mod -o=$(GOBIN)/cmctl-v2.1.0 "github.com/cert-manager/cmctl/v2"
+
 COPYRIGHT := $(GOBIN)/copyright-v0.0.0-20230505153745-6b7392939a60
 $(COPYRIGHT): $(BINGO_DIR)/copyright.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.

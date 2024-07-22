@@ -1,0 +1,30 @@
+---
+# Request a Certificate with spec.isCA: true specified. This is our CA for the minio-system namespace.
+# A new secret with the name minio-system-ca-tls is created in the minio-system namespace, this is 
+# the CA issuing TLS certificates for the services in the minio-system namespace.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: minio-operator-ca-certificate
+  namespace: minio-system
+spec:
+  isCA: true
+  commonName: operator
+  secretName: operator-ca-tls
+  duration: 70128h # 8y
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: selfsigned-root
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: minio-system-issuer
+  namespace: minio-system
+spec:
+  ca:
+    secretName: operator-ca-tls
