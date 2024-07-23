@@ -4,4 +4,4 @@ go 1.22
 
 toolchain go1.22.2
 
-require github.com/monitoring-mixins/mixtool v0.0.0-20240408085510-16dc166166d9 // cmd/mixtool
+require github.com/monitoring-mixins/mixtool v0.0.0-20240620133837-b97ae11b7bf3 // cmd/mixtool
