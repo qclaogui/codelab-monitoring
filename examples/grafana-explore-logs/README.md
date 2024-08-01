@@ -26,7 +26,7 @@ include:
 services:
   # override included service grafana environment
   grafana:
-    image: ${GRAFANA_IMAGE:-docker.io/grafana/grafana:11.1.0}
+    image: ${GRAFANA_IMAGE:-docker.io/grafana/grafana:11.1.3}
     volumes:
       - ./grafana/provisioning/plugins/grafana-lokiexplore-app.yaml:/etc/grafana/provisioning/plugins/grafana-lokiexplore-app.yaml
     environment:
