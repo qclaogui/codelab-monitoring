@@ -19,7 +19,7 @@ import (
 func main() {
 	rootCmd := cmd.NewCmdRoot()
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Print(err)
+		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
 	}
 }
