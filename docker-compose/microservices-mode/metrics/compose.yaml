@@ -41,7 +41,7 @@ services:
       - MIMIR_QUERY_FRONTEND_HOST=query-frontend
       - MIMIR_COMPACTOR_HOST=compactor
     healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ || exit 1" ]
+      test: [ "CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/" ]
       interval: 3s
       timeout: 1s
       retries: 20
@@ -61,7 +61,7 @@ services:
       - -target=distributor
       - -config.expand-env=true
     healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
+      test: [ "CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/ready" ]
       <<: *status-healthcheck
     deploy:
       replicas: 2
@@ -126,7 +126,7 @@ services:
       - -config.expand-env=true
       - -target=query-scheduler
     healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
+      test: [ "CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/ready" ]
       <<: *status-healthcheck
     deploy:
       replicas: 2
@@ -144,7 +144,7 @@ services:
       - -config.expand-env=true
       - -target=ruler
     healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
+      test: [ "CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/ready" ]
       <<: *status-healthcheck
     networks:
       default:
@@ -198,7 +198,7 @@ services:
       - -config.expand-env=true
       - -target=ingester
     healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ready || exit 1" ]
+      test: [ "CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/ready" ]
       <<: *status-healthcheck
     deploy:
       replicas: 3
