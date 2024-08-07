@@ -6,7 +6,10 @@ services:
       profiles.grafana.com/memory.scrape: true
       profiles.grafana.com/goroutine.scrape: true
     depends_on: { minio: { condition: service_healthy } }
-    image: ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:1.6.1}
+    build:
+      context: .
+      dockerfile: pyroscope.dockerfile
+    image: ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:1.7.1}
     configs:
       - source: pyroscope_config_file
         target: /etc/pyroscope/config.yaml
