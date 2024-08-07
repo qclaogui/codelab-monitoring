@@ -19,7 +19,10 @@ services:
       - -config.expand-env=true
       # - -runtime-config.file=/etc/pyroscope/configs/overrides.yaml
     healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:4040/ready || exit 1" ]
+      ## execute the `test` in a shell use the form `["CMD-SHELL", "command"]`
+      # test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:4040/ready || exit 1" ]
+      ## execute the `test` without a shell, use the form: `["CMD", "command", "arg1", "arg2"]`
+      test: [ "CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4040/ready" ]
       interval: 2s
       timeout: 1s
       retries: 15
