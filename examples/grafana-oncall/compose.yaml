@@ -63,7 +63,7 @@ services:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
-    image: &oncallImage grafana/oncall:v1.8.5
+    image: &oncallImage grafana/oncall:v1.8.9
     restart: always
     ports:
       # - "8080"
@@ -110,6 +110,11 @@ services:
     restart: always
     volumes:
       - redis_data:/data
+    deploy:
+      resources:
+        limits:
+          memory: 100m
+          cpus: "0.1"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       timeout: 5s
