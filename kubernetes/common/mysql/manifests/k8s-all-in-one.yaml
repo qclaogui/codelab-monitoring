@@ -11,8 +11,8 @@ metadata:
     app.kubernetes.io/instance: mysql
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mysql
-    app.kubernetes.io/version: 8.0.36
-    helm.sh/chart: mysql-9.23.0
+    app.kubernetes.io/version: 8.4.2
+    helm.sh/chart: mysql-11.1.15
   name: mysql
   namespace: mysql-system
 secrets:
@@ -22,12 +22,14 @@ apiVersion: v1
 data:
   my.cnf: |-
     [mysqld]
-    default_authentication_plugin=mysql_native_password
+    authentication_policy='* ,,'
     skip-name-resolve
     explicit_defaults_for_timestamp
     basedir=/opt/bitnami/mysql
     plugin_dir=/opt/bitnami/mysql/lib/plugin
-    port= 3306
+    port=3306
+    mysqlx=0
+    mysqlx_port=33060
     socket=/opt/bitnami/mysql/tmp/mysql.sock
     datadir=/bitnami/mysql/data
     tmpdir=/opt/bitnami/mysql/tmp
@@ -56,8 +58,8 @@ metadata:
     app.kubernetes.io/instance: mysql
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mysql
-    app.kubernetes.io/version: 8.0.36
-    helm.sh/chart: mysql-9.23.0
+    app.kubernetes.io/version: 8.4.2
+    helm.sh/chart: mysql-11.1.15
   name: mysql
   namespace: mysql-system
 ---
@@ -80,8 +82,8 @@ metadata:
     app.kubernetes.io/instance: mysql
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mysql
-    app.kubernetes.io/version: 8.0.36
-    helm.sh/chart: mysql-9.23.0
+    app.kubernetes.io/version: 8.4.2
+    helm.sh/chart: mysql-11.1.15
   name: mysql
   namespace: mysql-system
 spec:
@@ -106,8 +108,8 @@ metadata:
     app.kubernetes.io/instance: mysql
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mysql
-    app.kubernetes.io/version: 8.0.36
-    helm.sh/chart: mysql-9.23.0
+    app.kubernetes.io/version: 8.4.2
+    helm.sh/chart: mysql-11.1.15
   name: mysql-headless
   namespace: mysql-system
 spec:
@@ -131,8 +133,8 @@ metadata:
     app.kubernetes.io/instance: mysql
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mysql
-    app.kubernetes.io/version: 8.0.36
-    helm.sh/chart: mysql-9.23.0
+    app.kubernetes.io/version: 8.4.2
+    helm.sh/chart: mysql-11.1.15
   name: mysql
   namespace: mysql-system
 spec:
@@ -147,15 +149,15 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/configuration: f64c59b7c6e3de9ecefd18f9553ebca760f608483a70276e6da1bb9cb8586254
+        checksum/configuration: 5753ebb16fa1265f63fc88c081a65d2655d34c1e2c241a6963c7ba5af84fc2ea
         logs.grafana.com/scrape: "true"
       labels:
         app.kubernetes.io/component: primary
         app.kubernetes.io/instance: mysql
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: mysql
-        app.kubernetes.io/version: 8.0.36
-        helm.sh/chart: mysql-9.23.0
+        app.kubernetes.io/version: 8.4.2
+        helm.sh/chart: mysql-11.1.15
     spec:
       affinity:
         nodeAffinity: null
@@ -191,7 +193,7 @@ spec:
         - name: MYSQL_DATABASE
           value: my_database
         envFrom: null
-        image: docker.io/bitnami/mysql:8.0.36-debian-12-r8
+        image: docker.io/bitnami/mysql:8.4.2-debian-12-r2
         imagePullPolicy: IfNotPresent
         livenessProbe:
           exec:
@@ -223,22 +225,31 @@ spec:
               if [[ -f "${MYSQL_ROOT_PASSWORD_FILE:-}" ]]; then
                   password_aux=$(cat "$MYSQL_ROOT_PASSWORD_FILE")
               fi
-              mysqladmin status -uroot -p"${password_aux}"
+              mysqladmin ping -uroot -p"${password_aux}" | grep "mysqld is alive"
           failureThreshold: 3
           initialDelaySeconds: 5
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 1
+        resources:
+          limits:
+            cpu: 750m
+            ephemeral-storage: 2Gi
+            memory: 768Mi
+          requests:
+            cpu: 500m
+            ephemeral-storage: 50Mi
+            memory: 512Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
             drop:
             - ALL
-          readOnlyRootFilesystem: false
-          runAsGroup: 0
+          readOnlyRootFilesystem: true
+          runAsGroup: 1001
           runAsNonRoot: true
           runAsUser: 1001
-          seLinuxOptions: null
+          seLinuxOptions: {}
           seccompProfile:
             type: RuntimeDefault
         startupProbe:
@@ -251,7 +262,7 @@ spec:
               if [[ -f "${MYSQL_ROOT_PASSWORD_FILE:-}" ]]; then
                   password_aux=$(cat "$MYSQL_ROOT_PASSWORD_FILE")
               fi
-              mysqladmin status -uroot -p"${password_aux}"
+              mysqladmin ping -uroot -p"${password_aux}" | grep "mysqld is alive"
           failureThreshold: 10
           initialDelaySeconds: 15
           periodSeconds: 10
@@ -275,7 +286,46 @@ spec:
         - mountPath: /opt/bitnami/mysql/conf/my.cnf
           name: config
           subPath: my.cnf
-      initContainers: null
+      initContainers:
+      - args:
+        - -ec
+        - |
+          #!/bin/bash
+
+          . /opt/bitnami/scripts/libfs.sh
+          # We copy the logs folder because it has symlinks to stdout and stderr
+          if ! is_dir_empty /opt/bitnami/mysql/logs; then
+            cp -r /opt/bitnami/mysql/logs /emptydir/app-logs-dir
+          fi
+        command:
+        - /bin/bash
+        image: docker.io/bitnami/mysql:8.4.2-debian-12-r2
+        imagePullPolicy: IfNotPresent
+        name: preserve-logs-symlinks
+        resources:
+          limits:
+            cpu: 750m
+            ephemeral-storage: 2Gi
+            memory: 768Mi
+          requests:
+            cpu: 500m
+            ephemeral-storage: 50Mi
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 1001
+          runAsNonRoot: true
+          runAsUser: 1001
+          seLinuxOptions: {}
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - mountPath: /emptydir
+          name: empty-dir
       securityContext:
         fsGroup: 1001
         fsGroupChangePolicy: Always
@@ -304,6 +354,26 @@ spec:
         requests:
           storage: 8Gi
 ---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app.kubernetes.io/component: primary
+    app.kubernetes.io/instance: mysql
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: mysql
+    app.kubernetes.io/version: 8.4.2
+    helm.sh/chart: mysql-11.1.15
+  name: mysql
+  namespace: mysql-system
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: primary
+      app.kubernetes.io/instance: mysql
+      app.kubernetes.io/name: mysql
+---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -311,8 +381,8 @@ metadata:
     app.kubernetes.io/instance: mysql
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mysql
-    app.kubernetes.io/version: 8.0.36
-    helm.sh/chart: mysql-9.23.0
+    app.kubernetes.io/version: 8.4.2
+    helm.sh/chart: mysql-11.1.15
   name: mysql
   namespace: mysql-system
 spec:
@@ -321,14 +391,13 @@ spec:
   ingress:
   - ports:
     - port: 3306
-    - port: 3306
   podSelector:
     matchLabels:
       app.kubernetes.io/instance: mysql
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: mysql
-      app.kubernetes.io/version: 8.0.36
-      helm.sh/chart: mysql-9.23.0
+      app.kubernetes.io/version: 8.4.2
+      helm.sh/chart: mysql-11.1.15
   policyTypes:
   - Ingress
   - Egress

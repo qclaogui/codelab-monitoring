@@ -11,8 +11,8 @@ metadata:
     app.kubernetes.io/instance: redis
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
-    app.kubernetes.io/version: 7.2.4
-    helm.sh/chart: redis-18.19.3
+    app.kubernetes.io/version: 7.4.0
+    helm.sh/chart: redis-20.0.1
   name: redis-master
   namespace: redis-system
 ---
@@ -43,8 +43,8 @@ metadata:
     app.kubernetes.io/instance: redis
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
-    app.kubernetes.io/version: 7.2.4
-    helm.sh/chart: redis-18.19.3
+    app.kubernetes.io/version: 7.4.0
+    helm.sh/chart: redis-20.0.1
   name: redis-configuration
   namespace: redis-system
 ---
@@ -150,8 +150,8 @@ metadata:
     app.kubernetes.io/instance: redis
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
-    app.kubernetes.io/version: 7.2.4
-    helm.sh/chart: redis-18.19.3
+    app.kubernetes.io/version: 7.4.0
+    helm.sh/chart: redis-20.0.1
   name: redis-health
   namespace: redis-system
 ---
@@ -179,8 +179,8 @@ metadata:
     app.kubernetes.io/instance: redis
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
-    app.kubernetes.io/version: 7.2.4
-    helm.sh/chart: redis-18.19.3
+    app.kubernetes.io/version: 7.4.0
+    helm.sh/chart: redis-20.0.1
   name: redis-scripts
   namespace: redis-system
 ---
@@ -200,8 +200,8 @@ metadata:
     app.kubernetes.io/instance: redis
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
-    app.kubernetes.io/version: 7.2.4
-    helm.sh/chart: redis-18.19.3
+    app.kubernetes.io/version: 7.4.0
+    helm.sh/chart: redis-20.0.1
   name: redis-headless
   namespace: redis-system
 spec:
@@ -223,8 +223,8 @@ metadata:
     app.kubernetes.io/instance: redis
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
-    app.kubernetes.io/version: 7.2.4
-    helm.sh/chart: redis-18.19.3
+    app.kubernetes.io/version: 7.4.0
+    helm.sh/chart: redis-20.0.1
   name: redis-master
   namespace: redis-system
 spec:
@@ -249,12 +249,13 @@ metadata:
     app.kubernetes.io/instance: redis
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
-    app.kubernetes.io/version: 7.2.4
-    helm.sh/chart: redis-18.19.3
+    app.kubernetes.io/version: 7.4.0
+    helm.sh/chart: redis-20.0.1
   name: redis-master
   namespace: redis-system
 spec:
   replicas: 1
+  revisionHistoryLimit: 10
   selector:
     matchLabels:
       app.kubernetes.io/component: master
@@ -274,8 +275,8 @@ spec:
         app.kubernetes.io/instance: redis
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: redis
-        app.kubernetes.io/version: 7.2.4
-        helm.sh/chart: redis-18.19.3
+        app.kubernetes.io/version: 7.4.0
+        helm.sh/chart: redis-20.0.1
     spec:
       affinity:
         nodeAffinity: null
@@ -313,7 +314,7 @@ spec:
           value: "no"
         - name: REDIS_PORT
           value: "6379"
-        image: docker.io/bitnami/redis:7.2.4-debian-12-r9
+        image: docker.io/bitnami/redis:7.4.0-debian-12-r0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           exec:
@@ -341,16 +342,25 @@ spec:
           periodSeconds: 5
           successThreshold: 1
           timeoutSeconds: 2
+        resources:
+          limits:
+            cpu: 150m
+            ephemeral-storage: 2Gi
+            memory: 192Mi
+          requests:
+            cpu: 100m
+            ephemeral-storage: 50Mi
+            memory: 128Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
             drop:
             - ALL
-          readOnlyRootFilesystem: false
-          runAsGroup: 0
+          readOnlyRootFilesystem: true
+          runAsGroup: 1001
           runAsNonRoot: true
           runAsUser: 1001
-          seLinuxOptions: null
+          seLinuxOptions: {}
           seccompProfile:
             type: RuntimeDefault
         volumeMounts:
@@ -408,6 +418,26 @@ spec:
         requests:
           storage: 8Gi
 ---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app.kubernetes.io/component: master
+    app.kubernetes.io/instance: redis
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/version: 7.4.0
+    helm.sh/chart: redis-20.0.1
+  name: redis-master
+  namespace: redis-system
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: master
+      app.kubernetes.io/instance: redis
+      app.kubernetes.io/name: redis
+---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -415,8 +445,8 @@ metadata:
     app.kubernetes.io/instance: redis
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
-    app.kubernetes.io/version: 7.2.4
-    helm.sh/chart: redis-18.19.3
+    app.kubernetes.io/version: 7.4.0
+    helm.sh/chart: redis-20.0.1
   name: redis
   namespace: redis-system
 spec:

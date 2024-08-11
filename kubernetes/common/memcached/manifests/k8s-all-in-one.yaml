@@ -11,8 +11,8 @@ metadata:
     app.kubernetes.io/instance: memcached
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: memcached
-    app.kubernetes.io/version: 1.6.24
-    helm.sh/chart: memcached-7.0.0
+    app.kubernetes.io/version: 1.6.29
+    helm.sh/chart: memcached-7.4.11
   name: memcached
   namespace: memcached-system
 ---
@@ -1305,8 +1305,8 @@ metadata:
     app.kubernetes.io/instance: memcached
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: memcached
-    app.kubernetes.io/version: 1.6.24
-    helm.sh/chart: memcached-7.0.0
+    app.kubernetes.io/version: 1.6.29
+    helm.sh/chart: memcached-7.4.11
   name: memcached
   namespace: memcached-system
 spec:
@@ -1327,8 +1327,8 @@ metadata:
     app.kubernetes.io/instance: memcached
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: memcached
-    app.kubernetes.io/version: 1.6.24
-    helm.sh/chart: memcached-7.0.0
+    app.kubernetes.io/version: 1.6.29
+    helm.sh/chart: memcached-7.4.11
   name: memcached
   namespace: memcached-system
 spec:
@@ -1348,8 +1348,8 @@ spec:
         app.kubernetes.io/instance: memcached
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: memcached
-        app.kubernetes.io/version: 1.6.24
-        helm.sh/chart: memcached-7.0.0
+        app.kubernetes.io/version: 1.6.29
+        helm.sh/chart: memcached-7.4.11
     spec:
       affinity:
         nodeAffinity: null
@@ -1370,15 +1370,17 @@ spec:
           value: "false"
         - name: MEMCACHED_PORT_NUMBER
           value: "11211"
-        image: docker.io/bitnami/memcached:1.6.24-debian-12-r0
+        image: docker.io/bitnami/memcached:1.6.29-debian-12-r4
         imagePullPolicy: IfNotPresent
         livenessProbe:
+          exec:
+            command:
+            - pgrep
+            - memcached
           failureThreshold: 6
           initialDelaySeconds: 30
           periodSeconds: 10
           successThreshold: 1
-          tcpSocket:
-            port: memcache
           timeoutSeconds: 5
         name: memcached
         ports:
@@ -1409,7 +1411,7 @@ spec:
           runAsGroup: 1001
           runAsNonRoot: true
           runAsUser: 1001
-          seLinuxOptions: null
+          seLinuxOptions: {}
           seccompProfile:
             type: RuntimeDefault
         volumeMounts:
@@ -1419,6 +1421,7 @@ spec:
         - mountPath: /tmp
           name: empty-dir
           subPath: tmp-dir
+      enableServiceLinks: true
       securityContext:
         fsGroup: 1001
         fsGroupChangePolicy: Always
@@ -1428,6 +1431,24 @@ spec:
       volumes:
       - emptyDir: {}
         name: empty-dir
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app.kubernetes.io/instance: memcached
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: memcached
+    app.kubernetes.io/version: 1.6.29
+    helm.sh/chart: memcached-7.4.11
+  name: memcached
+  namespace: memcached-system
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: memcached
+      app.kubernetes.io/name: memcached
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
@@ -1476,8 +1497,8 @@ metadata:
     app.kubernetes.io/instance: memcached
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: memcached
-    app.kubernetes.io/version: 1.6.24
-    helm.sh/chart: memcached-7.0.0
+    app.kubernetes.io/version: 1.6.29
+    helm.sh/chart: memcached-7.4.11
   name: memcached
   namespace: memcached-system
 spec:
@@ -1491,8 +1512,8 @@ spec:
       app.kubernetes.io/instance: memcached
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: memcached
-      app.kubernetes.io/version: 1.6.24
-      helm.sh/chart: memcached-7.0.0
+      app.kubernetes.io/version: 1.6.29
+      helm.sh/chart: memcached-7.4.11
   policyTypes:
   - Ingress
   - Egress
