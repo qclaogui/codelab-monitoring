@@ -8,7 +8,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.15.0
-    operator.min.io/version: v6.0.1
+    operator.min.io/version: v6.0.2
   name: miniojobs.job.min.io
 spec:
   group: job.min.io
@@ -22,11 +22,11 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .spec.tenant.name
-      name: Tenant
-      type: string
-    - jsonPath: .spec.status.phase
+    - jsonPath: .status.phase
       name: Phase
+      type: string
+    - jsonPath: .status.message
+      name: Message
       type: string
     name: v1alpha1
     schema:
@@ -1084,7 +1084,7 @@ spec:
                   x-kubernetes-map-type: atomic
                 type: array
               mcImage:
-                default: quay.io/minio/mc:RELEASE.2024-07-16T23-46-41Z
+                default: quay.io/minio/mc:RELEASE.2024-07-31T15-58-33Z
                 type: string
               securityContext:
                 properties:
@@ -1209,7 +1209,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.15.0
-    operator.min.io/version: v6.0.1
+    operator.min.io/version: v6.0.2
   name: policybindings.sts.min.io
 spec:
   group: sts.min.io
@@ -1342,7 +1342,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.15.0
-    operator.min.io/version: v6.0.1
+    operator.min.io/version: v6.0.2
   name: tenants.minio.min.io
 spec:
   group: minio.min.io
@@ -2213,6 +2213,9 @@ spec:
                       type: string
                     type: array
                 type: object
+              certExpiryAlertThreshold:
+                format: int32
+                type: integer
               configuration:
                 properties:
                   name:
@@ -7012,8 +7015,8 @@ kind: ServiceAccount
 metadata:
   labels:
     app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/version: v6.0.1
-    helm.sh/chart: operator-6.0.1
+    app.kubernetes.io/version: v6.0.2
+    helm.sh/chart: operator-6.0.2
   name: minio-operator
   namespace: minio-system
 ---
@@ -7022,8 +7025,8 @@ kind: ClusterRole
 metadata:
   labels:
     app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/version: v6.0.1
-    helm.sh/chart: operator-6.0.1
+    app.kubernetes.io/version: v6.0.2
+    helm.sh/chart: operator-6.0.2
   name: minio-operator-role
 rules:
 - apiGroups:
@@ -7206,8 +7209,8 @@ kind: ClusterRoleBinding
 metadata:
   labels:
     app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/version: v6.0.1
-    helm.sh/chart: operator-6.0.1
+    app.kubernetes.io/version: v6.0.2
+    helm.sh/chart: operator-6.0.2
   name: minio-operator-binding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -7223,8 +7226,8 @@ kind: Service
 metadata:
   labels:
     app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/version: v6.0.1
-    helm.sh/chart: operator-6.0.1
+    app.kubernetes.io/version: v6.0.2
+    helm.sh/chart: operator-6.0.2
   name: operator
   namespace: minio-system
 spec:
@@ -7242,8 +7245,8 @@ kind: Service
 metadata:
   labels:
     app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/version: v6.0.1
-    helm.sh/chart: operator-6.0.1
+    app.kubernetes.io/version: v6.0.2
+    helm.sh/chart: operator-6.0.2
   name: sts
   namespace: minio-system
 spec:
@@ -7260,8 +7263,8 @@ kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/version: v6.0.1
-    helm.sh/chart: operator-6.0.1
+    app.kubernetes.io/version: v6.0.2
+    helm.sh/chart: operator-6.0.2
   name: minio-operator
   namespace: minio-system
 spec:
@@ -7276,8 +7279,8 @@ spec:
         app.kubernetes.io/instance: operator
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: operator
-        app.kubernetes.io/version: v6.0.1
-        helm.sh/chart: operator-6.0.1
+        app.kubernetes.io/version: v6.0.2
+        helm.sh/chart: operator-6.0.2
     spec:
       affinity:
         podAntiAffinity:
@@ -7297,7 +7300,7 @@ spec:
           value: "on"
         - name: OPERATOR_STS_AUTO_TLS_ENABLED
           value: "off"
-        image: quay.io/minio/operator:v6.0.1
+        image: quay.io/minio/operator:v6.0.2
         imagePullPolicy: IfNotPresent
         name: operator
         resources:
