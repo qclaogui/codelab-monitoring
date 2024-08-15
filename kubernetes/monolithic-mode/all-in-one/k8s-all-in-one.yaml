@@ -47,6 +47,7 @@ metadata:
   namespace: monitoring-system
 ---
 apiVersion: v1
+automountServiceAccountToken: true
 kind: ServiceAccount
 metadata:
   labels:
@@ -55,8 +56,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: kube-state-metrics
-    app.kubernetes.io/version: 2.12.0
-    helm.sh/chart: kube-state-metrics-5.19.0
+    app.kubernetes.io/version: 2.13.0
+    helm.sh/chart: kube-state-metrics-5.25.1
   name: kube-state-metrics
   namespace: monitoring-system
 ---
@@ -73,6 +74,7 @@ metadata:
   namespace: monitoring-system
 ---
 apiVersion: v1
+automountServiceAccountToken: false
 kind: ServiceAccount
 metadata:
   labels:
@@ -81,8 +83,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: prometheus-node-exporter
     app.kubernetes.io/part-of: prometheus-node-exporter
-    app.kubernetes.io/version: 1.7.0
-    helm.sh/chart: prometheus-node-exporter-4.32.0
+    app.kubernetes.io/version: 1.8.2
+    helm.sh/chart: prometheus-node-exporter-4.38.0
   name: prometheus-node-exporter
   namespace: monitoring-system
 ---
@@ -250,8 +252,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: kube-state-metrics
-    app.kubernetes.io/version: 2.12.0
-    helm.sh/chart: kube-state-metrics-5.19.0
+    app.kubernetes.io/version: 2.13.0
+    helm.sh/chart: kube-state-metrics-5.25.1
   name: kube-state-metrics
 rules:
 - apiGroups:
@@ -526,8 +528,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: kube-state-metrics
-    app.kubernetes.io/version: 2.12.0
-    helm.sh/chart: kube-state-metrics-5.19.0
+    app.kubernetes.io/version: 2.13.0
+    helm.sh/chart: kube-state-metrics-5.25.1
   name: kube-state-metrics
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -5722,8 +5724,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: kube-state-metrics
-    app.kubernetes.io/version: 2.12.0
-    helm.sh/chart: kube-state-metrics-5.19.0
+    app.kubernetes.io/version: 2.13.0
+    helm.sh/chart: kube-state-metrics-5.25.1
   name: kube-state-metrics
   namespace: monitoring-system
 spec:
@@ -5797,8 +5799,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: prometheus-node-exporter
     app.kubernetes.io/part-of: prometheus-node-exporter
-    app.kubernetes.io/version: 1.7.0
-    helm.sh/chart: prometheus-node-exporter-4.32.0
+    app.kubernetes.io/version: 1.8.2
+    helm.sh/chart: prometheus-node-exporter-4.38.0
   name: prometheus-node-exporter
   namespace: monitoring-system
 spec:
@@ -5959,8 +5961,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: kube-state-metrics
-    app.kubernetes.io/version: 2.12.0
-    helm.sh/chart: kube-state-metrics-5.19.0
+    app.kubernetes.io/version: 2.13.0
+    helm.sh/chart: kube-state-metrics-5.25.1
   name: kube-state-metrics
   namespace: monitoring-system
 spec:
@@ -5980,20 +5982,21 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: kube-state-metrics
         app.kubernetes.io/part-of: kube-state-metrics
-        app.kubernetes.io/version: 2.12.0
-        helm.sh/chart: kube-state-metrics-5.19.0
+        app.kubernetes.io/version: 2.13.0
+        helm.sh/chart: kube-state-metrics-5.25.1
     spec:
+      automountServiceAccountToken: true
       containers:
       - args:
         - --port=8080
         - --resources=certificatesigningrequests,configmaps,cronjobs,daemonsets,deployments,endpoints,horizontalpodautoscalers,ingresses,jobs,leases,limitranges,mutatingwebhookconfigurations,namespaces,networkpolicies,nodes,persistentvolumeclaims,persistentvolumes,poddisruptionbudgets,pods,replicasets,replicationcontrollers,resourcequotas,secrets,services,statefulsets,storageclasses,validatingwebhookconfigurations,volumeattachments
-        image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.12.0
+        image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.13.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
           httpGet:
             httpHeaders: null
-            path: /healthz
+            path: /livez
             port: 8080
             scheme: HTTP
           initialDelaySeconds: 5
@@ -6008,13 +6011,14 @@ spec:
           failureThreshold: 3
           httpGet:
             httpHeaders: null
-            path: /
+            path: /readyz
             port: 8080
             scheme: HTTP
           initialDelaySeconds: 5
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 5
+        resources: {}
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -6606,8 +6610,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: prometheus-node-exporter
     app.kubernetes.io/part-of: prometheus-node-exporter
-    app.kubernetes.io/version: 1.7.0
-    helm.sh/chart: prometheus-node-exporter-4.32.0
+    app.kubernetes.io/version: 1.8.2
+    helm.sh/chart: prometheus-node-exporter-4.38.0
   name: prometheus-node-exporter
   namespace: monitoring-system
 spec:
@@ -6626,8 +6630,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: prometheus-node-exporter
         app.kubernetes.io/part-of: prometheus-node-exporter
-        app.kubernetes.io/version: 1.7.0
-        helm.sh/chart: prometheus-node-exporter-4.32.0
+        app.kubernetes.io/version: 1.8.2
+        helm.sh/chart: prometheus-node-exporter-4.38.0
     spec:
       automountServiceAccountToken: false
       containers:
@@ -6640,7 +6644,7 @@ spec:
         env:
         - name: HOST_IP
           value: 0.0.0.0
-        image: quay.io/prometheus/node-exporter:v1.7.0
+        image: quay.io/prometheus/node-exporter:v1.8.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -6682,6 +6686,7 @@ spec:
           mountPropagation: HostToContainer
           name: root
           readOnly: true
+      hostIPC: false
       hostNetwork: true
       hostPID: true
       nodeSelector:
