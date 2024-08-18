@@ -3,11 +3,11 @@ module github.com/qclaogui/codelab-monitoring
 go 1.22.5
 
 require (
-	dagger.io/dagger v0.12.4
+	dagger.io/dagger v0.12.5
 	github.com/MakeNowJust/heredoc v1.0.0
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/dave/jennifer v1.7.0
-	github.com/prometheus/client_golang v1.19.1
+	github.com/prometheus/client_golang v1.20.0
 	github.com/prometheus/common v0.55.0
 	github.com/prometheus/prometheus v0.54.0
 	github.com/spf13/cobra v1.8.1
