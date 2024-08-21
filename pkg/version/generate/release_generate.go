@@ -4,10 +4,6 @@
 
 //go:build release
 
-// Copyright © Weifeng Wang <qclaogui@gmail.com>
-//
-// Licensed under the Apache License 2.0.
-
 package main
 
 import (
@@ -15,7 +11,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"runtime"
 	"strings"
 
 	"github.com/blang/semver"
@@ -70,7 +65,6 @@ func main() {
 	default:
 		log.Fatalf("unknown option %q. Expected one of %v", command, strings.Join([]string{"development", "next-pre-release-id", "full-version", "print-version", "print-major-minor-version"}, ", "))
 	}
-
 }
 
 func nextPreReleaseID(latestPreReleaseVersion string) (string, error) {
@@ -103,7 +97,6 @@ func nextPreReleaseID(latestPreReleaseVersion string) (string, error) {
 	}
 
 	return fmt.Sprintf("rc.%d", id.VersionNum+1), nil
-
 }
 
 func printMajorMinor() string {
@@ -119,8 +112,7 @@ func nextDevelopmentIteration() (string, string) {
 
 func writeVersionToFile(version, preReleaseID, fileName string) error {
 	f := jen.NewFilePath("pkg/version")
-	f.PackageComment(`
-	// Copyright © Weifeng Wang <qclaogui@gmail.com>
+	f.PackageComment(`// Copyright © Weifeng Wang <qclaogui@gmail.com>
 	//
 	// Licensed under the Apache License 2.0.
 	`)
@@ -139,9 +131,6 @@ func writeVersionToFile(version, preReleaseID, fileName string) error {
 
 	f.Comment("BuildDate is the time of the build with format yyyy-mm-ddThh:mm:ssZ. It will be set by the linker.")
 	f.Var().Id("BuildDate").Op("=").Lit("")
-
-	f.Comment("GoVersion returns the Go version string.")
-	f.Var().Id("GoVersion").Op("=").Lit(runtime.Version())
 
 	return f.Save(fileName)
 }

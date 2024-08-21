@@ -6,19 +6,21 @@ package profiles
 
 import (
 	"fmt"
-	"github.com/qclaogui/codelab-monitoring/pkg"
 	"slices"
 	"strings"
 
 	"github.com/MakeNowJust/heredoc"
+	"github.com/qclaogui/codelab-monitoring/pkg"
 	"github.com/spf13/cobra"
 )
 
-var supportedModes = []string{"monolithic-mode", "microservices-mode"}
-var mode string
+var (
+	supportedModes = []string{"monolithic-mode", "microservices-mode"}
+	mode           string
+)
 
 func NewCmdProfiles() *cobra.Command {
-	var profilesCmd = &cobra.Command{
+	profilesCmd := &cobra.Command{
 		Short: "Run Pyroscope for Profiles.",
 		Use:   "profiles",
 		Example: heredoc.Doc(`

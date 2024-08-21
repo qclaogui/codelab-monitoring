@@ -6,19 +6,21 @@ package all
 
 import (
 	"fmt"
-	"github.com/qclaogui/codelab-monitoring/pkg"
 	"slices"
 	"strings"
 
 	"github.com/MakeNowJust/heredoc"
+	"github.com/qclaogui/codelab-monitoring/pkg"
 	"github.com/spf13/cobra"
 )
 
-var supportedModes = []string{"monolithic-mode"}
-var mode string
+var (
+	supportedModes = []string{"monolithic-mode"}
+	mode           string
+)
 
 func NewCmdAll() *cobra.Command {
-	var allCmd = &cobra.Command{
+	allCmd := &cobra.Command{
 		Short: "Run Grafana LGTMP Stack All-in-one.",
 		Use:   "all",
 		Example: heredoc.Doc(`

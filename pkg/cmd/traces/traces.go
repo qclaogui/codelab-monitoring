@@ -6,19 +6,21 @@ package traces
 
 import (
 	"fmt"
-	"github.com/qclaogui/codelab-monitoring/pkg"
 	"slices"
 	"strings"
 
 	"github.com/MakeNowJust/heredoc"
+	"github.com/qclaogui/codelab-monitoring/pkg"
 	"github.com/spf13/cobra"
 )
 
-var supportedModes = []string{"monolithic-mode", "microservices-mode"}
-var mode string
+var (
+	supportedModes = []string{"monolithic-mode", "microservices-mode"}
+	mode           string
+)
 
 func NewCmdTraces() *cobra.Command {
-	var tracesCmd = &cobra.Command{
+	tracesCmd := &cobra.Command{
 		Short: "Run Tempo for Traces.",
 		Use:   "traces",
 		Example: heredoc.Doc(`

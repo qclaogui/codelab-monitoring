@@ -29,6 +29,18 @@ $(COPYRIGHT): $(BINGO_DIR)/copyright.mod
 	@echo "(re)installing $(GOBIN)/copyright-v0.0.0-20230505153745-6b7392939a60"
 	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=copyright.mod -o=$(GOBIN)/copyright-v0.0.0-20230505153745-6b7392939a60 "github.com/efficientgo/tools/copyright"
 
+GOFUMPT := $(GOBIN)/gofumpt-v0.7.0
+$(GOFUMPT): $(BINGO_DIR)/gofumpt.mod
+	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
+	@echo "(re)installing $(GOBIN)/gofumpt-v0.7.0"
+	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=gofumpt.mod -o=$(GOBIN)/gofumpt-v0.7.0 "mvdan.cc/gofumpt"
+
+GOIMPORTS := $(GOBIN)/goimports-v0.24.0
+$(GOIMPORTS): $(BINGO_DIR)/goimports.mod
+	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
+	@echo "(re)installing $(GOBIN)/goimports-v0.24.0"
+	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=goimports.mod -o=$(GOBIN)/goimports-v0.24.0 "golang.org/x/tools/cmd/goimports"
+
 GORELEASER := $(GOBIN)/goreleaser-v1.26.2
 $(GORELEASER): $(BINGO_DIR)/goreleaser.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.

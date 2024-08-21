@@ -11,12 +11,11 @@ import (
 	"github.com/qclaogui/codelab-monitoring/pkg/cmd/metrics"
 	"github.com/qclaogui/codelab-monitoring/pkg/cmd/profiles"
 	"github.com/qclaogui/codelab-monitoring/pkg/cmd/traces"
-
 	"github.com/spf13/cobra"
 )
 
 func NewCmdDeploy() *cobra.Command {
-	var cmd = &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "deploy",
 		Short: "Provisioning Grafana LGTMP stack by Kubernetes",
 		Example: heredoc.Doc(`

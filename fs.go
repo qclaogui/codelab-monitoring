@@ -51,13 +51,13 @@ func EmbedFsToGenDirectory() error {
 
 		info := hdr.FileInfo()
 		if info.IsDir() {
-			if err = os.MkdirAll(target, 0777); err != nil {
+			if err = os.MkdirAll(target, 0o777); err != nil {
 				return err
 			}
 			continue
 		}
 
-		w, openErr := os.OpenFile(target, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0666|info.Mode()&0777)
+		w, openErr := os.OpenFile(target, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666|info.Mode()&0o777)
 		if openErr != nil {
 			return openErr
 		}
