@@ -14,7 +14,7 @@ import (
 
 // NewCmdVersion represents the version command
 func NewCmdVersion() *cobra.Command {
-	var cmd = &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "version",
 		Short: "Output the version of lgtmp",
 		Example: heredoc.Doc(`

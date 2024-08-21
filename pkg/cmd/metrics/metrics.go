@@ -6,19 +6,21 @@ package metrics
 
 import (
 	"fmt"
-	"github.com/qclaogui/codelab-monitoring/pkg"
 	"slices"
 	"strings"
 
 	"github.com/MakeNowJust/heredoc"
+	"github.com/qclaogui/codelab-monitoring/pkg"
 	"github.com/spf13/cobra"
 )
 
-var supportedModes = []string{"monolithic-mode", "read-write-mode", "microservices-mode"}
-var mode string
+var (
+	supportedModes = []string{"monolithic-mode", "read-write-mode", "microservices-mode"}
+	mode           string
+)
 
 func NewCmdMetrics() *cobra.Command {
-	var metricsCmd = &cobra.Command{
+	metricsCmd := &cobra.Command{
 		Short: "Run Mimir for Metrics.",
 		Use:   "metrics",
 		Example: heredoc.Doc(`

@@ -11,12 +11,11 @@ import (
 	"github.com/qclaogui/codelab-monitoring/pkg/cmd/metrics"
 	"github.com/qclaogui/codelab-monitoring/pkg/cmd/profiles"
 	"github.com/qclaogui/codelab-monitoring/pkg/cmd/traces"
-
 	"github.com/spf13/cobra"
 )
 
 func NewCmdDown() *cobra.Command {
-	var cmd = &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "down",
 		Short: "Clean up Grafana LGTMP stack from Docker Compose",
 		Example: heredoc.Doc(`

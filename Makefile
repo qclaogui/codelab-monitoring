@@ -27,15 +27,28 @@ copyright: $(COPYRIGHT) ## Add Copyright header to .go files.
 	@$(COPYRIGHT) $(shell go list -f "{{.Dir}}" ./... | xargs -I {} find {} -name "*.go" | grep -iv "vendor/")
 	@echo ">> ensured all .go files have copyright headers"
 
+.PHONY: fmt
+fmt: go-fmt alloy-fmt
+
 
 ALLOY_CONFIG_FILES = $(shell find . -type f -name '*.alloy')
 ALLOY_CONFIG_FILES_IN_DOCKER = $(subst ./, /data/, $(ALLOY_CONFIG_FILES))
-.PHONY: fmt
-fmt: ## Uses Grafana Alloy to fmt the config
+
+.PHONY: alloy-fmt
+alloy-fmt: ## Uses Grafana Alloy to fmt the config
 	@for c in $(ALLOY_CONFIG_FILES_IN_DOCKER); do \
 		echo "$$c"; \
 		docker run --rm --volume "$(shell pwd):/data" -u $(shell id -u) grafana/alloy:v1.3.0 fmt -w $$c ; \
 	done
+
+.PHONY: go-fmt
+go-fmt: $(GOIMPORTS) $(GOFUMPT)
+	@echo ">> formatting go code"
+	@$(GOFUMPT) -w $(GO_FILES_TO_FMT)
+	@for file in $(GO_FILES_TO_FMT) ; do \
+		tools/scripts/goimports.sh "$${file}"; \
+	done
+	@$(GOIMPORTS) -w $(GO_FILES_TO_FMT)
 
 ##@ Docker compose
 
@@ -444,6 +457,7 @@ GOARM            ?= $(shell go env GOARM)
 CGO_ENABLED      ?= 0
 RELEASE_BUILD    ?= 0
 
+GO_FILES_TO_FMT  ?= $(shell find . -path ./vendor -prune -o -name '*.go' -print)
 
 GOPROXY          ?= https://proxy.golang.org
 export GOPROXY
@@ -456,8 +470,8 @@ GIT_COMMIT 	?= $(if $(shell git status --porcelain --untracked-files=no),${COMMI
 VPREFIX 	:= github.com/qclaogui/codelab-monitoring/pkg/version
 
 GO_LDFLAGS  := -X $(VPREFIX).Version=$(VERSION)                         \
-               -X $(VPREFIX).GitCommit=$(GIT_COMMIT)                    \
-               -X $(VPREFIX).BuildDate=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+               -X $(VPREFIX).gitCommit=$(GIT_COMMIT)                    \
+               -X $(VPREFIX).buildDate=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 DEFAULT_FLAGS	:= $(GO_FLAGS)
 

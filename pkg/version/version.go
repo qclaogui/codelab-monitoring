@@ -5,14 +5,49 @@
 package version
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 )
 
 //go:generate go run ./release_generate.go
 
+// Info holds version information
+type Info struct {
+	Version      string
+	PreReleaseID string
+	Metadata     BuildMetadata
+}
+
+// BuildMetadata contains the semver build metadata:
+// short commit hash and date in format YYYYMMDDTHHmmSS
+type BuildMetadata struct {
+	BuildDate string
+	GitCommit string
+}
+
+// GetVersionInfo returns version Info struct
+func GetVersionInfo() Info {
+	return Info{
+		Version:      Version,
+		PreReleaseID: PreReleaseID,
+		Metadata: BuildMetadata{
+			GitCommit: gitCommit,
+			BuildDate: buildDate,
+		},
+	}
+}
+
 // ExtraSep separates semver version from any extra version info
 const ExtraSep = "-"
+
+// String return version info as JSON
+func String() string {
+	if data, err := json.Marshal(GetVersionInfo()); err == nil {
+		return string(data)
+	}
+	return ""
+}
 
 // GetVersion return the exact version of this build
 func GetVersion() string {
@@ -22,15 +57,15 @@ func GetVersion() string {
 
 	versionWithPR := fmt.Sprintf("%s%s%s", Version, ExtraSep, PreReleaseID)
 
-	if isReleaseCandidate(PreReleaseID) || (GitCommit == "" || BuildDate == "") {
+	if isReleaseCandidate(PreReleaseID) || (gitCommit == "" || buildDate == "") {
 		return versionWithPR
 	}
 
 	//  Include build metadata
 	return fmt.Sprintf("%s+%s.%s",
 		versionWithPR,
-		GitCommit,
-		BuildDate,
+		gitCommit,
+		buildDate,
 	)
 }
 
@@ -39,6 +74,6 @@ func isReleaseCandidate(preReleaseID string) bool {
 }
 
 func PrintVersion() string {
-	return fmt.Sprintf("lgtmp has version %s built with %s from %s on %s\n",
-		Version, GoVersion, GitCommit, BuildDate)
+	return fmt.Sprintf("lgtmp has version %s built from %s on %s\n",
+		Version, gitCommit, buildDate)
 }
