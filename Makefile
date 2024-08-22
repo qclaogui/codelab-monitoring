@@ -30,6 +30,8 @@ copyright: $(COPYRIGHT) ## Add Copyright header to .go files.
 .PHONY: fmt
 fmt: go-fmt alloy-fmt
 
+.PHONY: lint
+lint: go-lint goreleaser-lint
 
 ALLOY_CONFIG_FILES = $(shell find . -type f -name '*.alloy')
 ALLOY_CONFIG_FILES_IN_DOCKER = $(subst ./, /data/, $(ALLOY_CONFIG_FILES))
@@ -49,6 +51,17 @@ go-fmt: $(GOIMPORTS) $(GOFUMPT)
 		tools/scripts/goimports.sh "$${file}"; \
 	done
 	@$(GOIMPORTS) -w $(GO_FILES_TO_FMT)
+
+# Lint .goreleaser*.yml files.
+.PHONY: goreleaser-lint
+goreleaser-lint: $(GORELEASER)
+	@echo ">> run goreleaser check"
+	@for config_file in $(shell ls .github/.goreleaser*); do cat $${config_file} > .github/.goreleaser.combined.yml; done
+	@$(GORELEASER) check -f .github/.goreleaser.combined.yml || exit 1 && rm .github/.goreleaser.combined.yml
+
+go-lint: $(GOLANGCI_LINT)
+	@echo ">> run golangci-lint"
+	@$(GOLANGCI_LINT) run --timeout=15m
 
 ##@ Docker compose
 
