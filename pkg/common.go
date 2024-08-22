@@ -67,7 +67,6 @@ func browser(target string) {
 	} else if strings.HasPrefix(target, "deploy-") {
 		OpenBrowser("http://localhost:8080/explore")
 	}
-	return
 }
 
 // openArgs returns a list of possible args to use to open a url.
