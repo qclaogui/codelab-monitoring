@@ -235,6 +235,7 @@ manifests-monitoring-mixins: $(KUSTOMIZE)
 manifests-common: $(KUSTOMIZE)
 	$(info ******************** generates manifests-common manifests ********************)
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/alloy > kubernetes/common/alloy/manifests/k8s-all-in-one.yaml
+	@$(KUSTOMIZE) build --enable-helm kubernetes/common/cert-exporter > kubernetes/common/cert-exporter/manifests/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/cert-manager > kubernetes/common/cert-manager/manifests/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/gateway > kubernetes/common/gateway/manifests/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --enable-helm kubernetes/common/grafana > kubernetes/common/grafana/manifests/k8s-all-in-one.yaml
