@@ -1,0 +1,166 @@
+certManager:
+  # DaemonSet or Deployment
+  kind: Deployment
+  replicaCount: 1
+  # Adds additional labels to pods
+  additionalPodLabels: {}
+  # label1: test
+  # label2: test
+
+  image:
+    repository: joeelliott/cert-exporter
+    # The default tag is ".Chart.AppVersion", only set "tag" to override that
+    tag: 
+    pullPolicy: IfNotPresent
+    command: ["./app"]
+    args:
+      - --secrets-annotation-selector=cert-manager.io/certificate-name
+      - --secrets-include-glob=*.crt
+      - --logtostderr
+    env: []
+    # - name: NODE_NAME
+    #   valueFrom:
+    #     fieldRef:
+    #       fieldPath: spec.nodeName
+
+  imagePullSecrets: []
+  nameOverride: ""
+  fullnameOverride: ""
+
+  podAnnotations: {}
+  # environment: prod
+  # prometheus.io/scrape: true
+  # prometheus.io/port: 8080
+  # prometheus.io/path: /metrics
+
+  podSecurityContext: {}
+  # fsGroup: 2000
+
+  securityContext: {}
+    # capabilities:
+    #   drop:
+    #   - ALL
+    # readOnlyRootFilesystem: true
+    # runAsNonRoot: true
+    # runAsUser: 1000
+
+  resources: {}
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  affinity: {}
+
+  volumes: []
+    # - name: kubelet
+    #   hostPath:
+    #     path: /var/lib/kubelet
+    #     type: Directory
+  volumeMounts: []
+    # - mountPath: /var/lib/kubelet/pki
+    #   mountPropagation: HostToContainer
+    #   name: kubelet
+    #   readOnly: true
+
+  containerPort: 8080
+
+service:
+  type: ClusterIP
+  port: 8080
+
+  portName: http-metrics
+
+  # Annotations to add to the service
+  annotations: {}
+
+  # Requires prometheus-operator to be installed
+  serviceMonitor:
+    create: false
+
+    # cannot be empty
+    additionalLabels:
+      prometheus.io/load-rule: "true"
+
+    ## Scrape interval. If not set, the Prometheus default scrape interval is used.
+    ##
+    interval: 20s
+
+    ## metric relabel configs to apply to samples before ingestion.
+    ##
+    metricRelabelings: []
+    # - action: keep
+    #   regex: 'kube_(daemonset|deployment|pod|namespace|node|statefulset).+'
+    #   sourceLabels: [__name__]
+
+    # relabel configs to apply to samples before ingestion.
+    ##
+    relabelings: []
+    # - sourceLabels: [__meta_kubernetes_pod_node_name]
+    #   separator: ;
+    #   regex: ^(.*)$
+    #   targetLabel: nodename
+    #   replacement: $1
+    #   action: replace
+
+rbac:
+  serviceAccount:
+    # Specifies whether a service account should be created
+    create: true
+    # Annotations to add to the service account
+    annotations: {}
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: cert-exporter
+
+  clusterRole:
+    # New role to grant to the service account
+    create: true
+    # Annotations to add to the service account
+    annotations: {}
+    # Rules for the Role
+    rules:
+    - apiGroups: [""]
+      resources: ["secrets"]
+      verbs: ["get", "list"]
+
+  clusterRoleBinding:
+    create: true
+
+# Extra manifests to deploy as an array
+extraManifests: []
+  # - |
+  #   apiVersion: rbac.authorization.k8s.io/v1
+  #   kind: Role
+  #   metadata:
+  #     name: cert-exporter
+  #   rules:
+  #   - apiGroups: [""]
+  #     resources: ["configmaps", "secrets"]
+  #     verbs: ["get", "list"]
+  # - |
+  #   apiVersion: rbac.authorization.k8s.io/v1
+  #   kind: RoleBinding
+  #   metadata:
+  #     name: cert-exporter
+  #   roleRef:
+  #     apiGroup: rbac.authorization.k8s.io
+  #     kind: Role
+  #     name: cert-exporter
+  #   subjects:
+  #     - kind: ServiceAccount
+  #       name: cert-exporter
+
+dashboards:
+  # Labels to add to all dashboard ConfigMaps
+  additionalLabels:
+    grafana_dashboard: "1"
+  certManagerDashboard:
+    create: true
+  namespace: monitoring
