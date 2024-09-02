@@ -3,7 +3,7 @@ module github.com/qclaogui/codelab-monitoring
 go 1.23
 
 require (
-	dagger.io/dagger v0.12.6
+	dagger.io/dagger v0.12.7
 	github.com/MakeNowJust/heredoc v1.0.0
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/dave/jennifer v1.7.0

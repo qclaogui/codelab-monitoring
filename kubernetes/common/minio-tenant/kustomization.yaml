@@ -12,15 +12,27 @@ helmCharts:
 resources:
 - configs/add-sm-minio.yaml
 - configs/codelab-tls-certificate.yaml
-generatorOptions:
-  disableNameSuffixHash: true
-  labels:
-    v1.min.io/tenant: codelab
+
 secretGenerator:
-- name: codelab-minio-env
-  files:
-  - configs/config.env
 - name: user-lgtmp
+  options:
+    disableNameSuffixHash: true
+    labels:
+      v1.min.io/tenant: codelab
   literals:
   - CONSOLE_ACCESS_KEY=lgtmp
   - CONSOLE_SECRET_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
+
+generators:
+- |-
+  apiVersion: builtin
+  kind: SecretGenerator
+  metadata:
+    name: codelab-minio-env
+  behavior: replace
+  options:
+    disableNameSuffixHash: true
+    labels:
+      v1.min.io/tenant: codelab
+  files:
+  - configs/config.env
