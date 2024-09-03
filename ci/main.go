@@ -11,7 +11,7 @@ import (
 	"dagger.io/dagger"
 )
 
-const goImage = "golang:1.23.1"
+const goImage = "golang:1.23"
 
 func main() {
 	println("Dagger is a programmable CI/CD engine that runs your pipelines in containers.")
