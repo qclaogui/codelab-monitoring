@@ -531,6 +531,10 @@ print-version: ## Prints the upcoming release number
 console-token: ## Prints the minio-operator console jwt token
 	@kubectl get secret/console-sa-secret -n minio-system -o json | jq -r ".data.token" | base64 -d
 
+mixin-screenshots: ## Generates mixin dashboards screenshots.
+	@find ./docs/dashboards -name '*.png' -delete
+	@./tools/screenshots/run.sh
+
 .PHONY: help
 help:  ## Display this help. Thanks to https://www.thapaliya.com/en/writings/well-documented-makefiles/
 ifeq ($(OS),Windows_NT)
