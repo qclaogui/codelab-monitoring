@@ -229,7 +229,7 @@ data:
           store: memberlist
 
     compactor:
-      working_directory: /tmp/compactor
+      working_directory: /var/loki/compactor
       compactor_ring:
         kvstore:
           store: memberlist
@@ -302,6 +302,8 @@ data:
         cache_location: /var/loki/cache
         index_gateway_client:
           server_address: dns:///loki-distributed-index-gateway.logging-system.svc.cluster.local:9095
+      bloom_shipper:
+        working_directory: /var/loki/blooms
 
     chunk_store_config:
       chunk_cache_config:
@@ -309,7 +311,7 @@ data:
           addresses: "dns+memcached.memcached-system.svc.cluster.local:11211"
 kind: ConfigMap
 metadata:
-  name: loki-config-b7m6ch6f6t
+  name: loki-config-ct7d8h4gdk
   namespace: logging-system
 ---
 apiVersion: v1
@@ -5479,6 +5481,8 @@ spec:
           name: config
         - mountPath: /etc/loki/runtime-config
           name: runtime-config
+        - mountPath: /var/loki
+          name: data
       securityContext:
         fsGroup: 10001
         runAsGroup: 10001
@@ -5491,11 +5495,13 @@ spec:
           items:
           - key: config.yaml
             path: config.yaml
-          name: loki-config-b7m6ch6f6t
+          name: loki-config-ct7d8h4gdk
         name: config
       - configMap:
           name: loki-runtime
         name: runtime-config
+      - emptyDir: {}
+        name: data
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -5591,7 +5597,7 @@ spec:
           items:
           - key: config.yaml
             path: config.yaml
-          name: loki-config-b7m6ch6f6t
+          name: loki-config-ct7d8h4gdk
         name: config
       - configMap:
           name: loki-runtime
@@ -5700,7 +5706,7 @@ spec:
           items:
           - key: config.yaml
             path: config.yaml
-          name: loki-config-b7m6ch6f6t
+          name: loki-config-ct7d8h4gdk
         name: config
       - configMap:
           name: loki-runtime
@@ -5800,7 +5806,7 @@ spec:
           items:
           - key: config.yaml
             path: config.yaml
-          name: loki-config-b7m6ch6f6t
+          name: loki-config-ct7d8h4gdk
         name: config
       - configMap:
           name: loki-runtime
@@ -5898,7 +5904,7 @@ spec:
           items:
           - key: config.yaml
             path: config.yaml
-          name: loki-config-b7m6ch6f6t
+          name: loki-config-ct7d8h4gdk
         name: config
       - configMap:
           name: loki-runtime
@@ -6070,8 +6076,6 @@ spec:
           name: runtime-config
         - mountPath: /var/loki
           name: data
-        - mountPath: /data
-          name: temp
       securityContext:
         fsGroup: 10001
         runAsGroup: 10001
@@ -6086,7 +6090,7 @@ spec:
           items:
           - key: config.yaml
             path: config.yaml
-          name: loki-config-b7m6ch6f6t
+          name: loki-config-ct7d8h4gdk
         name: config
       - configMap:
           name: loki-runtime
@@ -6192,7 +6196,7 @@ spec:
           items:
           - key: config.yaml
             path: config.yaml
-          name: loki-config-b7m6ch6f6t
+          name: loki-config-ct7d8h4gdk
         name: config
       - configMap:
           name: loki-runtime
@@ -6299,7 +6303,7 @@ spec:
           items:
           - key: config.yaml
             path: config.yaml
-          name: loki-config-b7m6ch6f6t
+          name: loki-config-ct7d8h4gdk
         name: config
       - configMap:
           name: loki-runtime
@@ -6402,7 +6406,7 @@ spec:
           items:
           - key: config.yaml
             path: config.yaml
-          name: loki-config-b7m6ch6f6t
+          name: loki-config-ct7d8h4gdk
         name: config
       - configMap:
           name: loki-runtime
@@ -6512,7 +6516,7 @@ spec:
           items:
           - key: config.yaml
             path: config.yaml
-          name: loki-config-b7m6ch6f6t
+          name: loki-config-ct7d8h4gdk
         name: config
       - configMap:
           name: loki-runtime
@@ -6618,7 +6622,7 @@ spec:
           items:
           - key: config.yaml
             path: config.yaml
-          name: loki-config-b7m6ch6f6t
+          name: loki-config-ct7d8h4gdk
         name: config
       - configMap:
           name: loki-runtime
@@ -6723,7 +6727,7 @@ spec:
           items:
           - key: config.yaml
             path: config.yaml
-          name: loki-config-b7m6ch6f6t
+          name: loki-config-ct7d8h4gdk
         name: config
       - configMap:
           name: loki-runtime

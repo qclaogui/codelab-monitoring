@@ -271,16 +271,16 @@ data:
           store: memberlist
 
     frontend:
-      scheduler_address: query-scheduler-discovery.logging-system.svc.cluster.local:9095
-      tail_proxy_url: http://loki-querier.logging-system.svc.cluster.local:3100
+      scheduler_address: loki-query-scheduler-discovery.logging-system.svc.cluster.local:9095
+      tail_proxy_url: http://loki-read.logging-system.svc.cluster.local:3100
     frontend_worker:
-      scheduler_address: query-scheduler-discovery.logging-system.svc.cluster.local:9095
+      scheduler_address: loki-query-scheduler-discovery.logging-system.svc.cluster.local:9095
 
     index_gateway:
       mode: simple
 
     compactor:
-      working_directory: /tmp/compactor
+      working_directory: /var/loki/compactor
 
     memberlist:
       join_members:
@@ -335,6 +335,8 @@ data:
         cache_location: /var/loki/cache
         index_gateway_client:
           server_address: dns+loki-backend-headless.logging-system.svc.cluster.local:9095
+      bloom_shipper:
+        working_directory: /var/loki/blooms
 
     chunk_store_config:
       chunk_cache_config:
@@ -342,7 +344,7 @@ data:
           addresses: "dns+memcached.memcached-system.svc.cluster.local:11211"
 kind: ConfigMap
 metadata:
-  name: loki-config-g8ttct59ct
+  name: loki-config-6ttcfmt98b
   namespace: logging-system
 ---
 apiVersion: v1
@@ -5268,7 +5270,7 @@ spec:
           items:
           - key: config.yaml
             path: config.yaml
-          name: loki-config-g8ttct59ct
+          name: loki-config-6ttcfmt98b
         name: config
       - configMap:
           name: loki-runtime
@@ -5483,7 +5485,7 @@ spec:
           items:
           - key: config.yaml
             path: config.yaml
-          name: loki-config-g8ttct59ct
+          name: loki-config-6ttcfmt98b
         name: config
       - configMap:
           name: loki-runtime
@@ -5591,7 +5593,7 @@ spec:
           items:
           - key: config.yaml
             path: config.yaml
-          name: loki-config-g8ttct59ct
+          name: loki-config-6ttcfmt98b
         name: config
       - configMap:
           name: loki-runtime
