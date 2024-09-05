@@ -17,11 +17,11 @@ GO     ?= $(shell which go)
 #	@echo "Running cmctl"
 #	@$(CMCTL) <flags/args..>
 #
-CMCTL := $(GOBIN)/cmctl-v2.1.0
+CMCTL := $(GOBIN)/cmctl-v2.1.1
 $(CMCTL): $(BINGO_DIR)/cmctl.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
-	@echo "(re)installing $(GOBIN)/cmctl-v2.1.0"
-	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=cmctl.mod -o=$(GOBIN)/cmctl-v2.1.0 "github.com/cert-manager/cmctl/v2"
+	@echo "(re)installing $(GOBIN)/cmctl-v2.1.1"
+	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=cmctl.mod -o=$(GOBIN)/cmctl-v2.1.1 "github.com/cert-manager/cmctl/v2"
 
 COPYRIGHT := $(GOBIN)/copyright-v0.0.0-20230505153745-6b7392939a60
 $(COPYRIGHT): $(BINGO_DIR)/copyright.mod
@@ -35,17 +35,17 @@ $(GOFUMPT): $(BINGO_DIR)/gofumpt.mod
 	@echo "(re)installing $(GOBIN)/gofumpt-v0.7.0"
 	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=gofumpt.mod -o=$(GOBIN)/gofumpt-v0.7.0 "mvdan.cc/gofumpt"
 
-GOIMPORTS := $(GOBIN)/goimports-v0.24.0
+GOIMPORTS := $(GOBIN)/goimports-v0.25.0
 $(GOIMPORTS): $(BINGO_DIR)/goimports.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
-	@echo "(re)installing $(GOBIN)/goimports-v0.24.0"
-	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=goimports.mod -o=$(GOBIN)/goimports-v0.24.0 "golang.org/x/tools/cmd/goimports"
+	@echo "(re)installing $(GOBIN)/goimports-v0.25.0"
+	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=goimports.mod -o=$(GOBIN)/goimports-v0.25.0 "golang.org/x/tools/cmd/goimports"
 
-GOLANGCI_LINT := $(GOBIN)/golangci-lint-v1.60.3
+GOLANGCI_LINT := $(GOBIN)/golangci-lint-v1.61.0
 $(GOLANGCI_LINT): $(BINGO_DIR)/golangci-lint.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
-	@echo "(re)installing $(GOBIN)/golangci-lint-v1.60.3"
-	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=golangci-lint.mod -o=$(GOBIN)/golangci-lint-v1.60.3 "github.com/golangci/golangci-lint/cmd/golangci-lint"
+	@echo "(re)installing $(GOBIN)/golangci-lint-v1.61.0"
+	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=golangci-lint.mod -o=$(GOBIN)/golangci-lint-v1.61.0 "github.com/golangci/golangci-lint/cmd/golangci-lint"
 
 GORELEASER := $(GOBIN)/goreleaser-v1.26.2
 $(GORELEASER): $(BINGO_DIR)/goreleaser.mod
@@ -71,11 +71,11 @@ $(JSONNETFMT): $(BINGO_DIR)/jsonnetfmt.mod
 	@echo "(re)installing $(GOBIN)/jsonnetfmt-v0.20.0"
 	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=jsonnetfmt.mod -o=$(GOBIN)/jsonnetfmt-v0.20.0 "github.com/google/go-jsonnet/cmd/jsonnetfmt"
 
-K3D := $(GOBIN)/k3d-v5.7.3
+K3D := $(GOBIN)/k3d-v5.7.4
 $(K3D): $(BINGO_DIR)/k3d.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
-	@echo "(re)installing $(GOBIN)/k3d-v5.7.3"
-	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=k3d.mod -o=$(GOBIN)/k3d-v5.7.3 "github.com/k3d-io/k3d/v5"
+	@echo "(re)installing $(GOBIN)/k3d-v5.7.4"
+	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=k3d.mod -o=$(GOBIN)/k3d-v5.7.4 "github.com/k3d-io/k3d/v5"
 
 KUSTOMIZE := $(GOBIN)/kustomize-v5.4.3
 $(KUSTOMIZE): $(BINGO_DIR)/kustomize.mod

@@ -226,3 +226,45 @@ services:
       default:
         aliases:
           - loki-memberlist
+
+  bloom-builder:
+    labels: *loki-labels
+    # depends_on: { query-scheduler: { condition: service_healthy } }
+    image: *lokiImage
+    configs:
+      - source: loki_config_file
+        target: /etc/loki/config.yaml
+    volumes:
+      - ../../common/config/loki:/etc/loki/configs
+    command:
+      - -config.file=/etc/loki/config.yaml
+      - -target=bloom-builder
+      - -config.expand-env=true
+
+  bloom-gateway:
+    labels: *loki-labels
+    # depends_on: { query-scheduler: { condition: service_healthy } }
+    image: *lokiImage
+    configs:
+      - source: loki_config_file
+        target: /etc/loki/config.yaml
+    volumes:
+      - ../../common/config/loki:/etc/loki/configs
+    command:
+      - -config.file=/etc/loki/config.yaml
+      - -target=bloom-gateway
+      - -config.expand-env=true
+
+  bloom-planner:
+    labels: *loki-labels
+    # depends_on: { query-scheduler: { condition: service_healthy } }
+    image: *lokiImage
+    configs:
+      - source: loki_config_file
+        target: /etc/loki/config.yaml
+    volumes:
+      - ../../common/config/loki:/etc/loki/configs
+    command:
+      - -config.file=/etc/loki/config.yaml
+      - -target=bloom-planner
+      - -config.expand-env=true

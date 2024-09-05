@@ -2,7 +2,6 @@
 # https://grafana.com/docs/loki/latest/operations/multi-tenancy/
 auth_enabled: true
 
-# -reporting.enabled=false
 analytics:
  reporting_enabled: false
 
@@ -30,32 +29,60 @@ common:
 index_gateway:
   mode: simple
 
+bloom_gateway:
+  enabled: true
+  client:
+    addresses: bloom-gateway:9095
+    cache_results: true
+    results_cache:
+      cache:
+        memcached_client:
+          addresses: "dns+memcached:11211"
+
+bloom_compactor:
+  enabled: true
+  ring:
+    kvstore:
+      store: memberlist
+
 compactor:
-  working_directory: /tmp/compactor
+  working_directory: /loki/compactor
+  compactor_ring:
+    kvstore:
+      store: memberlist
 
 frontend:
-  scheduler_address: query-scheduler:9095
   tail_proxy_url: http://querier:3100
+  scheduler_address: query-scheduler:9095
 frontend_worker:
   scheduler_address: query-scheduler:9095
 
-memberlist:
-  join_members:
-  - loki-memberlist:7946
+ingester:
+  lifecycler:
+    ring:
+      kvstore:
+        store: memberlist
+  wal:
+    dir: /loki/wal
 
 pattern_ingester:
   enabled: true
 
 limits_config:
+  bloom_gateway_enable_filtering: true
+  bloom_compactor_enable_compaction: true
   max_global_streams_per_user: 0
   ingestion_rate_mb: 50000
   ingestion_burst_size_mb: 50000
   volume_enabled: true
 
+memberlist:
+  join_members:
+  - loki-memberlist:7946
+
 # https://github.com/grafana/loki/blob/main/docs/sources/configure/_index.md#query_range
 query_range:
   align_queries_with_step: true
-
   cache_results: true
   results_cache:
     cache:
@@ -93,6 +120,8 @@ storage_config:
     cache_location: /loki/cache
     index_gateway_client:
       server_address: dns:///index-gateway:9095
+  bloom_shipper:
+    working_directory: /loki/blooms
 
 chunk_store_config:
   chunk_cache_config:
