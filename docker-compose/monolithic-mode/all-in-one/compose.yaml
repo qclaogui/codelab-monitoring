@@ -169,7 +169,7 @@ services:
       metrics.grafana.com/scrape: false
       profiles.grafana.com/service_name: pyroscope
     depends_on: { minio: { condition: service_healthy } }
-    image: ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:1.6.1}
+    image: ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:1.8.0}
     configs:
       - source: pyroscope_config_file
         target: /etc/pyroscope/config.yaml
@@ -185,7 +185,7 @@ services:
       <<: *jaeger-environment
       JAEGER_TAGS: app=pyroscope
     healthcheck:
-      test: [ "CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4040/ready" ]
+      test: [ "CMD", "profilecli", "ready" ]
       <<: *status-healthcheck
     # expose 34040 port so we can directly access pyroscope inside container
     ports:
