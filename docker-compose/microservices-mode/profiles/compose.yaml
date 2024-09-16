@@ -62,7 +62,7 @@ services:
       <<: *profiles-labels
       profiles.grafana.com/service_name: pyroscope-distributor
     depends_on: { ingester: { condition: service_healthy } }
-    image: &pyroscopeImage ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:1.6.1}
+    image: &pyroscopeImage ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:1.8.0}
     configs:
       - source: pyroscope_config_file
         target: /etc/pyroscope/config.yaml
@@ -77,7 +77,7 @@ services:
       - -memberlist.join=pyroscope-memberlist:7946
       # - -runtime-config.file=/etc/pyroscope/configs/overrides.yaml
     healthcheck:
-      test: [ "CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4040/ready" ]
+      test: [ "CMD", "profilecli", "ready" ]
       <<: *status-healthcheck
     networks:
       default:
@@ -103,7 +103,7 @@ services:
       - -memberlist.cluster-label=profiles-system
       - -memberlist.join=pyroscope-memberlist:7946
     healthcheck:
-      test: [ "CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4040/ready" ]
+      test: [ "CMD", "profilecli", "ready" ]
       <<: *status-healthcheck
     deploy:
       replicas: 3
