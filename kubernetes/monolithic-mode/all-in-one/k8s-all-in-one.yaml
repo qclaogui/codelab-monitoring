@@ -910,7 +910,7 @@ data:
                 "title": "Documentation",
                 "tooltip": "Clustering documentation",
                 "type": "link",
-                "url": "https://grafana.com/docs/alloy/latest/reference/cli/run/#clustered-mode"
+                "url": "https://grafana.com/docs/alloy/latest/reference/cli/run/#clustering"
              },
              {
                 "asDropdown": true,
@@ -1331,11 +1331,8 @@ data:
                    "type": "query"
                 },
                 {
-                   "allValue": ".*",
                    "datasource": "${datasource}",
-                   "includeAll": true,
                    "label": "job",
-                   "multi": true,
                    "name": "job",
                    "query": {
                       "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\"}, job)\n",
@@ -1430,7 +1427,7 @@ data:
                 "title": "Documentation",
                 "tooltip": "Clustering documentation",
                 "type": "link",
-                "url": "https://grafana.com/docs/alloy/latest/reference/cli/run/#clustered-mode"
+                "url": "https://grafana.com/docs/alloy/latest/reference/cli/run/#clustering"
              },
              {
                 "asDropdown": true,
@@ -1661,6 +1658,32 @@ data:
                 ],
                 "title": "Convergance state timeline",
                 "type": "state-timeline"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "The number of cluster peers seen by each instance.\n\nWhen cluster is converged, every peer should see all the other instances. When we have a split brain or one\npeer not joining the cluster, we will see two or more groups of instances that report different peer numbers\nfor an extended period of time and not converging.\n\nThis graph helps to identify which instances may be in a split brain state.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "peers"
+                   }
+                },
+                "gridPos": {
+                   "h": 12,
+                   "w": 24,
+                   "x": 0,
+                   "y": 18
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum by(instance) (cluster_node_peers{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"})\n",
+                      "instant": false,
+                      "legendFormat": "{{instance}}",
+                      "range": true
+                   }
+                ],
+                "title": "Number of peers seen by each instance",
+                "type": "timeseries"
              }
           ],
           "refresh": "10s",
@@ -1711,11 +1734,8 @@ data:
                    "type": "query"
                 },
                 {
-                   "allValue": ".*",
                    "datasource": "${datasource}",
-                   "includeAll": true,
                    "label": "job",
-                   "multi": true,
                    "name": "job",
                    "query": {
                       "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\"}, job)\n",
@@ -1896,7 +1916,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "count(alloy_component_controller_evaluating{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"})\n",
+                      "expr": "count(group(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}) by (instance))\n",
                       "instant": false,
                       "legendFormat": "__auto",
                       "range": true
@@ -2344,11 +2364,8 @@ data:
                    "type": "query"
                 },
                 {
-                   "allValue": ".*",
                    "datasource": "${datasource}",
-                   "includeAll": true,
                    "label": "job",
-                   "multi": true,
                    "name": "job",
                    "query": {
                       "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\"}, job)\n",
@@ -3722,7 +3739,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "rate(receiver_accepted_spans_ratio_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
+                      "expr": "rate(otelcol_receiver_accepted_spans_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
                       "instant": false,
                       "legendFormat": "{{ pod }} / {{ transport }}",
                       "range": true
@@ -3754,7 +3771,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "rate(receiver_refused_spans_ratio_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
+                      "expr": "rate(otelcol_receiver_refused_spans_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
                       "instant": false,
                       "legendFormat": "{{ pod }} / {{ transport }}",
                       "range": true
@@ -3865,7 +3882,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by (le) (increase(processor_batch_batch_send_size_ratio_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
+                      "expr": "sum by (le) (increase(otelcol_processor_batch_batch_send_size_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
                       "format": "heatmap",
                       "instant": false,
                       "legendFormat": "{{le}}",
@@ -3887,7 +3904,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "processor_batch_metadata_cardinality_ratio{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}\n",
+                      "expr": "otelcol_processor_batch_metadata_cardinality{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}\n",
                       "instant": false,
                       "legendFormat": "{{ pod }}",
                       "range": true
@@ -3908,7 +3925,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "rate(processor_batch_timeout_trigger_send_ratio_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
+                      "expr": "rate(otelcol_processor_batch_timeout_trigger_send_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
                       "instant": false,
                       "legendFormat": "{{ pod }}",
                       "range": true
@@ -3951,7 +3968,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "rate(exporter_sent_spans_ratio_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
+                      "expr": "rate(otelcol_exporter_sent_spans_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
                       "instant": false,
                       "legendFormat": "{{ pod }}",
                       "range": true
@@ -3983,7 +4000,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "rate(exporter_send_failed_spans_ratio_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
+                      "expr": "rate(otelcol_exporter_send_failed_spans_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
                       "instant": false,
                       "legendFormat": "{{ pod }}",
                       "range": true
@@ -4041,11 +4058,8 @@ data:
                    "type": "query"
                 },
                 {
-                   "allValue": ".*",
                    "datasource": "${datasource}",
-                   "includeAll": true,
                    "label": "job",
-                   "multi": true,
                    "name": "job",
                    "query": {
                       "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\"}, job)\n",
@@ -4248,6 +4262,72 @@ data:
              },
              {
                 "datasource": "${datasource}",
+                "description": "Percentage of samples sent by prometheus.remote_write that succeeded.\n\nLow success rates can indicate a problem with Alloy or the remote storage.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "percentunit"
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 12,
+                   "x": 0,
+                   "y": 12
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "(\n    1 - \n    (\n        sum(rate(prometheus_remote_storage_samples_failed_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval]))\n    )\n    /\n    (\n        sum(rate(prometheus_remote_storage_samples_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval]))\n    )\n)\n",
+                      "instant": false,
+                      "legendFormat": "% of samples successfully sent",
+                      "range": true
+                   }
+                ],
+                "title": "Remote write success rate in $cluster",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Latency of writes to the remote system made by\nprometheus.remote_write.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "s"
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 12,
+                   "x": 12,
+                   "y": 12
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "histogram_quantile(0.99, sum by (le) (\n  rate(prometheus_remote_storage_sent_batch_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n))\n",
+                      "instant": false,
+                      "legendFormat": "99th percentile",
+                      "range": true
+                   },
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "histogram_quantile(0.50, sum by (le) (\n  rate(prometheus_remote_storage_sent_batch_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n))\n",
+                      "instant": false,
+                      "legendFormat": "50th percentile",
+                      "range": true
+                   },
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum(rate(prometheus_remote_storage_sent_batch_duration_seconds_sum{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\"}[$__rate_interval])) /\nsum(rate(prometheus_remote_storage_sent_batch_duration_seconds_count{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\"}[$__rate_interval]))\n",
+                      "instant": false,
+                      "legendFormat": "Average",
+                      "range": true
+                   }
+                ],
+                "title": "Write latency in $cluster",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
                 "description": "How far behind prometheus.remote_write from samples recently written\nto the WAL.\n\nEach endpoint prometheus.remote_write is configured to send metrics\nhas its own delay. The time shown here is the sum across all\nendpoints for the given component.\n\nIt is normal for the WAL delay to be within 1-3 scrape intervals. If\nthe WAL delay continues to increase beyond that amount, try\nincreasing the number of maximum shards.\n",
                 "fieldConfig": {
                    "defaults": {
@@ -4256,9 +4336,9 @@ data:
                 },
                 "gridPos": {
                    "h": 10,
-                   "w": 6,
+                   "w": 8,
                    "x": 0,
-                   "y": 12
+                   "y": 22
                 },
                 "targets": [
                    {
@@ -4289,9 +4369,9 @@ data:
                 },
                 "gridPos": {
                    "h": 10,
-                   "w": 6,
-                   "x": 6,
-                   "y": 12
+                   "w": 8,
+                   "x": 8,
+                   "y": 22
                 },
                 "targets": [
                    {
@@ -4303,46 +4383,6 @@ data:
                    }
                 ],
                 "title": "Data write throughput",
-                "type": "timeseries"
-             },
-             {
-                "datasource": "${datasource}",
-                "description": "Latency of writes to the remote system made by\nprometheus.remote_write.\n",
-                "fieldConfig": {
-                   "defaults": {
-                      "unit": "s"
-                   }
-                },
-                "gridPos": {
-                   "h": 10,
-                   "w": 6,
-                   "x": 12,
-                   "y": 12
-                },
-                "targets": [
-                   {
-                      "datasource": "${datasource}",
-                      "expr": "histogram_quantile(0.99, sum by (le) (\n  rate(prometheus_remote_storage_sent_batch_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n))\n",
-                      "instant": false,
-                      "legendFormat": "99th percentile",
-                      "range": true
-                   },
-                   {
-                      "datasource": "${datasource}",
-                      "expr": "histogram_quantile(0.50, sum by (le) (\n  rate(prometheus_remote_storage_sent_batch_duration_seconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n))\n",
-                      "instant": false,
-                      "legendFormat": "50th percentile",
-                      "range": true
-                   },
-                   {
-                      "datasource": "${datasource}",
-                      "expr": "sum(rate(prometheus_remote_storage_sent_batch_duration_seconds_sum{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\"}[$__rate_interval])) /\nsum(rate(prometheus_remote_storage_sent_batch_duration_seconds_count{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\"}[$__rate_interval]))\n",
-                      "instant": false,
-                      "legendFormat": "Average",
-                      "range": true
-                   }
-                ],
-                "title": "Write latency",
                 "type": "timeseries"
              },
              {
@@ -4417,9 +4457,9 @@ data:
                 },
                 "gridPos": {
                    "h": 10,
-                   "w": 6,
-                   "x": 18,
-                   "y": 12
+                   "w": 8,
+                   "x": 16,
+                   "y": 22
                 },
                 "targets": [
                    {
@@ -4466,7 +4506,7 @@ data:
                    "h": 10,
                    "w": 8,
                    "x": 0,
-                   "y": 22
+                   "y": 32
                 },
                 "targets": [
                    {
@@ -4499,7 +4539,7 @@ data:
                    "h": 10,
                    "w": 8,
                    "x": 8,
-                   "y": 22
+                   "y": 32
                 },
                 "targets": [
                    {
@@ -4532,7 +4572,7 @@ data:
                    "h": 10,
                    "w": 8,
                    "x": 16,
-                   "y": 22
+                   "y": 32
                 },
                 "targets": [
                    {
@@ -4558,7 +4598,7 @@ data:
                    "h": 10,
                    "w": 8,
                    "x": 0,
-                   "y": 32
+                   "y": 42
                 },
                 "options": {
                    "legend": {
@@ -4589,7 +4629,7 @@ data:
                    "h": 10,
                    "w": 8,
                    "x": 8,
-                   "y": 32
+                   "y": 42
                 },
                 "targets": [
                    {
@@ -4615,7 +4655,7 @@ data:
                    "h": 10,
                    "w": 8,
                    "x": 16,
-                   "y": 32
+                   "y": 42
                 },
                 "targets": [
                    {
@@ -4678,11 +4718,8 @@ data:
                    "type": "query"
                 },
                 {
-                   "allValue": ".*",
                    "datasource": "${datasource}",
-                   "includeAll": true,
                    "label": "job",
-                   "multi": true,
                    "name": "job",
                    "query": {
                       "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\"}, job)\n",
@@ -5079,11 +5116,8 @@ data:
                    "type": "query"
                 },
                 {
-                   "allValue": ".*",
                    "datasource": "${datasource}",
-                   "includeAll": true,
                    "label": "job",
-                   "multi": true,
                    "name": "job",
                    "query": {
                       "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\"}, job)\n",
@@ -6729,76 +6763,116 @@ spec:
     rules:
     - alert: ClusterNotConverging
       annotations:
-        message: 'Cluster is not converging: nodes report different number of peers
-          in the cluster.'
-      expr: stddev by (cluster, namespace, job) (sum without (state) (cluster_node_peers))
-        != 0
+        description: 'Cluster is not converging: nodes report different number of
+          peers in the cluster. Job is {{ $labels.job }}'
+        summary: Cluster is not converging.
+      expr: stddev by (cluster, namespace, job, cluster_name) (sum without (state)
+        (cluster_node_peers)) != 0
       for: 10m
+      labels:
+        severity: warning
     - alert: ClusterNodeCountMismatch
       annotations:
-        message: Nodes report different number of peers vs. the count of observed
+        description: Nodes report different number of peers vs. the count of observed
           Alloy metrics. Some Alloy metrics may be missing or the cluster is in a
-          split brain state.
+          split brain state. Job is {{ $labels.job }}
+        summary: Nodes report different number of peers vs. the count of observed
+          Alloy metrics.
       expr: |
         sum without (state) (cluster_node_peers) !=
-        on (cluster, namespace, job) group_left
-        count by (cluster, namespace, job) (cluster_node_info)
+        on (cluster, namespace, job, cluster_name) group_left
+        count by (cluster, namespace, job, cluster_name) (cluster_node_info)
       for: 15m
+      labels:
+        severity: warning
     - alert: ClusterNodeUnhealthy
       annotations:
-        message: Cluster node is reporting a gossip protocol health score > 0.
+        description: Cluster node is reporting a gossip protocol health score > 0.
+          Job is {{ $labels.job }}
+        summary: Cluster unhealthy.
       expr: |
         cluster_node_gossip_health_score > 0
       for: 10m
+      labels:
+        severity: warning
     - alert: ClusterNodeNameConflict
       annotations:
-        message: A node tried to join the cluster with a name conflicting with an
-          existing peer.
-      expr: sum by (cluster, namespace, job) (rate(cluster_node_gossip_received_events_total{event="node_conflict"}[2m]))
+        description: A node tried to join the cluster with a name conflicting with
+          an existing peer. Job is {{ $labels.job }}
+        summary: Cluster Node Name Conflict.
+      expr: sum by (cluster, namespace, job, cluster_name) (rate(cluster_node_gossip_received_events_total{event="node_conflict"}[2m]))
         > 0
       for: 10m
+      labels:
+        severity: warning
     - alert: ClusterNodeStuckTerminating
       annotations:
-        message: Cluster node stuck in Terminating state.
-      expr: sum by (cluster, namespace, job, instance) (cluster_node_peers{state="terminating"})
+        description: There is a node within the cluster that is stuck in Terminating
+          state. Job is {{ $labels.job }}
+        summary: Cluster node stuck in Terminating state.
+      expr: sum by (cluster, namespace, job, instance, cluster_name) (cluster_node_peers{state="terminating"})
         > 0
       for: 10m
+      labels:
+        severity: warning
     - alert: ClusterConfigurationDrift
       annotations:
-        message: Cluster nodes are not using the same configuration file.
+        description: Cluster nodes are not using the same configuration file. Job
+          is {{ $labels.job }}
+        summary: Cluster configuration drifting.
       expr: |
         count without (sha256) (
-            max by (cluster, namespace, sha256, job) (alloy_config_hash and on(cluster, namespace, job) cluster_node_info)
+            max by (cluster, namespace, sha256, job, cluster_name) (alloy_config_hash and on(cluster, namespace, job, cluster_name) cluster_node_info)
         ) > 1
       for: 5m
+      labels:
+        severity: warning
   - name: alloy_controller
     rules:
     - alert: SlowComponentEvaluations
       annotations:
-        message: Component evaluations are taking too long.
+        description: Component evaluations are taking too long under job {{ $labels.job
+          }}, component_path {{ $labels.component_path }}, component_id {{ $labels.component_id
+          }}.
+        summary: Component evaluations are taking too long.
       expr: sum by (cluster, namespace, job, component_path, component_id) (rate(alloy_component_evaluation_slow_seconds[10m]))
         > 0
       for: 15m
+      labels:
+        severity: warning
     - alert: UnhealthyComponents
       annotations:
-        message: Unhealthy components detected.
+        description: Unhealthy components detected under job {{ $labels.job }}
+        summary: Unhealthy components detected.
       expr: sum by (cluster, namespace, job) (alloy_component_controller_running_components{health_type!="healthy"})
         > 0
       for: 15m
+      labels:
+        severity: warning
   - name: alloy_otelcol
     rules:
     - alert: OtelcolReceiverRefusedSpans
       annotations:
-        message: The receiver could not push some spans to the pipeline.
-      expr: sum by (cluster, namespace, job) (rate(receiver_refused_spans_ratio_total{}[1m]))
+        description: The receiver could not push some spans to the pipeline under
+          job {{ $labels.job }}. This could be due to reaching a limit such as the
+          ones imposed by otelcol.processor.memory_limiter.
+        summary: The receiver could not push some spans to the pipeline.
+      expr: sum by (cluster, namespace, job) (rate(otelcol_receiver_refused_spans_total{}[1m]))
         > 0
       for: 5m
+      labels:
+        severity: warning
     - alert: OtelcolExporterFailedSpans
       annotations:
-        message: The exporter failed to send spans to their destination.
-      expr: sum by (cluster, namespace, job) (rate(exporter_send_failed_spans_ratio_total{}[1m]))
+        description: The exporter failed to send spans to their destination under
+          job {{ $labels.job }}. There could be an issue with the payload or with
+          the destination endpoint.
+        summary: The exporter failed to send spans to their destination.
+      expr: sum by (cluster, namespace, job) (rate(otelcol_exporter_send_failed_spans_total{}[1m]))
         > 0
       for: 5m
+      labels:
+        severity: warning
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor

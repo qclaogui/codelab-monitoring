@@ -49,7 +49,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "rate(receiver_accepted_spans_ratio_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
+                  "expr": "rate(otelcol_receiver_accepted_spans_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
                   "instant": false,
                   "legendFormat": "{{ pod }} / {{ transport }}",
                   "range": true
@@ -81,7 +81,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "rate(receiver_refused_spans_ratio_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
+                  "expr": "rate(otelcol_receiver_refused_spans_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
                   "instant": false,
                   "legendFormat": "{{ pod }} / {{ transport }}",
                   "range": true
@@ -192,7 +192,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "sum by (le) (increase(processor_batch_batch_send_size_ratio_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
+                  "expr": "sum by (le) (increase(otelcol_processor_batch_batch_send_size_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
                   "format": "heatmap",
                   "instant": false,
                   "legendFormat": "{{le}}",
@@ -214,7 +214,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "processor_batch_metadata_cardinality_ratio{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}\n",
+                  "expr": "otelcol_processor_batch_metadata_cardinality{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}\n",
                   "instant": false,
                   "legendFormat": "{{ pod }}",
                   "range": true
@@ -235,7 +235,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "rate(processor_batch_timeout_trigger_send_ratio_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
+                  "expr": "rate(otelcol_processor_batch_timeout_trigger_send_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
                   "instant": false,
                   "legendFormat": "{{ pod }}",
                   "range": true
@@ -278,7 +278,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "rate(exporter_sent_spans_ratio_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
+                  "expr": "rate(otelcol_exporter_sent_spans_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
                   "instant": false,
                   "legendFormat": "{{ pod }}",
                   "range": true
@@ -310,7 +310,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "rate(exporter_send_failed_spans_ratio_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
+                  "expr": "rate(otelcol_exporter_send_failed_spans_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
                   "instant": false,
                   "legendFormat": "{{ pod }}",
                   "range": true
@@ -368,11 +368,8 @@
                "type": "query"
             },
             {
-               "allValue": ".*",
                "datasource": "${datasource}",
-               "includeAll": true,
                "label": "job",
-               "multi": true,
                "name": "job",
                "query": {
                   "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\"}, job)\n",

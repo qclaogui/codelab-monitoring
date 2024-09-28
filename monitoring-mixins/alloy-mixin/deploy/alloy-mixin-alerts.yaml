@@ -3,62 +3,92 @@ groups:
       rules:
         - alert: ClusterNotConverging
           annotations:
-            message: 'Cluster is not converging: nodes report different number of peers in the cluster.'
-          expr: stddev by (cluster, namespace, job) (sum without (state) (cluster_node_peers)) != 0
+            description: 'Cluster is not converging: nodes report different number of peers in the cluster. Job is {{ $labels.job }}'
+            summary: Cluster is not converging.
+          expr: stddev by (cluster, namespace, job, cluster_name) (sum without (state) (cluster_node_peers)) != 0
           for: 10m
+          labels:
+            severity: warning
         - alert: ClusterNodeCountMismatch
           annotations:
-            message: Nodes report different number of peers vs. the count of observed Alloy metrics. Some Alloy metrics may be missing or the cluster is in a split brain state.
+            description: Nodes report different number of peers vs. the count of observed Alloy metrics. Some Alloy metrics may be missing or the cluster is in a split brain state. Job is {{ $labels.job }}
+            summary: Nodes report different number of peers vs. the count of observed Alloy metrics.
           expr: |
             sum without (state) (cluster_node_peers) !=
-            on (cluster, namespace, job) group_left
-            count by (cluster, namespace, job) (cluster_node_info)
+            on (cluster, namespace, job, cluster_name) group_left
+            count by (cluster, namespace, job, cluster_name) (cluster_node_info)
           for: 15m
+          labels:
+            severity: warning
         - alert: ClusterNodeUnhealthy
           annotations:
-            message: Cluster node is reporting a gossip protocol health score > 0.
+            description: Cluster node is reporting a gossip protocol health score > 0. Job is {{ $labels.job }}
+            summary: Cluster unhealthy.
           expr: |
             cluster_node_gossip_health_score > 0
           for: 10m
+          labels:
+            severity: warning
         - alert: ClusterNodeNameConflict
           annotations:
-            message: A node tried to join the cluster with a name conflicting with an existing peer.
-          expr: sum by (cluster, namespace, job) (rate(cluster_node_gossip_received_events_total{event="node_conflict"}[2m])) > 0
+            description: A node tried to join the cluster with a name conflicting with an existing peer. Job is {{ $labels.job }}
+            summary: Cluster Node Name Conflict.
+          expr: sum by (cluster, namespace, job, cluster_name) (rate(cluster_node_gossip_received_events_total{event="node_conflict"}[2m])) > 0
           for: 10m
+          labels:
+            severity: warning
         - alert: ClusterNodeStuckTerminating
           annotations:
-            message: Cluster node stuck in Terminating state.
-          expr: sum by (cluster, namespace, job, instance) (cluster_node_peers{state="terminating"}) > 0
+            description: There is a node within the cluster that is stuck in Terminating state. Job is {{ $labels.job }}
+            summary: Cluster node stuck in Terminating state.
+          expr: sum by (cluster, namespace, job, instance, cluster_name) (cluster_node_peers{state="terminating"}) > 0
           for: 10m
+          labels:
+            severity: warning
         - alert: ClusterConfigurationDrift
           annotations:
-            message: Cluster nodes are not using the same configuration file.
+            description: Cluster nodes are not using the same configuration file. Job is {{ $labels.job }}
+            summary: Cluster configuration drifting.
           expr: |
             count without (sha256) (
-                max by (cluster, namespace, sha256, job) (alloy_config_hash and on(cluster, namespace, job) cluster_node_info)
+                max by (cluster, namespace, sha256, job, cluster_name) (alloy_config_hash and on(cluster, namespace, job, cluster_name) cluster_node_info)
             ) > 1
           for: 5m
+          labels:
+            severity: warning
     - name: alloy_controller
       rules:
         - alert: SlowComponentEvaluations
           annotations:
-            message: Component evaluations are taking too long.
+            description: Component evaluations are taking too long under job {{ $labels.job }}, component_path {{ $labels.component_path }}, component_id {{ $labels.component_id }}.
+            summary: Component evaluations are taking too long.
           expr: sum by (cluster, namespace, job, component_path, component_id) (rate(alloy_component_evaluation_slow_seconds[10m])) > 0
           for: 15m
+          labels:
+            severity: warning
         - alert: UnhealthyComponents
           annotations:
-            message: Unhealthy components detected.
+            description: Unhealthy components detected under job {{ $labels.job }}
+            summary: Unhealthy components detected.
           expr: sum by (cluster, namespace, job) (alloy_component_controller_running_components{health_type!="healthy"}) > 0
           for: 15m
+          labels:
+            severity: warning
     - name: alloy_otelcol
       rules:
         - alert: OtelcolReceiverRefusedSpans
           annotations:
-            message: The receiver could not push some spans to the pipeline.
-          expr: sum by (cluster, namespace, job) (rate(receiver_refused_spans_ratio_total{}[1m])) > 0
+            description: The receiver could not push some spans to the pipeline under job {{ $labels.job }}. This could be due to reaching a limit such as the ones imposed by otelcol.processor.memory_limiter.
+            summary: The receiver could not push some spans to the pipeline.
+          expr: sum by (cluster, namespace, job) (rate(otelcol_receiver_refused_spans_total{}[1m])) > 0
           for: 5m
+          labels:
+            severity: warning
         - alert: OtelcolExporterFailedSpans
           annotations:
-            message: The exporter failed to send spans to their destination.
-          expr: sum by (cluster, namespace, job) (rate(exporter_send_failed_spans_ratio_total{}[1m])) > 0
+            description: The exporter failed to send spans to their destination under job {{ $labels.job }}. There could be an issue with the payload or with the destination endpoint.
+            summary: The exporter failed to send spans to their destination.
+          expr: sum by (cluster, namespace, job) (rate(otelcol_exporter_send_failed_spans_total{}[1m])) > 0
           for: 5m
+          labels:
+            severity: warning
