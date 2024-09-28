@@ -20,7 +20,7 @@
             "title": "Documentation",
             "tooltip": "Clustering documentation",
             "type": "link",
-            "url": "https://grafana.com/docs/alloy/latest/reference/cli/run/#clustered-mode"
+            "url": "https://grafana.com/docs/alloy/latest/reference/cli/run/#clustering"
          },
          {
             "asDropdown": true,
@@ -251,6 +251,32 @@
             ],
             "title": "Convergance state timeline",
             "type": "state-timeline"
+         },
+         {
+            "datasource": "${datasource}",
+            "description": "The number of cluster peers seen by each instance.\n\nWhen cluster is converged, every peer should see all the other instances. When we have a split brain or one\npeer not joining the cluster, we will see two or more groups of instances that report different peer numbers\nfor an extended period of time and not converging.\n\nThis graph helps to identify which instances may be in a split brain state.\n",
+            "fieldConfig": {
+               "defaults": {
+                  "unit": "peers"
+               }
+            },
+            "gridPos": {
+               "h": 12,
+               "w": 24,
+               "x": 0,
+               "y": 18
+            },
+            "targets": [
+               {
+                  "datasource": "${datasource}",
+                  "expr": "sum by(instance) (cluster_node_peers{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"})\n",
+                  "instant": false,
+                  "legendFormat": "{{instance}}",
+                  "range": true
+               }
+            ],
+            "title": "Number of peers seen by each instance",
+            "type": "timeseries"
          }
       ],
       "refresh": "10s",
@@ -301,11 +327,8 @@
                "type": "query"
             },
             {
-               "allValue": ".*",
                "datasource": "${datasource}",
-               "includeAll": true,
                "label": "job",
-               "multi": true,
                "name": "job",
                "query": {
                   "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\"}, job)\n",

@@ -57,7 +57,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "count(alloy_component_controller_evaluating{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"})\n",
+                  "expr": "count(group(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}) by (instance))\n",
                   "instant": false,
                   "legendFormat": "__auto",
                   "range": true
@@ -505,11 +505,8 @@
                "type": "query"
             },
             {
-               "allValue": ".*",
                "datasource": "${datasource}",
-               "includeAll": true,
                "label": "job",
-               "multi": true,
                "name": "job",
                "query": {
                   "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\"}, job)\n",
