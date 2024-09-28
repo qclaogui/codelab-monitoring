@@ -116,19 +116,19 @@ declare "annotations_scrape" {
 	argument "__sd_annotation" {
 		optional = true
 		comment  = "The logic is used to transform the annotation argument into a valid label name by removing unsupported characters."
-		default  = replace(replace(replace(coalesce(argument.annotation_prefix.value, "metrics.grafana.com"), ".", "_"), "/", "_"), "-", "_")
+		default  = string.replace(string.replace(string.replace(coalesce(argument.annotation_prefix.value, "metrics.grafana.com"), ".", "_"), "/", "_"), "-", "_")
 	}
 
 	argument "__pod_role" {
 		comment  = "Most annotation targets service or pod that is all you want, however if the role is endpoints you want the pod"
 		optional = true
-		default  = replace(coalesce(argument.role.value, "endpoints"), "endpoints", "pod")
+		default  = string.replace(coalesce(argument.role.value, "endpoints"), "endpoints", "pod")
 	}
 
 	argument "__service_role" {
 		comment  = "Most annotation targets service or pod that is all you want, however if the role is endpoints you we also want to consider service annotations"
 		optional = true
-		default  = replace(coalesce(argument.role.value, "endpoints"), "endpoints", "service")
+		default  = string.replace(coalesce(argument.role.value, "endpoints"), "endpoints", "service")
 	}
 
 	argument "scrape_port_named_metrics" {
@@ -207,7 +207,7 @@ declare "annotations_scrape" {
 
 		// add a __tmp_scrape_port_named_metrics from the argument.scrape_port_named_metrics
 		rule {
-			replacement  = format("%t", argument.scrape_port_named_metrics.value)
+			replacement  = string.format("%t", argument.scrape_port_named_metrics.value)
 			target_label = "__tmp_scrape_port_named_metrics"
 		}
 
@@ -218,7 +218,7 @@ declare "annotations_scrape" {
 				"__tmp_scrape",
 				"__tmp_scrape_port_named_metrics",
 				// endpoints is the role and most meta labels started with "endpoints", however the port name is an exception and starts with "endpoint"
-				"__meta_kubernetes_" + replace(coalesce(argument.role.value, "endpoints"), "endpoints", "endpoint") + "_port_name",
+				"__meta_kubernetes_" + string.replace(coalesce(argument.role.value, "endpoints"), "endpoints", "endpoint") + "_port_name",
 			]
 			separator = ";"
 			regex     = "^(true;.*|(|true);true;(.*metrics.*))$"

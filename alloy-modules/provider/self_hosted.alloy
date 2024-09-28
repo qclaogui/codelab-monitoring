@@ -11,25 +11,25 @@ declare "self_hosted_stack" {
 	argument "metrics_endpoint_url" {
 		comment  = "Where to send collected metrics."
 		optional = true
-		default  = coalesce(env("SELF_HOSTED_METRICS_ENDPOINT_URL"), "http://mimir:8080/api/v1/push")
+		default  = coalesce(sys.env("SELF_HOSTED_METRICS_ENDPOINT_URL"), "http://mimir:8080/api/v1/push")
 	}
 
 	argument "logs_endpoint_url" {
 		comment  = "Where to send collected logs."
 		optional = true
-		default  = coalesce(env("SELF_HOSTED_LOGS_ENDPOINT_URL"), "http://loki:3100/loki/api/v1/push")
+		default  = coalesce(sys.env("SELF_HOSTED_LOGS_ENDPOINT_URL"), "http://loki:3100/loki/api/v1/push")
 	}
 
 	argument "traces_endpoint_url" {
 		comment  = "Where to send collected traces."
 		optional = true
-		default  = coalesce(env("SELF_HOSTED_TRACES_ENDPOINT_URL"), "http://tempo:4318")
+		default  = coalesce(sys.env("SELF_HOSTED_TRACES_ENDPOINT_URL"), "http://tempo:4318")
 	}
 
 	argument "profiles_endpoint_url" {
 		comment  = "Where to send collected profiles."
 		optional = true
-		default  = coalesce(env("SELF_HOSTED_PROFILES_ENDPOINT_URL"), "http://pyroscope:4040")
+		default  = coalesce(sys.env("SELF_HOSTED_PROFILES_ENDPOINT_URL"), "http://pyroscope:4040")
 	}
 
 	/***************************************************
@@ -41,9 +41,9 @@ declare "self_hosted_stack" {
 			send_native_histograms = true
 
 			basic_auth {
-				password_file = coalesce(env("SELF_HOSTED_METRICS_BASIC_AUTH_PASSWORD_FILE"), env("SELF_HOSTED_BASIC_AUTH_PASSWORD_FILE"))
-				password      = coalesce(env("SELF_HOSTED_METRICS_BASIC_AUTH_PASSWORD"), env("SELF_HOSTED_BASIC_AUTH_PASSWORD"))
-				username      = coalesce(env("SELF_HOSTED_METRICS_BASIC_AUTH_USERNAME"), env("SELF_HOSTED_BASIC_AUTH_USERNAME"))
+				password_file = coalesce(sys.env("SELF_HOSTED_METRICS_BASIC_AUTH_PASSWORD_FILE"), sys.env("SELF_HOSTED_BASIC_AUTH_PASSWORD_FILE"))
+				password      = coalesce(sys.env("SELF_HOSTED_METRICS_BASIC_AUTH_PASSWORD"), sys.env("SELF_HOSTED_BASIC_AUTH_PASSWORD"))
+				username      = coalesce(sys.env("SELF_HOSTED_METRICS_BASIC_AUTH_USERNAME"), sys.env("SELF_HOSTED_BASIC_AUTH_USERNAME"))
 			}
 		}
 	}
@@ -53,16 +53,16 @@ declare "self_hosted_stack" {
 			url = argument.logs_endpoint_url.value
 
 			basic_auth {
-				password_file = coalesce(env("SELF_HOSTED_LOGS_BASIC_AUTH_PASSWORD_FILE"), env("SELF_HOSTED_BASIC_AUTH_PASSWORD_FILE"))
-				password      = coalesce(env("SELF_HOSTED_LOGS_BASIC_AUTH_PASSWORD"), env("SELF_HOSTED_BASIC_AUTH_PASSWORD"))
-				username      = coalesce(env("SELF_HOSTED_LOGS_BASIC_AUTH_USERNAME"), env("SELF_HOSTED_BASIC_AUTH_USERNAME"))
+				password_file = coalesce(sys.env("SELF_HOSTED_LOGS_BASIC_AUTH_PASSWORD_FILE"), sys.env("SELF_HOSTED_BASIC_AUTH_PASSWORD_FILE"))
+				password      = coalesce(sys.env("SELF_HOSTED_LOGS_BASIC_AUTH_PASSWORD"), sys.env("SELF_HOSTED_BASIC_AUTH_PASSWORD"))
+				username      = coalesce(sys.env("SELF_HOSTED_LOGS_BASIC_AUTH_USERNAME"), sys.env("SELF_HOSTED_BASIC_AUTH_USERNAME"))
 			}
 		}
 	}
 
 	otelcol.auth.basic "self_hosted" {
-		username = coalesce(env("SELF_HOSTED_TRACES_BASIC_AUTH_USERNAME"), env("SELF_HOSTED_BASIC_AUTH_USERNAME"))
-		password = coalesce(env("SELF_HOSTED_TRACES_BASIC_AUTH_PASSWORD"), env("SELF_HOSTED_BASIC_AUTH_PASSWORD"))
+		username = coalesce(sys.env("SELF_HOSTED_TRACES_BASIC_AUTH_USERNAME"), sys.env("SELF_HOSTED_BASIC_AUTH_USERNAME"))
+		password = coalesce(sys.env("SELF_HOSTED_TRACES_BASIC_AUTH_PASSWORD"), sys.env("SELF_HOSTED_BASIC_AUTH_PASSWORD"))
 	}
 
 	otelcol.exporter.otlphttp "self_hosted" {
@@ -82,9 +82,9 @@ declare "self_hosted_stack" {
 			url = argument.profiles_endpoint_url.value
 
 			basic_auth {
-				password_file = coalesce(env("SELF_HOSTED_PROFILES_BASIC_AUTH_PASSWORD_FILE"), env("SELF_HOSTED_BASIC_AUTH_PASSWORD_FILE"))
-				password      = coalesce(env("SELF_HOSTED_PROFILES_BASIC_AUTH_PASSWORD"), env("SELF_HOSTED_BASIC_AUTH_PASSWORD"))
-				username      = coalesce(env("SELF_HOSTED_PROFILES_BASIC_AUTH_USERNAME"), env("SELF_HOSTED_BASIC_AUTH_USERNAME"))
+				password_file = coalesce(sys.env("SELF_HOSTED_PROFILES_BASIC_AUTH_PASSWORD_FILE"), sys.env("SELF_HOSTED_BASIC_AUTH_PASSWORD_FILE"))
+				password      = coalesce(sys.env("SELF_HOSTED_PROFILES_BASIC_AUTH_PASSWORD"), sys.env("SELF_HOSTED_BASIC_AUTH_PASSWORD"))
+				username      = coalesce(sys.env("SELF_HOSTED_PROFILES_BASIC_AUTH_USERNAME"), sys.env("SELF_HOSTED_BASIC_AUTH_USERNAME"))
 			}
 		}
 	}

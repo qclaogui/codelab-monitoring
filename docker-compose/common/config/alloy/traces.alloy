@@ -1,5 +1,5 @@
 logging {
-	level  = coalesce(env("ALLOY_LOG_LEVEL"), "warn")
+	level  = coalesce(sys.env("ALLOY_LOG_LEVEL"), "warn")
 	format = "logfmt"
 }
 
@@ -15,20 +15,20 @@ logging {
 
 // local file
 import.file "provider" {
-	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/provider"
+	filename = coalesce(sys.env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/provider"
 }
 
 provider.self_hosted_stack "compose" {
-	metrics_endpoint_url = coalesce(env("SELF_HOSTED_METRICS_ENDPOINT_URL"), "http://gateway:8080/api/v1/push")
-	logs_endpoint_url    = coalesce(env("SELF_HOSTED_LOGS_ENDPOINT_URL"), "http://gateway:3100/loki/api/v1/push")
-	traces_endpoint_url  = coalesce(env("SELF_HOSTED_TRACES_ENDPOINT_URL"), "http://gateway:4318")
+	metrics_endpoint_url = coalesce(sys.env("SELF_HOSTED_METRICS_ENDPOINT_URL"), "http://gateway:8080/api/v1/push")
+	logs_endpoint_url    = coalesce(sys.env("SELF_HOSTED_LOGS_ENDPOINT_URL"), "http://gateway:3100/loki/api/v1/push")
+	traces_endpoint_url  = coalesce(sys.env("SELF_HOSTED_TRACES_ENDPOINT_URL"), "http://gateway:4318")
 }
 
 /********************************************
  * Traces
  ********************************************/
 import.file "traces" {
-	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/compose/traces"
+	filename = coalesce(sys.env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/compose/traces"
 }
 
 // traces Processing And Transformation
@@ -50,7 +50,7 @@ tracing {
  * Metrics
  ********************************************/
 import.file "metrics" {
-	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/compose/metrics"
+	filename = coalesce(sys.env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/compose/metrics"
 }
 
 metrics.labels_scrape "compose" {

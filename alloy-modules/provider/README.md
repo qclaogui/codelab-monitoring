@@ -105,8 +105,8 @@ import.git "provider" {
 
 // get the receivers from provider
 provider.grafana_cloud "stack_name" {
-  stack_name = env("GRAFANA_CLOUD_STACK_NAME")
-  token      = env("GRAFANA_CLOUD_TOKEN")
+  stack_name = sys.env("GRAFANA_CLOUD_STACK_NAME")
+  token      = sys.env("GRAFANA_CLOUD_TOKEN")
 }
 
 // scrape metrics and write to metric receiver

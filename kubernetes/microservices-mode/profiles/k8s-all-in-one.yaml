@@ -1128,28 +1128,28 @@ metadata:
 ---
 apiVersion: v1
 data:
-  config.alloy: "logging {\n\tlevel  = coalesce(env(\"ALLOY_LOG_LEVEL\"), \"warn\")\n\tformat
+  config.alloy: "logging {\n\tlevel  = coalesce(sys.env(\"ALLOY_LOG_LEVEL\"), \"warn\")\n\tformat
     = \"logfmt\"\n}\n\n/********************************************\n * Grafana LGTMP
     Stack Receiver Provider\n ********************************************/\nimport.git
     \"provider\" {\n\trepository     = \"https://github.com/qclaogui/codelab-monitoring.git\"\n\trevision
     \      = \"main\"\n\tpath           = \"alloy-modules/provider\"\n\tpull_frequency
     = \"24h\"\n}\n\nprovider.self_hosted_stack \"kubernetes\" {\n\tmetrics_endpoint_url
-    \ = coalesce(env(\"SELF_HOSTED_METRICS_ENDPOINT_URL\"), \"http://nginx.gateway.svc:8080/api/v1/push\")\n\tprofiles_endpoint_url
-    = coalesce(env(\"SELF_HOSTED_PROFILES_ENDPOINT_URL\"), \"http://nginx.gateway.svc:4040\")\n}\n\n/********************************************\n
+    \ = coalesce(sys.env(\"SELF_HOSTED_METRICS_ENDPOINT_URL\"), \"http://nginx.gateway.svc:8080/api/v1/push\")\n\tprofiles_endpoint_url
+    = coalesce(sys.env(\"SELF_HOSTED_PROFILES_ENDPOINT_URL\"), \"http://nginx.gateway.svc:4040\")\n}\n\n/********************************************\n
     * Profiles\n ********************************************/\nimport.file \"profiles\"
-    {\n\tfilename = coalesce(env(\"ALLOY_MODULES_FOLDER\"), \"/etc/alloy/modules\")
+    {\n\tfilename = coalesce(sys.env(\"ALLOY_MODULES_FOLDER\"), \"/etc/alloy/modules\")
     + \"/kubernetes/profiles\"\n}\n\nprofiles.annotations_scrape \"kubernetes\" {\n\tcluster
-    = coalesce(env(\"CLUSTER_NAME\"), \"k3d-k3s-codelab\")\n\n\tforward_to = [provider.self_hosted_stack.kubernetes.profiles_receiver]\n}\n\n/********************************************\n
+    = coalesce(sys.env(\"CLUSTER_NAME\"), \"k3d-k3s-codelab\")\n\n\tforward_to = [provider.self_hosted_stack.kubernetes.profiles_receiver]\n}\n\n/********************************************\n
     * Metrics\n ********************************************/\nimport.file \"metrics\"
-    {\n\tfilename = coalesce(env(\"ALLOY_MODULES_FOLDER\"), \"/etc/alloy/modules\")
+    {\n\tfilename = coalesce(sys.env(\"ALLOY_MODULES_FOLDER\"), \"/etc/alloy/modules\")
     + \"/kubernetes/metrics\"\n}\n\nmetrics.annotations_scrape \"kubernetes\" {\n\tcluster
-    \        = coalesce(env(\"CLUSTER_NAME\"), \"k3d-k3s-codelab\")\n\tscrape_interval
+    \        = coalesce(sys.env(\"CLUSTER_NAME\"), \"k3d-k3s-codelab\")\n\tscrape_interval
     = \"15s\"\n\n\tforward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]\n}\n\nmetrics.servicemonitors_scrape
-    \"kubernetes\" {\n\tcluster         = coalesce(env(\"CLUSTER_NAME\"), \"k3d-k3s-codelab\")\n\tscrape_interval
+    \"kubernetes\" {\n\tcluster         = coalesce(sys.env(\"CLUSTER_NAME\"), \"k3d-k3s-codelab\")\n\tscrape_interval
     = \"15s\"\n\n\tforward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]\n}\n\n//
-    Jobs metrics\nimport.file \"jobs\" {\n\tfilename = coalesce(env(\"ALLOY_MODULES_FOLDER\"),
+    Jobs metrics\nimport.file \"jobs\" {\n\tfilename = coalesce(sys.env(\"ALLOY_MODULES_FOLDER\"),
     \"/etc/alloy/modules\") + \"/kubernetes/jobs\"\n}\n\njobs.kubelet_metrics_scrape
-    \"kubernetes\" {\n\tcluster         = coalesce(env(\"CLUSTER_NAME\"), \"k3d-k3s-codelab\")\n\tscrape_interval
+    \"kubernetes\" {\n\tcluster         = coalesce(sys.env(\"CLUSTER_NAME\"), \"k3d-k3s-codelab\")\n\tscrape_interval
     = \"30s\"\n\n\tforward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]\n}\n\n//
     Alloy integration metrics\nremote.kubernetes.configmap \"integrations\" {\n\tnamespace
     = \"monitoring-system\"\n\tname      = \"alloy-integrations\"\n}\n\n// Memcached
@@ -1158,7 +1158,7 @@ data:
     = [provider.self_hosted_stack.kubernetes.metrics_receiver]\n}\n"
 kind: ConfigMap
 metadata:
-  name: alloy-config-42kch682kt
+  name: alloy-config-g5hfmfd9ff
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -1759,7 +1759,7 @@ data:
     = \"instance\"\n\t\t\treplacement  = coalesce(nonsensitive(remote.kubernetes.secret.memcached.data[\"instance-name\"]),
     constants.hostname)\n\t\t}\n\t}\n\n\t/***************************************************************\n\t*
     Prometheus Scrape Integrations Targets\n\t****************************************************************/\n\tprometheus.scrape
-    \"integrations_memcached_exporter\" {\n\t\ttargets = concat(\n\t\t\tdiscovery.relabel.integrations_memcached_exporter.output,\n\t\t)\n\n\t\tscrape_classic_histograms
+    \"integrations_memcached_exporter\" {\n\t\ttargets = array.concat(\n\t\t\tdiscovery.relabel.integrations_memcached_exporter.output,\n\t\t)\n\n\t\tscrape_classic_histograms
     = true\n\n\t\tscrape_interval = coalesce(argument.scrape_interval.value, \"60s\")\n\t\tscrape_timeout
     \ = coalesce(argument.scrape_timeout.value, \"10s\")\n\n\t\tclustering {\n\t\t\tenabled
     = true\n\t\t}\n\n\t\tforward_to = [prometheus.relabel.integrations_memcached_exporter.receiver]\n\t}\n\n\t/***************************************************************\n\t*
@@ -1796,7 +1796,7 @@ data:
     \"instance\"\n\t\t\treplacement  = coalesce(nonsensitive(remote.kubernetes.secret.mysql.data[\"instance-name\"]),
     constants.hostname)\n\t\t}\n\t}\n\n\t/***************************************************************\n\t*
     Prometheus Scrape Integrations Targets\n\t****************************************************************/\n\tprometheus.scrape
-    \"integrations_mysqld_exporter\" {\n\t\ttargets = concat(\n\t\t\tdiscovery.relabel.integrations_mysqld_exporter.output,\n\t\t)\n\n\t\tscrape_classic_histograms
+    \"integrations_mysqld_exporter\" {\n\t\ttargets = array.concat(\n\t\t\tdiscovery.relabel.integrations_mysqld_exporter.output,\n\t\t)\n\n\t\tscrape_classic_histograms
     = true\n\n\t\tscrape_interval = coalesce(argument.scrape_interval.value, \"60s\")\n\t\tscrape_timeout
     \ = coalesce(argument.scrape_timeout.value, \"10s\")\n\n\t\tclustering {\n\t\t\tenabled
     = true\n\t\t}\n\n\t\tforward_to = [prometheus.relabel.integrations_mysqld_exporter.receiver]\n\t}\n\n\t/***************************************************************\n\t*
@@ -1833,7 +1833,7 @@ data:
     = \"instance\"\n\t\t\treplacement  = coalesce(nonsensitive(remote.kubernetes.secret.redis.data[\"instance-name\"]),
     constants.hostname)\n\t\t}\n\t}\n\n\t/***************************************************************\n\t*
     Prometheus Scrape Integrations Targets\n\t****************************************************************/\n\tprometheus.scrape
-    \"integrations_redis_exporter\" {\n\t\ttargets = concat(\n\t\t\tdiscovery.relabel.integrations_redis_exporter.output,\n\t\t)\n\n\t\tscrape_classic_histograms
+    \"integrations_redis_exporter\" {\n\t\ttargets = array.concat(\n\t\t\tdiscovery.relabel.integrations_redis_exporter.output,\n\t\t)\n\n\t\tscrape_classic_histograms
     = true\n\n\t\tscrape_interval = argument.scrape_interval.value\n\t\tscrape_timeout
     \ = argument.scrape_timeout.value\n\n\t\tclustering {\n\t\t\tenabled = true\n\t\t}\n\n\t\tforward_to
     = [prometheus.relabel.integrations_redis_exporter.receiver]\n\t}\n\n\t/***************************************************************\n\t*
@@ -2022,7 +2022,7 @@ data:
     = [\"__meta_kubernetes_node_name\"]\n\t\t\tregex         = \"(.+)\"\n\t\t\treplacement
     \  = \"/api/v1/nodes/${1}/proxy/metrics/cadvisor\"\n\t\t\ttarget_label  = \"__metrics_path__\"\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
     Prometheus Scrape Labels Targets\n\t*****************************************************************/\n\tprometheus.scrape
-    \"kubelet\" {\n\t\ttargets = concat(\n\t\t\tdiscovery.relabel.kubelet.output,\n\t\t\tdiscovery.relabel.resources.output,\n\t\t\tdiscovery.relabel.probes.output,\n\t\t\tdiscovery.relabel.cadvisor.output,\n\t\t)\n\n\t\tscheme
+    \"kubelet\" {\n\t\ttargets = array.concat(\n\t\t\tdiscovery.relabel.kubelet.output,\n\t\t\tdiscovery.relabel.resources.output,\n\t\t\tdiscovery.relabel.probes.output,\n\t\t\tdiscovery.relabel.cadvisor.output,\n\t\t)\n\n\t\tscheme
     \           = \"https\"\n\t\tscrape_interval   = coalesce(argument.scrape_interval.value,
     \"60s\")\n\t\tscrape_timeout    = coalesce(argument.scrape_timeout.value, \"10s\")\n\t\tbearer_token_file
     = \"/var/run/secrets/kubernetes.io/serviceaccount/token\"\n\n\t\ttls_config {\n\t\t\tca_file
@@ -2139,7 +2139,7 @@ data:
     \        = \"node_filesystem.*@(tempfs)\"\n\t\t\taction        = \"drop\"\n\t\t}\n\t}\n}\n"
 kind: ConfigMap
 metadata:
-  name: alloy-modules-kubernetes-jobs-749kdbk475
+  name: alloy-modules-kubernetes-jobs-9d9gc54kgg
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -2158,7 +2158,7 @@ data:
     to use (default: logs.grafana.com)\"\n\t\tdefault  = \"logs.grafana.com\"\n\t\toptional
     = true\n\t}\n\n\targument \"__sd_annotation\" {\n\t\toptional = true\n\t\tcomment
     \ = \"The logic is used to transform the annotation argument into a valid label
-    name by removing unsupported characters.\"\n\t\tdefault  = replace(replace(replace(coalesce(argument.annotation_prefix.value,
+    name by removing unsupported characters.\"\n\t\tdefault  = string.replace(string.replace(string.replace(coalesce(argument.annotation_prefix.value,
     \"logs.grafana.com\"), \".\", \"_\"), \"/\", \"_\"), \"-\", \"_\")\n\t}\n\n\t//
     find all pods\n\tdiscovery.kubernetes \"annotation_logs\" {\n\t\trole = \"pod\"\n\t}\n\n\t//
     filter logs by kubernetes annotations\n\tdiscovery.relabel \"annotation_logs_filter\"
@@ -2281,7 +2281,7 @@ data:
     = \"true\",\n\t\t\t}\n\t\t}\n\t}\n}\n"
 kind: ConfigMap
 metadata:
-  name: alloy-modules-kubernetes-logs-7b5f7t9d8g
+  name: alloy-modules-kubernetes-logs-b2t74ghdgm
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -2365,18 +2365,19 @@ data:
     endpoints)\"\n\t\toptional = true\n\t}\n\n\targument \"__sd_annotation\" {\n\t\toptional
     = true\n\t\tcomment  = \"The logic is used to transform the annotation argument
     into a valid label name by removing unsupported characters.\"\n\t\tdefault  =
-    replace(replace(replace(coalesce(argument.annotation_prefix.value, \"metrics.grafana.com\"),
-    \".\", \"_\"), \"/\", \"_\"), \"-\", \"_\")\n\t}\n\n\targument \"__pod_role\"
-    {\n\t\tcomment  = \"Most annotation targets service or pod that is all you want,
-    however if the role is endpoints you want the pod\"\n\t\toptional = true\n\t\tdefault
-    \ = replace(coalesce(argument.role.value, \"endpoints\"), \"endpoints\", \"pod\")\n\t}\n\n\targument
-    \"__service_role\" {\n\t\tcomment  = \"Most annotation targets service or pod
-    that is all you want, however if the role is endpoints you we also want to consider
-    service annotations\"\n\t\toptional = true\n\t\tdefault  = replace(coalesce(argument.role.value,
-    \"endpoints\"), \"endpoints\", \"service\")\n\t}\n\n\targument \"scrape_port_named_metrics\"
-    {\n\t\tcomment  = \"Whether or not to automatically scrape endpoints that have
-    a port with 'metrics' in the name\"\n\t\toptional = true\n\t\tdefault  = false\n\t}\n\n\targument
-    \"keep_metrics\" {\n\t\tcomment  = \"A regex of metrics to keep (default: (.+))\"\n\t\toptional
+    string.replace(string.replace(string.replace(coalesce(argument.annotation_prefix.value,
+    \"metrics.grafana.com\"), \".\", \"_\"), \"/\", \"_\"), \"-\", \"_\")\n\t}\n\n\targument
+    \"__pod_role\" {\n\t\tcomment  = \"Most annotation targets service or pod that
+    is all you want, however if the role is endpoints you want the pod\"\n\t\toptional
+    = true\n\t\tdefault  = string.replace(coalesce(argument.role.value, \"endpoints\"),
+    \"endpoints\", \"pod\")\n\t}\n\n\targument \"__service_role\" {\n\t\tcomment  =
+    \"Most annotation targets service or pod that is all you want, however if the
+    role is endpoints you we also want to consider service annotations\"\n\t\toptional
+    = true\n\t\tdefault  = string.replace(coalesce(argument.role.value, \"endpoints\"),
+    \"endpoints\", \"service\")\n\t}\n\n\targument \"scrape_port_named_metrics\" {\n\t\tcomment
+    \ = \"Whether or not to automatically scrape endpoints that have a port with 'metrics'
+    in the name\"\n\t\toptional = true\n\t\tdefault  = false\n\t}\n\n\targument \"keep_metrics\"
+    {\n\t\tcomment  = \"A regex of metrics to keep (default: (.+))\"\n\t\toptional
     = true\n\t}\n\n\targument \"drop_metrics\" {\n\t\tcomment  = \"A regex of metrics
     to drop (default: \\\"\\\")\"\n\t\toptional = true\n\t}\n\n\targument \"scrape_interval\"
     {\n\t\tcomment  = \"How often to scrape metrics from the targets (default: 60s)\"\n\t\toptional
@@ -2405,26 +2406,26 @@ data:
     = \";\"\n\t\t\t// only allow empty or true, otherwise defaults to false\n\t\t\tregex
     \       = \"^(?:;*)?(true)(;|true)*$\"\n\t\t\treplacement  = \"$1\"\n\t\t\ttarget_label
     = \"__tmp_scrape\"\n\t\t}\n\n\t\t// add a __tmp_scrape_port_named_metrics from
-    the argument.scrape_port_named_metrics\n\t\trule {\n\t\t\treplacement  = format(\"%t\",
+    the argument.scrape_port_named_metrics\n\t\trule {\n\t\t\treplacement  = string.format(\"%t\",
     argument.scrape_port_named_metrics.value)\n\t\t\ttarget_label = \"__tmp_scrape_port_named_metrics\"\n\t\t}\n\n\t\t//
     only keep targets that have scrape: true or \"metrics\" in the port name if the
     argument scrape_port_named_metrics\n\t\trule {\n\t\t\taction        = \"keep\"\n\t\t\tsource_labels
     = [\n\t\t\t\t\"__tmp_scrape\",\n\t\t\t\t\"__tmp_scrape_port_named_metrics\",\n\t\t\t\t//
     endpoints is the role and most meta labels started with \"endpoints\", however
     the port name is an exception and starts with \"endpoint\"\n\t\t\t\t\"__meta_kubernetes_\"
-    + replace(coalesce(argument.role.value, \"endpoints\"), \"endpoints\", \"endpoint\")
-    + \"_port_name\",\n\t\t\t]\n\t\t\tseparator = \";\"\n\t\t\tregex     = \"^(true;.*|(|true);true;(.*metrics.*))$\"\n\t\t}\n\n\t\t//
-    only keep targets where the pod is running or the pod_phase is empty and is not
-    an init container.  This will only exist for role=\"pod\" or\n\t\t// potentially
-    role=\"endpoints\", if it is a service the value is empty and thus allowed to
-    pass, if it is an endpoint but not associated to a\n\t\t// pod but rather a static
-    IP or hostname, that could be outside of kubernetes allow endpoints to declare
-    what tenant their metrics should be\n\t\t// written to\n\t\trule {\n\t\t\taction
-    \       = \"keep\"\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_phase\"]\n\t\t\tregex
-    \        = \"^(?i)(Running|)$\"\n\t\t}\n\n\t\trule {\n\t\t\taction        = \"keep\"\n\t\t\tsource_labels
-    = [\"__meta_kubernetes_pod_ready\"]\n\t\t\tregex         = \"^(true|)$\"\n\t\t}\n\t\t//
-    if the container is an init container, drop it\n\t\trule {\n\t\t\taction        =
-    \"drop\"\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_container_init\"]\n\t\t\tregex
+    + string.replace(coalesce(argument.role.value, \"endpoints\"), \"endpoints\",
+    \"endpoint\") + \"_port_name\",\n\t\t\t]\n\t\t\tseparator = \";\"\n\t\t\tregex
+    \    = \"^(true;.*|(|true);true;(.*metrics.*))$\"\n\t\t}\n\n\t\t// only keep targets
+    where the pod is running or the pod_phase is empty and is not an init container.
+    \ This will only exist for role=\"pod\" or\n\t\t// potentially role=\"endpoints\",
+    if it is a service the value is empty and thus allowed to pass, if it is an endpoint
+    but not associated to a\n\t\t// pod but rather a static IP or hostname, that could
+    be outside of kubernetes allow endpoints to declare what tenant their metrics
+    should be\n\t\t// written to\n\t\trule {\n\t\t\taction        = \"keep\"\n\t\t\tsource_labels
+    = [\"__meta_kubernetes_pod_phase\"]\n\t\t\tregex         = \"^(?i)(Running|)$\"\n\t\t}\n\n\t\trule
+    {\n\t\t\taction        = \"keep\"\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_ready\"]\n\t\t\tregex
+    \        = \"^(true|)$\"\n\t\t}\n\t\t// if the container is an init container,
+    drop it\n\t\trule {\n\t\t\taction        = \"drop\"\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_container_init\"]\n\t\t\tregex
     \        = \"^(true)$\"\n\t\t}\n\n\t\t// allow resources to declare their metrics
     the tenant their metrics should be sent to,\n\t\t// Example Annotation:\n\t\t//
     \  metrics.grafana.com/tenant: primary\n\t\t//\n\t\t// Note: This does not necessarily
@@ -2649,7 +2650,7 @@ data:
     \"\")\n\t\t}\n\t}\n}\n"
 kind: ConfigMap
 metadata:
-  name: alloy-modules-kubernetes-metrics-6g7hb9cd7g
+  name: alloy-modules-kubernetes-metrics-8287kbcb62
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -2668,7 +2669,7 @@ data:
     \"true\"\n\t// profiles.grafana.com/goroutine.port: \"8080\"\n\t// ```\n\t//\n\t//
     will scrape the `memory`, `cpu` and `goroutine` profiles from the `8080` port
     of the pod.\n\t//\n\t// For more information see https://grafana.com/docs/phlare/latest/operators-guide/deploy-kubernetes/#optional-scrape-your-own-workloads-profiles\n\tdiscovery.relabel
-    \"kubernetes_pods\" {\n\t\ttargets = concat(discovery.kubernetes.pyroscope_kubernetes.targets)\n\n\t\trule
+    \"kubernetes_pods\" {\n\t\ttargets = array.concat(discovery.kubernetes.pyroscope_kubernetes.targets)\n\n\t\trule
     {\n\t\t\taction        = \"drop\"\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_phase\"]\n\t\t\tregex
     \        = \"Pending|Succeeded|Failed|Completed\"\n\t\t}\n\n\t\trule {\n\t\t\taction
     = \"labelmap\"\n\t\t\tregex  = \"__meta_kubernetes_pod_label_(.+)\"\n\t\t}\n\n\t\t//
@@ -2679,7 +2680,7 @@ data:
     = [\"__meta_kubernetes_pod_name\"]\n\t\t\ttarget_label  = \"pod\"\n\t\t}\n\n\t\trule
     {\n\t\t\taction        = \"replace\"\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_container_name\"]\n\t\t\ttarget_label
     \ = \"container\"\n\t\t}\n\t}\n\n\tdiscovery.relabel \"kubernetes_pods_memory_default_name\"
-    {\n\t\ttargets = concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
+    {\n\t\ttargets = array.concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
     {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_memory_scrape\"]\n\t\t\taction
     \       = \"keep\"\n\t\t\tregex         = \"true\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
     = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_memory_port_name\"]\n\t\t\taction
@@ -2692,7 +2693,7 @@ data:
     \  = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels = [\"__address__\", \"__meta_kubernetes_pod_annotation_profiles_grafana_com_memory_port\"]\n\t\t\taction
     \       = \"replace\"\n\t\t\tregex         = \"(.+?)(?::\\\\d+)?;(\\\\d+)\"\n\t\t\ttarget_label
     \ = \"__address__\"\n\t\t\treplacement   = \"$1:$2\"\n\t\t}\n\t}\n\n\tdiscovery.relabel
-    \"kubernetes_pods_memory_custom_name\" {\n\t\ttargets = concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
+    \"kubernetes_pods_memory_custom_name\" {\n\t\ttargets = array.concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
     {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_memory_scrape\"]\n\t\t\taction
     \       = \"keep\"\n\t\t\tregex         = \"true\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
     = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_memory_port_name\"]\n\t\t\taction
@@ -2708,13 +2709,14 @@ data:
     \ = \"__address__\"\n\t\t\treplacement   = \"$1:$2\"\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
     Kubernetes Pyroscope Scrape Memory\n\t*****************************************************************/\n\tpyroscope.scrape
     \"pyroscope_scrape_memory\" {\n\t\tclustering {\n\t\t\tenabled = true\n\t\t}\n\n\t\ttargets
-    \   = concat(discovery.relabel.kubernetes_pods_memory_default_name.output, discovery.relabel.kubernetes_pods_memory_custom_name.output)\n\t\tforward_to
-    = argument.forward_to.value\n\n\t\tprofiling_config {\n\t\t\tprofile.memory {\n\t\t\t\tenabled
+    \   = array.concat(discovery.relabel.kubernetes_pods_memory_default_name.output,
+    discovery.relabel.kubernetes_pods_memory_custom_name.output)\n\t\tforward_to =
+    argument.forward_to.value\n\n\t\tprofiling_config {\n\t\t\tprofile.memory {\n\t\t\t\tenabled
     = true\n\t\t\t}\n\n\t\t\tprofile.process_cpu {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.goroutine
     {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.block {\n\t\t\t\tenabled
     = false\n\t\t\t}\n\n\t\t\tprofile.mutex {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.fgprof
     {\n\t\t\t\tenabled = false\n\t\t\t}\n\t\t}\n\t}\n\n\tdiscovery.relabel \"kubernetes_pods_cpu_default_name\"
-    {\n\t\ttargets = concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
+    {\n\t\ttargets = array.concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
     {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_cpu_scrape\"]\n\t\t\taction
     \       = \"keep\"\n\t\t\tregex         = \"true\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
     = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_cpu_port_name\"]\n\t\t\taction
@@ -2727,7 +2729,7 @@ data:
     \  = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels = [\"__address__\", \"__meta_kubernetes_pod_annotation_profiles_grafana_com_cpu_port\"]\n\t\t\taction
     \       = \"replace\"\n\t\t\tregex         = \"(.+?)(?::\\\\d+)?;(\\\\d+)\"\n\t\t\ttarget_label
     \ = \"__address__\"\n\t\t\treplacement   = \"$1:$2\"\n\t\t}\n\t}\n\n\tdiscovery.relabel
-    \"kubernetes_pods_cpu_custom_name\" {\n\t\ttargets = concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
+    \"kubernetes_pods_cpu_custom_name\" {\n\t\ttargets = array.concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
     {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_cpu_scrape\"]\n\t\t\taction
     \       = \"keep\"\n\t\t\tregex         = \"true\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
     = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_cpu_port_name\"]\n\t\t\taction
@@ -2743,13 +2745,14 @@ data:
     \ = \"__address__\"\n\t\t\treplacement   = \"$1:$2\"\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
     Kubernetes Pyroscope Scrape CPU\n\t*****************************************************************/\n\tpyroscope.scrape
     \"pyroscope_scrape_cpu\" {\n\t\tclustering {\n\t\t\tenabled = true\n\t\t}\n\n\t\ttargets
-    \   = concat(discovery.relabel.kubernetes_pods_cpu_default_name.output, discovery.relabel.kubernetes_pods_cpu_custom_name.output)\n\t\tforward_to
-    = argument.forward_to.value\n\n\t\tprofiling_config {\n\t\t\tprofile.memory {\n\t\t\t\tenabled
-    = false\n\t\t\t}\n\n\t\t\tprofile.process_cpu {\n\t\t\t\tenabled = true\n\t\t\t}\n\n\t\t\tprofile.goroutine
-    {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.block {\n\t\t\t\tenabled
-    = false\n\t\t\t}\n\n\t\t\tprofile.mutex {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.fgprof
-    {\n\t\t\t\tenabled = false\n\t\t\t}\n\t\t}\n\t}\n\n\tdiscovery.relabel \"kubernetes_pods_goroutine_default_name\"
-    {\n\t\ttargets = concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
+    \   = array.concat(discovery.relabel.kubernetes_pods_cpu_default_name.output,
+    discovery.relabel.kubernetes_pods_cpu_custom_name.output)\n\t\tforward_to = argument.forward_to.value\n\n\t\tprofiling_config
+    {\n\t\t\tprofile.memory {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.process_cpu
+    {\n\t\t\t\tenabled = true\n\t\t\t}\n\n\t\t\tprofile.goroutine {\n\t\t\t\tenabled
+    = false\n\t\t\t}\n\n\t\t\tprofile.block {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.mutex
+    {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.fgprof {\n\t\t\t\tenabled
+    = false\n\t\t\t}\n\t\t}\n\t}\n\n\tdiscovery.relabel \"kubernetes_pods_goroutine_default_name\"
+    {\n\t\ttargets = array.concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
     {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_goroutine_scrape\"]\n\t\t\taction
     \       = \"keep\"\n\t\t\tregex         = \"true\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
     = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_goroutine_port_name\"]\n\t\t\taction
@@ -2762,7 +2765,7 @@ data:
     \  = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels = [\"__address__\", \"__meta_kubernetes_pod_annotation_profiles_grafana_com_goroutine_port\"]\n\t\t\taction
     \       = \"replace\"\n\t\t\tregex         = \"(.+?)(?::\\\\d+)?;(\\\\d+)\"\n\t\t\ttarget_label
     \ = \"__address__\"\n\t\t\treplacement   = \"$1:$2\"\n\t\t}\n\t}\n\n\tdiscovery.relabel
-    \"kubernetes_pods_goroutine_custom_name\" {\n\t\ttargets = concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
+    \"kubernetes_pods_goroutine_custom_name\" {\n\t\ttargets = array.concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
     {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_goroutine_scrape\"]\n\t\t\taction
     \       = \"keep\"\n\t\t\tregex         = \"true\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
     = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_goroutine_port_name\"]\n\t\t\taction
@@ -2778,14 +2781,14 @@ data:
     \ = \"__address__\"\n\t\t\treplacement   = \"$1:$2\"\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
     Kubernetes Pyroscope Scrape Goroutine\n\t*****************************************************************/\n\tpyroscope.scrape
     \"pyroscope_scrape_goroutine\" {\n\t\tclustering {\n\t\t\tenabled = true\n\t\t}\n\n\t\ttargets
-    \   = concat(discovery.relabel.kubernetes_pods_goroutine_default_name.output,
+    \   = array.concat(discovery.relabel.kubernetes_pods_goroutine_default_name.output,
     discovery.relabel.kubernetes_pods_goroutine_custom_name.output)\n\t\tforward_to
     = argument.forward_to.value\n\n\t\tprofiling_config {\n\t\t\tprofile.memory {\n\t\t\t\tenabled
     = false\n\t\t\t}\n\n\t\t\tprofile.process_cpu {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.goroutine
     {\n\t\t\t\tenabled = true\n\t\t\t}\n\n\t\t\tprofile.block {\n\t\t\t\tenabled =
     false\n\t\t\t}\n\n\t\t\tprofile.mutex {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.fgprof
     {\n\t\t\t\tenabled = false\n\t\t\t}\n\t\t}\n\t}\n\n\tdiscovery.relabel \"kubernetes_pods_block_default_name\"
-    {\n\t\ttargets = concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
+    {\n\t\ttargets = array.concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
     {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_block_scrape\"]\n\t\t\taction
     \       = \"keep\"\n\t\t\tregex         = \"true\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
     = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_block_port_name\"]\n\t\t\taction
@@ -2798,7 +2801,7 @@ data:
     \  = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels = [\"__address__\", \"__meta_kubernetes_pod_annotation_profiles_grafana_com_block_port\"]\n\t\t\taction
     \       = \"replace\"\n\t\t\tregex         = \"(.+?)(?::\\\\d+)?;(\\\\d+)\"\n\t\t\ttarget_label
     \ = \"__address__\"\n\t\t\treplacement   = \"$1:$2\"\n\t\t}\n\t}\n\n\tdiscovery.relabel
-    \"kubernetes_pods_block_custom_name\" {\n\t\ttargets = concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
+    \"kubernetes_pods_block_custom_name\" {\n\t\ttargets = array.concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
     {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_block_scrape\"]\n\t\t\taction
     \       = \"keep\"\n\t\t\tregex         = \"true\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
     = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_block_port_name\"]\n\t\t\taction
@@ -2814,13 +2817,14 @@ data:
     \ = \"__address__\"\n\t\t\treplacement   = \"$1:$2\"\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
     Kubernetes Pyroscope Scrape Block\n\t*****************************************************************/\n\tpyroscope.scrape
     \"pyroscope_scrape_block\" {\n\t\tclustering {\n\t\t\tenabled = true\n\t\t}\n\n\t\ttargets
-    \   = concat(discovery.relabel.kubernetes_pods_block_default_name.output, discovery.relabel.kubernetes_pods_block_custom_name.output)\n\t\tforward_to
-    = argument.forward_to.value\n\n\t\tprofiling_config {\n\t\t\tprofile.memory {\n\t\t\t\tenabled
+    \   = array.concat(discovery.relabel.kubernetes_pods_block_default_name.output,
+    discovery.relabel.kubernetes_pods_block_custom_name.output)\n\t\tforward_to =
+    argument.forward_to.value\n\n\t\tprofiling_config {\n\t\t\tprofile.memory {\n\t\t\t\tenabled
     = false\n\t\t\t}\n\n\t\t\tprofile.process_cpu {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.goroutine
     {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.block {\n\t\t\t\tenabled
     = true\n\t\t\t}\n\n\t\t\tprofile.mutex {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.fgprof
     {\n\t\t\t\tenabled = false\n\t\t\t}\n\t\t}\n\t}\n\n\tdiscovery.relabel \"kubernetes_pods_mutex_default_name\"
-    {\n\t\ttargets = concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
+    {\n\t\ttargets = array.concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
     {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_mutex_scrape\"]\n\t\t\taction
     \       = \"keep\"\n\t\t\tregex         = \"true\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
     = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_mutex_port_name\"]\n\t\t\taction
@@ -2833,7 +2837,7 @@ data:
     \  = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels = [\"__address__\", \"__meta_kubernetes_pod_annotation_profiles_grafana_com_mutex_port\"]\n\t\t\taction
     \       = \"replace\"\n\t\t\tregex         = \"(.+?)(?::\\\\d+)?;(\\\\d+)\"\n\t\t\ttarget_label
     \ = \"__address__\"\n\t\t\treplacement   = \"$1:$2\"\n\t\t}\n\t}\n\n\tdiscovery.relabel
-    \"kubernetes_pods_mutex_custom_name\" {\n\t\ttargets = concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
+    \"kubernetes_pods_mutex_custom_name\" {\n\t\ttargets = array.concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
     {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_mutex_scrape\"]\n\t\t\taction
     \       = \"keep\"\n\t\t\tregex         = \"true\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
     = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_mutex_port_name\"]\n\t\t\taction
@@ -2849,13 +2853,14 @@ data:
     \ = \"__address__\"\n\t\t\treplacement   = \"$1:$2\"\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
     Kubernetes Pyroscope Scrape Mutex\n\t*****************************************************************/\n\tpyroscope.scrape
     \"pyroscope_scrape_mutex\" {\n\t\tclustering {\n\t\t\tenabled = true\n\t\t}\n\n\t\ttargets
-    \   = concat(discovery.relabel.kubernetes_pods_mutex_default_name.output, discovery.relabel.kubernetes_pods_mutex_custom_name.output)\n\t\tforward_to
-    = argument.forward_to.value\n\n\t\tprofiling_config {\n\t\t\tprofile.memory {\n\t\t\t\tenabled
+    \   = array.concat(discovery.relabel.kubernetes_pods_mutex_default_name.output,
+    discovery.relabel.kubernetes_pods_mutex_custom_name.output)\n\t\tforward_to =
+    argument.forward_to.value\n\n\t\tprofiling_config {\n\t\t\tprofile.memory {\n\t\t\t\tenabled
     = false\n\t\t\t}\n\n\t\t\tprofile.process_cpu {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.goroutine
     {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.block {\n\t\t\t\tenabled
     = false\n\t\t\t}\n\n\t\t\tprofile.mutex {\n\t\t\t\tenabled = true\n\t\t\t}\n\n\t\t\tprofile.fgprof
     {\n\t\t\t\tenabled = false\n\t\t\t}\n\t\t}\n\t}\n\n\tdiscovery.relabel \"kubernetes_pods_fgprof_default_name\"
-    {\n\t\ttargets = concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
+    {\n\t\ttargets = array.concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
     {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_fgprof_scrape\"]\n\t\t\taction
     \       = \"keep\"\n\t\t\tregex         = \"true\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
     = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_fgprof_port_name\"]\n\t\t\taction
@@ -2868,7 +2873,7 @@ data:
     \  = \"$1\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels = [\"__address__\", \"__meta_kubernetes_pod_annotation_profiles_grafana_com_fgprof_port\"]\n\t\t\taction
     \       = \"replace\"\n\t\t\tregex         = \"(.+?)(?::\\\\d+)?;(\\\\d+)\"\n\t\t\ttarget_label
     \ = \"__address__\"\n\t\t\treplacement   = \"$1:$2\"\n\t\t}\n\t}\n\n\tdiscovery.relabel
-    \"kubernetes_pods_fgprof_custom_name\" {\n\t\ttargets = concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
+    \"kubernetes_pods_fgprof_custom_name\" {\n\t\ttargets = array.concat(discovery.relabel.kubernetes_pods.output)\n\n\t\trule
     {\n\t\t\tsource_labels = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_fgprof_scrape\"]\n\t\t\taction
     \       = \"keep\"\n\t\t\tregex         = \"true\"\n\t\t}\n\n\t\trule {\n\t\t\tsource_labels
     = [\"__meta_kubernetes_pod_annotation_profiles_grafana_com_fgprof_port_name\"]\n\t\t\taction
@@ -2884,15 +2889,16 @@ data:
     \ = \"__address__\"\n\t\t\treplacement   = \"$1:$2\"\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
     Kubernetes Pyroscope Scrape Fgprof\n\t*****************************************************************/\n\tpyroscope.scrape
     \"pyroscope_scrape_fgprof\" {\n\t\tclustering {\n\t\t\tenabled = true\n\t\t}\n\n\t\ttargets
-    \   = concat(discovery.relabel.kubernetes_pods_fgprof_default_name.output, discovery.relabel.kubernetes_pods_fgprof_custom_name.output)\n\t\tforward_to
-    = argument.forward_to.value\n\n\t\tprofiling_config {\n\t\t\tprofile.memory {\n\t\t\t\tenabled
+    \   = array.concat(discovery.relabel.kubernetes_pods_fgprof_default_name.output,
+    discovery.relabel.kubernetes_pods_fgprof_custom_name.output)\n\t\tforward_to =
+    argument.forward_to.value\n\n\t\tprofiling_config {\n\t\t\tprofile.memory {\n\t\t\t\tenabled
     = false\n\t\t\t}\n\n\t\t\tprofile.process_cpu {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.goroutine
     {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.block {\n\t\t\t\tenabled
     = false\n\t\t\t}\n\n\t\t\tprofile.mutex {\n\t\t\t\tenabled = false\n\t\t\t}\n\n\t\t\tprofile.fgprof
     {\n\t\t\t\tenabled = true\n\t\t\t}\n\t\t}\n\t}\n}\n"
 kind: ConfigMap
 metadata:
-  name: alloy-modules-kubernetes-profiles-8hhkt7m7k9
+  name: alloy-modules-kubernetes-profiles-6479gm5dc2
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -5808,22 +5814,22 @@ spec:
       serviceAccountName: alloy
       volumes:
       - configMap:
-          name: alloy-config-42kch682kt
+          name: alloy-config-g5hfmfd9ff
         name: config
       - configMap:
-          name: alloy-modules-kubernetes-metrics-6g7hb9cd7g
+          name: alloy-modules-kubernetes-metrics-8287kbcb62
         name: modules-kubernetes-metrics
       - configMap:
-          name: alloy-modules-kubernetes-logs-7b5f7t9d8g
+          name: alloy-modules-kubernetes-logs-b2t74ghdgm
         name: modules-kubernetes-logs
       - configMap:
           name: alloy-modules-kubernetes-traces-4h9946thb4
         name: modules-kubernetes-traces
       - configMap:
-          name: alloy-modules-kubernetes-profiles-8hhkt7m7k9
+          name: alloy-modules-kubernetes-profiles-6479gm5dc2
         name: modules-kubernetes-profiles
       - configMap:
-          name: alloy-modules-kubernetes-jobs-749kdbk475
+          name: alloy-modules-kubernetes-jobs-9d9gc54kgg
         name: modules-kubernetes-jobs
 ---
 apiVersion: apps/v1

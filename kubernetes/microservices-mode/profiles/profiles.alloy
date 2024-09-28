@@ -1,5 +1,5 @@
 logging {
-	level  = coalesce(env("ALLOY_LOG_LEVEL"), "warn")
+	level  = coalesce(sys.env("ALLOY_LOG_LEVEL"), "warn")
 	format = "logfmt"
 }
 
@@ -14,19 +14,19 @@ import.git "provider" {
 }
 
 provider.self_hosted_stack "kubernetes" {
-	metrics_endpoint_url  = coalesce(env("SELF_HOSTED_METRICS_ENDPOINT_URL"), "http://nginx.gateway.svc:8080/api/v1/push")
-	profiles_endpoint_url = coalesce(env("SELF_HOSTED_PROFILES_ENDPOINT_URL"), "http://nginx.gateway.svc:4040")
+	metrics_endpoint_url  = coalesce(sys.env("SELF_HOSTED_METRICS_ENDPOINT_URL"), "http://nginx.gateway.svc:8080/api/v1/push")
+	profiles_endpoint_url = coalesce(sys.env("SELF_HOSTED_PROFILES_ENDPOINT_URL"), "http://nginx.gateway.svc:4040")
 }
 
 /********************************************
  * Profiles
  ********************************************/
 import.file "profiles" {
-	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/kubernetes/profiles"
+	filename = coalesce(sys.env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/kubernetes/profiles"
 }
 
 profiles.annotations_scrape "kubernetes" {
-	cluster = coalesce(env("CLUSTER_NAME"), "k3d-k3s-codelab")
+	cluster = coalesce(sys.env("CLUSTER_NAME"), "k3d-k3s-codelab")
 
 	forward_to = [provider.self_hosted_stack.kubernetes.profiles_receiver]
 }
@@ -35,18 +35,18 @@ profiles.annotations_scrape "kubernetes" {
  * Metrics
  ********************************************/
 import.file "metrics" {
-	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/kubernetes/metrics"
+	filename = coalesce(sys.env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/kubernetes/metrics"
 }
 
 metrics.annotations_scrape "kubernetes" {
-	cluster         = coalesce(env("CLUSTER_NAME"), "k3d-k3s-codelab")
+	cluster         = coalesce(sys.env("CLUSTER_NAME"), "k3d-k3s-codelab")
 	scrape_interval = "15s"
 
 	forward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]
 }
 
 metrics.servicemonitors_scrape "kubernetes" {
-	cluster         = coalesce(env("CLUSTER_NAME"), "k3d-k3s-codelab")
+	cluster         = coalesce(sys.env("CLUSTER_NAME"), "k3d-k3s-codelab")
 	scrape_interval = "15s"
 
 	forward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]
@@ -54,11 +54,11 @@ metrics.servicemonitors_scrape "kubernetes" {
 
 // Jobs metrics
 import.file "jobs" {
-	filename = coalesce(env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/kubernetes/jobs"
+	filename = coalesce(sys.env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/kubernetes/jobs"
 }
 
 jobs.kubelet_metrics_scrape "kubernetes" {
-	cluster         = coalesce(env("CLUSTER_NAME"), "k3d-k3s-codelab")
+	cluster         = coalesce(sys.env("CLUSTER_NAME"), "k3d-k3s-codelab")
 	scrape_interval = "30s"
 
 	forward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]

@@ -74,7 +74,7 @@ declare "labels_scrape" {
 	argument "__sd_label" {
 		optional = true
 		comment  = "The logic is used to transform the label_prefix argument into a valid label name by removing unsupported characters."
-		default  = replace(replace(replace(coalesce(argument.label_prefix.value, "metrics.grafana.com"), ".", "_"), "/", "_"), "-", "_")
+		default  = string.replace(string.replace(string.replace(coalesce(argument.label_prefix.value, "metrics.grafana.com"), ".", "_"), "/", "_"), "-", "_")
 	}
 
 	argument "cluster" {
@@ -380,7 +380,7 @@ declare "labels_scrape" {
 	* Prometheus Scrape Labels Targets
 	*****************************************************************/
 	prometheus.scrape "pc_docker_metrics" {
-		targets = concat(
+		targets = array.concat(
 			discovery.relabel.dr_keep_http_targets.output,
 		)
 
