@@ -27,10 +27,16 @@ common:
       http_config:
         insecure_skip_verify: true
 
+bloom_build:
+  enabled: true
+  builder:
+    planner_address: loki-distributed-bloom-planner-headless.logging-system.svc.cluster.local:9095
+
 bloom_gateway:
   enabled: true
   client:
     addresses: dns:///loki-distributed-bloom-gateway-headless.logging-system.svc.cluster.local:9095
+    # addresses: dnssrvnoa+_grpc._tcp.loki-distributed-bloom-gateway-headless.logging-system.svc.cluster.local:9095
     cache_results: true
     results_cache:
       cache:
@@ -117,7 +123,7 @@ storage_config:
     index_gateway_client:
       server_address: dns:///loki-distributed-index-gateway.logging-system.svc.cluster.local:9095
   bloom_shipper:
-    working_directory: /var/loki/blooms
+    working_directory: /var/loki/bloomshipper
 
 chunk_store_config:
   chunk_cache_config:
