@@ -22,7 +22,7 @@ services:
   github-exporter:
     labels: # https://github.com/qclaogui/codelab-monitoring/blob/main/alloy-modules/compose/README.md
       metrics.grafana.com/scrape: true
-    image: githubexporter/github-exporter:1.1.0
+    image: githubexporter/github-exporter:1.3.1
     environment:
     - REPOS=qclaogui/codelab-monitoring
 ```

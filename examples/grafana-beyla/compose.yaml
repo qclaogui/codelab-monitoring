@@ -18,14 +18,19 @@ include:
 
 services:
   # Beyla for NGINX gateway
-  gateway-beyla:
+  beyla:
+    labels:
+      metrics.grafana.com/scrape: true
+      metrics.grafana.com/job: beyla
+      metrics.grafana.com/path: /internal/metrics
+      metrics.grafana.com/port: 6060
     depends_on: { gateway: { condition: service_started } }
-    image: grafana/beyla:1.7.0
+    image: grafana/beyla:1.8.5
     volumes:
       - ./beyla/beyla-config.yml/:/configs/beyla-config.yml
       - ./sys-kernel-security:/sys/kernel/security
     privileged: true 
-    network_mode: "service:gateway"
+    # network_mode: "service:gateway"
     pid: "service:gateway"
     environment:
       BEYLA_CONFIG_PATH: "/configs/beyla-config.yml"
