@@ -7,8 +7,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.4.1
-    helm.sh/chart: alloy-0.8.1
+    app.kubernetes.io/version: v1.4.2
+    helm.sh/chart: alloy-0.9.1
   name: alloy
   namespace: monitoring-system
 ---
@@ -21,8 +21,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.4.1
-    helm.sh/chart: alloy-0.8.1
+    app.kubernetes.io/version: v1.4.2
+    helm.sh/chart: alloy-0.9.1
   name: alloy
 rules:
 - apiGroups:
@@ -125,8 +125,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.4.1
-    helm.sh/chart: alloy-0.8.1
+    app.kubernetes.io/version: v1.4.2
+    helm.sh/chart: alloy-0.9.1
   name: alloy
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -1767,9 +1767,10 @@ data:
     appended rate.\"\n\t\toptional = true\n\t}\n\n\t/*****************************************************************\n\t*
     Targets From Docker Discovery\n\t*****************************************************************/\n\tdiscovery.kubernetes
     \"apiserver\" {\n\t\trole = \"service\"\n\n\t\tselectors {\n\t\t\trole  = \"service\"\n\t\t\tfield
-    = join(coalesce(argument.field_selectors.value, [\"metadata.name=kubernetes\"]),
-    \",\")\n\t\t\tlabel = join(coalesce(argument.label_selectors.value, []), \",\")\n\t\t}\n\n\t\tnamespaces
-    {\n\t\t\tnames = coalesce(argument.namespaces.value, [\"default\"])\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
+    = string.join(coalesce(argument.field_selectors.value, [\"metadata.name=kubernetes\"]),
+    \",\")\n\t\t\tlabel = string.join(coalesce(argument.label_selectors.value, []),
+    \",\")\n\t\t}\n\n\t\tnamespaces {\n\t\t\tnames = coalesce(argument.namespaces.value,
+    [\"default\"])\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
     Discovery Relabelings (pre-scrape)\n\t*****************************************************************/\n\tdiscovery.relabel
     \"apiserver\" {\n\t\ttargets = discovery.kubernetes.apiserver.targets\n\n\t\t//
     only keep targets with a matching port name\n\t\trule {\n\t\t\tsource_labels =
@@ -1833,10 +1834,10 @@ data:
     appended rate.\"\n\t\toptional = true\n\t}\n\n\t/*****************************************************************\n\t*
     Targets From Service Discovery\n\t*****************************************************************/\n\tdiscovery.kubernetes
     \"kube_state_metrics\" {\n\t\trole = \"service\"\n\n\t\tselectors {\n\t\t\trole
-    \ = \"service\"\n\t\t\tfield = join(coalesce(argument.field_selectors.value, []),
-    \",\")\n\t\t\tlabel = join(coalesce(argument.label_selectors.value, [\"app.kubernetes.io/name=kube-state-metrics\"]),
-    \",\")\n\t\t}\n\n\t\tnamespaces {\n\t\t\tnames = coalesce(argument.namespaces.value,
-    [])\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
+    \ = \"service\"\n\t\t\tfield = string.join(coalesce(argument.field_selectors.value,
+    []), \",\")\n\t\t\tlabel = string.join(coalesce(argument.label_selectors.value,
+    [\"app.kubernetes.io/name=kube-state-metrics\"]), \",\")\n\t\t}\n\n\t\tnamespaces
+    {\n\t\t\tnames = coalesce(argument.namespaces.value, [])\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
     Discovery Relabelings (pre-scrape)\n\t*****************************************************************/\n\tdiscovery.relabel
     \"kube_state_metrics\" {\n\t\ttargets = discovery.kubernetes.kube_state_metrics.targets\n\n\t\t//
     only keep targets with a matching port name\n\t\trule {\n\t\t\tsource_labels =
@@ -1981,9 +1982,10 @@ data:
     appended rate.\"\n\t\toptional = true\n\t}\n\n\t/*****************************************************************\n\t*
     Targets From Service Discovery\n\t*****************************************************************/\n\tdiscovery.kubernetes
     \"node_exporter\" {\n\t\trole = \"pod\"\n\n\t\tselectors {\n\t\t\trole  = \"pod\"\n\t\t\tfield
-    = join(coalesce(argument.field_selectors.value, []), \",\")\n\t\t\tlabel = join(coalesce(argument.label_selectors.value,
-    [\"app.kubernetes.io/name=prometheus-node-exporter\"]), \",\")\n\t\t}\n\n\t\tnamespaces
-    {\n\t\t\tnames = coalesce(argument.namespaces.value, [])\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
+    = string.join(coalesce(argument.field_selectors.value, []), \",\")\n\t\t\tlabel
+    = string.join(coalesce(argument.label_selectors.value, [\"app.kubernetes.io/name=prometheus-node-exporter\"]),
+    \",\")\n\t\t}\n\n\t\tnamespaces {\n\t\t\tnames = coalesce(argument.namespaces.value,
+    [])\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
     Discovery Relabelings (pre-scrape)\n\t*****************************************************************/\n\tdiscovery.relabel
     \"node_exporter\" {\n\t\ttargets = discovery.kubernetes.node_exporter.targets\n\n\t\t//
     keep only the specified metrics port name, and pods that are Running and ready\n\t\trule
@@ -2029,7 +2031,7 @@ data:
     \        = \"node_filesystem.*@(tempfs)\"\n\t\t\taction        = \"drop\"\n\t\t}\n\t}\n}\n"
 kind: ConfigMap
 metadata:
-  name: alloy-modules-kubernetes-jobs-9d9gc54kgg
+  name: alloy-modules-kubernetes-jobs-8c76t6t6b7
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -4433,8 +4435,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.4.1
-    helm.sh/chart: alloy-0.8.1
+    app.kubernetes.io/version: v1.4.2
+    helm.sh/chart: alloy-0.9.1
   name: alloy
   namespace: monitoring-system
 spec:
@@ -4474,8 +4476,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.4.1
-    helm.sh/chart: alloy-0.8.1
+    app.kubernetes.io/version: v1.4.2
+    helm.sh/chart: alloy-0.9.1
   name: alloy-cluster
   namespace: monitoring-system
 spec:
@@ -4515,8 +4517,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.4.1
-    helm.sh/chart: alloy-0.8.1
+    app.kubernetes.io/version: v1.4.2
+    helm.sh/chart: alloy-0.9.1
   name: alloy
   namespace: monitoring-system
 spec:
@@ -4569,7 +4571,7 @@ spec:
         - secretRef:
             name: alloy-env
             optional: true
-        image: docker.io/grafana/alloy:v1.4.1
+        image: docker.io/grafana/alloy:v1.4.2
         imagePullPolicy: IfNotPresent
         name: alloy
         ports:
@@ -4637,7 +4639,7 @@ spec:
           name: alloy-modules-kubernetes-profiles-6479gm5dc2
         name: modules-kubernetes-profiles
       - configMap:
-          name: alloy-modules-kubernetes-jobs-9d9gc54kgg
+          name: alloy-modules-kubernetes-jobs-8c76t6t6b7
         name: modules-kubernetes-jobs
 ---
 apiVersion: monitoring.coreos.com/v1
@@ -4771,8 +4773,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.4.1
-    helm.sh/chart: alloy-0.8.1
+    app.kubernetes.io/version: v1.4.2
+    helm.sh/chart: alloy-0.9.1
   name: alloy
   namespace: monitoring-system
 spec:
@@ -4794,8 +4796,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.4.1
-    helm.sh/chart: alloy-0.8.1
+    app.kubernetes.io/version: v1.4.2
+    helm.sh/chart: alloy-0.9.1
   name: alloy
   namespace: monitoring-system
 spec:
