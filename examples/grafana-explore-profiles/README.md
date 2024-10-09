@@ -18,7 +18,7 @@ include:
 services:
   # override included service grafana environment
   grafana:
-    image: ${GRAFANA_IMAGE:-docker.io/grafana/grafana:11.2.1}
+    image: ${GRAFANA_IMAGE:-docker.io/grafana/grafana:11.2.2}
     volumes:
       - ./grafana/provisioning/plugins/grafana-pyroscope-app.yaml:/etc/grafana/provisioning/plugins/grafana-pyroscope-app.yaml
     environment:

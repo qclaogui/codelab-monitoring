@@ -51,8 +51,8 @@ declare "memcached_metrics_scrape" {
 	****************************************************************/
 	// https://grafana.com/docs/alloy/latest/reference/components/prometheus.exporter.memcached/
 	prometheus.exporter.memcached "integrations_memcached_exporter" {
-		address = nonsensitive(remote.kubernetes.secret.memcached.data["instance-address"])
-		timeout = nonsensitive(remote.kubernetes.secret.memcached.data["instance-timeout"])
+		address = convert.nonsensitive(remote.kubernetes.secret.memcached.data["instance-address"])
+		timeout = convert.nonsensitive(remote.kubernetes.secret.memcached.data["instance-timeout"])
 	}
 
 	/***************************************************************
@@ -68,7 +68,7 @@ declare "memcached_metrics_scrape" {
 
 		rule {
 			target_label = "instance"
-			replacement  = coalesce(nonsensitive(remote.kubernetes.secret.memcached.data["instance-name"]), constants.hostname)
+			replacement  = coalesce(convert.nonsensitive(remote.kubernetes.secret.memcached.data["instance-name"]), constants.hostname)
 		}
 	}
 

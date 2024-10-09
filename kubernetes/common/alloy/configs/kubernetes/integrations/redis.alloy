@@ -52,8 +52,8 @@ declare "redis_exporter_metrics_scrape" {
 	* Integrations Redis
 	****************************************************************/
 	prometheus.exporter.redis "integrations_redis_exporter" {
-		redis_addr     = nonsensitive(remote.kubernetes.secret.redis.data["instance-address"])
-		redis_password = nonsensitive(remote.kubernetes.secret.redis.data["instance-password"])
+		redis_addr     = convert.nonsensitive(remote.kubernetes.secret.redis.data["instance-address"])
+		redis_password = convert.nonsensitive(remote.kubernetes.secret.redis.data["instance-password"])
 	}
 
 	/***************************************************************
@@ -69,7 +69,7 @@ declare "redis_exporter_metrics_scrape" {
 
 		rule {
 			target_label = "instance"
-			replacement  = coalesce(nonsensitive(remote.kubernetes.secret.redis.data["instance-name"]), constants.hostname)
+			replacement  = coalesce(convert.nonsensitive(remote.kubernetes.secret.redis.data["instance-name"]), constants.hostname)
 		}
 	}
 

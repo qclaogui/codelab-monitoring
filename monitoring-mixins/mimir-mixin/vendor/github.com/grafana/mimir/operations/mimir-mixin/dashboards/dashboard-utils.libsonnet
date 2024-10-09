@@ -25,6 +25,7 @@ local utils = import 'mixin-utils/utils.libsonnet';
   ]),
 
   local sortAscending = 1,
+  local sortNaturalAscending = 7,
 
   _config:: error 'must provide _config',
 
@@ -34,6 +35,18 @@ local utils = import 'mixin-utils/utils.libsonnet';
         if condition
         then self.addPanel(panel)
         else self,
+
+      // justifyPanels make sure that the panels span the whole row.
+      // It is useful when the number of panels is not a divisor of 12.
+      justifyPanels()::
+        self + {
+          local n = std.length(super.panels),
+          local span = std.floor(12 / n),
+          panels: [
+            super.panels[i] { span: span + if i < (12 % n) then 1 else 0 }
+            for i in std.range(0, n - 1)
+          ],
+        },
     },
 
   // Override the dashboard constructor to add:
@@ -55,6 +68,8 @@ local utils = import 'mixin-utils/utils.libsonnet';
           version: '8.0.0',
         },
       ],
+
+      refresh: '5m',
 
       addRowIf(condition, row)::
         if condition
@@ -98,10 +113,10 @@ local utils = import 'mixin-utils/utils.libsonnet';
 
         if multi then
           if $._config.singleBinary
-          then d.addMultiTemplate('job', $._config.dashboard_variables.job_query, $._config.per_job_label, sort=sortAscending)
+          then d.addMultiTemplate('job', $._config.dashboard_variables.job_query, $._config.per_job_label, sort=sortAscending, includeAll=false)
           else d
                .addMultiTemplate('cluster', $._config.dashboard_variables.cluster_query, '%s' % $._config.per_cluster_label, sort=sortAscending)
-               .addMultiTemplate('namespace', $._config.dashboard_variables.namespace_query, '%s' % $._config.per_namespace_label, sort=sortAscending)
+               .addMultiTemplate('namespace', $._config.dashboard_variables.namespace_query, '%s' % $._config.per_namespace_label, sort=sortAscending, includeAll=false)
         else
           if $._config.singleBinary
           then d.addTemplate('job', $._config.dashboard_variables.job_query, $._config.per_job_label, sort=sortAscending)
@@ -110,32 +125,40 @@ local utils = import 'mixin-utils/utils.libsonnet';
                .addTemplate('namespace', $._config.dashboard_variables.namespace_query, '%s' % $._config.per_namespace_label, sort=sortAscending),
 
       addActiveUserSelectorTemplates()::
-        self.addTemplate('user', 'cortex_ingester_active_series{%s=~"$cluster", %s=~"$namespace"}' % [$._config.per_cluster_label, $._config.per_namespace_label], 'user', sort=sortAscending),
+        self.addTemplate('user', 'cortex_ingester_active_series{%s=~"$cluster", %s=~"$namespace"}' % [$._config.per_cluster_label, $._config.per_namespace_label], 'user', sort=sortNaturalAscending),
 
-      addCustomTemplate(name, values, defaultIndex=0):: self {
+      addCustomTemplate(label, name, options, defaultIndex=0):: self {
+        // Escape the comma because it's used a separator in the options list.
+        local escapeValue(v) = std.strReplace(v, ',', '\\,'),
+
         templating+: {
-          list+: [
-            {
-              name: name,
-              options: [
-                {
-                  selected: v == values[defaultIndex],
-                  text: v,
-                  value: v,
-                }
-                for v in values
-              ],
-              current: {
-                selected: true,
-                text: values[defaultIndex],
-                value: values[defaultIndex],
-              },
-              type: 'custom',
-              hide: 0,
-              includeAll: false,
-              multi: false,
+          list+: [{
+            current: {
+              selected: true,
+              text: options[defaultIndex].label,
+              value: escapeValue(options[defaultIndex].value),
             },
-          ],
+            hide: 0,
+            includeAll: false,
+            label: label,
+            multi: false,
+            name: name,
+            query: std.join(',', [
+              '%s : %s' % [option.label, escapeValue(option.value)]
+              for option in options
+            ]),
+            options: [
+              {
+                selected: option.label == options[defaultIndex].label,
+                text: option.label,
+                value: escapeValue(option.value),
+              }
+              for option in options
+            ],
+            skipUrlSync: false,
+            type: 'custom',
+            useTags: false,
+          }],
         },
       },
     },
@@ -173,7 +196,7 @@ local utils = import 'mixin-utils/utils.libsonnet';
   jobSelector(job)::
     if $._config.singleBinary
     then [utils.selector.noop('%s' % $._config.per_cluster_label), utils.selector.re($._config.per_job_label, '$job')]
-    else [utils.selector.re('%s' % $._config.per_cluster_label, '$cluster'), utils.selector.re($._config.per_job_label, '($namespace)/(%s)' % formatJobForQuery(job))],
+    else [utils.selector.re('%s' % $._config.per_cluster_label, '$cluster'), utils.selector.re($._config.per_job_label, '%s(%s)' % [$._config.job_prefix, formatJobForQuery(job)])],
 
   recordingRulePrefix(selectors)::
     std.join('_', [matcher.label for matcher in selectors]),
@@ -192,6 +215,11 @@ local utils = import 'mixin-utils/utils.libsonnet';
         defaults+: {
           unit: 'short',
           min: 0,
+        },
+      },
+      options+: {
+        tooltip+: {
+          mode: 'multi',
         },
       },
     },
@@ -252,6 +280,16 @@ local utils = import 'mixin-utils/utils.libsonnet';
         for target in super.targets
       ],
     },
+
+  perInstanceLatencyPanelNativeHistogram(quantile, metric, selector, legends=null, instanceLabel=$._config.per_instance_label, from_recording=false)::
+    local queries = [
+      utils.showClassicHistogramQuery(utils.ncHistogramQuantile(quantile, metric, utils.toPrometheusSelectorNaked(selector), [instanceLabel], from_recording=from_recording)),
+      utils.showNativeHistogramQuery(utils.ncHistogramQuantile(quantile, metric, utils.toPrometheusSelectorNaked(selector), [instanceLabel], from_recording=from_recording)),
+    ];
+    if legends == null then
+      $.hiddenLegendQueryPanel(queries, ['', ''])
+    else
+      $.queryPanel(queries, legends),
 
   // Creates a panel like queryPanel() but if the legend contains only 1 entry,
   // than it configures the series alias color to the one used to display failures.
@@ -590,8 +628,8 @@ local utils = import 'mixin-utils/utils.libsonnet';
           max by (scaletargetref_name) (
             kube_horizontalpodautoscaler_spec_max_replicas{%(namespace_matcher)s, horizontalpodautoscaler=~"%(hpa_name)s"}
             # Add the scaletargetref_name label for readability
-            + on (%(cluster_labels)s, horizontalpodautoscaler) group_left (scaletargetref_name)
-              0*kube_horizontalpodautoscaler_info{%(namespace_matcher)s, horizontalpodautoscaler=~"%(hpa_name)s"}
+            * on (%(cluster_labels)s, horizontalpodautoscaler) group_left (scaletargetref_name)
+              group by (%(cluster_labels)s, horizontalpodautoscaler, scaletargetref_name) (kube_horizontalpodautoscaler_info{%(namespace_matcher)s, horizontalpodautoscaler=~"%(hpa_name)s"})
           )
         ||| % {
           namespace_matcher: $.namespaceMatcher(),
@@ -602,8 +640,8 @@ local utils = import 'mixin-utils/utils.libsonnet';
           max by (scaletargetref_name) (
             kube_horizontalpodautoscaler_status_current_replicas{%(namespace_matcher)s, horizontalpodautoscaler=~"%(hpa_name)s"}
             # Add the scaletargetref_name label for readability
-            + on (%(cluster_labels)s, horizontalpodautoscaler) group_left (scaletargetref_name)
-              0*kube_horizontalpodautoscaler_info{%(namespace_matcher)s, horizontalpodautoscaler=~"%(hpa_name)s"}
+            * on (%(cluster_labels)s, horizontalpodautoscaler) group_left (scaletargetref_name)
+              group by (%(cluster_labels)s, horizontalpodautoscaler, scaletargetref_name) (kube_horizontalpodautoscaler_info{%(namespace_matcher)s, horizontalpodautoscaler=~"%(hpa_name)s"})
           )
         ||| % {
           namespace_matcher: $.namespaceMatcher(),
@@ -614,8 +652,8 @@ local utils = import 'mixin-utils/utils.libsonnet';
           max by (scaletargetref_name) (
             kube_horizontalpodautoscaler_spec_min_replicas{%(namespace_matcher)s, horizontalpodautoscaler=~"%(hpa_name)s"}
             # Add the scaletargetref_name label for readability
-            + on (%(cluster_labels)s, horizontalpodautoscaler) group_left (scaletargetref_name)
-              0*kube_horizontalpodautoscaler_info{%(namespace_matcher)s, horizontalpodautoscaler=~"%(hpa_name)s"}
+            * on (%(cluster_labels)s, horizontalpodautoscaler) group_left (scaletargetref_name)
+              group by (%(cluster_labels)s, horizontalpodautoscaler, scaletargetref_name) (kube_horizontalpodautoscaler_info{%(namespace_matcher)s, horizontalpodautoscaler=~"%(hpa_name)s"})
           )
         ||| % {
           namespace_matcher: $.namespaceMatcher(),
@@ -663,18 +701,25 @@ local utils = import 'mixin-utils/utils.libsonnet';
       [
         |||
           sum by (scaler) (
-            label_replace(
-              keda_scaler_metrics_value{%(cluster_label)s=~"$cluster", exported_namespace=~"$namespace", scaler=~"%(scaler_selector)s"},
-              "namespace", "$1", "exported_namespace", "(.*)"
+            # Using `max by ()` so that series churn doesn't break the promQL join
+            max by (%(aggregation_labels)s, scaledObject, metric, scaler) (
+              label_replace(
+                keda_scaler_metrics_value{%(cluster_label)s=~"$cluster", exported_namespace=~"$namespace", scaler=~"%(scaler_selector)s"},
+                "namespace", "$1", "exported_namespace", "(.*)"
+              )
             )
             /
-            on(%(aggregation_labels)s, scaledObject, metric) group_left label_replace(
-              label_replace(
-                kube_horizontalpodautoscaler_spec_target_metric{%(namespace)s, horizontalpodautoscaler=~"%(hpa_name)s"},
-                "metric", "$1", "metric_name", "(.+)"
-              ),
-              "scaledObject", "$1", "horizontalpodautoscaler", "%(hpa_prefix)s(.*)"
-            )
+            on(%(aggregation_labels)s, scaledObject, metric) group_left
+              # Using `max by ()` so that series churn doesn't break the promQL join
+              max by (%(aggregation_labels)s, scaledObject, metric) (
+                label_replace(
+                  label_replace(
+                    kube_horizontalpodautoscaler_spec_target_metric{%(namespace)s, horizontalpodautoscaler=~"%(hpa_name)s"},
+                    "metric", "$1", "metric_name", "(.+)"
+                  ),
+                  "scaledObject", "$1", "horizontalpodautoscaler", "%(hpa_prefix)s(.*)"
+                )
+              )
           )
         ||| % {
           aggregation_labels: $._config.alert_aggregation_labels,
@@ -706,23 +751,34 @@ local utils = import 'mixin-utils/utils.libsonnet';
       [
         |||
           sum by (scaler) (
-            label_replace(
-              keda_scaler_metrics_value{%(cluster_label)s=~"$cluster", exported_namespace=~"$namespace", scaler=~"%(scaler_selector)s"},
-              "namespace", "$1", "exported_namespace", "(.*)"
+            # Using `max by ()` so that series churn doesn't break the promQL join
+            max by (%(aggregation_labels)s, scaledObject, metric, scaler) (
+              label_replace(
+                keda_scaler_metrics_value{%(cluster_label)s=~"$cluster", exported_namespace=~"$namespace", scaler=~"%(scaler_selector)s"},
+                "namespace", "$1", "exported_namespace", "(.*)"
+              )
             )
             /
-            on(%(aggregation_labels)s, scaledObject, metric) group_left label_replace(
-              label_replace(
-                kube_horizontalpodautoscaler_spec_target_metric{%(namespace)s, horizontalpodautoscaler=~"%(hpa_name)s"},
-                "metric", "$1", "metric_name", "(.+)"
-              ),
-              "scaledObject", "$1", "horizontalpodautoscaler", "%(hpa_prefix)s(.*)"
-            )
+            on(%(aggregation_labels)s, scaledObject, metric) group_left
+              # Using `max by ()` so that series churn doesn't break the promQL join
+              max by (%(aggregation_labels)s, scaledObject, metric) (
+                label_replace(
+                  label_replace(
+                    kube_horizontalpodautoscaler_spec_target_metric{%(namespace)s, horizontalpodautoscaler=~"%(hpa_name)s"},
+                    "metric", "$1", "metric_name", "(.+)"
+                  ),
+                  "scaledObject", "$1", "horizontalpodautoscaler", "%(hpa_prefix)s(.*)"
+                )
+              )
             *
-            on(%(aggregation_labels)s, scaledObject) group_left label_replace(
-              kube_horizontalpodautoscaler_status_current_replicas{%(namespace)s, horizontalpodautoscaler=~"%(hpa_name)s"},
-              "scaledObject", "$1", "horizontalpodautoscaler", "keda-hpa-(.*)"
-            )
+            on(%(aggregation_labels)s, scaledObject) group_left
+              # Using `max by ()` so that series churn doesn't break the promQL join
+              max by (%(aggregation_labels)s, scaledObject) (
+                label_replace(
+                  kube_horizontalpodautoscaler_status_current_replicas{%(namespace)s, horizontalpodautoscaler=~"%(hpa_name)s"},
+                  "scaledObject", "$1", "horizontalpodautoscaler", "keda-hpa-(.*)"
+                )
+              )
           )
         ||| % {
           aggregation_labels: $._config.alert_aggregation_labels,
@@ -757,8 +813,21 @@ local utils = import 'mixin-utils/utils.libsonnet';
       title,
       |||
         The rate of failures in the KEDA custom metrics API server. Whenever an error occurs, the KEDA custom
-        metrics server is unable to query the scaling metric from Prometheus so the autoscaler woudln't work properly.
+        metrics server is unable to query the scaling metric from Prometheus so the autoscaler wouldn't work properly.
       |||
+    ),
+
+  cpuBasedAutoScalingRow(componentTitle)::
+    local componentName = std.strReplace(std.asciiLower(componentTitle), '-', '_');
+    super.row('%s – autoscaling' % [componentTitle])
+    .addPanel(
+      $.autoScalingActualReplicas(componentName)
+    )
+    .addPanel(
+      $.autoScalingDesiredReplicasByAverageValueScalingMetricPanel(componentName, 'CPU', 'cpu')
+    )
+    .addPanel(
+      $.autoScalingFailuresPanel(componentName)
     ),
 
   cpuAndMemoryBasedAutoScalingRow(componentTitle)::
@@ -775,6 +844,33 @@ local utils = import 'mixin-utils/utils.libsonnet';
     )
     .addPanel(
       $.autoScalingFailuresPanel(componentName)
+    ),
+
+  ncSumCountRateStatPanel(metric, selectors, extra_selector, thresholds=[])::
+    local ncQuery = $.ncSumHistogramCountRate(metric, selectors, extra_selector);
+    local queries = [
+      utils.showClassicHistogramQuery(ncQuery),
+      utils.showNativeHistogramQuery(ncQuery),
+    ];
+    $.newStatPanel(
+      queries=queries,
+      legends=['', ''],
+      unit='percentunit',
+      thresholds=thresholds,
+    ),
+
+  ncLatencyStatPanel(quantile, metric, selectors, thresholds=[])::
+    local labels = std.join('_', [matcher.label for matcher in selectors]);
+    local metricStr = '%(labels)s:%(metric)s' % { labels: labels, metric: metric };
+    local queries = [
+      utils.showClassicHistogramQuery(utils.ncHistogramQuantile(quantile, metricStr, utils.toPrometheusSelectorNaked(selectors), from_recording=true)),
+      utils.showNativeHistogramQuery(utils.ncHistogramQuantile(quantile, metricStr, utils.toPrometheusSelectorNaked(selectors), from_recording=true)),
+    ];
+    $.newStatPanel(
+      queries=queries,
+      legends=['', ''],
+      unit='s',
+      thresholds=thresholds,
     ),
 
   newStatPanel(queries, legends='', unit='percentunit', decimals=1, thresholds=[], instant=false, novalue='')::
@@ -1347,20 +1443,23 @@ local utils = import 'mixin-utils/utils.libsonnet';
 
   filterKedaScalerErrorsByHPA(hpa_name)::
     |||
-      sum by(%(aggregation_labels)s, scaler, metric, scaledObject) (
+      sum by(%(aggregation_labels)s, metric, scaledObject, scaler) (
         label_replace(
           rate(keda_scaler_errors[$__rate_interval]),
           "namespace", "$1", "exported_namespace", "(.+)"
         )
       ) +
       on(%(aggregation_labels)s, metric, scaledObject) group_left
-      label_replace(
-        label_replace(
-            kube_horizontalpodautoscaler_spec_target_metric{%(namespace)s, horizontalpodautoscaler=~"%(hpa_name)s"} * 0,
-            "scaledObject", "$1", "horizontalpodautoscaler", "%(hpa_prefix)s(.*)"
-        ),
-        "metric", "$1", "metric_name", "(.+)"
-      )
+        # Using `max by ()` so that series churn doesn't break the promQL join
+        max by (%(aggregation_labels)s, metric, scaledObject) (
+          label_replace(
+            label_replace(
+                kube_horizontalpodautoscaler_spec_target_metric{%(namespace)s, horizontalpodautoscaler=~"%(hpa_name)s"} * 0,
+                "scaledObject", "$1", "horizontalpodautoscaler", "%(hpa_prefix)s(.*)"
+            ),
+            "metric", "$1", "metric_name", "(.+)"
+          )
+        )
     ||| % {
       hpa_name: hpa_name,
       hpa_prefix: $._config.autoscaling_hpa_prefix,
@@ -1517,17 +1616,15 @@ local utils = import 'mixin-utils/utils.libsonnet';
       $.row($.capitalize(rowTitlePrefix + 'query-frontend'))
       .addPanel(
         $.timeseriesPanel('Requests / sec') +
-        $.qpsPanel('cortex_request_duration_seconds_count{%s, route=~"%s"}' % [$.jobMatcher(queryFrontendJobName), queryRoutesRegex])
+        $.qpsPanelNativeHistogram($.queries.query_frontend.requestsPerSecondMetric, utils.toPrometheusSelectorNaked($.jobSelector(queryFrontendJobName) + [utils.selector.re('route', queryRoutesRegex)]))
       )
       .addPanel(
         $.timeseriesPanel('Latency') +
-        $.latencyRecordingRulePanel('cortex_request_duration_seconds', $.jobSelector(queryFrontendJobName) + [utils.selector.re('route', queryRoutesRegex)])
+        $.latencyRecordingRulePanelNativeHistogram($.queries.query_frontend.requestsPerSecondMetric, $.jobSelector(queryFrontendJobName) + [utils.selector.re('route', queryRoutesRegex)])
       )
       .addPanel(
         $.timeseriesPanel('Per %s p99 latency' % $._config.per_instance_label) +
-        $.hiddenLegendQueryPanel(
-          'histogram_quantile(0.99, sum by(le, %s) (rate(cortex_request_duration_seconds_bucket{%s, route=~"%s"}[$__rate_interval])))' % [$._config.per_instance_label, $.jobMatcher(queryFrontendJobName), queryRoutesRegex], ''
-        )
+        $.perInstanceLatencyPanelNativeHistogram('0.99', $.queries.query_frontend.requestsPerSecondMetric, $.jobSelector(queryFrontendJobName) + [utils.selector.re('route', queryRoutesRegex)])
       ),
       local description = |||
         <p>
@@ -1677,9 +1774,9 @@ local utils = import 'mixin-utils/utils.libsonnet';
     ],
 
   ingestStorageIngesterEndToEndLatencyWhenStartingPanel()::
-    $.timeseriesPanel('Kafka record end-to-end latency when starting') +
+    $.timeseriesPanel('Kafka end-to-end latency when starting') +
     $.panelDescription(
-      'Kafka record end-to-end latency when starting',
+      'Kafka end-to-end latency when starting',
       |||
         Time between writing request by distributor to Kafka and reading the record by ingester during catch-up phase, when ingesters are starting.
         If ingesters are not starting and catching up in the selected time range, this panel will be empty.
@@ -1705,9 +1802,9 @@ local utils = import 'mixin-utils/utils.libsonnet';
     },
 
   ingestStorageIngesterEndToEndLatencyWhenRunningPanel()::
-    $.timeseriesPanel('Kafka record end-to-end latency when ingesters are running') +
+    $.timeseriesPanel('Kafka end-to-end latency when ingesters are running') +
     $.panelDescription(
-      'Kafka record end-to-end latency when ingesters are running',
+      'Kafka end-to-end latency when ingesters are running',
       |||
         Time between writing request by distributor to Kafka and reading the record by ingester, when ingesters are running.
       |||
@@ -1718,6 +1815,209 @@ local utils = import 'mixin-utils/utils.libsonnet';
         'histogram_quantile(0.99, sum(rate(cortex_ingest_storage_reader_receive_delay_seconds{%s, phase="running"}[$__rate_interval])))' % [$.jobMatcher($._config.job_names.ingester)],
         'histogram_quantile(0.999, sum(rate(cortex_ingest_storage_reader_receive_delay_seconds{%s, phase="running"}[$__rate_interval])))' % [$.jobMatcher($._config.job_names.ingester)],
         'histogram_quantile(1.0, sum(rate(cortex_ingest_storage_reader_receive_delay_seconds{%s, phase="running"}[$__rate_interval])))' % [$.jobMatcher($._config.job_names.ingester)],
+      ],
+      [
+        'avg',
+        '99th percentile',
+        '99.9th percentile',
+        '100th percentile',
+      ],
+    ) + {
+      fieldConfig+: {
+        defaults+: { unit: 's' },
+      },
+    },
+
+  ingestStorageIngesterEndToEndLatencyOutliersWhenRunningPanel()::
+    $.timeseriesPanel('Kafka 100th percentile end-to-end latency when ingesters are running (outliers)') +
+    $.panelDescription(
+      'Kafka 100th percentile end-to-end latency when ingesters are running (outliers only)',
+      |||
+        The 100th percentile of the time between writing request by distributor to Kafka and reading the record by ingester,
+        when ingesters are running. This panel only shows ingester outliers, to easily spot if the high end-to-end latency
+        may be caused by few ingesters.
+      |||
+    ) +
+    $.hiddenLegendQueryPanel(
+      |||
+        histogram_quantile(1.0, sum by(pod) (rate(cortex_ingest_storage_reader_receive_delay_seconds{%(job_matcher)s, phase="running"}[$__rate_interval])))
+
+        # Add a filter to show only the outliers. We consider an ingester an outlier if its
+        # 100th percentile latency is greater than the 200%% of the average 100th of the 10
+        # worst ingesters (if there are less than 10 ingesters, then all ingesters will be took
+        # in account).
+        > scalar(
+          avg(
+            topk(10,
+                histogram_quantile(1.0, sum by(pod) (rate(cortex_ingest_storage_reader_receive_delay_seconds{%(job_matcher)s, phase="running"}[$__rate_interval])))
+                > 0
+            )
+          )
+          * 2
+        )
+      ||| % { job_matcher: $.jobMatcher($._config.job_names.ingester) },
+      '{{pod}}',
+    ) + {
+      fieldConfig+: {
+        defaults+: { unit: 's' },
+      },
+    },
+
+  ingestStorageKafkaProducedRecordsRatePanel(jobName)::
+    $.timeseriesPanel('Kafka produced records / sec') +
+    $.panelDescription(
+      'Kafka produced records / sec',
+      'Rate of records synchronously produced to Kafka.',
+    ) +
+    $.queryPanel([
+      |||
+        sum(rate(cortex_ingest_storage_writer_produce_requests_total{%(job_matcher)s}[$__rate_interval]))
+        -
+        (sum(rate(cortex_ingest_storage_writer_produce_failures_total{%(job_matcher)s}[$__rate_interval])) or vector(0))
+      ||| % { job_matcher: $.jobMatcher($._config.job_names[jobName]) },
+      |||
+        sum by(reason) (rate(cortex_ingest_storage_writer_produce_failures_total{%(job_matcher)s}[$__rate_interval]))
+      ||| % { job_matcher: $.jobMatcher($._config.job_names[jobName]) },
+    ], [
+      'success',
+      'failed - {{ reason }}',
+    ]) +
+    $.stack +
+    $.aliasColors({
+      success: $._colors.success,
+    }),
+
+  ingestStorageKafkaProducedRecordsLatencyPanel(jobName)::
+    $.timeseriesPanel('Kafka produced records latency') +
+    $.panelDescription(
+      'Kafka produced records latency',
+      |||
+        Latency of records synchronously produced to Kafka.
+      |||
+    ) +
+    $.queryPanel(
+      [
+        'histogram_avg(sum(rate(cortex_ingest_storage_writer_latency_seconds{%s}[$__rate_interval])))' % [$.jobMatcher($._config.job_names[jobName])],
+        'histogram_quantile(0.99, sum(rate(cortex_ingest_storage_writer_latency_seconds{%s}[$__rate_interval])))' % [$.jobMatcher($._config.job_names[jobName])],
+        'histogram_quantile(0.999, sum(rate(cortex_ingest_storage_writer_latency_seconds{%s}[$__rate_interval])))' % [$.jobMatcher($._config.job_names[jobName])],
+        'histogram_quantile(1.0, sum(rate(cortex_ingest_storage_writer_latency_seconds{%s}[$__rate_interval])))' % [$.jobMatcher($._config.job_names[jobName])],
+      ],
+      [
+        'avg',
+        '99th percentile',
+        '99.9th percentile',
+        '100th percentile',
+      ],
+    ) + {
+      fieldConfig+: {
+        defaults+: { unit: 's' },
+      },
+    },
+
+  ingestStorageFetchLastProducedOffsetRequestsPanel(jobMatcher)::
+    $.timeseriesPanel('Fetch last produced offset requests / sec') +
+    $.panelDescription(
+      'Fetch last produced offset requests / sec',
+      'Shows rate of successful and failed requests to fetch last produced offset(s).',
+    ) +
+    $.queryPanel(
+      [
+        |||
+          sum(rate(cortex_ingest_storage_reader_last_produced_offset_requests_total{%s}[$__rate_interval]))
+          -
+          sum(rate(cortex_ingest_storage_reader_last_produced_offset_failures_total{%s}[$__rate_interval]))
+        ||| % [jobMatcher, jobMatcher],
+        |||
+          sum(rate(cortex_ingest_storage_reader_last_produced_offset_failures_total{%s}[$__rate_interval]))
+        ||| % [jobMatcher],
+      ],
+      [
+        'successful',
+        'failed',
+      ],
+    ) + {
+      fieldConfig+: {
+        defaults+: { unit: 'reqps' },
+      },
+    } +
+    $.aliasColors({ successful: $._colors.success, failed: $._colors.failed }) +
+    $.stack,
+
+  ingestStorageFetchLastProducedOffsetLatencyPanel(jobMatcher)::
+    $.timeseriesPanel('Fetch last produced offset latency') +
+    $.panelDescription(
+      'Fetch last produced offset latency',
+      |||
+        How long does it take to fetch "last produced offset" of partition(s).
+      |||
+    ) +
+    $.queryPanel(
+      [
+        'histogram_avg(sum(rate(cortex_ingest_storage_reader_last_produced_offset_request_duration_seconds{%s}[$__rate_interval])))' % [jobMatcher],
+        'histogram_quantile(0.99, sum(rate(cortex_ingest_storage_reader_last_produced_offset_request_duration_seconds{%s}[$__rate_interval])))' % [jobMatcher],
+        'histogram_quantile(0.999, sum(rate(cortex_ingest_storage_reader_last_produced_offset_request_duration_seconds{%s}[$__rate_interval])))' % [jobMatcher],
+        'histogram_quantile(1.0, sum(rate(cortex_ingest_storage_reader_last_produced_offset_request_duration_seconds{%s}[$__rate_interval])))' % [jobMatcher],
+      ],
+      [
+        'avg',
+        '99th percentile',
+        '99.9th percentile',
+        '100th percentile',
+      ],
+    ) + {
+      fieldConfig+: {
+        defaults+: { unit: 's' },
+      },
+    },
+
+  ingestStorageStrongConsistencyRequestsPanel(component, jobMatcher)::
+    // The unit changes whether the metric is exposed from ingesters (partition-reader) or other components. In the ingesters it's the
+    // requests issued by queriers to ingesters, while in other components it's the actual query.
+    local unit = if component == 'partition-reader' then 'requests' else 'queries';
+    local title = '%s with strong read consistency / sec' % (std.asciiUpper(std.substr(unit, 0, 1)) + std.substr(unit, 1, std.length(unit) - 1));
+
+    $.timeseriesPanel(title) +
+    $.panelDescription(
+      title,
+      'Shows rate of %(unit)s with strong read consistency, and rate of failed %(unit)s with strong read consistency.' % {
+        unit: unit,
+      },
+    ) +
+    $.queryPanel(
+      [
+        |||
+          sum(rate(cortex_ingest_storage_strong_consistency_requests_total{component="%(component)s", %(jobMatcher)s}[$__rate_interval]))
+          -
+          sum(rate(cortex_ingest_storage_strong_consistency_failures_total{component="%(component)s", %(jobMatcher)s}[$__rate_interval]))
+        ||| % { jobMatcher: jobMatcher, component: component },
+        |||
+          sum(rate(cortex_ingest_storage_strong_consistency_failures_total{component="%(component)s", %(jobMatcher)s}[$__rate_interval]))
+        ||| % { jobMatcher: jobMatcher, component: component },
+      ],
+      [
+        'successful',
+        'failed',
+      ],
+    ) + {
+      fieldConfig+: {
+        defaults+: { unit: 'reqps' },
+      },
+    } +
+    $.aliasColors({ successful: $._colors.success, failed: $._colors.failed }) +
+    $.stack,
+
+  ingestStorageStrongConsistencyWaitLatencyPanel(component, jobMatcher)::
+    $.timeseriesPanel('Strong read consistency queries — wait latency') +
+    $.panelDescription(
+      'Strong read consistency queries — wait latency',
+      'How long does the request wait to guarantee strong read consistency.',
+    ) +
+    $.queryPanel(
+      [
+        'histogram_avg(sum(rate(cortex_ingest_storage_strong_consistency_wait_duration_seconds{component="%(component)s", %(jobMatcher)s}[$__rate_interval])))' % { component: component, jobMatcher: jobMatcher },
+        'histogram_quantile(0.99, sum(rate(cortex_ingest_storage_strong_consistency_wait_duration_seconds{component="%(component)s", %(jobMatcher)s}[$__rate_interval])))' % { component: component, jobMatcher: jobMatcher },
+        'histogram_quantile(0.999, sum(rate(cortex_ingest_storage_strong_consistency_wait_duration_seconds{component="%(component)s", %(jobMatcher)s}[$__rate_interval])))' % { component: component, jobMatcher: jobMatcher },
+        'histogram_quantile(1.0, sum(rate(cortex_ingest_storage_strong_consistency_wait_duration_seconds{component="%(component)s", %(jobMatcher)s}[$__rate_interval])))' % { component: component, jobMatcher: jobMatcher },
       ],
       [
         'avg',

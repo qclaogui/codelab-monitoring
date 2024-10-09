@@ -43,7 +43,7 @@ local utils = import 'mixin-utils/utils.libsonnet';
       },
     },
 
-    addMultiTemplate(name, metric_name, label_name, hide=0, allValue='.+', sort=2):: self {
+    addMultiTemplate(name, metric_name, label_name, hide=0, allValue='.+', sort=2, includeAll=true):: self {
       templating+: {
         list+: [{
           allValue: allValue,
@@ -54,7 +54,7 @@ local utils = import 'mixin-utils/utils.libsonnet';
           },
           datasource: '$datasource',
           hide: hide,
-          includeAll: true,
+          includeAll: includeAll,
           label: name,
           multi: true,
           name: name,
@@ -332,17 +332,25 @@ local utils = import 'mixin-utils/utils.libsonnet';
   },
 
   statPanel(query, format='percentunit'):: {
+    local isNativeClassic = utils.isNativeClassicQuery(query),
     type: 'singlestat',
     thresholds: '70,80',
     format: format,
     targets: [
       {
-        expr: query,
+        expr: if isNativeClassic then utils.showClassicHistogramQuery(query) else query,
+        format: 'time_series',
+        instant: true,
+        refId: if isNativeClassic then 'A_classic' else 'A',
+      },
+    ] + if isNativeClassic then [
+      {
+        expr: utils.showNativeHistogramQuery(query),
         format: 'time_series',
         instant: true,
         refId: 'A',
       },
-    ],
+    ] else [],
   },
 
   tablePanel(queries, labelStyles):: {

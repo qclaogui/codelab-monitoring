@@ -50,7 +50,7 @@ declare "mysql_metrics_scrape" {
 	* Integrations Mysql
 	****************************************************************/
 	prometheus.exporter.mysql "integrations_mysqld_exporter" {
-		data_source_name = nonsensitive(remote.kubernetes.secret.mysql.data["mysql-username"]) + ":" + nonsensitive(remote.kubernetes.secret.mysql.data["mysql-password"]) + "@(" + nonsensitive(remote.kubernetes.secret.mysql.data["mysql-host"]) + ")/"
+		data_source_name = convert.nonsensitive(remote.kubernetes.secret.mysql.data["mysql-username"]) + ":" + convert.nonsensitive(remote.kubernetes.secret.mysql.data["mysql-password"]) + "@(" + convert.nonsensitive(remote.kubernetes.secret.mysql.data["mysql-host"]) + ")/"
 	}
 
 	/***************************************************************
@@ -66,7 +66,7 @@ declare "mysql_metrics_scrape" {
 
 		rule {
 			target_label = "instance"
-			replacement  = coalesce(nonsensitive(remote.kubernetes.secret.mysql.data["instance-name"]), constants.hostname)
+			replacement  = coalesce(convert.nonsensitive(remote.kubernetes.secret.mysql.data["instance-name"]), constants.hostname)
 		}
 	}
 

@@ -31,6 +31,7 @@
 
     job_names: {
       ingester: ['mimir', 'ingester.*', 'cortex', 'mimir-write.*'],  // Match also custom and per-zone ingester deployments.
+      ingester_partition: ['ingester.*-partition'],  // Match exclusively temporarily partition ingesters run during the migration to ingest storage.
       distributor: ['mimir', 'distributor.*', 'cortex', 'mimir-write.*'],  // Match also per-zone distributor deployments.
       querier: ['mimir', 'querier.*', 'cortex', 'mimir-read.*'],  // Match also custom querier deployments.
       ruler_querier: ['mimir', 'ruler-querier.*'],  // Match also custom querier deployments.
@@ -45,6 +46,10 @@
       compactor: ['mimir', 'compactor.*', 'cortex', 'mimir-backend.*'],  // Match also custom compactor deployments.
       alertmanager: ['mimir', 'alertmanager', 'cortex','mimir-backend.*'],
       overrides_exporter: ['mimir', 'overrides-exporter', 'mimir-backend.*'],
+
+      // The following are job matchers used to select all components in the read path.
+      main_read_path: std.uniq(std.sort(self.query_frontend + self.query_scheduler + self.querier)),
+      remote_ruler_read_path: std.uniq(std.sort(self.ruler_query_frontend + self.ruler_query_scheduler + self.ruler_querier)),
     },
 
     instance_names: {

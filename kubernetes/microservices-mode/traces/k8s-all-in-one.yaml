@@ -36,8 +36,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.4.1
-    helm.sh/chart: alloy-0.8.1
+    app.kubernetes.io/version: v1.4.2
+    helm.sh/chart: alloy-0.9.1
   name: alloy
   namespace: monitoring-system
 ---
@@ -62,7 +62,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.6.0
-    helm.sh/chart: tempo-distributed-1.18.1
+    helm.sh/chart: tempo-distributed-1.18.2
   name: tempo-distributed
   namespace: tracing-system
 ---
@@ -75,8 +75,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.4.1
-    helm.sh/chart: alloy-0.8.1
+    app.kubernetes.io/version: v1.4.2
+    helm.sh/chart: alloy-0.9.1
   name: alloy
 rules:
 - apiGroups:
@@ -200,8 +200,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.4.1
-    helm.sh/chart: alloy-0.8.1
+    app.kubernetes.io/version: v1.4.2
+    helm.sh/chart: alloy-0.9.1
   name: alloy
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -2095,13 +2095,13 @@ data:
     \     = coalesce(argument.name.value, \"alloy-integrations-memcached\")\n\t}\n\n\t/***************************************************************\n\t*
     Integrations Memcached\n\t****************************************************************/\n\t//
     https://grafana.com/docs/alloy/latest/reference/components/prometheus.exporter.memcached/\n\tprometheus.exporter.memcached
-    \"integrations_memcached_exporter\" {\n\t\taddress = nonsensitive(remote.kubernetes.secret.memcached.data[\"instance-address\"])\n\t\ttimeout
-    = nonsensitive(remote.kubernetes.secret.memcached.data[\"instance-timeout\"])\n\t}\n\n\t/***************************************************************\n\t*
+    \"integrations_memcached_exporter\" {\n\t\taddress = convert.nonsensitive(remote.kubernetes.secret.memcached.data[\"instance-address\"])\n\t\ttimeout
+    = convert.nonsensitive(remote.kubernetes.secret.memcached.data[\"instance-timeout\"])\n\t}\n\n\t/***************************************************************\n\t*
     Discovery Relabelings (pre-scrape)\n\t****************************************************************/\n\tdiscovery.relabel
     \"integrations_memcached_exporter\" {\n\t\ttargets = prometheus.exporter.memcached.integrations_memcached_exporter.targets\n\n\t\trule
     {\n\t\t\ttarget_label = \"job\"\n\t\t\treplacement  = coalesce(argument.job_label.value,
     \"integrations/kubernetes/memcached\")\n\t\t}\n\n\t\trule {\n\t\t\ttarget_label
-    = \"instance\"\n\t\t\treplacement  = coalesce(nonsensitive(remote.kubernetes.secret.memcached.data[\"instance-name\"]),
+    = \"instance\"\n\t\t\treplacement  = coalesce(convert.nonsensitive(remote.kubernetes.secret.memcached.data[\"instance-name\"]),
     constants.hostname)\n\t\t}\n\t}\n\n\t/***************************************************************\n\t*
     Prometheus Scrape Integrations Targets\n\t****************************************************************/\n\tprometheus.scrape
     \"integrations_memcached_exporter\" {\n\t\ttargets = array.concat(\n\t\t\tdiscovery.relabel.integrations_memcached_exporter.output,\n\t\t)\n\n\t\tscrape_classic_histograms
@@ -2130,15 +2130,15 @@ data:
     \"mysql\" {\n\t\tname      = coalesce(argument.name.value, \"alloy-integrations-mysql\")\n\t\tnamespace
     = coalesce(argument.namespace.value, \"monitoring-system\")\n\t}\n\n\t/***************************************************************\n\t*
     Integrations Mysql\n\t****************************************************************/\n\tprometheus.exporter.mysql
-    \"integrations_mysqld_exporter\" {\n\t\tdata_source_name = nonsensitive(remote.kubernetes.secret.mysql.data[\"mysql-username\"])
-    + \":\" + nonsensitive(remote.kubernetes.secret.mysql.data[\"mysql-password\"])
-    + \"@(\" + nonsensitive(remote.kubernetes.secret.mysql.data[\"mysql-host\"]) +
-    \")/\"\n\t}\n\n\t/***************************************************************\n\t*
+    \"integrations_mysqld_exporter\" {\n\t\tdata_source_name = convert.nonsensitive(remote.kubernetes.secret.mysql.data[\"mysql-username\"])
+    + \":\" + convert.nonsensitive(remote.kubernetes.secret.mysql.data[\"mysql-password\"])
+    + \"@(\" + convert.nonsensitive(remote.kubernetes.secret.mysql.data[\"mysql-host\"])
+    + \")/\"\n\t}\n\n\t/***************************************************************\n\t*
     Discovery Relabelings (pre-scrape)\n\t****************************************************************/\n\tdiscovery.relabel
     \"integrations_mysqld_exporter\" {\n\t\ttargets = prometheus.exporter.mysql.integrations_mysqld_exporter.targets\n\n\t\trule
     {\n\t\t\ttarget_label = \"job\"\n\t\t\treplacement  = coalesce(argument.job_label.value,
     \"integrations/kubernetes/mysql\")\n\t\t}\n\n\t\trule {\n\t\t\ttarget_label =
-    \"instance\"\n\t\t\treplacement  = coalesce(nonsensitive(remote.kubernetes.secret.mysql.data[\"instance-name\"]),
+    \"instance\"\n\t\t\treplacement  = coalesce(convert.nonsensitive(remote.kubernetes.secret.mysql.data[\"instance-name\"]),
     constants.hostname)\n\t\t}\n\t}\n\n\t/***************************************************************\n\t*
     Prometheus Scrape Integrations Targets\n\t****************************************************************/\n\tprometheus.scrape
     \"integrations_mysqld_exporter\" {\n\t\ttargets = array.concat(\n\t\t\tdiscovery.relabel.integrations_mysqld_exporter.output,\n\t\t)\n\n\t\tscrape_classic_histograms
@@ -2169,13 +2169,13 @@ data:
     \"redis\" {\n\t\tnamespace = coalesce(argument.namespace.value, \"monitoring-system\")\n\t\tname
     \     = coalesce(argument.name.value, \"alloy-integrations-redis\")\n\t}\n\n\t/***************************************************************\n\t*
     Integrations Redis\n\t****************************************************************/\n\tprometheus.exporter.redis
-    \"integrations_redis_exporter\" {\n\t\tredis_addr     = nonsensitive(remote.kubernetes.secret.redis.data[\"instance-address\"])\n\t\tredis_password
-    = nonsensitive(remote.kubernetes.secret.redis.data[\"instance-password\"])\n\t}\n\n\t/***************************************************************\n\t*
+    \"integrations_redis_exporter\" {\n\t\tredis_addr     = convert.nonsensitive(remote.kubernetes.secret.redis.data[\"instance-address\"])\n\t\tredis_password
+    = convert.nonsensitive(remote.kubernetes.secret.redis.data[\"instance-password\"])\n\t}\n\n\t/***************************************************************\n\t*
     Discovery Relabelings (pre-scrape)\n\t****************************************************************/\n\tdiscovery.relabel
     \"integrations_redis_exporter\" {\n\t\ttargets = prometheus.exporter.redis.integrations_redis_exporter.targets\n\n\t\trule
     {\n\t\t\ttarget_label = \"job\"\n\t\t\treplacement  = coalesce(argument.job_label.value,
     \"integrations/kubernetes/redis_exporter\")\n\t\t}\n\n\t\trule {\n\t\t\ttarget_label
-    = \"instance\"\n\t\t\treplacement  = coalesce(nonsensitive(remote.kubernetes.secret.redis.data[\"instance-name\"]),
+    = \"instance\"\n\t\t\treplacement  = coalesce(convert.nonsensitive(remote.kubernetes.secret.redis.data[\"instance-name\"]),
     constants.hostname)\n\t\t}\n\t}\n\n\t/***************************************************************\n\t*
     Prometheus Scrape Integrations Targets\n\t****************************************************************/\n\tprometheus.scrape
     \"integrations_redis_exporter\" {\n\t\ttargets = array.concat(\n\t\t\tdiscovery.relabel.integrations_redis_exporter.output,\n\t\t)\n\n\t\tscrape_classic_histograms
@@ -2222,9 +2222,10 @@ data:
     appended rate.\"\n\t\toptional = true\n\t}\n\n\t/*****************************************************************\n\t*
     Targets From Docker Discovery\n\t*****************************************************************/\n\tdiscovery.kubernetes
     \"apiserver\" {\n\t\trole = \"service\"\n\n\t\tselectors {\n\t\t\trole  = \"service\"\n\t\t\tfield
-    = join(coalesce(argument.field_selectors.value, [\"metadata.name=kubernetes\"]),
-    \",\")\n\t\t\tlabel = join(coalesce(argument.label_selectors.value, []), \",\")\n\t\t}\n\n\t\tnamespaces
-    {\n\t\t\tnames = coalesce(argument.namespaces.value, [\"default\"])\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
+    = string.join(coalesce(argument.field_selectors.value, [\"metadata.name=kubernetes\"]),
+    \",\")\n\t\t\tlabel = string.join(coalesce(argument.label_selectors.value, []),
+    \",\")\n\t\t}\n\n\t\tnamespaces {\n\t\t\tnames = coalesce(argument.namespaces.value,
+    [\"default\"])\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
     Discovery Relabelings (pre-scrape)\n\t*****************************************************************/\n\tdiscovery.relabel
     \"apiserver\" {\n\t\ttargets = discovery.kubernetes.apiserver.targets\n\n\t\t//
     only keep targets with a matching port name\n\t\trule {\n\t\t\tsource_labels =
@@ -2288,10 +2289,10 @@ data:
     appended rate.\"\n\t\toptional = true\n\t}\n\n\t/*****************************************************************\n\t*
     Targets From Service Discovery\n\t*****************************************************************/\n\tdiscovery.kubernetes
     \"kube_state_metrics\" {\n\t\trole = \"service\"\n\n\t\tselectors {\n\t\t\trole
-    \ = \"service\"\n\t\t\tfield = join(coalesce(argument.field_selectors.value, []),
-    \",\")\n\t\t\tlabel = join(coalesce(argument.label_selectors.value, [\"app.kubernetes.io/name=kube-state-metrics\"]),
-    \",\")\n\t\t}\n\n\t\tnamespaces {\n\t\t\tnames = coalesce(argument.namespaces.value,
-    [])\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
+    \ = \"service\"\n\t\t\tfield = string.join(coalesce(argument.field_selectors.value,
+    []), \",\")\n\t\t\tlabel = string.join(coalesce(argument.label_selectors.value,
+    [\"app.kubernetes.io/name=kube-state-metrics\"]), \",\")\n\t\t}\n\n\t\tnamespaces
+    {\n\t\t\tnames = coalesce(argument.namespaces.value, [])\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
     Discovery Relabelings (pre-scrape)\n\t*****************************************************************/\n\tdiscovery.relabel
     \"kube_state_metrics\" {\n\t\ttargets = discovery.kubernetes.kube_state_metrics.targets\n\n\t\t//
     only keep targets with a matching port name\n\t\trule {\n\t\t\tsource_labels =
@@ -2436,9 +2437,10 @@ data:
     appended rate.\"\n\t\toptional = true\n\t}\n\n\t/*****************************************************************\n\t*
     Targets From Service Discovery\n\t*****************************************************************/\n\tdiscovery.kubernetes
     \"node_exporter\" {\n\t\trole = \"pod\"\n\n\t\tselectors {\n\t\t\trole  = \"pod\"\n\t\t\tfield
-    = join(coalesce(argument.field_selectors.value, []), \",\")\n\t\t\tlabel = join(coalesce(argument.label_selectors.value,
-    [\"app.kubernetes.io/name=prometheus-node-exporter\"]), \",\")\n\t\t}\n\n\t\tnamespaces
-    {\n\t\t\tnames = coalesce(argument.namespaces.value, [])\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
+    = string.join(coalesce(argument.field_selectors.value, []), \",\")\n\t\t\tlabel
+    = string.join(coalesce(argument.label_selectors.value, [\"app.kubernetes.io/name=prometheus-node-exporter\"]),
+    \",\")\n\t\t}\n\n\t\tnamespaces {\n\t\t\tnames = coalesce(argument.namespaces.value,
+    [])\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
     Discovery Relabelings (pre-scrape)\n\t*****************************************************************/\n\tdiscovery.relabel
     \"node_exporter\" {\n\t\ttargets = discovery.kubernetes.node_exporter.targets\n\n\t\t//
     keep only the specified metrics port name, and pods that are Running and ready\n\t\trule
@@ -2484,7 +2486,7 @@ data:
     \        = \"node_filesystem.*@(tempfs)\"\n\t\t\taction        = \"drop\"\n\t\t}\n\t}\n}\n"
 kind: ConfigMap
 metadata:
-  name: alloy-modules-kubernetes-jobs-9d9gc54kgg
+  name: alloy-modules-kubernetes-jobs-8c76t6t6b7
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -5116,7 +5118,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.6.0
-    helm.sh/chart: tempo-distributed-1.18.1
+    helm.sh/chart: tempo-distributed-1.18.2
   name: tempo-distributed-config
   namespace: tracing-system
 ---
@@ -5132,7 +5134,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.6.0
-    helm.sh/chart: tempo-distributed-1.18.1
+    helm.sh/chart: tempo-distributed-1.18.2
   name: tempo-distributed-runtime
   namespace: tracing-system
 ---
@@ -5292,8 +5294,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.4.1
-    helm.sh/chart: alloy-0.8.1
+    app.kubernetes.io/version: v1.4.2
+    helm.sh/chart: alloy-0.9.1
   name: alloy
   namespace: monitoring-system
 spec:
@@ -5333,8 +5335,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.4.1
-    helm.sh/chart: alloy-0.8.1
+    app.kubernetes.io/version: v1.4.2
+    helm.sh/chart: alloy-0.9.1
   name: alloy-cluster
   namespace: monitoring-system
 spec:
@@ -5424,7 +5426,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.6.0
-    helm.sh/chart: tempo-distributed-1.18.1
+    helm.sh/chart: tempo-distributed-1.18.2
   name: tempo-distributed-compactor
   namespace: tracing-system
 spec:
@@ -5448,7 +5450,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.6.0
-    helm.sh/chart: tempo-distributed-1.18.1
+    helm.sh/chart: tempo-distributed-1.18.2
   name: tempo-distributed-distributor
   namespace: tracing-system
 spec:
@@ -5487,7 +5489,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.6.0
-    helm.sh/chart: tempo-distributed-1.18.1
+    helm.sh/chart: tempo-distributed-1.18.2
     prometheus.io/service-monitor: "false"
   name: tempo-distributed-distributor-discovery
   namespace: tracing-system
@@ -5524,7 +5526,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.6.0
-    helm.sh/chart: tempo-distributed-1.18.1
+    helm.sh/chart: tempo-distributed-1.18.2
   name: tempo-distributed-gossip-ring
   namespace: tracing-system
 spec:
@@ -5550,7 +5552,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.6.0
-    helm.sh/chart: tempo-distributed-1.18.1
+    helm.sh/chart: tempo-distributed-1.18.2
   name: tempo-distributed-ingester
   namespace: tracing-system
 spec:
@@ -5577,7 +5579,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.6.0
-    helm.sh/chart: tempo-distributed-1.18.1
+    helm.sh/chart: tempo-distributed-1.18.2
     prometheus.io/service-monitor: "false"
   name: tempo-distributed-ingester-discovery
   namespace: tracing-system
@@ -5608,7 +5610,7 @@ metadata:
     app.kubernetes.io/name: tempo
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 2.6.0
-    helm.sh/chart: tempo-distributed-1.18.1
+    helm.sh/chart: tempo-distributed-1.18.2
   name: tempo-distributed-metrics-generator
   namespace: tracing-system
 spec:
@@ -5636,7 +5638,7 @@ metadata:
     app.kubernetes.io/name: tempo
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 2.6.0
-    helm.sh/chart: tempo-distributed-1.18.1
+    helm.sh/chart: tempo-distributed-1.18.2
     prometheus.io/service-monitor: "false"
   name: tempo-distributed-metrics-generator-discovery
   namespace: tracing-system
@@ -5666,7 +5668,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.6.0
-    helm.sh/chart: tempo-distributed-1.18.1
+    helm.sh/chart: tempo-distributed-1.18.2
   name: tempo-distributed-querier
   namespace: tracing-system
 spec:
@@ -5693,7 +5695,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.6.0
-    helm.sh/chart: tempo-distributed-1.18.1
+    helm.sh/chart: tempo-distributed-1.18.2
   name: tempo-distributed-query-frontend
   namespace: tracing-system
 spec:
@@ -5720,7 +5722,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.6.0
-    helm.sh/chart: tempo-distributed-1.18.1
+    helm.sh/chart: tempo-distributed-1.18.2
   name: tempo-distributed-query-frontend-discovery
   namespace: tracing-system
 spec:
@@ -5839,7 +5841,7 @@ metadata:
     app.kubernetes.io/name: tempo
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 2.6.0
-    helm.sh/chart: tempo-distributed-1.18.1
+    helm.sh/chart: tempo-distributed-1.18.2
   name: tempo-distributed-compactor
   namespace: tracing-system
 spec:
@@ -5858,7 +5860,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 4801794f29637968f45bccea240df79c8f45410afba54b3ce1d4539b1c5a4196
+        checksum/config: 5d8f890fa61e7384d6e588acc8e744e972e541e44b3e0a8623258fe87c1a015c
         logs.grafana.com/scrape: "true"
         profiles.grafana.com/cpu.port_name: http-metrics
         profiles.grafana.com/cpu.scrape: "true"
@@ -5873,7 +5875,7 @@ spec:
         app.kubernetes.io/name: tempo
         app.kubernetes.io/part-of: memberlist
         app.kubernetes.io/version: 2.6.0
-        helm.sh/chart: tempo-distributed-1.18.1
+        helm.sh/chart: tempo-distributed-1.18.2
     spec:
       containers:
       - args:
@@ -5940,7 +5942,7 @@ metadata:
     app.kubernetes.io/name: tempo
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 2.6.0
-    helm.sh/chart: tempo-distributed-1.18.1
+    helm.sh/chart: tempo-distributed-1.18.2
   name: tempo-distributed-distributor
   namespace: tracing-system
 spec:
@@ -5955,7 +5957,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 4801794f29637968f45bccea240df79c8f45410afba54b3ce1d4539b1c5a4196
+        checksum/config: 5d8f890fa61e7384d6e588acc8e744e972e541e44b3e0a8623258fe87c1a015c
         logs.grafana.com/scrape: "true"
         profiles.grafana.com/cpu.port_name: http-metrics
         profiles.grafana.com/cpu.scrape: "true"
@@ -5970,7 +5972,7 @@ spec:
         app.kubernetes.io/name: tempo
         app.kubernetes.io/part-of: memberlist
         app.kubernetes.io/version: 2.6.0
-        helm.sh/chart: tempo-distributed-1.18.1
+        helm.sh/chart: tempo-distributed-1.18.2
     spec:
       affinity:
         podAntiAffinity:
@@ -6077,7 +6079,7 @@ metadata:
     app.kubernetes.io/name: tempo
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 2.6.0
-    helm.sh/chart: tempo-distributed-1.18.1
+    helm.sh/chart: tempo-distributed-1.18.2
   name: tempo-distributed-metrics-generator
   namespace: tracing-system
 spec:
@@ -6092,7 +6094,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 4801794f29637968f45bccea240df79c8f45410afba54b3ce1d4539b1c5a4196
+        checksum/config: 5d8f890fa61e7384d6e588acc8e744e972e541e44b3e0a8623258fe87c1a015c
         logs.grafana.com/scrape: "true"
         profiles.grafana.com/cpu.port_name: http-metrics
         profiles.grafana.com/cpu.scrape: "true"
@@ -6107,7 +6109,7 @@ spec:
         app.kubernetes.io/name: tempo
         app.kubernetes.io/part-of: memberlist
         app.kubernetes.io/version: 2.6.0
-        helm.sh/chart: tempo-distributed-1.18.1
+        helm.sh/chart: tempo-distributed-1.18.2
     spec:
       affinity:
         podAntiAffinity:
@@ -6205,7 +6207,7 @@ metadata:
     app.kubernetes.io/name: tempo
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 2.6.0
-    helm.sh/chart: tempo-distributed-1.18.1
+    helm.sh/chart: tempo-distributed-1.18.2
   name: tempo-distributed-querier
   namespace: tracing-system
 spec:
@@ -6224,7 +6226,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 4801794f29637968f45bccea240df79c8f45410afba54b3ce1d4539b1c5a4196
+        checksum/config: 5d8f890fa61e7384d6e588acc8e744e972e541e44b3e0a8623258fe87c1a015c
         logs.grafana.com/scrape: "true"
         profiles.grafana.com/cpu.port_name: http-metrics
         profiles.grafana.com/cpu.scrape: "true"
@@ -6239,7 +6241,7 @@ spec:
         app.kubernetes.io/name: tempo
         app.kubernetes.io/part-of: memberlist
         app.kubernetes.io/version: 2.6.0
-        helm.sh/chart: tempo-distributed-1.18.1
+        helm.sh/chart: tempo-distributed-1.18.2
     spec:
       affinity:
         podAntiAffinity:
@@ -6339,7 +6341,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.6.0
-    helm.sh/chart: tempo-distributed-1.18.1
+    helm.sh/chart: tempo-distributed-1.18.2
   name: tempo-distributed-query-frontend
   namespace: tracing-system
 spec:
@@ -6358,7 +6360,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 4801794f29637968f45bccea240df79c8f45410afba54b3ce1d4539b1c5a4196
+        checksum/config: 5d8f890fa61e7384d6e588acc8e744e972e541e44b3e0a8623258fe87c1a015c
         logs.grafana.com/scrape: "true"
         profiles.grafana.com/cpu.port_name: http-metrics
         profiles.grafana.com/cpu.scrape: "true"
@@ -6372,7 +6374,7 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: tempo
         app.kubernetes.io/version: 2.6.0
-        helm.sh/chart: tempo-distributed-1.18.1
+        helm.sh/chart: tempo-distributed-1.18.2
     spec:
       affinity:
         podAntiAffinity:
@@ -6592,8 +6594,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.4.1
-    helm.sh/chart: alloy-0.8.1
+    app.kubernetes.io/version: v1.4.2
+    helm.sh/chart: alloy-0.9.1
   name: alloy
   namespace: monitoring-system
 spec:
@@ -6646,7 +6648,7 @@ spec:
         - secretRef:
             name: alloy-env
             optional: true
-        image: docker.io/grafana/alloy:v1.4.1
+        image: docker.io/grafana/alloy:v1.4.2
         imagePullPolicy: IfNotPresent
         name: alloy
         ports:
@@ -6714,7 +6716,7 @@ spec:
           name: alloy-modules-kubernetes-profiles-6479gm5dc2
         name: modules-kubernetes-profiles
       - configMap:
-          name: alloy-modules-kubernetes-jobs-9d9gc54kgg
+          name: alloy-modules-kubernetes-jobs-8c76t6t6b7
         name: modules-kubernetes-jobs
 ---
 apiVersion: apps/v1
@@ -6727,7 +6729,7 @@ metadata:
     app.kubernetes.io/name: tempo
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 2.6.0
-    helm.sh/chart: tempo-distributed-1.18.1
+    helm.sh/chart: tempo-distributed-1.18.2
   name: tempo-distributed-ingester
   namespace: tracing-system
 spec:
@@ -6742,7 +6744,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 4801794f29637968f45bccea240df79c8f45410afba54b3ce1d4539b1c5a4196
+        checksum/config: 5d8f890fa61e7384d6e588acc8e744e972e541e44b3e0a8623258fe87c1a015c
         logs.grafana.com/scrape: "true"
         profiles.grafana.com/cpu.port_name: http-metrics
         profiles.grafana.com/cpu.scrape: "true"
@@ -6757,7 +6759,7 @@ spec:
         app.kubernetes.io/name: tempo
         app.kubernetes.io/part-of: memberlist
         app.kubernetes.io/version: 2.6.0
-        helm.sh/chart: tempo-distributed-1.18.1
+        helm.sh/chart: tempo-distributed-1.18.2
     spec:
       affinity:
         podAntiAffinity:
@@ -6864,7 +6866,7 @@ metadata:
     app.kubernetes.io/name: tempo
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 2.6.0
-    helm.sh/chart: tempo-distributed-1.18.1
+    helm.sh/chart: tempo-distributed-1.18.2
   name: tempo-distributed-ingester
   namespace: tracing-system
 spec:
@@ -7041,8 +7043,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.4.1
-    helm.sh/chart: alloy-0.8.1
+    app.kubernetes.io/version: v1.4.2
+    helm.sh/chart: alloy-0.9.1
   name: alloy
   namespace: monitoring-system
 spec:
@@ -7098,8 +7100,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.4.1
-    helm.sh/chart: alloy-0.8.1
+    app.kubernetes.io/version: v1.4.2
+    helm.sh/chart: alloy-0.9.1
   name: alloy
   namespace: monitoring-system
 spec:
