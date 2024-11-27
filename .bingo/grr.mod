@@ -4,4 +4,4 @@ go 1.23
 
 toolchain go1.23.0
 
-require github.com/grafana/grizzly v0.4.8 // cmd/grr
+require github.com/grafana/grizzly v0.6.1 // cmd/grr
