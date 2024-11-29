@@ -202,18 +202,16 @@ local utils = import 'mixin-utils/utils.libsonnet';
         },
         {
           alert: $.alertName('CacheRequestErrors'),
+          // Specifically exclude "add" operations which are used for cache invalidation and "locking" since
+          // they are expected to sometimes fail in normal operation (such as when a "lock" already exists).
           expr: |||
             (
               sum by(%(group_by)s, name, operation) (
-                rate(thanos_memcached_operation_failures_total[%(range_interval)s])
-                or
-                rate(thanos_cache_operation_failures_total[%(range_interval)s])
+                rate(thanos_cache_operation_failures_total{operation!="add"}[%(range_interval)s])
               )
               /
               sum by(%(group_by)s, name, operation) (
-                rate(thanos_memcached_operations_total[%(range_interval)s])
-                or
-                rate(thanos_cache_operations_total[%(range_interval)s])
+                rate(thanos_cache_operations_total{operation!="add"}[%(range_interval)s])
               )
             ) * 100 > 5
           ||| % {
@@ -298,7 +296,11 @@ local utils = import 'mixin-utils/utils.libsonnet';
           alert: $.alertName('IngesterInstanceHasNoTenants'),
           'for': '1h',
           expr: |||
-            (min by(%(alert_aggregation_labels)s, %(per_instance_label)s) (cortex_ingester_memory_users) == 0)
+            (
+              (min by(%(alert_aggregation_labels)s, %(per_instance_label)s) (cortex_ingester_memory_users) == 0)
+              unless
+              (max by(%(alert_aggregation_labels)s, %(per_instance_label)s) (cortex_lifecycler_read_only) > 0)
+            )
             and on (%(alert_aggregation_labels)s)
             # Only if there are more timeseries than would be expected due to continuous testing load
             (
@@ -777,8 +779,8 @@ local utils = import 'mixin-utils/utils.libsonnet';
             |||
               max by (%s) (memberlist_client_cluster_members_count)
               >
-              (sum by (%s) (up{%s=~".+/%s"}) + 10)
-            ||| % [$._config.alert_aggregation_labels, $._config.alert_aggregation_labels, $._config.per_job_label, simpleRegexpOpt($._config.job_names.ring_members)],
+              (sum by (%s) (up{%s}) + 10)
+            ||| % [$._config.alert_aggregation_labels, $._config.alert_aggregation_labels, $.jobMatcher($._config.job_names.ring_members)],
           'for': '20m',
           labels: {
             severity: 'warning',
@@ -873,7 +875,7 @@ local utils = import 'mixin-utils/utils.libsonnet';
           alert: 'EtcdAllocatingTooMuchMemory',
           expr: |||
             (
-              container_memory_working_set_bytes{container="etcd"}
+              container_memory_rss{container="etcd"}
                 /
               ( container_spec_memory_limit_bytes{container="etcd"} > 0 )
             ) > 0.65
@@ -892,7 +894,7 @@ local utils = import 'mixin-utils/utils.libsonnet';
           alert: 'EtcdAllocatingTooMuchMemory',
           expr: |||
             (
-              container_memory_working_set_bytes{container="etcd"}
+              container_memory_rss{container="etcd"}
                 /
               ( container_spec_memory_limit_bytes{container="etcd"} > 0 )
             ) > 0.8

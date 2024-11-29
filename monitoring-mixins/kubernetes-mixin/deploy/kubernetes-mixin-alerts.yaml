@@ -105,7 +105,7 @@ groups:
             summary: StatefulSet update has not been rolled out.
           expr: |
             (
-              max without (revision) (
+              max by(namespace, statefulset, job, cluster) (
                 kube_statefulset_status_current_revision{job="integrations/kubernetes/kube-state-metrics"}
                   unless
                 kube_statefulset_status_update_revision{job="integrations/kubernetes/kube-state-metrics"}
@@ -126,7 +126,7 @@ groups:
             severity: warning
         - alert: KubeDaemonSetRolloutStuck
           annotations:
-            description: DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset }} has not finished or progressed for at least 15 minutes.
+            description: DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset }} has not finished or progressed for at least 15m.
             runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubedaemonsetrolloutstuck
             summary: DaemonSet rollout is stuck.
           expr: |
@@ -158,11 +158,11 @@ groups:
             severity: warning
         - alert: KubeContainerWaiting
           annotations:
-            description: pod/{{ $labels.pod }} in namespace {{ $labels.namespace }} on container {{ $labels.container}} has been in waiting state for longer than 1 hour.
+            description: 'pod/{{ $labels.pod }} in namespace {{ $labels.namespace }} on container {{ $labels.container}} has been in waiting state for longer than 1 hour. (reason: "{{ $labels.reason }}").'
             runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubecontainerwaiting
             summary: Pod container waiting longer than 1 hour
           expr: |
-            sum by (namespace, pod, container, cluster) (kube_pod_container_status_waiting_reason{job="integrations/kubernetes/kube-state-metrics"}) > 0
+            kube_pod_container_status_waiting_reason{reason!="CrashLoopBackOff", job="integrations/kubernetes/kube-state-metrics"} > 0
           for: 1h
           labels:
             severity: warning
@@ -251,7 +251,7 @@ groups:
             runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubecpuovercommit
             summary: Cluster has overcommitted CPU resource requests.
           expr: |
-            sum(namespace_cpu:kube_pod_container_resource_requests:sum{job="integrations/kubernetes/kube-state-metrics",}) by (cluster) - (sum(kube_node_status_allocatable{job="integrations/kubernetes/kube-state-metrics",resource="cpu"}) by (cluster) - max(kube_node_status_allocatable{job="integrations/kubernetes/kube-state-metrics",resource="cpu"}) by (cluster)) > 0
+            sum(namespace_cpu:kube_pod_container_resource_requests:sum{}) by (cluster) - (sum(kube_node_status_allocatable{job="integrations/kubernetes/kube-state-metrics",resource="cpu"}) by (cluster) - max(kube_node_status_allocatable{job="integrations/kubernetes/kube-state-metrics",resource="cpu"}) by (cluster)) > 0
             and
             (sum(kube_node_status_allocatable{job="integrations/kubernetes/kube-state-metrics",resource="cpu"}) by (cluster) - max(kube_node_status_allocatable{job="integrations/kubernetes/kube-state-metrics",resource="cpu"}) by (cluster)) > 0
           for: 10m
@@ -340,9 +340,9 @@ groups:
             runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-cputhrottlinghigh
             summary: Processes experience elevated CPU throttling.
           expr: |
-            sum(increase(container_cpu_cfs_throttled_periods_total{container!="", }[5m])) by (cluster, container, pod, namespace)
+            sum(increase(container_cpu_cfs_throttled_periods_total{container!="", job="integrations/kubernetes/cadvisor", }[5m])) without (id, metrics_path, name, image, endpoint, job, node)
               /
-            sum(increase(container_cpu_cfs_periods_total{}[5m])) by (cluster, container, pod, namespace)
+            sum(increase(container_cpu_cfs_periods_total{job="integrations/kubernetes/cadvisor", }[5m])) without (id, metrics_path, name, image, endpoint, job, node)
               > ( 25 / 100 )
           for: 15m
           labels:
@@ -476,9 +476,9 @@ groups:
             runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeapierrorbudgetburn
             summary: The API server is burning too much error budget.
           expr: |
-            sum(apiserver_request:burnrate1h) > (14.40 * 0.01000)
-            and
-            sum(apiserver_request:burnrate5m) > (14.40 * 0.01000)
+            sum by(cluster) (apiserver_request:burnrate1h) > (14.40 * 0.01000)
+            and on(cluster)
+            sum by(cluster) (apiserver_request:burnrate5m) > (14.40 * 0.01000)
           for: 2m
           labels:
             long: 1h
@@ -490,9 +490,9 @@ groups:
             runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeapierrorbudgetburn
             summary: The API server is burning too much error budget.
           expr: |
-            sum(apiserver_request:burnrate6h) > (6.00 * 0.01000)
-            and
-            sum(apiserver_request:burnrate30m) > (6.00 * 0.01000)
+            sum by(cluster) (apiserver_request:burnrate6h) > (6.00 * 0.01000)
+            and on(cluster)
+            sum by(cluster) (apiserver_request:burnrate30m) > (6.00 * 0.01000)
           for: 15m
           labels:
             long: 6h
@@ -504,9 +504,9 @@ groups:
             runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeapierrorbudgetburn
             summary: The API server is burning too much error budget.
           expr: |
-            sum(apiserver_request:burnrate1d) > (3.00 * 0.01000)
-            and
-            sum(apiserver_request:burnrate2h) > (3.00 * 0.01000)
+            sum by(cluster) (apiserver_request:burnrate1d) > (3.00 * 0.01000)
+            and on(cluster)
+            sum by(cluster) (apiserver_request:burnrate2h) > (3.00 * 0.01000)
           for: 1h
           labels:
             long: 1d
@@ -518,9 +518,9 @@ groups:
             runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeapierrorbudgetburn
             summary: The API server is burning too much error budget.
           expr: |
-            sum(apiserver_request:burnrate3d) > (1.00 * 0.01000)
-            and
-            sum(apiserver_request:burnrate6h) > (1.00 * 0.01000)
+            sum by(cluster) (apiserver_request:burnrate3d) > (1.00 * 0.01000)
+            and on(cluster)
+            sum by(cluster) (apiserver_request:burnrate6h) > (1.00 * 0.01000)
           for: 3h
           labels:
             long: 3d
@@ -530,21 +530,25 @@ groups:
       rules:
         - alert: KubeClientCertificateExpiration
           annotations:
-            description: A client certificate used to authenticate to kubernetes apiserver is expiring in less than 7.0 days.
+            description: A client certificate used to authenticate to kubernetes apiserver is expiring in less than 7.0 days on cluster {{ $labels.cluster }}.
             runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeclientcertificateexpiration
             summary: Client certificate is about to expire.
           expr: |
-            apiserver_client_certificate_expiration_seconds_count{job="integrations/kubernetes/apiserver"} > 0 and on(job) histogram_quantile(0.01, sum by (job, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="integrations/kubernetes/apiserver"}[5m]))) < 604800
+            histogram_quantile(0.01, sum without (namespace, service, endpoint) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="integrations/kubernetes/apiserver"}[5m]))) < 604800
+            and
+            on(job, cluster, instance) apiserver_client_certificate_expiration_seconds_count{job="integrations/kubernetes/apiserver"} > 0
           for: 5m
           labels:
             severity: warning
         - alert: KubeClientCertificateExpiration
           annotations:
-            description: A client certificate used to authenticate to kubernetes apiserver is expiring in less than 24.0 hours.
+            description: A client certificate used to authenticate to kubernetes apiserver is expiring in less than 24.0 hours on cluster {{ $labels.cluster }}.
             runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeclientcertificateexpiration
             summary: Client certificate is about to expire.
           expr: |
-            apiserver_client_certificate_expiration_seconds_count{job="integrations/kubernetes/apiserver"} > 0 and on(job) histogram_quantile(0.01, sum by (job, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="integrations/kubernetes/apiserver"}[5m]))) < 86400
+            histogram_quantile(0.01, sum without (namespace, service, endpoint) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="integrations/kubernetes/apiserver"}[5m]))) < 86400
+            and
+            on(job, cluster, instance) apiserver_client_certificate_expiration_seconds_count{job="integrations/kubernetes/apiserver"} > 0
           for: 5m
           labels:
             severity: critical
@@ -583,7 +587,7 @@ groups:
             runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeapiterminatedrequests
             summary: The kubernetes apiserver has terminated {{ $value | humanizePercentage }} of its incoming requests.
           expr: |
-            sum(rate(apiserver_request_terminations_total{job="integrations/kubernetes/apiserver"}[10m]))  / (  sum(rate(apiserver_request_total{job="integrations/kubernetes/apiserver"}[10m])) + sum(rate(apiserver_request_terminations_total{job="integrations/kubernetes/apiserver"}[10m])) ) > 0.20
+            sum by(cluster) (rate(apiserver_request_terminations_total{job="integrations/kubernetes/apiserver"}[10m])) / ( sum by(cluster) (rate(apiserver_request_total{job="integrations/kubernetes/apiserver"}[10m])) + sum by(cluster) (rate(apiserver_request_terminations_total{job="integrations/kubernetes/apiserver"}[10m])) ) > 0.20
           for: 5m
           labels:
             severity: warning
