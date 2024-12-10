@@ -31,8 +31,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.5.0
-    helm.sh/chart: alloy-0.10.0
+    app.kubernetes.io/version: v1.5.1
+    helm.sh/chart: alloy-0.10.1
   name: alloy
   namespace: monitoring-system
 ---
@@ -57,8 +57,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.5.0
-    helm.sh/chart: alloy-0.10.0
+    app.kubernetes.io/version: v1.5.1
+    helm.sh/chart: alloy-0.10.1
   name: alloy
 rules:
 - apiGroups:
@@ -182,8 +182,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.5.0
-    helm.sh/chart: alloy-0.10.0
+    app.kubernetes.io/version: v1.5.1
+    helm.sh/chart: alloy-0.10.1
   name: alloy
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -4924,8 +4924,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.5.0
-    helm.sh/chart: alloy-0.10.0
+    app.kubernetes.io/version: v1.5.1
+    helm.sh/chart: alloy-0.10.1
   name: alloy
   namespace: monitoring-system
 spec:
@@ -4965,8 +4965,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.5.0
-    helm.sh/chart: alloy-0.10.0
+    app.kubernetes.io/version: v1.5.1
+    helm.sh/chart: alloy-0.10.1
   name: alloy-cluster
   namespace: monitoring-system
 spec:
@@ -5268,8 +5268,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.5.0
-    helm.sh/chart: alloy-0.10.0
+    app.kubernetes.io/version: v1.5.1
+    helm.sh/chart: alloy-0.10.1
   name: alloy
   namespace: monitoring-system
 spec:
@@ -5322,7 +5322,7 @@ spec:
         - secretRef:
             name: alloy-env
             optional: true
-        image: docker.io/grafana/alloy:v1.5.0
+        image: docker.io/grafana/alloy:v1.5.1
         imagePullPolicy: IfNotPresent
         name: alloy
         ports:
@@ -5497,10 +5497,16 @@ spec:
         description: The receiver could not push some spans to the pipeline under
           job {{ $labels.job }}. This could be due to reaching a limit such as the
           ones imposed by otelcol.processor.memory_limiter.
-        summary: The receiver could not push some spans to the pipeline.
-      expr: sum by (cluster, namespace, job) (rate(otelcol_receiver_refused_spans_total{}[1m]))
-        > 0
-      for: 5m
+        summary: The receiver pushing spans to the pipeline success rate is below
+          95%.
+      expr: |
+        (1 - (
+                sum by (cluster, namespace, job) (rate(otelcol_receiver_refused_spans_total{}[1m]))
+                /
+                sum by (cluster, namespace, job) (rate(otelcol_receiver_refused_spans_total{}[1m]) + rate(otelcol_receiver_accepted_spans_total{}[1m]))
+             )
+        ) < 0.95
+      for: 10m
       labels:
         severity: warning
     - alert: OtelcolExporterFailedSpans
@@ -5508,10 +5514,15 @@ spec:
         description: The exporter failed to send spans to their destination under
           job {{ $labels.job }}. There could be an issue with the payload or with
           the destination endpoint.
-        summary: The exporter failed to send spans to their destination.
-      expr: sum by (cluster, namespace, job) (rate(otelcol_exporter_send_failed_spans_total{}[1m]))
-        > 0
-      for: 5m
+        summary: The exporter sending spans success rate is below 95%.
+      expr: |
+        (1 - (
+                sum by (cluster, namespace, job) (rate(otelcol_exporter_send_failed_spans_total{}[1m]))
+                /
+                sum by (cluster, namespace, job) (rate(otelcol_exporter_send_failed_spans_total{}[1m]) + rate(otelcol_exporter_sent_spans_total{}[1m]))
+             )
+        ) < 0.95
+      for: 10m
       labels:
         severity: warning
 ---
@@ -5559,8 +5570,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.5.0
-    helm.sh/chart: alloy-0.10.0
+    app.kubernetes.io/version: v1.5.1
+    helm.sh/chart: alloy-0.10.1
   name: alloy
   namespace: monitoring-system
 spec:
@@ -5616,8 +5627,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.5.0
-    helm.sh/chart: alloy-0.10.0
+    app.kubernetes.io/version: v1.5.1
+    helm.sh/chart: alloy-0.10.1
   name: alloy
   namespace: monitoring-system
 spec:
