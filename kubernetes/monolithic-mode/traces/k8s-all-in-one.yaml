@@ -62,7 +62,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.6.1
-    helm.sh/chart: tempo-1.15.0
+    helm.sh/chart: tempo-1.16.0
   name: tempo
   namespace: tracing-system
 ---
@@ -5117,7 +5117,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.6.1
-    helm.sh/chart: tempo-1.15.0
+    helm.sh/chart: tempo-1.16.0
   name: tempo
   namespace: tracing-system
 ---
@@ -5417,7 +5417,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.6.1
-    helm.sh/chart: tempo-1.15.0
+    helm.sh/chart: tempo-1.16.0
   name: tempo
   namespace: tracing-system
 spec:
@@ -5828,7 +5828,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.6.1
-    helm.sh/chart: tempo-1.15.0
+    helm.sh/chart: tempo-1.16.0
   name: tempo
   namespace: tracing-system
 spec:
@@ -5841,7 +5841,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 87dd368efe845e2aa7ac0d5740dada492277bf7134edb4363602976415f9c2ac
+        checksum/config: a75be882317fda9de93d4207410f81540c17ac69048830fb78ef435faae4ae8b
         logs.grafana.com/scrape: "true"
         logs.grafana.com/scrub-level: info
         profiles.grafana.com/cpu.port_name: prom-metrics
@@ -5866,6 +5866,15 @@ spec:
             name: tempo-env-2d6dmbhc82
         image: grafana/tempo:2.6.1
         imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /ready
+            port: 3100
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
         name: tempo
         ports:
         - containerPort: 9095
@@ -5894,6 +5903,15 @@ spec:
           name: otlp-http
         - containerPort: 55678
           name: opencensus
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /ready
+            port: 3100
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
         resources:
           limits:
             cpu: 999m
