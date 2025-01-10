@@ -15,10 +15,11 @@ import (
 	"strings"
 )
 
+//go:generate tar cf .lgtmp.tar .bingo alloy-modules docker-compose kubernetes monitoring-mixins tools Makefile
+
 //go:embed .lgtmp.tar
 var DirFS embed.FS
 
-//go:generate tar cf .lgtmp.tar .bingo alloy-modules docker-compose kubernetes monitoring-mixins tools Makefile
 var GenDir = ".lgtmp"
 
 func init() {

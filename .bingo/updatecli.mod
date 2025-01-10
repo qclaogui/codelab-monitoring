@@ -4,4 +4,4 @@ go 1.23.4
 
 replace github.com/drone/go-scm => github.com/olblak/go-scm v1.26.1-0.20240829085250-adc387402cba
 
-require github.com/updatecli/updatecli v0.89.0
+require github.com/updatecli/updatecli v0.91.0
