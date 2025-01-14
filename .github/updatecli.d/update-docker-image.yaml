@@ -1,0 +1,41 @@
+name: Bump up image version
+
+sources:
+  alloy-version:
+    name: Check Alloy image tag in DockerHub
+    kind: dockerimage
+    spec:
+      image: docker.io/grafana/alloy
+      versionfilter:
+        kind: semver
+        pattern: "~1.x"
+
+conditions:
+  alloy-image:
+    name: Check latest image tag for alloy/alloy
+    kind: dockerimage
+    disablesourceinput: true
+    spec:
+      image: docker.io/grafana/alloy
+      tag: '{{ source "alloy-version" }}'
+
+targets:
+  alloy-yaml:
+    name: "Update Alloy image version in docker-compose/common/compose-include/alloy.yaml"
+    kind: yaml
+    transformers:
+      - addprefix: "${ALLOY_IMAGE:-docker.io/grafana/alloy:"
+      - addsuffix: "}"
+    spec:
+      file: docker-compose/common/compose-include/alloy.yaml
+      key: services.alloy.image
+
+  alloy-env:
+    name: "Update Alloy image version in docker-compose/common/config/.env"
+    kind: "file"
+    disablesourceinput: true
+    spec:
+      files:
+        - docker-compose/common/config/.env
+      matchpattern: 'ALLOY_IMAGE=grafana/alloy:.*'
+      replacepattern: 'ALLOY_IMAGE=grafana/alloy:{{ source "alloy-version" }}'
