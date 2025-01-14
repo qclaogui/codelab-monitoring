@@ -20,6 +20,9 @@ update-common-charts: $(UPDATECLI)
 update-lgtmp-stack-charts: $(UPDATECLI)
 	@$(UPDATECLI) apply --config .github/updatecli.d/lgtmp-stack-charts.yaml > /dev/null 2>&1
 
+update-docker-image: $(UPDATECLI)
+	@$(UPDATECLI) apply --config .github/updatecli.d/update-docker-image.yaml > /dev/null 2>&1
+
 ##@ Lint & fmt
 
 .PHONY: copyright
@@ -40,7 +43,7 @@ ALLOY_CONFIG_FILES_IN_DOCKER = $(subst ./, /data/, $(ALLOY_CONFIG_FILES))
 alloy-fmt: ## Uses Grafana Alloy to fmt the config
 	@for c in $(ALLOY_CONFIG_FILES_IN_DOCKER); do \
 		echo "$$c"; \
-		docker run --rm --volume "$(shell pwd):/data" -u $(shell id -u) grafana/alloy:v1.5.0 fmt -w $$c ; \
+		docker run --rm --volume "$(shell pwd):/data" -u $(shell id -u) grafana/alloy:v1.5.1 fmt -w $$c ; \
 	done
 
 .PHONY: go-fmt
