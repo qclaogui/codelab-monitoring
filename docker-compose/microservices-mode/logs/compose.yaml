@@ -37,7 +37,7 @@ services:
     labels:
       metrics.grafana.com/scrape: false
       logs.grafana.com/log-format: nginx
-    depends_on: { distributor: { condition: service_healthy } }
+    depends_on: {distributor: {condition: service_healthy}}
     image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.27-alpine}
     volumes:
       - ../../common/config/nginx/10-default-lgtmp.envsh:/docker-entrypoint.d/10-default-lgtmp.envsh
@@ -52,7 +52,7 @@ services:
       - LOKI_QUERIER_HOST=querier
       - LOKI_COMPACTOR_HOST=compactor
     healthcheck:
-      test: [ "CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/" ]
+      test: ["CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/"]
       interval: 3s
       timeout: 1s
       retries: 20
@@ -61,8 +61,8 @@ services:
 
   distributor:
     labels: *loki-labels
-    depends_on: { ingester: { condition: service_healthy } }
-    image: &lokiImage ${LOKI_IMAGE:-docker.io/grafana/loki:3.3.0}
+    depends_on: {ingester: {condition: service_healthy}}
+    image: &lokiImage ${LOKI_IMAGE:-docker.io/grafana/loki:3.3.2}
     configs:
       - source: loki_config_file
         target: /etc/loki/config.yaml
@@ -73,7 +73,7 @@ services:
       - -target=distributor
       - -config.expand-env=true
     healthcheck:
-      test: [ "CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/ready" ]
+      test: ["CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/ready"]
       <<: *status-healthcheck
     deploy:
       replicas: 2
@@ -84,7 +84,7 @@ services:
 
   ingester:
     labels: *loki-labels
-    depends_on: { minio: { condition: service_healthy } }
+    depends_on: {minio: {condition: service_healthy}}
     image: *lokiImage
     configs:
       - source: loki_config_file
@@ -96,7 +96,7 @@ services:
       - -target=ingester
       - -config.expand-env=true
     healthcheck:
-      test: [ "CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/ready" ]
+      test: ["CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/ready"]
       <<: *status-healthcheck
     deploy:
       replicas: 3
@@ -107,7 +107,7 @@ services:
 
   pattern-ingester:
     labels: *loki-labels
-    depends_on: { minio: { condition: service_healthy } }
+    depends_on: {minio: {condition: service_healthy}}
     image: *lokiImage
     configs:
       - source: loki_config_file
@@ -119,7 +119,7 @@ services:
       - -target=pattern-ingester
       - -config.expand-env=true
     healthcheck:
-      test: [ "CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/ready" ]
+      test: ["CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/ready"]
       <<: *status-healthcheck
     deploy:
       replicas: 1
@@ -130,7 +130,7 @@ services:
 
   index-gateway:
     labels: *loki-labels
-    depends_on: { query-scheduler: { condition: service_healthy } }
+    depends_on: {query-scheduler: {condition: service_healthy}}
     image: *lokiImage
     configs:
       - source: loki_config_file
@@ -144,7 +144,7 @@ services:
 
   query-frontend:
     labels: *loki-labels
-    depends_on: { query-scheduler: { condition: service_healthy } }
+    depends_on: {query-scheduler: {condition: service_healthy}}
     image: *lokiImage
     configs:
       - source: loki_config_file
@@ -169,7 +169,7 @@ services:
       - -target=query-scheduler
       - -config.expand-env=true
     healthcheck:
-      test: [ "CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/ready" ]
+      test: ["CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/ready"]
       <<: *status-healthcheck
     deploy:
       replicas: 2
@@ -180,7 +180,7 @@ services:
 
   querier:
     labels: *loki-labels
-    depends_on: { query-scheduler: { condition: service_healthy } }
+    depends_on: {query-scheduler: {condition: service_healthy}}
     image: *lokiImage
     configs:
       - source: loki_config_file
@@ -194,7 +194,7 @@ services:
 
   ruler:
     labels: *loki-labels
-    depends_on: { minio: { condition: service_healthy } }
+    depends_on: {minio: {condition: service_healthy}}
     image: *lokiImage
     configs:
       - source: loki_config_file

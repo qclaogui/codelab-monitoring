@@ -1,8 +1,7 @@
-name: Bump up image version
+name: Update Docker Compose image versions
 
 sources:
   alloy-version:
-    name: Check Alloy image tag in DockerHub
     kind: dockerimage
     spec:
       image: docker.io/grafana/alloy
@@ -10,32 +9,94 @@ sources:
         kind: semver
         pattern: "~1.x"
 
+  loki-version:
+    kind: dockerimage
+    spec:
+      image: docker.io/grafana/loki
+      versionfilter:
+        kind: semver
+        pattern: "~3.x"
+
 conditions:
-  alloy-image:
-    name: Check latest image tag for alloy/alloy
+  check-alloy-image:
     kind: dockerimage
     disablesourceinput: true
     spec:
       image: docker.io/grafana/alloy
       tag: '{{ source "alloy-version" }}'
 
+  check-loki-image:
+    kind: dockerimage
+    disablesourceinput: true
+    spec:
+      image: docker.io/grafana/loki
+      tag: '{{ source "loki-version" }}'
+
 targets:
-  alloy-yaml:
-    name: "Update Alloy image version in docker-compose/common/compose-include/alloy.yaml"
+  update-alloy-image-version-in-compose-include:
     kind: yaml
+    sourceid: alloy-version
     transformers:
       - addprefix: "${ALLOY_IMAGE:-docker.io/grafana/alloy:"
       - addsuffix: "}"
     spec:
       file: docker-compose/common/compose-include/alloy.yaml
-      key: services.alloy.image
+      key: $.services.alloy.image
 
-  alloy-env:
-    name: "Update Alloy image version in docker-compose/common/config/.env"
+  update-alloy-image-version-in-env:
     kind: "file"
-    disablesourceinput: true
+    sourceid: alloy-version
     spec:
       files:
         - docker-compose/common/config/.env
       matchpattern: 'ALLOY_IMAGE=grafana/alloy:.*'
       replacepattern: 'ALLOY_IMAGE=grafana/alloy:{{ source "alloy-version" }}'
+
+  update-loki-image-version-in-compose-include:
+    kind: yaml
+    sourceid: loki-version
+    transformers:
+      - addprefix: "${LOKI_IMAGE:-docker.io/grafana/loki:"
+      - addsuffix: "}"
+    spec:
+      file: docker-compose/common/compose-include/loki.yaml
+      key: $.services.loki.image
+
+  update-loki-image-version-in-all-in-one-mode-logs:
+    kind: yaml
+    sourceid: loki-version
+    transformers:
+      - addprefix: "${LOKI_IMAGE:-docker.io/grafana/loki:"
+      - addsuffix: "}"
+    spec:
+      file: docker-compose/monolithic-mode/all-in-one/compose.yaml
+      key: $.services.loki.image
+
+  update-loki-image-version-in-read-write-mode-logs:
+    kind: yaml
+    sourceid: loki-version
+    transformers:
+      - addprefix: "&lokiImage ${LOKI_IMAGE:-docker.io/grafana/loki:"
+      - addsuffix: "}"
+    spec:
+      file: docker-compose/read-write-mode/logs/compose.yaml
+      key: $.services.loki-read.image
+
+  update-loki-image-version-in-microservices-mode-logs:
+    kind: yaml
+    sourceid: loki-version
+    transformers:
+      - addprefix: "&lokiImage ${LOKI_IMAGE:-docker.io/grafana/loki:"
+      - addsuffix: "}"
+    spec:
+      file: docker-compose/microservices-mode/logs/compose.yaml
+      key: $.services.distributor.image
+
+  update-loki-image-version-in-env:
+    kind: "file"
+    sourceid: loki-version
+    spec:
+      files:
+        - docker-compose/common/config/.env
+      matchpattern: 'LOKI_IMAGE=grafana/loki:.*'
+      replacepattern: 'LOKI_IMAGE=grafana/loki:{{ source "loki-version" }}'

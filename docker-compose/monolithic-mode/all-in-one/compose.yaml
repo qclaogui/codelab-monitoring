@@ -46,7 +46,7 @@ services:
   gateway:
     labels:
       metrics.grafana.com/scrape: false
-    depends_on: { tempo: { condition: service_healthy }, mimir: { condition: service_healthy }, pyroscope: { condition: service_healthy } }
+    depends_on: {tempo: {condition: service_healthy}, mimir: {condition: service_healthy}, pyroscope: {condition: service_healthy}}
     image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.27-alpine}
     restart: always
     volumes:
@@ -57,7 +57,7 @@ services:
       - ../../common/config/mimir/gateway_mimir.conf:/etc/nginx/templates/gateway_mimir.conf.template
       - ../../common/config/pyroscope/gateway_pyroscope.conf:/etc/nginx/templates/gateway_pyroscope.conf.template
     healthcheck:
-      test: [ "CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/" ]
+      test: ["CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/"]
       interval: 3s
       timeout: 1s
       retries: 20
@@ -67,8 +67,8 @@ services:
       <<: *profiles-labels
       metrics.grafana.com/scrape: false
       profiles.grafana.com/service_name: loki
-    depends_on: { minio: { condition: service_healthy } }
-    image: ${LOKI_IMAGE:-docker.io/grafana/loki:3.3.0}
+    depends_on: {minio: {condition: service_healthy}}
+    image: ${LOKI_IMAGE:-docker.io/grafana/loki:3.3.2}
     configs:
       - source: loki_config_file
         target: /etc/loki/config.yaml
@@ -82,7 +82,7 @@ services:
       <<: *jaeger-environment
       JAEGER_TAGS: app=loki
     healthcheck:
-      test: [ "CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/ready" ]
+      test: ["CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/ready"]
       <<: *status-healthcheck
     # expose 33100 port so we can directly access loki inside container
     ports:
@@ -97,7 +97,7 @@ services:
       <<: *profiles-labels
       metrics.grafana.com/scrape: false
       profiles.grafana.com/service_name: tempo
-    depends_on: { minio: { condition: service_healthy }, mimir: { condition: service_healthy } }
+    depends_on: {minio: {condition: service_healthy}, mimir: {condition: service_healthy}}
     image: ${TEMPO_IMAGE:-docker.io/grafana/tempo:2.6.0}
     configs:
       - source: tempo_config_file
@@ -112,7 +112,7 @@ services:
       <<: *jaeger-environment
       JAEGER_TAGS: app=tempo
     healthcheck:
-      test: [ "CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3200/ready" ]
+      test: ["CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3200/ready"]
       <<: *status-healthcheck
       start_period: 10s
     # expose 33200 port so we can directly access tempo inside container
@@ -124,7 +124,7 @@ services:
       <<: *profiles-labels
       metrics.grafana.com/scrape: false
       profiles.grafana.com/service_name: mimir
-    depends_on: { minio: { condition: service_healthy } }
+    depends_on: {minio: {condition: service_healthy}}
     image: ${MIMIR_IMAGE:-docker.io/grafana/mimir-alpine:2.14.0}
     configs:
       - source: mimir_config_file
@@ -140,7 +140,7 @@ services:
       <<: *jaeger-environment
       JAEGER_TAGS: app=mimir
     healthcheck:
-      test: [ "CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/ready" ]
+      test: ["CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/ready"]
       <<: *status-healthcheck
     # expose 38080 port so we can directly access mimir inside container
     ports:
@@ -168,7 +168,7 @@ services:
     labels:
       metrics.grafana.com/scrape: false
       profiles.grafana.com/service_name: pyroscope
-    depends_on: { minio: { condition: service_healthy } }
+    depends_on: {minio: {condition: service_healthy}}
     image: ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:1.10.0}
     configs:
       - source: pyroscope_config_file
@@ -185,11 +185,11 @@ services:
       <<: *jaeger-environment
       JAEGER_TAGS: app=pyroscope
     healthcheck:
-      test: [ "CMD", "profilecli", "ready" ]
+      test: ["CMD", "profilecli", "ready"]
       <<: *status-healthcheck
     # expose 34040 port so we can directly access pyroscope inside container
     ports:
       - "34040:4040"
 
 volumes:
-  pyroscope_data:
+  pyroscope_data: {}
