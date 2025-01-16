@@ -32,7 +32,7 @@ services:
     # https://github.com/qclaogui/codelab-monitoring/blob/main/alloy-modules/compose/README.md
     labels:
       metrics.grafana.com/scrape: false
-    depends_on: { loki-write: { condition: service_healthy } }
+    depends_on: {loki-write: {condition: service_healthy}}
     image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.27-alpine}
     volumes:
       - ../../common/config/nginx/10-default-lgtmp.envsh:/docker-entrypoint.d/10-default-lgtmp.envsh
@@ -47,7 +47,7 @@ services:
       - LOKI_QUERIER_HOST=loki-read
       - LOKI_COMPACTOR_HOST=loki-backend
     healthcheck:
-      test: [ "CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/" ]
+      test: ["CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/"]
       interval: 3s
       timeout: 1s
       retries: 20
@@ -55,8 +55,8 @@ services:
       - "33100:3100"
 
   loki-read:
-    depends_on: { minio: { condition: service_healthy } }
-    image: &lokiImage ${LOKI_IMAGE:-docker.io/grafana/loki:3.3.0}
+    depends_on: {minio: {condition: service_healthy}}
+    image: &lokiImage ${LOKI_IMAGE:-docker.io/grafana/loki:3.3.2}
     configs:
       - source: loki_config_file
         target: /etc/loki/config.yaml
@@ -68,7 +68,7 @@ services:
       - -legacy-read-mode=false
       - -config.expand-env=true
     healthcheck:
-      test: [ "CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/ready" ]
+      test: ["CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/ready"]
       <<: *status-healthcheck
     deploy:
       replicas: 2
@@ -78,7 +78,7 @@ services:
           - loki-memberlist
 
   loki-write:
-    depends_on: { minio: { condition: service_healthy } }
+    depends_on: {minio: {condition: service_healthy}}
     image: *lokiImage
     configs:
       - source: loki_config_file
@@ -90,7 +90,7 @@ services:
       - -target=write
       - -config.expand-env=true
     healthcheck:
-      test: [ "CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/ready" ]
+      test: ["CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/ready"]
       <<: *status-healthcheck
     deploy:
       replicas: 3
@@ -100,7 +100,7 @@ services:
           - loki-memberlist
 
   loki-backend:
-    depends_on: { minio: { condition: service_healthy } }
+    depends_on: {minio: {condition: service_healthy}}
     image: *lokiImage
     configs:
       - source: loki_config_file
@@ -113,7 +113,7 @@ services:
       - -legacy-read-mode=false
       - -config.expand-env=true
     healthcheck:
-      test: [ "CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/ready" ]
+      test: ["CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/ready"]
       <<: *status-healthcheck
     deploy:
       replicas: 2
