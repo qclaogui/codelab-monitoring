@@ -11,7 +11,7 @@ metadata:
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.3.2
-    helm.sh/chart: loki-6.24.0
+    helm.sh/chart: loki-6.25.0
   name: loki
   namespace: logging-system
 ---
@@ -24,8 +24,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.5.1
-    helm.sh/chart: alloy-0.10.1
+    app.kubernetes.io/version: v1.6.1
+    helm.sh/chart: alloy-0.11.0
   name: alloy
   namespace: monitoring-system
 ---
@@ -50,8 +50,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.5.1
-    helm.sh/chart: alloy-0.10.1
+    app.kubernetes.io/version: v1.6.1
+    helm.sh/chart: alloy-0.11.0
   name: alloy
 rules:
 - apiGroups:
@@ -152,7 +152,7 @@ metadata:
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.3.2
-    helm.sh/chart: loki-6.24.0
+    helm.sh/chart: loki-6.25.0
   name: loki-clusterrole
 rules:
 - apiGroups:
@@ -174,8 +174,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.5.1
-    helm.sh/chart: alloy-0.10.1
+    app.kubernetes.io/version: v1.6.1
+    helm.sh/chart: alloy-0.11.0
   name: alloy
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -193,7 +193,7 @@ metadata:
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.3.2
-    helm.sh/chart: loki-6.24.0
+    helm.sh/chart: loki-6.25.0
   name: loki-clusterrolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -358,7 +358,7 @@ metadata:
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.3.2
-    helm.sh/chart: loki-6.24.0
+    helm.sh/chart: loki-6.25.0
   name: loki-runtime
   namespace: logging-system
 ---
@@ -4853,7 +4853,7 @@ metadata:
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.3.2
-    helm.sh/chart: loki-6.24.0
+    helm.sh/chart: loki-6.25.0
   name: loki-backend
   namespace: logging-system
 spec:
@@ -4908,7 +4908,7 @@ metadata:
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.3.2
-    helm.sh/chart: loki-6.24.0
+    helm.sh/chart: loki-6.25.0
   name: loki-memberlist
   namespace: logging-system
 spec:
@@ -4960,7 +4960,7 @@ metadata:
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.3.2
-    helm.sh/chart: loki-6.24.0
+    helm.sh/chart: loki-6.25.0
   name: loki-read
   namespace: logging-system
 spec:
@@ -5016,7 +5016,7 @@ metadata:
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.3.2
-    helm.sh/chart: loki-6.24.0
+    helm.sh/chart: loki-6.25.0
   name: loki-write
   namespace: logging-system
 spec:
@@ -5073,8 +5073,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.5.1
-    helm.sh/chart: alloy-0.10.1
+    app.kubernetes.io/version: v1.6.1
+    helm.sh/chart: alloy-0.11.0
   name: alloy
   namespace: monitoring-system
 spec:
@@ -5114,8 +5114,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.5.1
-    helm.sh/chart: alloy-0.10.1
+    app.kubernetes.io/version: v1.6.1
+    helm.sh/chart: alloy-0.11.0
   name: alloy-cluster
   namespace: monitoring-system
 spec:
@@ -5205,7 +5205,7 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 3.3.2
-    helm.sh/chart: loki-6.24.0
+    helm.sh/chart: loki-6.25.0
   name: loki-read
   namespace: logging-system
 spec:
@@ -5399,7 +5399,7 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 3.3.2
-    helm.sh/chart: loki-6.24.0
+    helm.sh/chart: loki-6.25.0
   name: loki-backend
   namespace: logging-system
 spec:
@@ -5446,9 +5446,15 @@ spec:
           value: "60"
         - name: LOG_LEVEL
           value: INFO
-        image: kiwigrid/k8s-sidecar:1.28.0
+        image: kiwigrid/k8s-sidecar:1.29.0
         imagePullPolicy: IfNotPresent
         name: loki-sc-rules
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
         volumeMounts:
         - mountPath: /rules
           name: sc-rules-volume
@@ -5533,7 +5539,7 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/part-of: memberlist
     app.kubernetes.io/version: 3.3.2
-    helm.sh/chart: loki-6.24.0
+    helm.sh/chart: loki-6.25.0
   name: loki-write
   namespace: logging-system
 spec:
@@ -5637,8 +5643,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.5.1
-    helm.sh/chart: alloy-0.10.1
+    app.kubernetes.io/version: v1.6.1
+    helm.sh/chart: alloy-0.11.0
   name: alloy
   namespace: monitoring-system
 spec:
@@ -5691,7 +5697,7 @@ spec:
         - secretRef:
             name: alloy-env
             optional: true
-        image: docker.io/grafana/alloy:v1.5.1
+        image: docker.io/grafana/alloy:v1.6.1
         imagePullPolicy: IfNotPresent
         name: alloy
         ports:
@@ -5770,7 +5776,7 @@ metadata:
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.3.2
-    helm.sh/chart: loki-6.24.0
+    helm.sh/chart: loki-6.25.0
   name: loki-backend
   namespace: logging-system
 spec:
@@ -5789,7 +5795,7 @@ metadata:
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.3.2
-    helm.sh/chart: loki-6.24.0
+    helm.sh/chart: loki-6.25.0
   name: loki-read
   namespace: logging-system
 spec:
@@ -5808,7 +5814,7 @@ metadata:
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.3.2
-    helm.sh/chart: loki-6.24.0
+    helm.sh/chart: loki-6.25.0
   name: loki-write
   namespace: logging-system
 spec:
@@ -5961,8 +5967,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.5.1
-    helm.sh/chart: alloy-0.10.1
+    app.kubernetes.io/version: v1.6.1
+    helm.sh/chart: alloy-0.11.0
   name: alloy
   namespace: monitoring-system
 spec:
@@ -6018,8 +6024,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.5.1
-    helm.sh/chart: alloy-0.10.1
+    app.kubernetes.io/version: v1.6.1
+    helm.sh/chart: alloy-0.11.0
   name: alloy
   namespace: monitoring-system
 spec:
