@@ -53,11 +53,11 @@ $(GORELEASER): $(BINGO_DIR)/goreleaser.mod
 	@echo "(re)installing $(GOBIN)/goreleaser-v1.26.2"
 	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=goreleaser.mod -o=$(GOBIN)/goreleaser-v1.26.2 "github.com/goreleaser/goreleaser"
 
-GRR := $(GOBIN)/grr-v0.6.1
+GRR := $(GOBIN)/grr-v0.7.1
 $(GRR): $(BINGO_DIR)/grr.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
-	@echo "(re)installing $(GOBIN)/grr-v0.6.1"
-	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=grr.mod -o=$(GOBIN)/grr-v0.6.1 "github.com/grafana/grizzly/cmd/grr"
+	@echo "(re)installing $(GOBIN)/grr-v0.7.1"
+	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=grr.mod -o=$(GOBIN)/grr-v0.7.1 "github.com/grafana/grizzly/cmd/grr"
 
 JB := $(GOBIN)/jb-v0.6.0
 $(JB): $(BINGO_DIR)/jb.mod
@@ -71,17 +71,17 @@ $(JSONNETFMT): $(BINGO_DIR)/jsonnetfmt.mod
 	@echo "(re)installing $(GOBIN)/jsonnetfmt-v0.20.0"
 	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=jsonnetfmt.mod -o=$(GOBIN)/jsonnetfmt-v0.20.0 "github.com/google/go-jsonnet/cmd/jsonnetfmt"
 
-K3D := $(GOBIN)/k3d-v5.7.5
+K3D := $(GOBIN)/k3d-v5.8.1
 $(K3D): $(BINGO_DIR)/k3d.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
-	@echo "(re)installing $(GOBIN)/k3d-v5.7.5"
-	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=k3d.mod -o=$(GOBIN)/k3d-v5.7.5 "github.com/k3d-io/k3d/v5"
+	@echo "(re)installing $(GOBIN)/k3d-v5.8.1"
+	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=k3d.mod -o=$(GOBIN)/k3d-v5.8.1 "github.com/k3d-io/k3d/v5"
 
-KUSTOMIZE := $(GOBIN)/kustomize-v5.5.0
+KUSTOMIZE := $(GOBIN)/kustomize-v5.6.0
 $(KUSTOMIZE): $(BINGO_DIR)/kustomize.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
-	@echo "(re)installing $(GOBIN)/kustomize-v5.5.0"
-	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=kustomize.mod -o=$(GOBIN)/kustomize-v5.5.0 "sigs.k8s.io/kustomize/kustomize/v5"
+	@echo "(re)installing $(GOBIN)/kustomize-v5.6.0"
+	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=kustomize.mod -o=$(GOBIN)/kustomize-v5.6.0 "sigs.k8s.io/kustomize/kustomize/v5"
 
 MIXTOOL := $(GOBIN)/mixtool-v0.0.0-20250106141011-7472b3fc310e
 $(MIXTOOL): $(BINGO_DIR)/mixtool.mod
@@ -89,9 +89,9 @@ $(MIXTOOL): $(BINGO_DIR)/mixtool.mod
 	@echo "(re)installing $(GOBIN)/mixtool-v0.0.0-20250106141011-7472b3fc310e"
 	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=mixtool.mod -o=$(GOBIN)/mixtool-v0.0.0-20250106141011-7472b3fc310e "github.com/monitoring-mixins/mixtool/cmd/mixtool"
 
-UPDATECLI := $(GOBIN)/updatecli-v0.92.0
+UPDATECLI := $(GOBIN)/updatecli-v0.93.0
 $(UPDATECLI): $(BINGO_DIR)/updatecli.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
-	@echo "(re)installing $(GOBIN)/updatecli-v0.92.0"
-	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=updatecli.mod -o=$(GOBIN)/updatecli-v0.92.0 "github.com/updatecli/updatecli"
+	@echo "(re)installing $(GOBIN)/updatecli-v0.93.0"
+	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=updatecli.mod -o=$(GOBIN)/updatecli-v0.93.0 "github.com/updatecli/updatecli"
 
