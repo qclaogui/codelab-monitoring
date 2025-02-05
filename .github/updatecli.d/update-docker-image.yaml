@@ -1,6 +1,14 @@
 name: Update Docker Compose image versions
 
 sources:
+  grafana-version:
+    kind: dockerimage
+    spec:
+      image: docker.io/grafana/grafana
+      versionfilter:
+        kind: semver
+        pattern: "~11.x"
+
   alloy-version:
     kind: dockerimage
     spec:
@@ -18,6 +26,13 @@ sources:
         pattern: "~3.x"
 
 conditions:
+  check-grafana-image:
+    kind: dockerimage
+    disablesourceinput: true
+    spec:
+      image: docker.io/grafana/grafana
+      tag: '{{ source "grafana-version" }}'
+
   check-alloy-image:
     kind: dockerimage
     disablesourceinput: true
@@ -33,6 +48,25 @@ conditions:
       tag: '{{ source "loki-version" }}'
 
 targets:
+  update-grafana-image-version-in-compose-include:
+    kind: yaml
+    sourceid: grafana-version
+    transformers:
+      - addprefix: "${GRAFANA_IMAGE:-docker.io/grafana/grafana:"
+      - addsuffix: "}"
+    spec:
+      file: docker-compose/common/compose-include/grafana.yaml
+      key: $.services.grafana.image
+
+  update-grafana-image-version-in-env:
+    kind: "file"
+    sourceid: grafana-version
+    spec:
+      files:
+        - docker-compose/common/config/.env
+      matchpattern: 'GRAFANA_IMAGE=grafana/grafana:.*'
+      replacepattern: 'GRAFANA_IMAGE=grafana/grafana:{{ source "grafana-version" }}'
+
   update-alloy-image-version-in-compose-include:
     kind: yaml
     sourceid: alloy-version
