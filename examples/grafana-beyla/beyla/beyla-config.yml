@@ -1,8 +1,14 @@
 log_level: DEBUG
-print_traces: true
+trace_printer: text
+
+ebpf:
+  enable_context_propagation: true
 
 routes:
   ignored_patterns:
+    - /health
+    - /ready
+    - /live
     - /metrics
   patterns:
     - /api/v1/push
@@ -19,8 +25,6 @@ routes:
   unmatched: path
 
 otel_metrics_export:
-  report_target: true
-  report_peer: true
   features:
     - application
     - application_span
@@ -30,15 +34,11 @@ otel_metrics_export:
 
 network:
   enable: true
-  allowed_attributes:
-    - beyla.ip
-    - transport
-    - src.address
-    - dst.address
-    - src.port
-    - dst.port
-    - src.name
-    - dst.name
+
+attributes:
+  select:
+    "*":
+      include: ["*"]
 
 internal_metrics:
   prometheus:
