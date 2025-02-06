@@ -2,7 +2,11 @@ services:
   # override included service grafana for dashboards pre-provisioning
   grafana:
     volumes:
-      - ./beyla/beyla-red-metrics.json:/var/lib/grafana/dashboards/beyla-red-metrics.json
-      - ./beyla/process-dashboard.json:/var/lib/grafana/dashboards/process-dashboard.json
+      - ../../monitoring-mixins/beyla-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/beyla-mixin
     environment:
-      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/beyla-red-metrics.json
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/beyla-mixin/application.json
+
+  mimirtool:
+    volumes:
+      - ../../monitoring-mixins/beyla-mixin/deploy/beyla-mixin-rules.yaml:/rules/beyla-mixin-rules.yaml
+      - ../../monitoring-mixins/beyla-mixin/deploy/beyla-mixin-alerts.yaml:/rules/beyla-mixin-alerts.yaml

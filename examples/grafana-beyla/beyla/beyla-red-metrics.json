@@ -21,12 +21,11 @@
   "graphTooltip": 0,
   "id": 15,
   "links": [],
-  "liveNow": false,
   "panels": [
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "metrics"
       },
       "description": "the slowest HTTP routes sorted by response time percentile",
       "fieldConfig": {
@@ -123,12 +122,12 @@
           }
         ]
       },
-      "pluginVersion": "11.2.1",
+      "pluginVersion": "11.5.1",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "metrics"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -180,7 +179,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "metrics"
       },
       "description": "the slowest remote procedure calls (RPC) in your application sorted by response time percentile",
       "fieldConfig": {
@@ -277,12 +276,12 @@
           }
         ]
       },
-      "pluginVersion": "11.2.1",
+      "pluginVersion": "11.5.1",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "metrics"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -328,14 +327,13 @@
       "id": 72,
       "panels": [],
       "repeat": "Service",
-      "repeatDirection": "h",
       "title": "Inbound: $Service",
       "type": "row"
     },
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "metrics"
       },
       "description": "average and top percentiles for both HTTP and gRPC traffic",
       "fieldConfig": {
@@ -409,15 +407,17 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "single",
           "sort": "none"
         }
       },
+      "pluginVersion": "11.5.1",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "metrics"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.99, sum by(service_name, le) (rate({__name__=~\"http_server_request_duration_seconds_bucket|http_server_request_duration_bucket\",service_name=\"$Service\",instance=~\"$instance\",job=~\"$job\"}[$__rate_interval])))",
@@ -428,7 +428,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "metrics"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.95, sum(rate({__name__=~\"http_server_request_duration_seconds_bucket|http_server_request_duration_bucket\",service_name=\"$Service\",instance=~\"$instance\",job=~\"$job\"}[$__rate_interval])) by (service_name, le))",
@@ -440,7 +440,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "metrics"
           },
           "editorMode": "code",
           "expr": "sum(rate({__name__=~\"http_server_request_duration_seconds_sum|http_server_request_duration_sum\",service_name=\"$Service\",instance=~\"$instance\",job=~\"$job\"} [$__rate_interval])) / sum(rate({__name__=~\"http_server_request_duration_seconds_count|http_server_request_duration_count\",service_name=\"$Service\",instance=~\"$instance\",job=~\"$job\"} [$__rate_interval]))",
@@ -452,7 +452,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "metrics"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.99, sum by(service_name, le) (rate({__name__=~\"rpc_server_duration_seconds_bucket|rpc_server_duration_bucket\",service_name=\"$Service\",instance=~\"$instance\",job=~\"$job\"}[$__rate_interval])))",
@@ -464,7 +464,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "metrics"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.95, sum by(service_name, le) (rate({__name__=~\"rpc_server_duration_seconds_bucket|rpc_server_duration_bucket\",service_name=\"$Service\",instance=~\"$instance\",job=~\"$job\"}[$__rate_interval])))",
@@ -476,7 +476,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "metrics"
           },
           "editorMode": "code",
           "expr": "sum(rate({__name__=~\"rpc_server_duration_seconds_sum\",service_name=\"$Service\",instance=~\"$instance\",job=~\"$job\"} [$__rate_interval])) / sum(rate({__name__=~\"rpc_server_duration_seconds_count|rpc_server_duration_count\",service_name=\"$Service\",instance=~\"$instance\",job=~\"$job\"} [$__rate_interval]))",
@@ -492,7 +492,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "metrics"
       },
       "description": "number of requests per second, faceted by its HTTP or gRPC return code",
       "fieldConfig": {
@@ -566,15 +566,17 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "single",
           "sort": "none"
         }
       },
+      "pluginVersion": "11.5.1",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "metrics"
           },
           "editorMode": "code",
           "expr": "sum(rate({__name__=~\"http_server_request_duration_seconds_count|http_server_request_duration_count\",service_name=\"$Service\",instance=~\"$instance\",job=~\"$job\"} [$__rate_interval])) by (http_response_status_code)",
@@ -586,7 +588,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "metrics"
           },
           "editorMode": "code",
           "expr": "sum(rate({__name__=~\"rpc_server_duration_seconds_count|rpc_server_duration_count\",service_name=\"$Service\",instance=~\"$instance\",job=~\"$job\"} [$__rate_interval])) by (service_name, rpc_grpc_status_code)",
@@ -602,7 +604,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "metrics"
       },
       "description": "percentage of 4xx|5xx HTTP responses or non-zero gRPC responses over the total of the requests",
       "fieldConfig": {
@@ -677,15 +679,17 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "single",
           "sort": "none"
         }
       },
+      "pluginVersion": "11.5.1",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "metrics"
           },
           "editorMode": "code",
           "expr": "sum by (http_response_status_code) (rate({__name__=~\"http_server_request_duration_seconds_count|http_server_request_duration_count\",service_name=\"${Service}\",http_response_status_code=~\"(4|5).*\",instance=~\"$instance\",job=~\"$job\"}[$__rate_interval])) / ignoring(http_response_status_code) group_left sum(rate({__name__=~\"http_server_request_duration_seconds_count|http_server_request_duration_count\",service_name=\"${Service}\",instance=~\"$instance\",job=~\"$job\"}[$__rate_interval]))",
@@ -697,7 +701,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "metrics"
           },
           "editorMode": "code",
           "expr": "sum by (rpc_grpc_status_code) (rate({__name__=~\"rpc_server_duration_seconds_count|rpc_server_duration_count\",service_name=\"${Service}\",rpc_grpc_status_code!=\"0\",instance=~\"$instance\",job=~\"$job\"}[$__rate_interval])) / ignoring(rpc_grpc_status_code) group_left sum(rate({__name__=~\"rpc_server_duration_seconds_count|rpc_server_duration_count\",service_name=\"${Service}\",instance=~\"$instance\",job=~\"$job\"}[$__rate_interval]))",
@@ -721,14 +725,13 @@
       "id": 5,
       "panels": [],
       "repeat": "Service",
-      "repeatDirection": "h",
       "title": "Outbound: $Service",
       "type": "row"
     },
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "metrics"
       },
       "description": "average and top percentiles for both HTTP and gRPC traffic",
       "fieldConfig": {
@@ -802,15 +805,17 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "single",
           "sort": "none"
         }
       },
+      "pluginVersion": "11.5.1",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "metrics"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.99, sum by(service_name, le) (rate({__name__=~\"http_client_request_duration_seconds_bucket|http_client_request_duration_bucket\",service_name=\"$Service\",instance=~\"$instance\",job=~\"$job\"}[$__rate_interval])))",
@@ -821,7 +826,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "metrics"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.95, sum(rate({__name__=~\"http_client_request_duration_seconds_bucket|http_client_request_duration_bucket\",service_name=\"$Service\",instance=~\"$instance\",job=~\"$job\"}[$__rate_interval])) by (service_name, le)) ",
@@ -833,7 +838,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "metrics"
           },
           "editorMode": "code",
           "expr": "sum(rate({__name__=~\"http_client_request_duration_seconds_sum|http_client_request_duration_sum\",service_name=\"$Service\",instance=~\"$instance\",job=~\"$job\"} [$__rate_interval])) / sum(rate({__name__=~\"http_client_request_duration_count|http_client_request_duration_seconds_count\",service_name=\"$Service\",instance=~\"$instance\",job=~\"$job\"} [$__rate_interval]))",
@@ -845,7 +850,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "metrics"
           },
           "editorMode": "code",
           "expr": "sum(rate({__name__=~\"rpc_client_duration_seconds_sum|rpc_client_duration_sum\",service_name=\"$Service\",instance=~\"$instance\",job=~\"$job\"} [$__rate_interval])) / sum(rate({__name__=~\"rpc_client_duration_count|rpc_client_duration_seconds_count\",service_name=\"$Service\",instance=~\"$instance\",job=~\"$job\"} [$__rate_interval]))",
@@ -857,7 +862,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "metrics"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.99, sum by(service_name, le) (rate({__name__=~\"rpc_client_duration_seconds_bucket|rpc_client_duration_bucket\",service_name=\"$Service\",instance=~\"$instance\",job=~\"$job\"}[$__rate_interval])))",
@@ -869,7 +874,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "metrics"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.95, sum(rate({__name__=~\"rpc_client_duration_seconds_bucket|rpc_client_duration_bucket\",service_name=\"$Service\",instance=~\"$instance\",job=~\"$job\"}[$__rate_interval])) by (service_name, le)) ",
@@ -885,7 +890,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "metrics"
       },
       "description": "number of requests per second, faceted by its HTTP or gRPC return code",
       "fieldConfig": {
@@ -959,15 +964,17 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "single",
           "sort": "none"
         }
       },
+      "pluginVersion": "11.5.1",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "metrics"
           },
           "editorMode": "code",
           "expr": "sum(rate({__name__=~\"http_client_request_duration_count|http_client_request_duration_seconds_count\",service_name=\"$Service\",instance=~\"$instance\",job=~\"$job\"} [$__rate_interval])) by (service_name, http_response_status_code)",
@@ -978,7 +985,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "metrics"
           },
           "editorMode": "code",
           "expr": "sum(rate({__name__=~\"rpc_client_duration_count|rpc_client_duration_seconds_count\",service_name=\"$Service\",instance=~\"$instance\",job=~\"$job\"} [$__rate_interval])) by (service_name, rpc_grpc_status_code)",
@@ -994,7 +1001,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "metrics"
       },
       "description": "percentage of 5xx HTTP responses or non-zero gRPC responses over the total of the requests",
       "fieldConfig": {
@@ -1094,15 +1101,17 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "single",
           "sort": "none"
         }
       },
+      "pluginVersion": "11.5.1",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "metrics"
           },
           "editorMode": "code",
           "expr": "sum by (http_response_status_code) (rate({__name__=~\"http_client_request_duration_count|http_client_request_duration_seconds_count\",service_name=\"$Service\",http_response_status_code=~\"5.*\",instance=~\"$instance\",job=~\"$job\"}[$__rate_interval])) / ignoring(http_response_status_code) group_left sum(rate({__name__=~\"http_client_request_duration_count|http_client_request_duration_seconds_count\",service_name=\"$Service\",instance=~\"$instance\",job=~\"$job\"}[$__rate_interval]))",
@@ -1114,7 +1123,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "metrics"
           },
           "editorMode": "code",
           "expr": "sum by (rpc_grpc_status_code) (rate({__name__=~\"rpc_client_duration_count|rpc_client_duration_seconds_count\",service_name=\"$Service\",rpc_grpc_status_code!=\"0\",instance=~\"$instance\",job=~\"$job\"}[$__rate_interval])) / ignoring(rpc_grpc_status_code) group_left sum(rate({__name__=~\"rpc_client_duration_count|rpc_client_duration_seconds_count\",service_name=\"$Service\",instance=~\"$instance\",job=~\"$job\"}[$__rate_interval]))",
@@ -1128,8 +1137,9 @@
       "type": "timeseries"
     }
   ],
+  "preload": false,
   "refresh": "30s",
-  "schemaVersion": 39,
+  "schemaVersion": 40,
   "tags": [
     "ebpf",
     "red",
@@ -1142,40 +1152,29 @@
     "list": [
       {
         "current": {
-          "selected": false,
           "text": "Metrics",
           "value": "metrics"
         },
         "description": "Source of the metrics (e.g. Prometheus source)",
-        "hide": 0,
         "includeAll": false,
         "label": "Data source",
-        "multi": false,
         "name": "datasource",
         "options": [],
         "query": "prometheus",
-        "queryValue": "",
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
         "type": "datasource"
       },
       {
         "current": {
-          "selected": true,
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
+          "text": "All",
+          "value": "$__all"
         },
         "datasource": {
           "type": "prometheus",
-          "uid": "${datasource}"
+          "uid": "metrics"
         },
         "definition": "label_values(service_name)",
-        "hide": 0,
         "includeAll": true,
         "label": "Service",
         "multi": true,
@@ -1187,27 +1186,20 @@
         },
         "refresh": 2,
         "regex": "",
-        "skipUrlSync": false,
         "sort": 5,
         "type": "query"
       },
       {
         "allValue": ".+",
         "current": {
-          "selected": true,
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
+          "text": "All",
+          "value": "$__all"
         },
         "datasource": {
           "type": "prometheus",
-          "uid": "${datasource}"
+          "uid": "metrics"
         },
         "definition": "label_values(job)",
-        "hide": 0,
         "includeAll": true,
         "label": "Job",
         "multi": true,
@@ -1219,27 +1211,19 @@
         },
         "refresh": 2,
         "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
         "type": "query"
       },
       {
         "allValue": ".+",
         "current": {
-          "selected": true,
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
+          "text": "All",
+          "value": "$__all"
         },
         "datasource": {
           "type": "prometheus",
-          "uid": "${datasource}"
+          "uid": "metrics"
         },
         "definition": "label_values(instance)",
-        "hide": 0,
         "includeAll": true,
         "label": "Instance",
         "multi": true,
@@ -1251,8 +1235,6 @@
         },
         "refresh": 2,
         "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
         "type": "query"
       }
     ]

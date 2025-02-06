@@ -1,0 +1,27 @@
+# ----------------------------------------------------
+# apiVersion and kind of Kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: monitoring-system
+
+resources:
+- prometheus-alerts.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_dashboard_folder: "/dashboards/beyla-mixin"
+
+configMapGenerator:
+- name: application_process.json
+  files:
+  - dashboards_out/application_process.json
+- name: application.json
+  files:
+  - dashboards_out/application.json
+- name: beyla_debug.json
+  files:
+  - dashboards_out/beyla_debug.json

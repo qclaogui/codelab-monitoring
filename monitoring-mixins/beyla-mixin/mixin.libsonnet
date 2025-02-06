@@ -1,0 +1,1 @@
+import 'beyla-mixin/mixin.libsonnet'
