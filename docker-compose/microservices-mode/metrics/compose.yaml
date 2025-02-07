@@ -28,7 +28,7 @@ services:
     # https://github.com/qclaogui/codelab-monitoring/blob/main/alloy-modules/compose/README.md
     labels:
       - metrics.grafana.com/scrape=false
-    depends_on: { distributor: { condition: service_healthy }, ruler: { condition: service_healthy } }
+    depends_on: {distributor: {condition: service_healthy}, ruler: {condition: service_healthy}}
     image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.27-alpine}
     volumes:
       - ../../common/config/nginx/10-default-lgtmp.envsh:/docker-entrypoint.d/10-default-lgtmp.envsh
@@ -41,7 +41,7 @@ services:
       - MIMIR_QUERY_FRONTEND_HOST=query-frontend
       - MIMIR_COMPACTOR_HOST=compactor
     healthcheck:
-      test: [ "CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/" ]
+      test: ["CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/"]
       interval: 3s
       timeout: 1s
       retries: 20
@@ -49,8 +49,8 @@ services:
       - "38080:8080"
 
   distributor:
-    depends_on: { ingester: { condition: service_healthy } }
-    image: &mimirImage ${MIMIR_IMAGE:-docker.io/grafana/mimir-alpine:2.14.0}
+    depends_on: {ingester: {condition: service_healthy}}
+    image: &mimirImage ${MIMIR_IMAGE:-docker.io/grafana/mimir-alpine:2.15.0}
     configs:
       - source: mimir_config_file
         target: /etc/mimir/config.yaml
@@ -61,7 +61,7 @@ services:
       - -target=distributor
       - -config.expand-env=true
     healthcheck:
-      test: [ "CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/ready" ]
+      test: ["CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/ready"]
       <<: *status-healthcheck
     deploy:
       replicas: 2
@@ -83,7 +83,7 @@ services:
       - -config.expand-env=true
 
   querier:
-    depends_on: { query-scheduler: { condition: service_healthy } }
+    depends_on: {query-scheduler: {condition: service_healthy}}
     image: *mimirImage
     configs:
       - source: mimir_config_file
@@ -102,7 +102,7 @@ services:
           - mimir-memberlist
 
   query-frontend:
-    depends_on: { query-scheduler: { condition: service_healthy } }
+    depends_on: {query-scheduler: {condition: service_healthy}}
     image: *mimirImage
     configs:
       - source: mimir_config_file
@@ -126,13 +126,13 @@ services:
       - -config.expand-env=true
       - -target=query-scheduler
     healthcheck:
-      test: [ "CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/ready" ]
+      test: ["CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/ready"]
       <<: *status-healthcheck
     deploy:
       replicas: 2
 
   ruler:
-    depends_on: { minio: { condition: service_healthy } }
+    depends_on: {minio: {condition: service_healthy}}
     image: *mimirImage
     configs:
       - source: mimir_config_file
@@ -144,7 +144,7 @@ services:
       - -config.expand-env=true
       - -target=ruler
     healthcheck:
-      test: [ "CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/ready" ]
+      test: ["CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/ready"]
       <<: *status-healthcheck
     networks:
       default:
@@ -152,7 +152,7 @@ services:
           - mimir-memberlist
 
   alertmanager:
-    depends_on: { minio: { condition: service_healthy } }
+    depends_on: {minio: {condition: service_healthy}}
     image: *mimirImage
     configs:
       - source: mimir_config_file
@@ -169,7 +169,7 @@ services:
           - mimir-memberlist
 
   compactor:
-    depends_on: { minio: { condition: service_healthy } }
+    depends_on: {minio: {condition: service_healthy}}
     image: *mimirImage
     configs:
       - source: mimir_config_file
@@ -186,7 +186,7 @@ services:
           - mimir-memberlist
 
   ingester:
-    depends_on: { minio: { condition: service_healthy } }
+    depends_on: {minio: {condition: service_healthy}}
     image: *mimirImage
     configs:
       - source: mimir_config_file
@@ -198,7 +198,7 @@ services:
       - -config.expand-env=true
       - -target=ingester
     healthcheck:
-      test: [ "CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/ready" ]
+      test: ["CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/ready"]
       <<: *status-healthcheck
     deploy:
       replicas: 3
@@ -208,7 +208,7 @@ services:
           - mimir-memberlist
 
   store-gateway:
-    depends_on: { minio: { condition: service_healthy } }
+    depends_on: {minio: {condition: service_healthy}}
     image: *mimirImage
     configs:
       - source: mimir_config_file
@@ -227,7 +227,7 @@ services:
   mimirtool:
     labels:
       metrics.grafana.com/scrape: false
-    image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:2.14.0}
+    image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:2.15.0}
     volumes:
       - ../../../monitoring-mixins/crontab:/etc/crontabs/root
       - ../../../monitoring-mixins/alloy-mixin/deploy/alloy-mixin-alerts.yaml:/rules/alloy-mixin-alerts.yaml
