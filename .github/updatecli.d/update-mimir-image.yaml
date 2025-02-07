@@ -1,0 +1,133 @@
+name: Update mimir image version
+
+sources:
+  mimir-version:
+    kind: dockerimage
+    spec:
+      image: docker.io/grafana/mimir-alpine
+      versionfilter:
+        kind: semver
+        pattern: "~2.x"
+
+  mimirtool-version:
+    kind: dockerimage
+    spec:
+      image: docker.io/grafana/mimirtool
+      versionfilter:
+        kind: semver
+        pattern: "~2.x"
+
+
+conditions:
+  check-mimir-image:
+    kind: dockerimage
+    disablesourceinput: true
+    spec:
+      image: docker.io/grafana/mimir-alpine
+      tag: '{{ source "mimir-version" }}'
+
+  check-mimirtool-image:
+    kind: dockerimage
+    disablesourceinput: true
+    spec:
+      image: docker.io/grafana/mimirtool
+      tag: '{{ source "mimirtool-version" }}'
+
+targets:
+  update-mimir-image-version-in-env:
+    kind: "file"
+    sourceid: mimir-version
+    spec:
+      files:
+        - docker-compose/common/config/.env
+      matchpattern: 'MIMIR_IMAGE=grafana/mimir-alpine:.*'
+      replacepattern: 'MIMIR_IMAGE=grafana/mimir-alpine:{{ source "mimir-version" }}'
+
+  update-mimirtool-image-version-in-env:
+    kind: "file"
+    sourceid: mimirtool-version
+    spec:
+      files:
+        - docker-compose/common/config/.env
+      matchpattern: 'MIMIRTOOL_IMAGE=grafana/mimirtool:.*'
+      replacepattern: 'MIMIRTOOL_IMAGE=grafana/mimirtool:{{ source "mimirtool-version" }}'
+
+  update-mimir-image-version-in-compose-include:
+    kind: yaml
+    sourceid: mimir-version
+    transformers:
+      - addprefix: "${MIMIR_IMAGE:-docker.io/grafana/mimir-alpine:"
+      - addsuffix: "}"
+    spec:
+      file: docker-compose/common/compose-include/mimir.yaml
+      key: $.services.mimir.image
+
+  update-mimirtool-image-version-in-compose-include:
+    kind: yaml
+    sourceid: mimirtool-version
+    transformers:
+      - addprefix: "${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:"
+      - addsuffix: "}"
+    spec:
+      file: docker-compose/common/compose-include/mimir.yaml
+      key: $.services.mimirtool.image
+
+  update-mimir-image-version-in-all-in-one-mode-metrics:
+    kind: yaml
+    sourceid: mimir-version
+    transformers:
+      - addprefix: "${MIMIR_IMAGE:-docker.io/grafana/mimir-alpine:"
+      - addsuffix: "}"
+    spec:
+      file: docker-compose/monolithic-mode/all-in-one/compose.yaml
+      key: $.services.mimir.image
+
+  update-mimirtool-image-version-in-all-in-one-mode-metrics:
+    kind: yaml
+    sourceid: mimirtool-version
+    transformers:
+      - addprefix: "${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:"
+      - addsuffix: "}"
+    spec:
+      file: docker-compose/monolithic-mode/all-in-one/compose.yaml
+      key: $.services.mimirtool.image
+
+  update-mimir-image-version-in-read-write-mode-metrics:
+    kind: yaml
+    sourceid: mimir-version
+    transformers:
+      - addprefix: "&mimirImage ${MIMIR_IMAGE:-docker.io/grafana/mimir-alpine:"
+      - addsuffix: "}"
+    spec:
+      file: docker-compose/read-write-mode/metrics/compose.yaml
+      key: $.services.mimir-backend.image
+
+  update-mimirtool-image-version-in-read-write-mode-metrics:
+    kind: yaml
+    sourceid: mimirtool-version
+    transformers:
+      - addprefix: "${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:"
+      - addsuffix: "}"
+    spec:
+      file: docker-compose/read-write-mode/metrics/compose.yaml
+      key: $.services.mimirtool.image
+
+  update-mimir-image-version-in-microservices-mode-metrics:
+    kind: yaml
+    sourceid: mimir-version
+    transformers:
+      - addprefix: "&mimirImage ${MIMIR_IMAGE:-docker.io/grafana/mimir-alpine:"
+      - addsuffix: "}"
+    spec:
+      file: docker-compose/microservices-mode/metrics/compose.yaml
+      key: $.services.distributor.image
+
+  update-mimirtool-image-version-in-microservices-mode-metrics:
+    kind: yaml
+    sourceid: mimirtool-version
+    transformers:
+      - addprefix: "${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:"
+      - addsuffix: "}"
+    spec:
+      file: docker-compose/microservices-mode/metrics/compose.yaml
+      key: $.services.mimirtool.image
