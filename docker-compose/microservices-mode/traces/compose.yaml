@@ -41,7 +41,7 @@ services:
     # https://github.com/qclaogui/codelab-monitoring/blob/main/alloy-modules/compose/README.md
     labels:
       metrics.grafana.com/scrape: false
-    depends_on: { distributor: { condition: service_healthy } }
+    depends_on: {distributor: {condition: service_healthy}}
     image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.27-alpine}
     restart: always
     volumes:
@@ -56,7 +56,7 @@ services:
       - TEMPO_QUERY_FRONTEND_HOST=query-frontend
       - TEMPO_COMPACTOR_HOST=compactor
     healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ || exit 1" ]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ || exit 1"]
       interval: 3s
       timeout: 1s
       retries: 20
@@ -64,8 +64,8 @@ services:
       - "33200:3200"
 
   distributor:
-    depends_on: { ingester: { condition: service_healthy } }
-    image: &tempoImage ${TEMPO_IMAGE:-docker.io/grafana/tempo:2.6.0}
+    depends_on: {ingester: {condition: service_healthy}}
+    image: &tempoImage ${TEMPO_IMAGE:-docker.io/grafana/tempo:2.7.0}
     configs:
       - source: tempo_config_file
         target: /etc/tempo/config.yaml
@@ -79,11 +79,11 @@ services:
       <<: *jaeger-environment
       JAEGER_TAGS: app=distributor
     healthcheck:
-      test: [ "CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3200/ready" ]
+      test: ["CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3200/ready"]
       <<: *status-healthcheck
 
   ingester:
-    depends_on: { minio: { condition: service_healthy } }
+    depends_on: {minio: {condition: service_healthy}}
     image: *tempoImage
     configs:
       - source: tempo_config_file
@@ -98,7 +98,7 @@ services:
       <<: *jaeger-environment
       JAEGER_TAGS: app=ingester
     healthcheck:
-      test: [ "CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3200/ready" ]
+      test: ["CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3200/ready"]
       <<: *status-healthcheck
     deploy:
       replicas: 3
@@ -108,7 +108,7 @@ services:
           - tempo-memberlist
 
   query-frontend:
-    depends_on: { minio: { condition: service_healthy } }
+    depends_on: {minio: {condition: service_healthy}}
     image: *tempoImage
     configs:
       - source: tempo_config_file
@@ -124,7 +124,7 @@ services:
       JAEGER_TAGS: app=query-frontend
 
   querier:
-    depends_on: { minio: { condition: service_healthy } }
+    depends_on: {minio: {condition: service_healthy}}
     image: *tempoImage
     configs:
       - source: tempo_config_file
@@ -140,7 +140,7 @@ services:
       JAEGER_TAGS: app=querier
 
   compactor:
-    depends_on: { minio: { condition: service_healthy } }
+    depends_on: {minio: {condition: service_healthy}}
     image: *tempoImage
     configs:
       - source: tempo_config_file
@@ -156,7 +156,7 @@ services:
       JAEGER_TAGS: app=compactor
 
   metrics-generator:
-    depends_on: { minio: { condition: service_healthy } }
+    depends_on: {minio: {condition: service_healthy}}
     image: *tempoImage
     configs:
       - source: tempo_config_file
