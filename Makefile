@@ -21,8 +21,7 @@ update-lgtmp-stack-charts: $(UPDATECLI)
 	@$(UPDATECLI) apply --config .github/updatecli.d/lgtmp-stack-charts.yaml > /dev/null 2>&1
 
 update-docker-image: $(UPDATECLI)
-	@$(UPDATECLI) apply --config .github/updatecli.d/update-docker-image.yaml > /dev/null 2>&1
-	@$(UPDATECLI) apply --config .github/updatecli.d/update-mimir-image.yaml > /dev/null 2>&1
+	@$(UPDATECLI) apply --config .github/updatecli.d/docker-image > /dev/null 2>&1
 
 ##@ Lint & fmt
 

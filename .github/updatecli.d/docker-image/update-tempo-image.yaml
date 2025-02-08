@@ -1,0 +1,58 @@
+name: Update tempo image versions
+
+sources:
+  tempo-version:
+    kind: dockerimage
+    spec:
+      image: docker.io/grafana/tempo
+      versionfilter:
+        kind: semver
+        pattern: "~2.x"
+
+conditions:
+  check-tempo-image:
+    kind: dockerimage
+    disablesourceinput: true
+    spec:
+      image: docker.io/grafana/tempo
+      tag: '{{ source "tempo-version" }}'
+
+targets:
+  update-tempo-image-version-in-env:
+    kind: "file"
+    sourceid: tempo-version
+    spec:
+      files:
+        - docker-compose/common/config/.env
+      matchpattern: 'TEMPO_IMAGE=grafana/tempo:.*'
+      replacepattern: 'TEMPO_IMAGE=grafana/tempo:{{ source "tempo-version" }}'
+
+  update-tempo-image-version-in-compose-include:
+    kind: yaml
+    sourceid: tempo-version
+    transformers:
+      - addprefix: "${TEMPO_IMAGE:-docker.io/grafana/tempo:"
+      - addsuffix: "}"
+    spec:
+      file: docker-compose/common/compose-include/tempo.yaml
+      key: $.services.tempo.image
+
+  update-tempo-image-version-in-all-in-one-mode:
+    kind: yaml
+    sourceid: tempo-version
+    transformers:
+      - addprefix: "${TEMPO_IMAGE:-docker.io/grafana/tempo:"
+      - addsuffix: "}"
+    spec:
+      file: docker-compose/monolithic-mode/all-in-one/compose.yaml
+      key: $.services.tempo.image
+
+  update-tempo-image-version-in-microservices-mode:
+    kind: yaml
+    sourceid: tempo-version
+    transformers:
+      - addprefix: "&tempoImage ${TEMPO_IMAGE:-docker.io/grafana/tempo:"
+      - addsuffix: "}"
+    spec:
+      file: docker-compose/microservices-mode/traces/compose.yaml
+      key: $.services.distributor.image

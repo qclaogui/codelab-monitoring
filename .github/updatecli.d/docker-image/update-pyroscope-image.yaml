@@ -1,0 +1,58 @@
+name: Update pyroscope image versions
+
+sources:
+  pyroscope-version:
+    kind: dockerimage
+    spec:
+      image: docker.io/grafana/pyroscope
+      versionfilter:
+        kind: semver
+        pattern: "~1.x"
+
+conditions:
+  check-pyroscope-image:
+    kind: dockerimage
+    disablesourceinput: true
+    spec:
+      image: docker.io/grafana/pyroscope
+      tag: '{{ source "pyroscope-version" }}'
+
+targets:
+  update-pyroscope-image-version-in-env:
+    kind: "file"
+    sourceid: pyroscope-version
+    spec:
+      files:
+        - docker-compose/common/config/.env
+      matchpattern: 'PYROSCOPE_IMAGE=grafana/pyroscope:.*'
+      replacepattern: 'PYROSCOPE_IMAGE=grafana/pyroscope:{{ source "pyroscope-version" }}'
+
+  update-pyroscope-image-version-in-compose-include:
+    kind: yaml
+    sourceid: pyroscope-version
+    transformers:
+      - addprefix: "${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:"
+      - addsuffix: "}"
+    spec:
+      file: docker-compose/common/compose-include/pyroscope.yaml
+      key: $.services.pyroscope.image
+
+  update-pyroscope-image-version-in-all-in-one-mode:
+    kind: yaml
+    sourceid: pyroscope-version
+    transformers:
+      - addprefix: "${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:"
+      - addsuffix: "}"
+    spec:
+      file: docker-compose/monolithic-mode/all-in-one/compose.yaml
+      key: $.services.pyroscope.image
+
+  update-pyroscope-image-version-in-microservices-mode:
+    kind: yaml
+    sourceid: pyroscope-version
+    transformers:
+      - addprefix: "&pyroscopeImage ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:"
+      - addsuffix: "}"
+    spec:
+      file: docker-compose/microservices-mode/profiles/compose.yaml
+      key: $.services.distributor.image
