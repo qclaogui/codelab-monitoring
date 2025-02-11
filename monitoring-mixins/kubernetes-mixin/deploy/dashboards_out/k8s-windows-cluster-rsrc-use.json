@@ -1,19 +1,5 @@
 {
       "editable": false,
-      "links": [
-         {
-            "asDropdown": true,
-            "includeVars": true,
-            "keepTime": true,
-            "tags": [
-               "kubernetes-mixin",
-               "infrastucture"
-            ],
-            "targetBlank": false,
-            "title": "Kubernetes",
-            "type": "dashboards"
-         }
-      ],
       "panels": [
          {
             "datasource": {
@@ -22,38 +8,36 @@
             },
             "fieldConfig": {
                "defaults": {
-                  "displayName": "$pod",
-                  "max": 10000000000,
-                  "min": 0,
-                  "thresholds": {
-                     "steps": [
-                        {
-                           "color": "dark-green",
-                           "index": 0,
-                           "value": null
-                        },
-                        {
-                           "color": "dark-yellow",
-                           "index": 1,
-                           "value": 5000000000
-                        },
-                        {
-                           "color": "dark-red",
-                           "index": 2,
-                           "value": 7000000000
-                        }
-                     ]
+                  "custom": {
+                     "fillOpacity": 10,
+                     "showPoints": "never",
+                     "spanNulls": true
                   },
-                  "unit": "Bps"
+                  "unit": "percentunit"
                }
             },
             "gridPos": {
-               "h": 9,
-               "w": 12,
+               "h": 7,
+               "w": 24,
                "x": 0,
                "y": 0
             },
             "id": 1,
+            "interval": "1m",
+            "options": {
+               "legend": {
+                  "asTable": true,
+                  "calcs": [
+                     "lastNotNull"
+                  ],
+                  "displayMode": "table",
+                  "placement": "right",
+                  "showLegend": true
+               },
+               "tooltip": {
+                  "mode": "single"
+               }
+            },
             "pluginVersion": "v11.4.0",
             "targets": [
                {
@@ -61,65 +45,12 @@
                      "type": "prometheus",
                      "uid": "${datasource}"
                   },
-                  "expr": "sum(rate(container_network_receive_bytes_total{cluster=\"$cluster\",namespace=~\"$namespace\", pod=~\"$pod\"}[$__rate_interval]))",
-                  "legendFormat": "__auto"
+                  "expr": "node:windows_node_cpu_utilisation:avg1m{cluster=\"$cluster\"} * node:windows_node_num_cpu:sum{cluster=\"$cluster\"} / scalar(sum(node:windows_node_num_cpu:sum{cluster=\"$cluster\"}))",
+                  "legendFormat": "{{instance}}"
                }
             ],
-            "title": "Current Rate of Bytes Received",
-            "type": "gauge"
-         },
-         {
-            "datasource": {
-               "type": "datasource",
-               "uid": "-- Mixed --"
-            },
-            "fieldConfig": {
-               "defaults": {
-                  "displayName": "$pod",
-                  "max": 10000000000,
-                  "min": 0,
-                  "thresholds": {
-                     "steps": [
-                        {
-                           "color": "dark-green",
-                           "index": 0,
-                           "value": null
-                        },
-                        {
-                           "color": "dark-yellow",
-                           "index": 1,
-                           "value": 5000000000
-                        },
-                        {
-                           "color": "dark-red",
-                           "index": 2,
-                           "value": 7000000000
-                        }
-                     ]
-                  },
-                  "unit": "Bps"
-               }
-            },
-            "gridPos": {
-               "h": 9,
-               "w": 12,
-               "x": 12,
-               "y": 0
-            },
-            "id": 2,
-            "pluginVersion": "v11.4.0",
-            "targets": [
-               {
-                  "datasource": {
-                     "type": "prometheus",
-                     "uid": "${datasource}"
-                  },
-                  "expr": "sum(rate(container_network_transmit_bytes_total{cluster=\"$cluster\",namespace=~\"$namespace\", pod=~\"$pod\"}[$__rate_interval]))",
-                  "legendFormat": "__auto"
-               }
-            ],
-            "title": "Current Rate of Bytes Transmitted",
-            "type": "gauge"
+            "title": "CPU Utilisation",
+            "type": "timeseries"
          },
          {
             "datasource": {
@@ -129,22 +60,78 @@
             "fieldConfig": {
                "defaults": {
                   "custom": {
-                     "showPoints": "never"
+                     "fillOpacity": 10,
+                     "showPoints": "never",
+                     "spanNulls": true
                   },
-                  "unit": "binBps"
+                  "unit": "percentunit"
                }
             },
             "gridPos": {
-               "h": 9,
+               "h": 7,
                "w": 12,
                "x": 0,
-               "y": 9
+               "y": 7
+            },
+            "id": 2,
+            "interval": "1m",
+            "options": {
+               "legend": {
+                  "asTable": true,
+                  "calcs": [
+                     "lastNotNull"
+                  ],
+                  "displayMode": "table",
+                  "placement": "right",
+                  "showLegend": true
+               },
+               "tooltip": {
+                  "mode": "single"
+               }
+            },
+            "pluginVersion": "v11.4.0",
+            "targets": [
+               {
+                  "datasource": {
+                     "type": "prometheus",
+                     "uid": "${datasource}"
+                  },
+                  "expr": "node:windows_node_memory_utilisation:ratio{cluster=\"$cluster\"}",
+                  "legendFormat": "{{instance}}"
+               }
+            ],
+            "title": "Memory Utilisation",
+            "type": "timeseries"
+         },
+         {
+            "datasource": {
+               "type": "datasource",
+               "uid": "-- Mixed --"
+            },
+            "fieldConfig": {
+               "defaults": {
+                  "custom": {
+                     "fillOpacity": 10,
+                     "showPoints": "never",
+                     "spanNulls": true
+                  },
+                  "unit": "short"
+               }
+            },
+            "gridPos": {
+               "h": 7,
+               "w": 12,
+               "x": 12,
+               "y": 7
             },
             "id": 3,
             "interval": "1m",
             "options": {
                "legend": {
                   "asTable": true,
+                  "calcs": [
+                     "lastNotNull"
+                  ],
                   "displayMode": "table",
                   "placement": "right",
                   "showLegend": true
@@ -160,11 +147,11 @@
                      "type": "prometheus",
                      "uid": "${datasource}"
                   },
-                  "expr": "sum(rate(container_network_receive_bytes_total{cluster=\"$cluster\",namespace=~\"$namespace\", pod=~\"$pod\"}[$__rate_interval])) by (pod)",
-                  "legendFormat": "__auto"
+                  "expr": "node:windows_node_memory_swap_io_pages:irate{cluster=\"$cluster\"}",
+                  "legendFormat": "{{instance}}"
                }
             ],
-            "title": "Receive Bandwidth",
+            "title": "Memory Saturation (Swap I/O Pages)",
             "type": "timeseries"
          },
          {
@@ -175,22 +162,27 @@
             "fieldConfig": {
                "defaults": {
                   "custom": {
-                     "showPoints": "never"
+                     "fillOpacity": 10,
+                     "showPoints": "never",
+                     "spanNulls": true
                   },
-                  "unit": "binBps"
+                  "unit": "percentunit"
                }
             },
             "gridPos": {
-               "h": 9,
-               "w": 12,
-               "x": 12,
-               "y": 9
+               "h": 7,
+               "w": 24,
+               "x": 0,
+               "y": 14
             },
             "id": 4,
             "interval": "1m",
             "options": {
                "legend": {
                   "asTable": true,
+                  "calcs": [
+                     "lastNotNull"
+                  ],
                   "displayMode": "table",
                   "placement": "right",
                   "showLegend": true
@@ -206,11 +198,11 @@
                      "type": "prometheus",
                      "uid": "${datasource}"
                   },
-                  "expr": "sum(rate(container_network_transmit_bytes_total{cluster=\"$cluster\",namespace=~\"$namespace\", pod=~\"$pod\"}[$__rate_interval])) by (pod)",
-                  "legendFormat": "__auto"
+                  "expr": "node:windows_node_disk_utilisation:avg_irate{cluster=\"$cluster\"} / scalar(node:windows_node:sum{cluster=\"$cluster\"})",
+                  "legendFormat": "{{instance}}"
                }
             ],
-            "title": "Transmit Bandwidth",
+            "title": "Disk IO Utilisation",
             "type": "timeseries"
          },
          {
@@ -221,22 +213,27 @@
             "fieldConfig": {
                "defaults": {
                   "custom": {
-                     "showPoints": "never"
+                     "fillOpacity": 10,
+                     "showPoints": "never",
+                     "spanNulls": true
                   },
-                  "unit": "pps"
+                  "unit": "Bps"
                }
             },
             "gridPos": {
-               "h": 9,
+               "h": 7,
                "w": 12,
                "x": 0,
-               "y": 18
+               "y": 21
             },
             "id": 5,
             "interval": "1m",
             "options": {
                "legend": {
                   "asTable": true,
+                  "calcs": [
+                     "lastNotNull"
+                  ],
                   "displayMode": "table",
                   "placement": "right",
                   "showLegend": true
@@ -252,11 +249,11 @@
                      "type": "prometheus",
                      "uid": "${datasource}"
                   },
-                  "expr": "sum(rate(container_network_receive_packets_total{cluster=\"$cluster\",namespace=~\"$namespace\", pod=~\"$pod\"}[$__rate_interval])) by (pod)",
-                  "legendFormat": "__auto"
+                  "expr": "node:windows_node_net_utilisation:sum_irate{cluster=\"$cluster\"}",
+                  "legendFormat": "{{instance}}"
                }
             ],
-            "title": "Rate of Received Packets",
+            "title": "Net Utilisation (Transmitted)",
             "type": "timeseries"
          },
          {
@@ -267,22 +264,27 @@
             "fieldConfig": {
                "defaults": {
                   "custom": {
-                     "showPoints": "never"
+                     "fillOpacity": 10,
+                     "showPoints": "never",
+                     "spanNulls": true
                   },
-                  "unit": "pps"
+                  "unit": "Bps"
                }
             },
             "gridPos": {
-               "h": 9,
+               "h": 7,
                "w": 12,
                "x": 12,
-               "y": 18
+               "y": 21
             },
             "id": 6,
             "interval": "1m",
             "options": {
                "legend": {
                   "asTable": true,
+                  "calcs": [
+                     "lastNotNull"
+                  ],
                   "displayMode": "table",
                   "placement": "right",
                   "showLegend": true
@@ -298,11 +300,11 @@
                      "type": "prometheus",
                      "uid": "${datasource}"
                   },
-                  "expr": "sum(rate(container_network_transmit_packets_total{cluster=\"$cluster\",namespace=~\"$namespace\", pod=~\"$pod\"}[$__rate_interval])) by (pod)",
-                  "legendFormat": "__auto"
+                  "expr": "node:windows_node_net_saturation:sum_irate{cluster=\"$cluster\"}",
+                  "legendFormat": "{{instance}}"
                }
             ],
-            "title": "Rate of Transmitted Packets",
+            "title": "Net Utilisation (Dropped)",
             "type": "timeseries"
          },
          {
@@ -313,22 +315,27 @@
             "fieldConfig": {
                "defaults": {
                   "custom": {
-                     "showPoints": "never"
+                     "fillOpacity": 10,
+                     "showPoints": "never",
+                     "spanNulls": true
                   },
-                  "unit": "pps"
+                  "unit": "percentunit"
                }
             },
             "gridPos": {
-               "h": 9,
-               "w": 12,
+               "h": 7,
+               "w": 24,
                "x": 0,
-               "y": 27
+               "y": 28
             },
             "id": 7,
             "interval": "1m",
             "options": {
                "legend": {
                   "asTable": true,
+                  "calcs": [
+                     "lastNotNull"
+                  ],
                   "displayMode": "table",
                   "placement": "right",
                   "showLegend": true
@@ -344,57 +351,11 @@
                      "type": "prometheus",
                      "uid": "${datasource}"
                   },
-                  "expr": "sum(rate(container_network_receive_packets_dropped_total{cluster=\"$cluster\",namespace=~\"$namespace\", pod=~\"$pod\"}[$__rate_interval])) by (pod)",
-                  "legendFormat": "__auto"
+                  "expr": "sum by (instance)(node:windows_node_filesystem_usage:{cluster=\"$cluster\"})",
+                  "legendFormat": "{{instance}}"
                }
             ],
-            "title": "Rate of Received Packets Dropped",
-            "type": "timeseries"
-         },
-         {
-            "datasource": {
-               "type": "datasource",
-               "uid": "-- Mixed --"
-            },
-            "fieldConfig": {
-               "defaults": {
-                  "custom": {
-                     "showPoints": "never"
-                  },
-                  "unit": "pps"
-               }
-            },
-            "gridPos": {
-               "h": 9,
-               "w": 12,
-               "x": 12,
-               "y": 27
-            },
-            "id": 8,
-            "interval": "1m",
-            "options": {
-               "legend": {
-                  "asTable": true,
-                  "displayMode": "table",
-                  "placement": "right",
-                  "showLegend": true
-               },
-               "tooltip": {
-                  "mode": "single"
-               }
-            },
-            "pluginVersion": "v11.4.0",
-            "targets": [
-               {
-                  "datasource": {
-                     "type": "prometheus",
-                     "uid": "${datasource}"
-                  },
-                  "expr": "sum(rate(container_network_transmit_packets_dropped_total{cluster=\"$cluster\",namespace=~\"$namespace\", pod=~\"$pod\"}[$__rate_interval])) by (pod)",
-                  "legendFormat": "__auto"
-               }
-            ],
-            "title": "Rate of Transmitted Packets Dropped",
+            "title": "Disk Capacity",
             "type": "timeseries"
          }
       ],
@@ -427,45 +388,7 @@
                "hide": 0,
                "label": "cluster",
                "name": "cluster",
-               "query": "label_values(up{job=\"integrations/kubernetes/cadvisor\"}, cluster)",
-               "refresh": 2,
-               "sort": 1,
-               "type": "query"
-            },
-            {
-               "allValue": ".+",
-               "current": {
-                  "selected": false,
-                  "text": "kube-system",
-                  "value": "kube-system"
-               },
-               "datasource": {
-                  "type": "prometheus",
-                  "uid": "${datasource}"
-               },
-               "hide": 0,
-               "includeAll": true,
-               "label": "namespace",
-               "name": "namespace",
-               "query": "label_values(container_network_receive_packets_total{cluster=\"$cluster\"}, namespace)",
-               "refresh": 2,
-               "sort": 1,
-               "type": "query"
-            },
-            {
-               "current": {
-                  "selected": false,
-                  "text": "kube-system",
-                  "value": "kube-system"
-               },
-               "datasource": {
-                  "type": "prometheus",
-                  "uid": "${datasource}"
-               },
-               "hide": 0,
-               "label": "pod",
-               "name": "pod",
-               "query": "label_values(container_network_receive_packets_total{cluster=\"$cluster\",namespace=~\"$namespace\"}, pod)",
+               "query": "label_values(up{job=\"kubernetes-windows-exporter\"}, cluster)",
                "refresh": 2,
                "sort": 1,
                "type": "query"
@@ -476,7 +399,7 @@
          "from": "now-1h",
          "to": "now"
       },
-      "timezone": "browser",
-      "title": "Kubernetes / Networking / Pod",
-      "uid": "7a18067ce943a40ae25454675c19ff5c"
+      "timezone": "utc",
+      "title": "Kubernetes / USE Method / Cluster(Windows)",
+      "uid": "53a43377ec9aaf2ff64dfc7a1f539334"
    }

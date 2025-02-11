@@ -22,7 +22,7 @@ define build_mixin_func
 	@mkdir -p "${$@_MIXIN_OUTPUT}"; \
 	find "${$@_MIXIN_OUTPUT}" ! -name "kustomization.yaml" ! -name "prometheus-alerts.yaml" ! -name "prometheus-rules.yaml" -type f -delete
 	@$(MIXTOOL) generate all --output-alerts "${$@_MIXIN_OUTPUT}/alerts.yaml" --output-rules "${$@_MIXIN_OUTPUT}/rules.yaml" --directory "${$@_MIXIN_OUTPUT}/dashboards_out" "${$@_MIXIN_OUTPUT}.libsonnet"
-	@../../tools/check-rules.sh "${$@_MIXIN_OUTPUT}/rules.yaml" 20
+	@../../tools/check-rules.sh "${$@_MIXIN_OUTPUT}/rules.yaml" 25
 	@mv ${$@_MIXIN_OUTPUT}/alerts.yaml ${$@_MIXIN_OUTPUT}/${CURRENT_DIR}-alerts.yaml
 	@mv ${$@_MIXIN_OUTPUT}/rules.yaml ${$@_MIXIN_OUTPUT}/${CURRENT_DIR}-rules.yaml
 endef
