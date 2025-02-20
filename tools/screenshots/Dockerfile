@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y \
     chromium
 
 # Tell puppeter to skip chromium installation
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD true
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 # Install sources and dependencies.
