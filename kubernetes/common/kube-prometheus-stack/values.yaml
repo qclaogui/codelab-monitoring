@@ -408,6 +408,75 @@ alertmanager:
   ##
   forceDeployDashboards: false
 
+  ## Network Policy configuration
+  ##
+  networkPolicy:
+    # -- Enable network policy for Alertmanager
+    enabled: false
+
+    # -- Define policy types. If egress is enabled, both Ingress and Egress will be used
+    # Valid values are ["Ingress"] or ["Ingress", "Egress"]
+    ##
+    policyTypes:
+      - Ingress
+
+    # -- Gateway (formerly ingress controller) configuration
+    ##
+    gateway:
+      # -- Gateway namespace
+      ##
+      namespace: "ingress-nginx"
+      # -- Gateway pod labels
+      ##
+      podLabels:
+        app.kubernetes.io/name: ingress-nginx
+
+    # -- Additional custom ingress rules
+    ##
+    additionalIngress: []
+    # - from:
+    #   - namespaceSelector:
+    #       matchLabels:
+    #         name: another-namespace
+    #     podSelector:
+    #       matchLabels:
+    #         app: another-app
+
+    # -- Configure egress rules
+    ##
+    egress:
+      # -- Enable egress rules. When enabled, policyTypes will include Egress
+      ##
+      enabled: false
+      # -- Custom egress rules
+      ##
+      rules: []
+      # - to:
+      #   - namespaceSelector: {}
+      #     podSelector:
+      #       matchLabels:
+      #         name: smtp-relay
+      #   ports:
+      #   - port: 25
+      #     protocol: TCP
+
+    # -- Enable rules for alertmanager cluster traffic
+    ##
+    enableClusterRules: true
+
+    # -- Configure monitoring component rules
+    ##
+    monitoringRules:
+      # -- Enable ingress from Prometheus
+      ##
+      prometheus: true
+      # -- Enable ingress from Loki
+      ##
+      loki: true
+      # -- Enable ingress for config reloader metrics
+      ##
+      configReloader: true
+
   ## Service account for Alertmanager to use.
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
   ##
@@ -933,7 +1002,7 @@ alertmanager:
     retention: 120h
 
     ## Storage is the definition of how storage will be used by the Alertmanager instances.
-    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/storage.md
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/platform/storage.md
     ##
     storage: {}
     # volumeClaimTemplate:
@@ -1277,6 +1346,7 @@ grafana:
       exemplarTraceIdDestinations: {}
         # datasourceUid: Jaeger
         # traceIdLabelName: trace_id
+        # urlDisplayLabel: View traces
       alertmanager:
         enabled: true
         name: Alertmanager
@@ -3824,7 +3894,7 @@ prometheus:
     image:
       registry: quay.io
       repository: prometheus/prometheus
-      tag: v3.1.0
+      tag: v3.2.1
       sha: ""
 
     ## Tolerations for use with node taints
@@ -4142,7 +4212,7 @@ prometheus:
     #   memory: 400Mi
 
     ## Prometheus StorageSpec for persistent data
-    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/storage.md
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/platform/storage.md
     ##
     storageSpec: {}
     ## Using PersistentVolumeClaim
@@ -4951,7 +5021,7 @@ thanosRuler:
     evaluationInterval: ""
 
     ## Storage is the definition of how storage will be used by the ThanosRuler instances.
-    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/storage.md
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/platform/storage.md
     ##
     storage: {}
     # volumeClaimTemplate:
