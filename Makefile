@@ -11,17 +11,12 @@ install-build-deps: ## Install dependencies tools
 	@go install github.com/bwplotka/bingo@v0.9.0
 
 .PHONY: update-helm-charts
-update-helm-charts: ## Update helm charts dependencies
-update-helm-charts: update-common-charts update-lgtmp-stack-charts
+update-helm-charts: $(UPDATECLI) ## Update helm charts dependencies
+	@$(UPDATECLI) apply --config .github/updatecli.d/kubernetes > /dev/null 2>&1
 
-update-common-charts: $(UPDATECLI)
-	@$(UPDATECLI) apply --config .github/updatecli.d/common-charts.yaml > /dev/null 2>&1
-
-update-lgtmp-stack-charts: $(UPDATECLI)
-	@$(UPDATECLI) apply --config .github/updatecli.d/lgtmp-stack-charts.yaml > /dev/null 2>&1
-
-update-docker-image: $(UPDATECLI)
-	@$(UPDATECLI) apply --config .github/updatecli.d/docker-image > /dev/null 2>&1
+.PHONY: update-docker-images
+update-docker-images: $(UPDATECLI) ## Update docker image dependencies
+	@$(UPDATECLI) apply --config .github/updatecli.d/docker-compose > /dev/null 2>&1
 
 ##@ Lint & fmt
 
