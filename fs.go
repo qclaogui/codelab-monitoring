@@ -24,20 +24,25 @@ var GenDir = ".lgtmp"
 
 func init() {
 	if err := EmbedFsToGenDirectory(); err != nil {
-		fmt.Print(err)
+		fmt.Println("Error initializing embedded filesystem:", err)
 		os.Exit(1)
 	}
 }
 
 func EmbedFsToGenDirectory() error {
 	if err := os.RemoveAll(GenDir); err != nil {
-		return err
+		return fmt.Errorf("failed to remove existing directory %s: %w", GenDir, err)
 	}
+
 	r, err := DirFS.Open(".lgtmp.tar")
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to open embedded tar file: %w", err)
 	}
-	defer func() { _ = r.Close() }()
+	defer func() {
+		if closeErr := r.Close(); closeErr != nil {
+			fmt.Println("Error closing tar file reader:", closeErr)
+		}
+	}()
 
 	tr := tar.NewReader(r)
 	for {
@@ -46,29 +51,36 @@ func EmbedFsToGenDirectory() error {
 			break
 		}
 		if trErr != nil {
-			return trErr
+			return fmt.Errorf("failed to read next tar header: %w", trErr)
 		}
-		target := filepath.Join(GenDir, strings.TrimPrefix(hdr.Name, string(filepath.Separator)))
 
+		target := filepath.Join(GenDir, strings.TrimPrefix(hdr.Name, string(filepath.Separator)))
 		info := hdr.FileInfo()
+
 		if info.IsDir() {
-			if err = os.MkdirAll(target, 0o777); err != nil {
-				return err
+			if err := os.MkdirAll(target, 0o777); err != nil {
+				return fmt.Errorf("failed to create directory %s: %w", target, err)
 			}
 			continue
 		}
 
-		w, openErr := os.OpenFile(target, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666|info.Mode()&0o777)
+		// Ensure the directory for the file exists
+		if err := os.MkdirAll(filepath.Dir(target), 0o777); err != nil {
+			return fmt.Errorf("failed to create directory %s: %w", filepath.Dir(target), err)
+		}
+
+		w, openErr := os.OpenFile(target, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, info.Mode().Perm())
 		if openErr != nil {
-			return openErr
+			return fmt.Errorf("failed to open file %s for writing: %w", target, openErr)
 		}
 
 		if _, ioErr := io.Copy(w, tr); ioErr != nil {
 			_ = w.Close()
-			return fmt.Errorf("copying %s: %v", target, ioErr)
+			return fmt.Errorf("failed to copy data to %s: %w", target, ioErr)
 		}
-		if err = w.Close(); err != nil {
-			return err
+
+		if closeErr := w.Close(); closeErr != nil {
+			return fmt.Errorf("failed to close file %s: %w", target, closeErr)
 		}
 	}
 	return nil
