@@ -12,8 +12,8 @@ env:
     UPDATECLI_CONFIG_DIR: "${{ github.workspace }}/.github/updatecli.d"
 
 jobs:
-    updateCommonCharts:
-        name: Bump common dependency Helm charts
+    updateHelmCharts:
+        name: Bump up helm chart dependencies
         runs-on: "ubuntu-latest"
         steps:
             - 
@@ -33,12 +33,12 @@ jobs:
               name: Run Updatecli
               id: updatecli-apply
               run: |
-                CHANGELOG=$(updatecli apply --config ${UPDATECLI_CONFIG_DIR}/common-charts.yaml 2>&1)
+                CHANGELOG=$(updatecli apply --config ${UPDATECLI_CONFIG_DIR}/kubernetes 2>&1)
                 if ! git diff --exit-code > /dev/null; then
                   echo "changed=true" >> "${GITHUB_OUTPUT}"
                   echo "body<<EOF" >> ${GITHUB_OUTPUT}
                   # here we can place the command that will generate multi-line text
-                  echo "${CHANGELOG}" | awk '/^TARGETS$/,0' >> "${GITHUB_OUTPUT}"
+                  echo "${CHANGELOG}" | awk '/^SUMMARY:$/,0' >> "${GITHUB_OUTPUT}"
                   echo "EOF" >> ${GITHUB_OUTPUT}
                 fi
             - 
@@ -47,15 +47,15 @@ jobs:
               uses: peter-evans/create-pull-request@67ccf781d68cd99b580ae25a5c18a1cc84ffff1f #v7.0.6
               with:
                 token: ${{ steps.app-token.outputs.token }}
-                title: "[kubernetes] Update common dependency helm charts"
-                commit-message: Update common dependency helm charts
+                title: "[kubernetes] Update Helm chart dependencies"
+                commit-message: Update Helm chart dependencies
                 committer: 🤖QC Owl App[bot] <165384878+qc-owl-app[bot]@users.noreply.github.com>
                 signoff: true
                 body: |
-                  🤖 Update common dependency helm charts
+                  🤖 Update Helm chart dependencies
 
                   <details>
-                  <summary> FULL TARGETS CHANGELOG </summary>
+                  <summary> FULL SUMMARY CHANGELOG </summary>
                   <blockquote>
 
                   ${{ steps.updatecli-apply.outputs.body }}
@@ -68,11 +68,11 @@ jobs:
 
                   [0]: https://github.com/qclaogui/codelab-monitoring/blob/main/.github/workflows/updatecli.yml
                 labels: dependencies
-                branch: update-common-helm-charts
+                branch: update-helm-charts
                 delete-branch: true
 
-    updateLGTMPStackCharts:
-        name: Bump LGTMP stack dependency Helm charts
+    updateDockerImages:
+        name: Bump up docker image dependencies
         runs-on: "ubuntu-latest"
         steps:
             -
@@ -92,12 +92,12 @@ jobs:
               name: Run Updatecli
               id: updatecli-apply
               run: |
-                CHANGELOG=$(updatecli apply --config ${UPDATECLI_CONFIG_DIR}/lgtmp-stack-charts.yaml 2>&1)
+                CHANGELOG=$(updatecli apply --config ${UPDATECLI_CONFIG_DIR}/docker-compose 2>&1)
                 if ! git diff --exit-code > /dev/null; then
                   echo "changed=true" >> "${GITHUB_OUTPUT}"
                   echo "body<<EOF" >> ${GITHUB_OUTPUT}
                   # here we can place the command that will generate multi-line text
-                  echo "${CHANGELOG}" | awk '/^TARGETS$/,0' >> "${GITHUB_OUTPUT}"
+                  echo "${CHANGELOG}" | awk '/^SUMMARY:$/,0' >> "${GITHUB_OUTPUT}"
                   echo "EOF" >> ${GITHUB_OUTPUT}
                 fi
             - 
@@ -106,15 +106,15 @@ jobs:
               uses: peter-evans/create-pull-request@67ccf781d68cd99b580ae25a5c18a1cc84ffff1f #v7.0.6
               with:
                 token: ${{ steps.app-token.outputs.token }}
-                title: "[kubernetes] Update LGTMP stack dependency Helm charts"
-                commit-message: Update LGTMP stack dependency Helm charts
+                title: "[docker-compose] Update Docker image dependencies"
+                commit-message: Update Docker image dependencies
                 committer: 🤖QC Owl App[bot] <165384878+qc-owl-app[bot]@users.noreply.github.com>
                 signoff: true
                 body: |
-                  🤖 Update LGTMP stack dependency Helm charts
+                  🤖 Update Docker image dependencies
 
                   <details>
-                  <summary> FULL TARGETS CHANGELOG </summary>
+                  <summary> FULL SUMMARY CHANGELOG </summary>
                   <blockquote>
 
                   ${{ steps.updatecli-apply.outputs.body }}
@@ -127,5 +127,5 @@ jobs:
 
                   [0]: https://github.com/qclaogui/codelab-monitoring/blob/main/.github/workflows/updatecli.yml
                 labels: dependencies
-                branch: update-lgtmp-helm-charts
+                branch: update-docker-images
                 delete-branch: true
