@@ -9,6 +9,7 @@
         metrics_generator: '(tempo|metrics-generator)',
         distributor: '(tempo|distributor)',
         compactor: '(tempo|compactor)',
+        block_builder: '(tempo|block-builder)',
       }
     }
 }

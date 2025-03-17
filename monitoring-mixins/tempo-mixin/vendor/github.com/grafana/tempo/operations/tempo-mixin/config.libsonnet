@@ -13,6 +13,7 @@
       metrics_generator: 'metrics-generator',
       distributor: 'distributor',
       compactor: 'compactor',
+      block_builder: 'block-builder',
     },
     alerts: {
       compactions_per_hour_failed: 2,
@@ -24,6 +25,11 @@
       p99_request_exclude_regex: 'metrics|/frontend.Frontend/Process|debug_pprof',
       outstanding_blocks_warning: 100,
       outstanding_blocks_critical: 250,
+      // Partition lag thresholds in seconds
+      partition_lag_warning_seconds: 300,  // 5 minutes
+      partition_lag_critical_seconds: 900,  // 15 minutes
+      // Filter for consumer groups to monitor for partition lag
+      partition_lag_group_filter: 'metrics-generator|block-builder',
     },
 
     per_cluster_label: 'cluster',
@@ -43,5 +49,11 @@
     group_by_cluster: makeGroupBy($._config.cluster_selectors),
     group_by_job: makeGroupBy($._config.job_selectors),
     group_by_tenant: makeGroupBy($._config.tenant_selectors),
+
+    // Tunes histogram recording rules to aggregate over this interval.
+    // Set to at least twice the scrape interval; otherwise, recording rules will output no data.
+    // Set to four times the scrape interval to account for edge cases: https://www.robustperception.io/what-range-should-i-use-with-rate/
+    recording_rules_range_interval: '1m',
+
   },
 }

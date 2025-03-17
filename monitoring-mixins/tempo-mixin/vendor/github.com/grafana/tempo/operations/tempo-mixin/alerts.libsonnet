@@ -5,22 +5,6 @@
         name: 'tempo_alerts',
         rules: [
           {
-            alert: 'TempoRequestLatency',
-            expr: |||
-              %s_route:tempo_request_duration_seconds:99quantile{route!~"%s"} > %s
-            ||| % [$._config.group_prefix_jobs, $._config.alerts.p99_request_exclude_regex, $._config.alerts.p99_request_threshold_seconds],
-            'for': '15m',
-            labels: {
-              severity: 'critical',
-            },
-            annotations: {
-              message: |||
-                {{ $labels.job }} {{ $labels.route }} is experiencing {{ printf "%.2f" $value }}s 99th percentile latency.
-              |||,
-              runbook_url: 'https://github.com/grafana/tempo/tree/main/operations/tempo-mixin/runbook.md#TempoRequestLatency',
-            },
-          },
-          {
             alert: 'TempoCompactorUnhealthy',
             expr: |||
               max by (%s) (tempo_ring_members{state="Unhealthy", name="%s", namespace=~"%s"}) > 0
@@ -49,8 +33,36 @@
             },
           },
           {
+            alert: 'TempoIngesterUnhealthy',
+            'for': '15m',
+            expr: |||
+              max by (%s) (tempo_ring_members{state="Unhealthy", name="%s", namespace=~"%s"}) > 0
+            ||| % [$._config.group_by_cluster, $._config.jobs.ingester, $._config.namespace],
+            labels: {
+              severity: 'critical',
+            },
+            annotations: {
+              message: 'There are {{ printf "%f" $value }} unhealthy ingester(s).',
+              runbook_url: 'https://github.com/grafana/tempo/tree/main/operations/tempo-mixin/runbook.md#TempoIngesterUnhealthy',
+            },
+          },
+          {
+            alert: 'TempoMetricsGeneratorUnhealthy',
+            'for': '15m',
+            expr: |||
+              max by (%s) (tempo_ring_members{state="Unhealthy", name="%s", namespace=~"%s"}) > 0
+            ||| % [$._config.group_by_cluster, $._config.jobs.metrics_generator, $._config.namespace],
+            labels: {
+              severity: 'critical',
+            },
+            annotations: {
+              message: 'There are {{ printf "%f" $value }} unhealthy metric-generator(s).',
+              runbook_url: 'https://github.com/grafana/tempo/tree/main/operations/tempo-mixin/runbook.md#TempoMetricsGeneratorUnhealthy',
+            },
+          },
+          {
             alert: 'TempoCompactionsFailing',
-            'for': '5m',
+            'for': '1h',
             expr: |||
               sum by (%s) (increase(tempodb_compaction_errors_total{}[1h])) > %s and
               sum by (%s) (increase(tempodb_compaction_errors_total{}[5m])) > 0
@@ -155,7 +167,7 @@
           {
             alert: 'TempoBlockListRisingQuickly',
             expr: |||
-              avg(tempodb_blocklist_length{namespace="%(namespace)s"}) / avg(tempodb_blocklist_length{namespace="%(namespace)s", job=~"$namespace/$component"} offset 7d) > 1.4
+              avg(tempodb_blocklist_length{namespace=~"%(namespace)s", container="compactor"}) / avg(tempodb_blocklist_length{namespace=~"%(namespace)s", container="compactor"} offset 7d) > 1.4
             ||| % { namespace: $._config.namespace },
             'for': '15m',
             labels: {
@@ -199,7 +211,7 @@
             alert: 'TempoProvisioningTooManyWrites',
             // 30MB/s written to the WAL per ingester max
             expr: |||
-              avg by (%s) (rate(tempo_ingester_bytes_received_total{job=~".+/ingester"}[1m])) / 1024 / 1024 > 30
+              avg by (%s) (rate(tempo_ingester_bytes_received_total{job=~".+/ingester"}[5m])) / 1024 / 1024 > 30
             ||| % $._config.group_by_cluster,
             'for': '15m',
             labels: {
@@ -251,6 +263,34 @@
             annotations: {
               message: 'Tempo ingester has encountered errors while replaying a block on startup in {{ $labels.%s }}/{{ $labels.namespace }} for tenant {{ $labels.tenant }}' % $._config.per_cluster_label,
               runbook_url: 'https://github.com/grafana/tempo/tree/main/operations/tempo-mixin/runbook.md#TempoIngesterReplayErrors',
+            },
+          },
+          {
+            alert: 'TempoPartitionLagWarning',
+            expr: |||
+              max by (%s, group, partition) (tempo_ingest_group_partition_lag_seconds{namespace=~"%s", group=~"%s"}) > %d
+            ||| % [$._config.group_by_cluster, $._config.namespace, $._config.alerts.partition_lag_group_filter, $._config.alerts.partition_lag_warning_seconds],
+            'for': '5m',
+            labels: {
+              severity: 'warning',
+            },
+            annotations: {
+              message: 'Tempo partition {{ $labels.partition }} in consumer group {{ $labels.group }} is lagging by more than %d seconds in {{ $labels.%s }}/{{ $labels.namespace }}.' % [$._config.alerts.partition_lag_warning_seconds, $._config.per_cluster_label],
+              runbook_url: 'https://github.com/grafana/tempo/tree/main/operations/tempo-mixin/runbook.md#TempoPartitionLag',
+            },
+          },
+          {
+            alert: 'TempoPartitionLagCritical',
+            expr: |||
+              max by (%s, group, partition) (tempo_ingest_group_partition_lag_seconds{namespace=~"%s", group=~"%s"}) > %d
+            ||| % [$._config.group_by_cluster, $._config.namespace, $._config.alerts.partition_lag_group_filter, $._config.alerts.partition_lag_critical_seconds],
+            'for': '5m',
+            labels: {
+              severity: 'critical',
+            },
+            annotations: {
+              message: 'Tempo partition {{ $labels.partition }} in consumer group {{ $labels.group }} is lagging by more than %d seconds in {{ $labels.%s }}/{{ $labels.namespace }}.' % [$._config.alerts.partition_lag_critical_seconds, $._config.per_cluster_label],
+              runbook_url: 'https://github.com/grafana/tempo/tree/main/operations/tempo-mixin/runbook.md#TempoPartitionLag',
             },
           },
         ],
