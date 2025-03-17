@@ -11,6 +11,7 @@ spec:
         - alert: BeylaOTELMetricExportHighErrorRate
           annotations:
             description: Beyla in { $labels.cluster }} is experiencing {{ printf "%.2f" $value }}% errors for OTEL metric exports.
+            runbook_url: https://github.com/grafana/beyla/tree/main/ops/runbook.md#BeylaOTELMetricExportHighErrorRate
             summary: Beyla has a high error rate for OTEL metric exports
           expr: |
             100 * sum(rate(beyla_otel_metric_export_errors_total[1m])) by (cluster)
@@ -23,6 +24,7 @@ spec:
         - alert: BeylaOTELMetricExportHighErrorRate
           annotations:
             description: Beyla in { $labels.cluster }} is experiencing {{ printf "%.2f" $value }}% errors for OTEL metric exports.
+            runbook_url: https://github.com/grafana/beyla/tree/main/ops/runbook.md#BeylaOTELMetricExportHighErrorRate
             summary: Beyla has a high error rate for OTEL metric exports
           expr: |
             100 * sum(rate(beyla_otel_metric_export_errors_total[1m])) by (cluster)
@@ -35,6 +37,7 @@ spec:
         - alert: BeylaOTELTraceExportHighErrorRate
           annotations:
             description: Beyla in { $labels.cluster }} is experiencing {{ printf "%.2f" $value }}% errors for OTEL trace exports.
+            runbook_url: https://github.com/grafana/beyla/tree/main/ops/runbook.md#BeylaOTELTraceExportHighErrorRate
             summary: Beyla has a high error rate for OTEL trace exports
           expr: |
             100 * sum(rate(beyla_otel_trace_export_errors_total[1m])) by (cluster)
@@ -47,6 +50,7 @@ spec:
         - alert: BeylaOTELTraceExportHighErrorRate
           annotations:
             description: Beyla in { $labels.cluster }} is experiencing {{ printf "%.2f" $value }}% errors for OTEL trace exports.
+            runbook_url: https://github.com/grafana/beyla/tree/main/ops/runbook.md#BeylaOTELTraceExportHighErrorRate
             summary: Beyla has a high error rate for OTEL trace exports
           expr: |
             100 * sum(rate(beyla_otel_trace_export_errors_total[1m])) by (cluster)
@@ -59,6 +63,7 @@ spec:
         - alert: BeylaInstrumentedProcessesNoTelemetry
           annotations:
             description: Beyla in { $labels.cluster }} has are more than 1 instrumented processes, but no metrics or traces have been exported in the last 10 minutes.
+            runbook_url: https://github.com/grafana/beyla/tree/main/ops/runbook.md#BeylaInstrumentedProcessesNoTelemetry
             summary: Beyla has instrumented processes without metrics or traces
           expr: "sum by(cluster) (beyla_instrumented_processes{process_name!=\"beyla\"}) > 1 and \n(absent(sum by(cluster) (rate(beyla_otel_metric_exports_total[5m]))) or\n absent(sum by(cluster) (rate(beyla_otel_trace_exports_total[5m]))) or \n absent(sum by(cluster) (rate(beyla_ebpf_tracer_flushes_sum[5m]))) or \n absent(sum by(cluster) (rate(beyla_prometheus_http_requests_total[5m]))))\n"
           for: 10m

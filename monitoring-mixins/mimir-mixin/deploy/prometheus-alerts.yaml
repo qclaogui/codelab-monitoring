@@ -114,11 +114,11 @@ spec:
           expr: |
             (
               sum by(cluster, namespace, name, operation) (
-                rate(thanos_cache_operation_failures_total{operation!~"add|delete"}[1m])
+                rate(thanos_cache_operation_failures_total{operation!="add"}[1m])
               )
               /
               sum by(cluster, namespace, name, operation) (
-                rate(thanos_cache_operations_total{operation!~"add|delete"}[1m])
+                rate(thanos_cache_operations_total{operation!="add"}[1m])
               )
             ) * 100 > 5
           for: 5m
@@ -162,7 +162,7 @@ spec:
             message: '{{ $labels.job }}/{{ $labels.pod }} has a number of mmap-ed areas close to the limit.'
             runbook_url: https://grafana.com/docs/mimir/latest/operators-guide/mimir-runbooks/#mimirmemorymapareastoohigh
           expr: |
-            process_memory_map_areas{job=~".*/(mimir|ingester.*|cortex|mimir-write.*|mimir|store-gateway.*|cortex|mimir-backend.*)"} / process_memory_map_areas_limit{job=~".*/(mimir|ingester.*|cortex|mimir-write.*|mimir|store-gateway.*|cortex|mimir-backend.*)"} > 0.8
+            process_memory_map_areas{job=~".*/(ingester.*|cortex|mimir|mimir-write.*|store-gateway.*|cortex|mimir|mimir-backend.*)"} / process_memory_map_areas_limit{job=~".*/(ingester.*|cortex|mimir|mimir-write.*|store-gateway.*|cortex|mimir|mimir-backend.*)"} > 0.8
           for: 5m
           labels:
             severity: critical
@@ -244,8 +244,8 @@ spec:
             runbook_url: https://grafana.com/docs/mimir/latest/operators-guide/mimir-runbooks/#mimirringmembersmismatch
           expr: |
             (
-              avg by(cluster, namespace) (sum by(cluster, namespace, pod) (cortex_ring_members{name="ingester",job=~".*/(mimir|ingester.*|cortex|mimir-write.*)",job!~".*/(ingester.*-partition)"}))
-              != sum by(cluster, namespace) (up{job=~".*/(mimir|ingester.*|cortex|mimir-write.*)",job!~".*/(ingester.*-partition)"})
+              avg by(cluster, namespace) (sum by(cluster, namespace, pod) (cortex_ring_members{name="ingester",job=~".*/(ingester.*|cortex|mimir|mimir-write.*)",job!~".*/(ingester.*-partition)"}))
+              != sum by(cluster, namespace) (up{job=~".*/(ingester.*|cortex|mimir|mimir-write.*)",job!~".*/(ingester.*-partition)"})
             )
             and
             (
@@ -500,9 +500,9 @@ spec:
             runbook_url: https://grafana.com/docs/mimir/latest/operators-guide/mimir-runbooks/#mimirrulerremoteevaluationfailing
           expr: |
             (
-              sum by (cluster, namespace) (rate(cortex_request_duration_seconds_count{status_code=~"5..", route="/httpgrpc.HTTP/Handle", job=~".*/(mimir|ruler-query-frontend.*)"}[5m]))
+              sum by (cluster, namespace) (rate(cortex_request_duration_seconds_count{status_code=~"5..", route="/httpgrpc.HTTP/Handle", job=~".*/(ruler-query-frontend.*)"}[5m]))
               /
-              sum by (cluster, namespace) (rate(cortex_request_duration_seconds_count{route="/httpgrpc.HTTP/Handle", job=~".*/(mimir|ruler-query-frontend.*)"}[5m]))
+              sum by (cluster, namespace) (rate(cortex_request_duration_seconds_count{route="/httpgrpc.HTTP/Handle", job=~".*/(ruler-query-frontend.*)"}[5m]))
             ) * 100 > 1
           for: 5m
           labels:
@@ -515,9 +515,9 @@ spec:
             runbook_url: https://grafana.com/docs/mimir/latest/operators-guide/mimir-runbooks/#mimirrulerremoteevaluationfailing
           expr: |
             (
-              sum by (cluster, namespace) (histogram_count(rate(cortex_request_duration_seconds{status_code=~"5..", route="/httpgrpc.HTTP/Handle", job=~".*/(mimir|ruler-query-frontend.*)"}[5m])))
+              sum by (cluster, namespace) (histogram_count(rate(cortex_request_duration_seconds{status_code=~"5..", route="/httpgrpc.HTTP/Handle", job=~".*/(ruler-query-frontend.*)"}[5m])))
               /
-              sum by (cluster, namespace) (histogram_count(rate(cortex_request_duration_seconds{route="/httpgrpc.HTTP/Handle", job=~".*/(mimir|ruler-query-frontend.*)"}[5m])))
+              sum by (cluster, namespace) (histogram_count(rate(cortex_request_duration_seconds{route="/httpgrpc.HTTP/Handle", job=~".*/(ruler-query-frontend.*)"}[5m])))
             ) * 100 > 1
           for: 5m
           labels:
@@ -532,7 +532,7 @@ spec:
           expr: |
             max by (cluster, namespace) (memberlist_client_cluster_members_count)
             >
-            (sum by (cluster, namespace) (up{job=~".*/(mimir|admin-api|alertmanager|compactor.*|distributor.*|ingester.*|querier.*|ruler|ruler-querier.*|store-gateway.*|cortex|mimir-write.*|mimir-read.*|mimir-backend.*)"}) + 10)
+            (sum by (cluster, namespace) (up{job=~".*/(admin-api|alertmanager|compactor.*|distributor.*|ingester.*|querier.*|ruler|ruler-querier.*|store-gateway.*|cortex|mimir|mimir-write.*|mimir-read.*|mimir-backend.*)"}) + 10)
           for: 20m
           labels:
             severity: warning
@@ -543,7 +543,7 @@ spec:
           expr: |
             min by (cluster, namespace) (memberlist_client_cluster_members_count)
             <
-            (sum by (cluster, namespace) (up{job=~".+/(mimir|admin-api|alertmanager|compactor.*|distributor.*|ingester.*|querier.*|ruler|ruler-querier.*|store-gateway.*|cortex|mimir-write.*|mimir-read.*|mimir-backend.*)"}) * 0.5)
+            (sum by (cluster, namespace) (up{job=~".+/(admin-api|alertmanager|compactor.*|distributor.*|ingester.*|querier.*|ruler|ruler-querier.*|store-gateway.*|cortex|mimir|mimir-write.*|mimir-read.*|mimir-backend.*)"}) * 0.5)
           for: 20m
           labels:
             severity: warning
@@ -987,11 +987,11 @@ spec:
                   # Add "metric" label.
                   + on(cluster, namespace, horizontalpodautoscaler) group_right
                     # Using `max by ()` so that series churn doesn't break the promQL join
-                    max by (cluster, namespace, horizontalpodautoscaler, metric) (
+                    max by (cluster, namespace, horizontalpodautoscaler) (
                       label_replace(kube_horizontalpodautoscaler_spec_target_metric*0, "metric", "$1", "metric_name", "(.+)")
                     )
                   > 0),
-                  "scaledObject", "$1", "horizontalpodautoscaler", "keda-hpa-(?:mimir-)?(.*)"
+                  "scaledObject", "$1", "horizontalpodautoscaler", "keda-hpa-(.*)"
                 )
             )
             # Alert only if the scaling metric exists and is > 0. If the KEDA ScaledObject is configured to scale down 0,
@@ -1176,35 +1176,27 @@ spec:
             runbook_url: https://grafana.com/docs/mimir/latest/operators-guide/mimir-runbooks/#mimirblockbuildernocycleprocessing
           expr: |
             max by(cluster, namespace, pod) (histogram_count(increase(cortex_blockbuilder_consume_cycle_duration_seconds[60m]))) == 0
-          for: 20m
+          for: 5m
           labels:
-            severity: critical
+            severity: warning
         - alert: MimirBlockBuilderLagging
           annotations:
-            message: Mimir {{ $labels.pod }} in {{ $labels.cluster }}/{{ $labels.namespace }} reports partition lag of {{ printf "%.2f" $value }}.
+            message: Mimir {{ $labels.pod }} in {{ $labels.cluster }}/{{ $labels.namespace }} reports partition lag of {{ printf "%.2f" $value }}%.
             runbook_url: https://grafana.com/docs/mimir/latest/operators-guide/mimir-runbooks/#mimirblockbuilderlagging
           expr: |
             max by(cluster, namespace, pod) (max_over_time(cortex_blockbuilder_consumer_lag_records[10m])) > 4e6
           for: 75m
           labels:
             severity: warning
-        - alert: MimirBlockBuilderLagging
-          annotations:
-            message: Mimir {{ $labels.pod }} in {{ $labels.cluster }}/{{ $labels.namespace }} reports partition lag of {{ printf "%.2f" $value }}.
-            runbook_url: https://grafana.com/docs/mimir/latest/operators-guide/mimir-runbooks/#mimirblockbuilderlagging
-          expr: |
-            max by(cluster, namespace, pod) (max_over_time(cortex_blockbuilder_consumer_lag_records[10m])) > 4e6
-          for: 140m
-          labels:
-            severity: critical
         - alert: MimirBlockBuilderCompactAndUploadFailed
           annotations:
             message: Mimir {{ $labels.pod }} in {{ $labels.cluster }}/{{ $labels.namespace }} fails to compact and upload blocks.
             runbook_url: https://grafana.com/docs/mimir/latest/operators-guide/mimir-runbooks/#mimirblockbuildercompactanduploadfailed
           expr: |
             sum by (cluster, namespace, pod) (rate(cortex_blockbuilder_tsdb_compact_and_upload_failed_total[1m])) > 0
+          for: 5m
           labels:
-            severity: critical
+            severity: warning
     - name: mimir_continuous_test
       rules:
         - alert: MimirContinuousTestNotRunningOnWrites

@@ -30,22 +30,23 @@
     },
 
     job_names: {
-      ingester: ['mimir', 'ingester.*', 'cortex', 'mimir-write.*'],  // Match also custom and per-zone ingester deployments.
+      ingester: ['ingester.*', 'cortex', 'mimir', 'mimir-write.*'],  // Match also custom and per-zone ingester deployments.
       ingester_partition: ['ingester.*-partition'],  // Match exclusively temporarily partition ingesters run during the migration to ingest storage.
-      distributor: ['mimir', 'distributor.*', 'cortex', 'mimir-write.*'],  // Match also per-zone distributor deployments.
-      querier: ['mimir', 'querier.*', 'cortex', 'mimir-read.*'],  // Match also custom querier deployments.
-      ruler_querier: ['mimir', 'ruler-querier.*'],  // Match also custom querier deployments.
-      ruler: ['mimir', 'ruler', 'cortex','mimir-backend.*'],
-      query_frontend: ['mimir', 'query-frontend.*', 'cortex', 'mimir-read.*'],  // Match also custom query-frontend deployments.
-      ruler_query_frontend: ['mimir', 'ruler-query-frontend.*'],  // Match also custom ruler-query-frontend deployments.
-      query_scheduler: ['mimir', 'query-scheduler.*', 'mimir-backend.*'],  // Not part of single-binary. Match also custom query-scheduler deployments.
-      ruler_query_scheduler: ['mimir', 'ruler-query-scheduler.*'],  // Not part of single-binary. Match also custom query-scheduler deployments.
-      ring_members: ['mimir', 'admin-api', 'alertmanager', 'compactor.*', 'distributor.*', 'ingester.*', 'querier.*', 'ruler', 'ruler-querier.*', 'store-gateway.*', 'cortex', 'mimir-write.*', 'mimir-read.*', 'mimir-backend.*'],
-      store_gateway: ['mimir', 'store-gateway.*', 'cortex', 'mimir-backend.*'],  // Match also per-zone store-gateway deployments.
+      block_builder: ['block-builder.*'],
+      distributor: ['distributor.*', 'cortex', 'mimir', 'mimir-write.*'],  // Match also per-zone distributor deployments.
+      querier: ['querier.*', 'cortex', 'mimir', 'mimir-read.*'],  // Match also custom querier deployments.
+      ruler_querier: ['ruler-querier.*'],  // Match also custom querier deployments.
+      ruler: ['ruler', 'cortex', 'mimir', 'mimir-backend.*'],
+      query_frontend: ['query-frontend.*', 'cortex', 'mimir', 'mimir-read.*'],  // Match also custom query-frontend deployments.
+      ruler_query_frontend: ['ruler-query-frontend.*'],  // Match also custom ruler-query-frontend deployments.
+      query_scheduler: ['query-scheduler.*', 'mimir-backend.*'],  // Not part of single-binary. Match also custom query-scheduler deployments.
+      ruler_query_scheduler: ['ruler-query-scheduler.*'],  // Not part of single-binary. Match also custom query-scheduler deployments.
+      ring_members: ['admin-api', 'alertmanager', 'compactor.*', 'distributor.*', 'ingester.*', 'querier.*', 'ruler', 'ruler-querier.*', 'store-gateway.*', 'cortex', 'mimir', 'mimir-write.*', 'mimir-read.*', 'mimir-backend.*'],
+      store_gateway: ['store-gateway.*', 'cortex', 'mimir', 'mimir-backend.*'],  // Match also per-zone store-gateway deployments.
       gateway: ['gateway', 'cortex-gw.*'],  // Match also custom and per-zone gateway deployments.
-      compactor: ['mimir', 'compactor.*', 'cortex', 'mimir-backend.*'],  // Match also custom compactor deployments.
-      alertmanager: ['mimir', 'alertmanager', 'cortex','mimir-backend.*'],
-      overrides_exporter: ['mimir', 'overrides-exporter', 'mimir-backend.*'],
+      compactor: ['compactor.*', 'cortex', 'mimir', 'mimir-backend.*'],  // Match also custom compactor deployments.
+      alertmanager: ['alertmanager', 'cortex', 'mimir', 'mimir-backend.*'],
+      overrides_exporter: ['overrides-exporter', 'cortex', 'mimir', 'mimir-backend.*'],
 
       // The following are job matchers used to select all components in the read path.
       main_read_path: std.uniq(std.sort(self.query_frontend + self.query_scheduler + self.querier)),

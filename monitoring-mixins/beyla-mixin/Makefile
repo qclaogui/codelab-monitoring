@@ -15,7 +15,7 @@ fmt: ## Format the mixin files
 
 .PHONY: update
 update: $(JB) ## update mixin 
-	$(JB) update github.com/grafana/beyla/ops/beyla-mixin@v2.0.3
+	$(JB) update
 
 define build_mixin_func
 	$(eval $@_MIXIN_OUTPUT = $(1))
