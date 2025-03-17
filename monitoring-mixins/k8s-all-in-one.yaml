@@ -58182,7 +58182,7 @@ spec:
         (
           kube_statefulset_status_replicas_ready{job="integrations/kubernetes/kube-state-metrics"}
             !=
-          kube_statefulset_status_replicas{job="integrations/kubernetes/kube-state-metrics"}
+          kube_statefulset_replicas{job="integrations/kubernetes/kube-state-metrics"}
         ) and (
           changes(kube_statefulset_status_replicas_updated{job="integrations/kubernetes/kube-state-metrics"}[10m])
             ==
@@ -58474,7 +58474,7 @@ spec:
         summary: Processes experience elevated CPU throttling.
       expr: |
         sum(increase(container_cpu_cfs_throttled_periods_total{container!="", job="integrations/kubernetes/cadvisor", }[5m])) without (id, metrics_path, name, image, endpoint, job, node)
-          /
+          / on (cluster, namespace, pod, container, instance) group_left
         sum(increase(container_cpu_cfs_periods_total{job="integrations/kubernetes/cadvisor", }[5m])) without (id, metrics_path, name, image, endpoint, job, node)
           > ( 25 / 100 )
       for: 15m
@@ -58768,6 +58768,20 @@ spec:
       for: 15m
       labels:
         severity: warning
+    - alert: KubeNodePressure
+      annotations:
+        description: '{{ $labels.node }} on cluster {{ $labels.cluster }} has active
+          Condition {{ $labels.condition }}. This is caused by resource usage exceeding
+          eviction thresholds.'
+        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubenodepressure
+        summary: Node has as active Condition.
+      expr: |
+        kube_node_status_condition{job="integrations/kubernetes/kube-state-metrics",condition=~"(MemoryPressure|DiskPressure|PIDPressure)",status="true"} == 1
+        and on (cluster, node)
+        kube_node_spec_unschedulable{job="integrations/kubernetes/kube-state-metrics"} == 0
+      for: 10m
+      labels:
+        severity: info
     - alert: KubeNodeUnreachable
       annotations:
         description: '{{ $labels.node }} is unreachable and some workloads may be
@@ -58815,6 +58829,24 @@ spec:
       for: 15m
       labels:
         severity: warning
+    - alert: KubeNodeEviction
+      annotations:
+        description: Node {{ $labels.node }} on {{ $labels.cluster }} is evicting
+          Pods due to {{ $labels.eviction_signal }}.  Eviction occurs when eviction
+          thresholds are crossed, typically caused by Pods exceeding RAM/ephemeral-storage
+          limits.
+        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubenodeeviction
+        summary: Node is evicting pods.
+      expr: |
+        sum(rate(kubelet_evictions{job="integrations/kubernetes/kubelet"}[15m])) by(cluster, eviction_signal, instance)
+        * on (cluster, instance) group_left(node)
+        max by (cluster, instance, node) (
+          kubelet_node_name{job="integrations/kubernetes/kubelet"}
+        )
+        > 0
+      for: 0s
+      labels:
+        severity: info
     - alert: KubeletPlegDurationHigh
       annotations:
         description: The Kubelet Pod Lifecycle Event Generator has a 99th percentile
