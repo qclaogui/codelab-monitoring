@@ -1,6 +1,6 @@
 module github.com/qclaogui/codelab-monitoring
 
-go 1.23
+go 1.24
 
 require (
 	github.com/MakeNowJust/heredoc v1.0.0
