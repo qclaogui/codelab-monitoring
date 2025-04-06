@@ -38,17 +38,13 @@ ALLOY_CONFIG_FILES_IN_DOCKER = $(subst ./, /data/, $(ALLOY_CONFIG_FILES))
 alloy-fmt: ## Uses Grafana Alloy to fmt the config
 	@for c in $(ALLOY_CONFIG_FILES_IN_DOCKER); do \
 		echo "$$c"; \
-		docker run --rm --volume "$(shell pwd):/data" -u $(shell id -u) grafana/alloy:v1.5.1 fmt -w $$c ; \
+		docker run --rm --volume "$(shell pwd):/data" -u $(shell id -u) grafana/alloy:v1.7.5 fmt -w $$c ; \
 	done
 
 .PHONY: go-fmt
-go-fmt: $(GOIMPORTS) $(GOFUMPT)
-	@echo ">> formatting go code"
+go-fmt: $(GOFUMPT)
 	@$(GOFUMPT) -w $(GO_FILES_TO_FMT)
-	@for file in $(GO_FILES_TO_FMT) ; do \
-		tools/scripts/goimports.sh "$${file}"; \
-	done
-	@$(GOIMPORTS) -w $(GO_FILES_TO_FMT)
+	@echo ">> ensured all .go files are formatted"
 
 # Lint .goreleaser*.yml files.
 .PHONY: goreleaser-lint
