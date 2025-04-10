@@ -46,7 +46,7 @@ services:
   gateway:
     labels:
       metrics.grafana.com/scrape: false
-    depends_on: {loki: {condition: service_healthy}, tempo: {condition: service_healthy}, mimir: {condition: service_healthy}, pyroscope: {condition: service_healthy}}
+    depends_on: {loki: {condition: service_healthy}, tempo: {condition: service_healthy}, mimir: {condition: service_started}, pyroscope: {condition: service_healthy}}
     image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.27-alpine}
     restart: always
     volumes:
@@ -97,7 +97,7 @@ services:
       <<: *profiles-labels
       metrics.grafana.com/scrape: false
       profiles.grafana.com/service_name: tempo
-    depends_on: {minio: {condition: service_healthy}, mimir: {condition: service_healthy}}
+    depends_on: {minio: {condition: service_healthy}, mimir: {condition: service_started}}
     image: ${TEMPO_IMAGE:-docker.io/grafana/tempo:2.7.2}
     configs:
       - source: tempo_config_file
@@ -125,7 +125,7 @@ services:
       metrics.grafana.com/scrape: false
       profiles.grafana.com/service_name: mimir
     depends_on: {minio: {condition: service_healthy}}
-    image: ${MIMIR_IMAGE:-docker.io/grafana/mimir-alpine:2.15.1}
+    image: ${MIMIR_IMAGE:-docker.io/grafana/mimir:2.16.0}
     configs:
       - source: mimir_config_file
         target: /etc/mimir/config.yaml
@@ -139,9 +139,6 @@ services:
     environment:
       <<: *jaeger-environment
       JAEGER_TAGS: app=mimir
-    healthcheck:
-      test: ["CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/ready"]
-      <<: *status-healthcheck
     # expose 38080 port so we can directly access mimir inside container
     ports:
       - "38080:8080"
@@ -153,7 +150,7 @@ services:
   mimirtool:
     labels:
       metrics.grafana.com/scrape: false
-    image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:2.15.1}
+    image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:2.16.0}
     volumes:
       - ../../../monitoring-mixins/crontab:/etc/crontabs/root
       - ../../../monitoring-mixins/alloy-mixin/deploy/alloy-mixin-alerts.yaml:/rules/alloy-mixin-alerts.yaml

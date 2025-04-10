@@ -4,7 +4,7 @@ sources:
   mimir-version:
     kind: dockerimage
     spec:
-      image: docker.io/grafana/mimir-alpine
+      image: docker.io/grafana/mimir
       versionfilter:
         kind: semver
         pattern: "~2.x"
@@ -23,7 +23,7 @@ conditions:
     kind: dockerimage
     disablesourceinput: true
     spec:
-      image: docker.io/grafana/mimir-alpine
+      image: docker.io/grafana/mimir
       tag: '{{ source "mimir-version" }}'
 
   check-mimirtool-image:
@@ -40,8 +40,8 @@ targets:
     spec:
       files:
         - docker-compose/common/config/.env
-      matchpattern: 'MIMIR_IMAGE=grafana/mimir-alpine:.*'
-      replacepattern: 'MIMIR_IMAGE=grafana/mimir-alpine:{{ source "mimir-version" }}'
+      matchpattern: 'MIMIR_IMAGE=grafana/mimir:.*'
+      replacepattern: 'MIMIR_IMAGE=grafana/mimir:{{ source "mimir-version" }}'
 
   update-mimirtool-image-version-in-env:
     kind: "file"
@@ -56,7 +56,7 @@ targets:
     kind: yaml
     sourceid: mimir-version
     transformers:
-      - addprefix: "${MIMIR_IMAGE:-docker.io/grafana/mimir-alpine:"
+      - addprefix: "${MIMIR_IMAGE:-docker.io/grafana/mimir:"
       - addsuffix: "}"
     spec:
       file: docker-compose/common/compose-include/mimir.yaml
@@ -76,7 +76,7 @@ targets:
     kind: yaml
     sourceid: mimir-version
     transformers:
-      - addprefix: "${MIMIR_IMAGE:-docker.io/grafana/mimir-alpine:"
+      - addprefix: "${MIMIR_IMAGE:-docker.io/grafana/mimir:"
       - addsuffix: "}"
     spec:
       file: docker-compose/monolithic-mode/all-in-one/compose.yaml
@@ -96,7 +96,7 @@ targets:
     kind: yaml
     sourceid: mimir-version
     transformers:
-      - addprefix: "&mimirImage ${MIMIR_IMAGE:-docker.io/grafana/mimir-alpine:"
+      - addprefix: "&mimirImage ${MIMIR_IMAGE:-docker.io/grafana/mimir:"
       - addsuffix: "}"
     spec:
       file: docker-compose/read-write-mode/metrics/compose.yaml
@@ -116,7 +116,7 @@ targets:
     kind: yaml
     sourceid: mimir-version
     transformers:
-      - addprefix: "&mimirImage ${MIMIR_IMAGE:-docker.io/grafana/mimir-alpine:"
+      - addprefix: "&mimirImage ${MIMIR_IMAGE:-docker.io/grafana/mimir:"
       - addsuffix: "}"
     spec:
       file: docker-compose/microservices-mode/metrics/compose.yaml

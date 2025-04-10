@@ -7,7 +7,7 @@ services:
     labels:
       metrics.grafana.com/scrape: false
     depends_on: {minio: {condition: service_healthy}}
-    image: ${MIMIR_IMAGE:-docker.io/grafana/mimir-alpine:2.15.1}
+    image: ${MIMIR_IMAGE:-docker.io/grafana/mimir:2.16.0}
     configs:
       - source: mimir_config_file
         target: /etc/mimir/config.yaml
@@ -17,11 +17,6 @@ services:
       - -config.file=/etc/mimir/config.yaml
       - -target=all
       - -config.expand-env=true
-    healthcheck:
-      test: ["CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/ready"]
-      interval: 3s
-      timeout: 1s
-      retries: 15
     # expose 38080 port so we can directly access mimir inside container
     ports:
       - "38080:8080"
@@ -33,7 +28,7 @@ services:
   mimirtool:
     labels:
       metrics.grafana.com/scrape: false
-    image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:2.15.1}
+    image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:2.16.0}
     volumes:
       - ../../../monitoring-mixins/crontab:/etc/crontabs/root
       - ../../../monitoring-mixins/alloy-mixin/deploy/alloy-mixin-alerts.yaml:/rules/alloy-mixin-alerts.yaml
