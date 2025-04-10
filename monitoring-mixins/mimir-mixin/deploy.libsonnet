@@ -5,29 +5,6 @@
 
     // Whether resources dashboards are enabled (based on cAdvisor metrics).
     resources_dashboards_enabled: true,
-    container_names: {
-      gateway: '(gateway|cortex-gw|cortex-gw-internal)',
-      distributor: '(mimir|distributor|mimir-write)',
-      ingester: '(mimir|ingester|mimir-write)',
-      query_frontend: '(mimir|query-frontend|mimir-read)',
-      query_scheduler: '(mimir|query-scheduler|mimir-backend)',
-      querier: '(mimir|querier|mimir-read)',
-      store_gateway: '(mimir|store-gateway|mimir-backend)',
-      ruler: '(mimir|ruler|mimir-backend)',
-      ruler_query_frontend: '(mimir|ruler-query-frontend)',
-      ruler_query_scheduler: '(mimir|ruler-query-scheduler)',
-      ruler_querier: '(mimir|ruler-querier)',
-      alertmanager: '(mimir|alertmanager)',
-      alertmanager_im: '(mimir|alertmanager-im)',
-      compactor: '(mimir|compactor|mimir-backend)',
-      
-      mimir_write: '(mimir|mimir-write|distributor|ingester)',
-      mimir_read: '(mimir|mimir-read|query-frontend|querier|ruler-query-frontend|ruler-querier)',
-      mimir_backend: '(mimir|mimir-backend|query-scheduler|ruler-query-scheduler|ruler|store-gateway|compactor|alertmanager|overrides-exporter)',
-      write: '(mimir|mimir-write|distributor|ingester)',
-      read: '(mimir|mimir-read|query-frontend|querier|ruler-query-frontend|ruler-querier)',
-      backend: '(mimir|mimir-backend|query-scheduler|ruler-query-scheduler|ruler|store-gateway|compactor|alertmanager|overrides-exporter)',
-    },
 
     job_names: {
       ingester: ['ingester.*', 'cortex', 'mimir', 'mimir-write.*'],  // Match also custom and per-zone ingester deployments.
@@ -51,6 +28,13 @@
       // The following are job matchers used to select all components in the read path.
       main_read_path: std.uniq(std.sort(self.query_frontend + self.query_scheduler + self.querier)),
       remote_ruler_read_path: std.uniq(std.sort(self.ruler_query_frontend + self.ruler_query_scheduler + self.ruler_querier)),
+
+      // The following are job matchers used to select all components in a given "path".
+      write: ['distributor.*', 'ingester.*', 'mimir-write.*'],
+      read: ['query-frontend.*', 'querier.*', 'ruler-query-frontend.*', 'ruler-querier.*', 'mimir-read.*'],
+      backend: ['ruler', 'query-scheduler.*', 'ruler-query-scheduler.*', 'store-gateway.*', 'compactor.*', 'alertmanager', 'overrides-exporter', 'mimir-backend.*'],
+
+      federation_frontend: ['federation-frontend.*'],  // Match federation-frontend deployments
     },
 
     instance_names: {
@@ -79,5 +63,30 @@
       backend: '(.*mimir-)?(mimir|mimir-backend|query-scheduler|ruler-query-scheduler|ruler|store-gateway|compactor|alertmanager|overrides-exporter).*',
       remote_ruler_read: '(.*mimir-)?(mimir|mimir-backend|ruler_query_frontend|ruler-query-scheduler|ruler|ruler_querier).*',
     },
+
+    container_names: {
+      gateway: '(gateway|cortex-gw|cortex-gw-internal)',
+      distributor: '(mimir|distributor|mimir-write)',
+      ingester: '(mimir|ingester|mimir-write)',
+      query_frontend: '(mimir|query-frontend|mimir-read)',
+      query_scheduler: '(mimir|query-scheduler|mimir-backend)',
+      querier: '(mimir|querier|mimir-read)',
+      store_gateway: '(mimir|store-gateway|mimir-backend)',
+      ruler: '(mimir|ruler|mimir-backend)',
+      ruler_query_frontend: '(mimir|ruler-query-frontend)',
+      ruler_query_scheduler: '(mimir|ruler-query-scheduler)',
+      ruler_querier: '(mimir|ruler-querier)',
+      alertmanager: '(mimir|alertmanager)',
+      alertmanager_im: '(mimir|alertmanager-im)',
+      compactor: '(mimir|compactor|mimir-backend)',
+      
+      mimir_write: '(mimir|mimir-write|distributor|ingester)',
+      mimir_read: '(mimir|mimir-read|query-frontend|querier|ruler-query-frontend|ruler-querier)',
+      mimir_backend: '(mimir|mimir-backend|query-scheduler|ruler-query-scheduler|ruler|store-gateway|compactor|alertmanager|overrides-exporter)',
+      write: '(mimir|mimir-write|distributor|ingester)',
+      read: '(mimir|mimir-read|query-frontend|querier|ruler-query-frontend|ruler-querier)',
+      backend: '(mimir|mimir-backend|query-scheduler|ruler-query-scheduler|ruler|store-gateway|compactor|alertmanager|overrides-exporter)',
+    },
+
   },
 }
