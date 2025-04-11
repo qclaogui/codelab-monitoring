@@ -38,7 +38,7 @@ ALLOY_CONFIG_FILES_IN_DOCKER = $(subst ./, /data/, $(ALLOY_CONFIG_FILES))
 alloy-fmt: ## Uses Grafana Alloy to fmt the config
 	@for c in $(ALLOY_CONFIG_FILES_IN_DOCKER); do \
 		echo "$$c"; \
-		docker run --rm --volume "$(shell pwd):/data" -u $(shell id -u) grafana/alloy:v1.7.5 fmt -w $$c ; \
+		docker run --rm --volume "$(shell pwd):/data" -u $(shell id -u) grafana/alloy:v1.8.1 fmt -w $$c ; \
 	done
 
 .PHONY: go-fmt
