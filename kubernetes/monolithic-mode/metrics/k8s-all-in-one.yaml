@@ -2953,8 +2953,136 @@ data:
                    "x": 0,
                    "y": 0
                 },
-                "title": "Receivers for traces [otelcol.receiver]",
+                "title": "Receivers [otelcol.receiver.*]",
                 "type": "row"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Number of metric points successfully pushed into the pipeline.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "custom": {
+                         "fillOpacity": 20,
+                         "gradientMode": "hue",
+                         "stacking": {
+                            "mode": "normal"
+                         }
+                      }
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 6,
+                   "x": 0,
+                   "y": 0
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum by(instance) (rate(otelcol_receiver_accepted_metric_points_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
+                      "instant": false,
+                      "legendFormat": "__auto",
+                      "range": true
+                   }
+                ],
+                "title": "Accepted metric points",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Number of metric points that could not be pushed into the pipeline.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "custom": {
+                         "fillOpacity": 20,
+                         "gradientMode": "hue",
+                         "stacking": {
+                            "mode": "normal"
+                         }
+                      }
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 6,
+                   "x": 6,
+                   "y": 0
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum by(instance) (rate(otelcol_receiver_refused_metric_points_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
+                      "instant": false,
+                      "legendFormat": "__auto",
+                      "range": true
+                   }
+                ],
+                "title": "Refused metric points",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Number of log records successfully pushed into the pipeline.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "custom": {
+                         "fillOpacity": 20,
+                         "gradientMode": "hue",
+                         "stacking": {
+                            "mode": "normal"
+                         }
+                      }
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 6,
+                   "x": 12,
+                   "y": 0
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum by(instance) (rate(otelcol_receiver_accepted_log_records_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
+                      "instant": false,
+                      "legendFormat": "__auto",
+                      "range": true
+                   }
+                ],
+                "title": "Accepted logs",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Number of log records that could not be pushed into the pipeline.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "custom": {
+                         "fillOpacity": 20,
+                         "gradientMode": "hue",
+                         "stacking": {
+                            "mode": "normal"
+                         }
+                      }
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 6,
+                   "x": 18,
+                   "y": 0
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum by(instance) (rate(otelcol_receiver_refused_log_records_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
+                      "instant": false,
+                      "legendFormat": "__auto",
+                      "range": true
+                   }
+                ],
+                "title": "Refused logs",
+                "type": "timeseries"
              },
              {
                 "datasource": "${datasource}",
@@ -2972,16 +3100,16 @@ data:
                 },
                 "gridPos": {
                    "h": 10,
-                   "w": 8,
+                   "w": 6,
                    "x": 0,
-                   "y": 0
+                   "y": 10
                 },
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "rate(otelcol_receiver_accepted_spans_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
+                      "expr": "sum by(instance) (rate(otelcol_receiver_accepted_spans_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
                       "instant": false,
-                      "legendFormat": "{{ pod }} / {{ transport }}",
+                      "legendFormat": "__auto",
                       "range": true
                    }
                 ],
@@ -3004,16 +3132,16 @@ data:
                 },
                 "gridPos": {
                    "h": 10,
-                   "w": 8,
-                   "x": 8,
-                   "y": 0
+                   "w": 6,
+                   "x": 6,
+                   "y": 10
                 },
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "rate(otelcol_receiver_refused_spans_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
+                      "expr": "sum by(instance) (rate(otelcol_receiver_refused_spans_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
                       "instant": false,
-                      "legendFormat": "{{ pod }} / {{ transport }}",
+                      "legendFormat": "__auto",
                       "range": true
                    }
                 ],
@@ -3022,12 +3150,12 @@ data:
              },
              {
                 "datasource": "${datasource}",
-                "description": "The duration of inbound RPCs.\n",
+                "description": "The duration of inbound RPCs for otelcol.receiver.* components.\n",
                 "gridPos": {
                    "h": 10,
-                   "w": 8,
-                   "x": 16,
-                   "y": 0
+                   "w": 6,
+                   "x": 12,
+                   "y": 10
                 },
                 "maxDataPoints": 30,
                 "options": {
@@ -3058,7 +3186,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by (le) (increase(rpc_server_duration_milliseconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", rpc_service=\"opentelemetry.proto.collector.trace.v1.TraceService\"}[$__rate_interval]))\n",
+                      "expr": "sum by (le) (increase(rpc_server_duration_milliseconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_id=~\"otelcol.receiver.*\"}[$__rate_interval]))\n",
                       "format": "heatmap",
                       "instant": false,
                       "legendFormat": "{{le}}",
@@ -3070,13 +3198,61 @@ data:
              },
              {
                 "datasource": "${datasource}",
+                "description": "The duration of inbound HTTP requests for otelcol.receiver.* components.\n",
+                "gridPos": {
+                   "h": 10,
+                   "w": 6,
+                   "x": 18,
+                   "y": 10
+                },
+                "maxDataPoints": 30,
+                "options": {
+                   "calculate": false,
+                   "color": {
+                      "exponent": 0.5,
+                      "fill": "dark-orange",
+                      "mode": "scheme",
+                      "scale": "exponential",
+                      "scheme": "Oranges",
+                      "steps": 65
+                   },
+                   "exemplars": {
+                      "color": "rgba(255,0,255,0.7)"
+                   },
+                   "filterValues": {
+                      "le": 1.0000000000000001e-09
+                   },
+                   "tooltip": {
+                      "show": true,
+                      "yHistogram": true
+                   },
+                   "yAxis": {
+                      "unit": "ms"
+                   }
+                },
+                "pluginVersion": "9.0.6",
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum by (le) (increase(http_server_duration_milliseconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_id=~\"otelcol.receiver.*\"}[$__rate_interval]))\n",
+                      "format": "heatmap",
+                      "instant": false,
+                      "legendFormat": "{{le}}",
+                      "range": true
+                   }
+                ],
+                "title": "HTTP server duration",
+                "type": "heatmap"
+             },
+             {
+                "datasource": "${datasource}",
                 "gridPos": {
                    "h": 1,
                    "w": 24,
                    "x": 0,
-                   "y": 10
+                   "y": 20
                 },
-                "title": "Batching of logs, metrics, and traces [otelcol.processor.batch]",
+                "title": "Batching [otelcol.processor.batch]",
                 "type": "row"
              },
              {
@@ -3091,7 +3267,7 @@ data:
                    "h": 10,
                    "w": 8,
                    "x": 0,
-                   "y": 10
+                   "y": 20
                 },
                 "maxDataPoints": 30,
                 "options": {
@@ -3139,14 +3315,14 @@ data:
                    "h": 10,
                    "w": 8,
                    "x": 8,
-                   "y": 10
+                   "y": 20
                 },
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "otelcol_processor_batch_metadata_cardinality{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}\n",
+                      "expr": "sum by(instance) (otelcol_processor_batch_metadata_cardinality{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"})\n",
                       "instant": false,
-                      "legendFormat": "{{ pod }}",
+                      "legendFormat": "__auto",
                       "range": true
                    }
                 ],
@@ -3160,14 +3336,14 @@ data:
                    "h": 10,
                    "w": 8,
                    "x": 16,
-                   "y": 10
+                   "y": 20
                 },
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "rate(otelcol_processor_batch_timeout_trigger_send_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
+                      "expr": "sum by(instance) (rate(otelcol_processor_batch_timeout_trigger_send_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
                       "instant": false,
-                      "legendFormat": "{{ pod }}",
+                      "legendFormat": "__auto",
                       "range": true
                    }
                 ],
@@ -3180,10 +3356,138 @@ data:
                    "h": 1,
                    "w": 24,
                    "x": 0,
-                   "y": 20
+                   "y": 30
                 },
-                "title": "Exporters for traces [otelcol.exporter]",
+                "title": "Exporters [otelcol.exporter.*]",
                 "type": "row"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Number of metric points successfully sent to destination.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "custom": {
+                         "fillOpacity": 20,
+                         "gradientMode": "hue",
+                         "stacking": {
+                            "mode": "normal"
+                         }
+                      }
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 6,
+                   "x": 0,
+                   "y": 30
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum by(instance) (rate(otelcol_exporter_sent_metric_points_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
+                      "instant": false,
+                      "legendFormat": "__auto",
+                      "range": true
+                   }
+                ],
+                "title": "Exported metric points",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Number of metric points that failed to be sent to destination.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "custom": {
+                         "fillOpacity": 20,
+                         "gradientMode": "hue",
+                         "stacking": {
+                            "mode": "normal"
+                         }
+                      }
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 6,
+                   "x": 6,
+                   "y": 30
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum by(instance) (rate(otelcol_exporter_send_failed_metric_points_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
+                      "instant": false,
+                      "legendFormat": "__auto",
+                      "range": true
+                   }
+                ],
+                "title": "Failed metric points",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Number of log records successfully sent to destination.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "custom": {
+                         "fillOpacity": 20,
+                         "gradientMode": "hue",
+                         "stacking": {
+                            "mode": "normal"
+                         }
+                      }
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 6,
+                   "x": 12,
+                   "y": 30
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum by(instance) (rate(otelcol_exporter_sent_log_records_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
+                      "instant": false,
+                      "legendFormat": "__auto",
+                      "range": true
+                   }
+                ],
+                "title": "Exported logs",
+                "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "Number of log records that failed to be sent to destination.\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "custom": {
+                         "fillOpacity": 20,
+                         "gradientMode": "hue",
+                         "stacking": {
+                            "mode": "normal"
+                         }
+                      }
+                   }
+                },
+                "gridPos": {
+                   "h": 10,
+                   "w": 6,
+                   "x": 18,
+                   "y": 30
+                },
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum by(instance) (rate(otelcol_exporter_send_failed_log_records_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
+                      "instant": false,
+                      "legendFormat": "__auto",
+                      "range": true
+                   }
+                ],
+                "title": "Failed logs",
+                "type": "timeseries"
              },
              {
                 "datasource": "${datasource}",
@@ -3201,25 +3505,25 @@ data:
                 },
                 "gridPos": {
                    "h": 10,
-                   "w": 8,
+                   "w": 6,
                    "x": 0,
-                   "y": 20
+                   "y": 40
                 },
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "rate(otelcol_exporter_sent_spans_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
+                      "expr": "sum by(instance) (rate(otelcol_exporter_sent_spans_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
                       "instant": false,
-                      "legendFormat": "{{ pod }}",
+                      "legendFormat": "__auto",
                       "range": true
                    }
                 ],
-                "title": "Exported sent spans",
+                "title": "Exported spans",
                 "type": "timeseries"
              },
              {
                 "datasource": "${datasource}",
-                "description": "Number of spans in failed attempts to send to destination.\n",
+                "description": "Number of spans that failed to be sent to destination.\n",
                 "fieldConfig": {
                    "defaults": {
                       "custom": {
@@ -3233,21 +3537,117 @@ data:
                 },
                 "gridPos": {
                    "h": 10,
-                   "w": 8,
-                   "x": 8,
-                   "y": 20
+                   "w": 6,
+                   "x": 6,
+                   "y": 40
                 },
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "rate(otelcol_exporter_send_failed_spans_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
+                      "expr": "sum by(instance) (rate(otelcol_exporter_send_failed_spans_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
                       "instant": false,
-                      "legendFormat": "{{ pod }}",
+                      "legendFormat": "__auto",
                       "range": true
                    }
                 ],
-                "title": "Exported failed spans",
+                "title": "Failed spans",
                 "type": "timeseries"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "The duration of outbound RPCs for otelcol.exporter.* components.\n",
+                "gridPos": {
+                   "h": 10,
+                   "w": 6,
+                   "x": 12,
+                   "y": 40
+                },
+                "maxDataPoints": 30,
+                "options": {
+                   "calculate": false,
+                   "color": {
+                      "exponent": 0.5,
+                      "fill": "dark-orange",
+                      "mode": "scheme",
+                      "scale": "exponential",
+                      "scheme": "Oranges",
+                      "steps": 65
+                   },
+                   "exemplars": {
+                      "color": "rgba(255,0,255,0.7)"
+                   },
+                   "filterValues": {
+                      "le": 1.0000000000000001e-09
+                   },
+                   "tooltip": {
+                      "show": true,
+                      "yHistogram": true
+                   },
+                   "yAxis": {
+                      "unit": "ms"
+                   }
+                },
+                "pluginVersion": "9.0.6",
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum by (le) (increase(rpc_client_duration_milliseconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_id=~\"otelcol.exporter.*\"}[$__rate_interval]))\n",
+                      "format": "heatmap",
+                      "instant": false,
+                      "legendFormat": "{{le}}",
+                      "range": true
+                   }
+                ],
+                "title": "RPC client duration",
+                "type": "heatmap"
+             },
+             {
+                "datasource": "${datasource}",
+                "description": "The duration of outbound HTTP requests for otelcol.exporter.* components.\n",
+                "gridPos": {
+                   "h": 10,
+                   "w": 6,
+                   "x": 18,
+                   "y": 40
+                },
+                "maxDataPoints": 30,
+                "options": {
+                   "calculate": false,
+                   "color": {
+                      "exponent": 0.5,
+                      "fill": "dark-orange",
+                      "mode": "scheme",
+                      "scale": "exponential",
+                      "scheme": "Oranges",
+                      "steps": 65
+                   },
+                   "exemplars": {
+                      "color": "rgba(255,0,255,0.7)"
+                   },
+                   "filterValues": {
+                      "le": 1.0000000000000001e-09
+                   },
+                   "tooltip": {
+                      "show": true,
+                      "yHistogram": true
+                   },
+                   "yAxis": {
+                      "unit": "ms"
+                   }
+                },
+                "pluginVersion": "9.0.6",
+                "targets": [
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "sum by (le) (increase(http_client_duration_milliseconds_bucket{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_id=~\"otelcol.exporter.*\"}[$__rate_interval]))\n",
+                      "format": "heatmap",
+                      "instant": false,
+                      "legendFormat": "{{le}}",
+                      "range": true
+                   }
+                ],
+                "title": "HTTP client duration",
+                "type": "heatmap"
              }
           ],
           "refresh": "10s",
@@ -5083,6 +5483,39 @@ spec:
       for: 10m
       labels:
         severity: warning
+    - alert: OtelcolReceiverRefusedMetrics
+      annotations:
+        description: The receiver could not push some metric points to the pipeline
+          under job {{ $labels.job }}. This could be due to reaching a limit such
+          as the ones imposed by otelcol.processor.memory_limiter.
+        summary: The receiver pushing metrics to the pipeline success rate is below
+          95%.
+      expr: |
+        (1 - (
+                sum by (cluster, namespace, job) (rate(otelcol_receiver_refused_metric_points_total{}[1m]))
+                /
+                sum by (cluster, namespace, job) (rate(otelcol_receiver_refused_metric_points_total{}[1m]) + rate(otelcol_receiver_accepted_metric_points_total{}[1m]))
+             )
+        ) < 0.95
+      for: 10m
+      labels:
+        severity: warning
+    - alert: OtelcolReceiverRefusedLogs
+      annotations:
+        description: The receiver could not push some log records to the pipeline
+          under job {{ $labels.job }}. This could be due to reaching a limit such
+          as the ones imposed by otelcol.processor.memory_limiter.
+        summary: The receiver pushing logs to the pipeline success rate is below 95%.
+      expr: |
+        (1 - (
+                sum by (cluster, namespace, job) (rate(otelcol_receiver_refused_log_records_total{}[1m]))
+                /
+                sum by (cluster, namespace, job) (rate(otelcol_receiver_refused_log_records_total{}[1m]) + rate(otelcol_receiver_accepted_log_records_total{}[1m]))
+             )
+        ) < 0.95
+      for: 10m
+      labels:
+        severity: warning
     - alert: OtelcolExporterFailedSpans
       annotations:
         description: The exporter failed to send spans to their destination under
@@ -5094,6 +5527,38 @@ spec:
                 sum by (cluster, namespace, job) (rate(otelcol_exporter_send_failed_spans_total{}[1m]))
                 /
                 sum by (cluster, namespace, job) (rate(otelcol_exporter_send_failed_spans_total{}[1m]) + rate(otelcol_exporter_sent_spans_total{}[1m]))
+             )
+        ) < 0.95
+      for: 10m
+      labels:
+        severity: warning
+    - alert: OtelcolExporterFailedMetrics
+      annotations:
+        description: The exporter failed to send metric points to their destination
+          under job {{ $labels.job }}. There could be an issue with the payload or
+          with the destination endpoint.
+        summary: The exporter sending metrics success rate is below 95%.
+      expr: |
+        (1 - (
+                sum by (cluster, namespace, job) (rate(otelcol_exporter_send_failed_metric_points_total{}[1m]))
+                /
+                sum by (cluster, namespace, job) (rate(otelcol_exporter_send_failed_metric_points_total{}[1m]) + rate(otelcol_exporter_sent_metric_points_total{}[1m]))
+             )
+        ) < 0.95
+      for: 10m
+      labels:
+        severity: warning
+    - alert: OtelcolExporterFailedLogs
+      annotations:
+        description: The exporter failed to send log records to their destination
+          under job {{ $labels.job }}. There could be an issue with the payload or
+          with the destination endpoint.
+        summary: The exporter sending logs success rate is below 95%.
+      expr: |
+        (1 - (
+                sum by (cluster, namespace, job) (rate(otelcol_exporter_send_failed_log_records_total{}[1m]))
+                /
+                sum by (cluster, namespace, job) (rate(otelcol_exporter_send_failed_log_records_total{}[1m]) + rate(otelcol_exporter_sent_log_records_total{}[1m]))
              )
         ) < 0.95
       for: 10m
