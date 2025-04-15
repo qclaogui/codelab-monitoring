@@ -11,8 +11,9 @@ metadata:
     app.kubernetes.io/instance: mysql
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mysql
-    app.kubernetes.io/version: 8.4.2
-    helm.sh/chart: mysql-11.1.15
+    app.kubernetes.io/part-of: mysql
+    app.kubernetes.io/version: 8.4.4
+    helm.sh/chart: mysql-12.3.3
   name: mysql
   namespace: mysql-system
 secrets:
@@ -58,8 +59,9 @@ metadata:
     app.kubernetes.io/instance: mysql
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mysql
-    app.kubernetes.io/version: 8.4.2
-    helm.sh/chart: mysql-11.1.15
+    app.kubernetes.io/part-of: mysql
+    app.kubernetes.io/version: 8.4.4
+    helm.sh/chart: mysql-12.3.3
   name: mysql
   namespace: mysql-system
 ---
@@ -82,8 +84,9 @@ metadata:
     app.kubernetes.io/instance: mysql
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mysql
-    app.kubernetes.io/version: 8.4.2
-    helm.sh/chart: mysql-11.1.15
+    app.kubernetes.io/part-of: mysql
+    app.kubernetes.io/version: 8.4.4
+    helm.sh/chart: mysql-12.3.3
   name: mysql
   namespace: mysql-system
 spec:
@@ -97,6 +100,7 @@ spec:
     app.kubernetes.io/component: primary
     app.kubernetes.io/instance: mysql
     app.kubernetes.io/name: mysql
+    app.kubernetes.io/part-of: mysql
   sessionAffinity: None
   type: ClusterIP
 ---
@@ -108,8 +112,9 @@ metadata:
     app.kubernetes.io/instance: mysql
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mysql
-    app.kubernetes.io/version: 8.4.2
-    helm.sh/chart: mysql-11.1.15
+    app.kubernetes.io/part-of: mysql
+    app.kubernetes.io/version: 8.4.4
+    helm.sh/chart: mysql-12.3.3
   name: mysql-headless
   namespace: mysql-system
 spec:
@@ -133,8 +138,9 @@ metadata:
     app.kubernetes.io/instance: mysql
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mysql
-    app.kubernetes.io/version: 8.4.2
-    helm.sh/chart: mysql-11.1.15
+    app.kubernetes.io/part-of: mysql
+    app.kubernetes.io/version: 8.4.4
+    helm.sh/chart: mysql-12.3.3
   name: mysql
   namespace: mysql-system
 spec:
@@ -145,19 +151,21 @@ spec:
       app.kubernetes.io/component: primary
       app.kubernetes.io/instance: mysql
       app.kubernetes.io/name: mysql
-  serviceName: mysql
+      app.kubernetes.io/part-of: mysql
+  serviceName: mysql-headless
   template:
     metadata:
       annotations:
-        checksum/configuration: 5753ebb16fa1265f63fc88c081a65d2655d34c1e2c241a6963c7ba5af84fc2ea
+        checksum/configuration: e658f8c09cb0134a3b66e56bd3ceaa47a7513c385ce020043e0ef33da11680c1
         logs.grafana.com/scrape: "true"
       labels:
         app.kubernetes.io/component: primary
         app.kubernetes.io/instance: mysql
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: mysql
-        app.kubernetes.io/version: 8.4.2
-        helm.sh/chart: mysql-11.1.15
+        app.kubernetes.io/part-of: mysql
+        app.kubernetes.io/version: 8.4.4
+        helm.sh/chart: mysql-12.3.3
     spec:
       affinity:
         nodeAffinity: null
@@ -176,24 +184,20 @@ spec:
       - env:
         - name: BITNAMI_DEBUG
           value: "false"
-        - name: MYSQL_ROOT_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: mysql-root-password
-              name: mysql-credentials-6k49fchf9c
+        - name: MYSQL_ROOT_PASSWORD_FILE
+          value: /opt/bitnami/mysql/secrets/mysql-root-password
+        - name: MYSQL_ENABLE_SSL
+          value: "no"
         - name: MYSQL_USER
           value: lgtmp
-        - name: MYSQL_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: mysql-password
-              name: mysql-credentials-6k49fchf9c
+        - name: MYSQL_PASSWORD_FILE
+          value: /opt/bitnami/mysql/secrets/mysql-password
         - name: MYSQL_PORT
           value: "3306"
         - name: MYSQL_DATABASE
           value: my_database
         envFrom: null
-        image: docker.io/bitnami/mysql:8.4.2-debian-12-r2
+        image: docker.io/bitnami/mysql:8.4.4-debian-12-r7
         imagePullPolicy: IfNotPresent
         livenessProbe:
           exec:
@@ -286,6 +290,8 @@ spec:
         - mountPath: /opt/bitnami/mysql/conf/my.cnf
           name: config
           subPath: my.cnf
+        - mountPath: /opt/bitnami/mysql/secrets/
+          name: mysql-credentials
       initContainers:
       - args:
         - -ec
@@ -299,7 +305,7 @@ spec:
           fi
         command:
         - /bin/bash
-        image: docker.io/bitnami/mysql:8.4.2-debian-12-r2
+        image: docker.io/bitnami/mysql:8.4.4-debian-12-r7
         imagePullPolicy: IfNotPresent
         name: preserve-logs-symlinks
         resources:
@@ -336,6 +342,14 @@ spec:
       - configMap:
           name: mysql
         name: config
+      - name: mysql-credentials
+        secret:
+          items:
+          - key: mysql-root-password
+            path: mysql-root-password
+          - key: mysql-password
+            path: mysql-password
+          secretName: mysql-credentials-6k49fchf9c
       - emptyDir: {}
         name: empty-dir
   updateStrategy:
@@ -362,8 +376,9 @@ metadata:
     app.kubernetes.io/instance: mysql
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mysql
-    app.kubernetes.io/version: 8.4.2
-    helm.sh/chart: mysql-11.1.15
+    app.kubernetes.io/part-of: mysql
+    app.kubernetes.io/version: 8.4.4
+    helm.sh/chart: mysql-12.3.3
   name: mysql
   namespace: mysql-system
 spec:
@@ -373,6 +388,7 @@ spec:
       app.kubernetes.io/component: primary
       app.kubernetes.io/instance: mysql
       app.kubernetes.io/name: mysql
+      app.kubernetes.io/part-of: mysql
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -381,8 +397,9 @@ metadata:
     app.kubernetes.io/instance: mysql
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mysql
-    app.kubernetes.io/version: 8.4.2
-    helm.sh/chart: mysql-11.1.15
+    app.kubernetes.io/part-of: mysql
+    app.kubernetes.io/version: 8.4.4
+    helm.sh/chart: mysql-12.3.3
   name: mysql
   namespace: mysql-system
 spec:
@@ -396,8 +413,8 @@ spec:
       app.kubernetes.io/instance: mysql
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: mysql
-      app.kubernetes.io/version: 8.4.2
-      helm.sh/chart: mysql-11.1.15
+      app.kubernetes.io/version: 8.4.4
+      helm.sh/chart: mysql-12.3.3
   policyTypes:
   - Ingress
   - Egress

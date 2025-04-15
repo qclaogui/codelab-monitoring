@@ -11,8 +11,8 @@ metadata:
     app.kubernetes.io/instance: redis
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
-    app.kubernetes.io/version: 7.4.0
-    helm.sh/chart: redis-20.0.1
+    app.kubernetes.io/version: 7.4.2
+    helm.sh/chart: redis-20.11.5
   name: redis-master
   namespace: redis-system
 ---
@@ -37,14 +37,15 @@ data:
     rename-command FLUSHDB ""
     rename-command FLUSHALL ""
     # End of replica configuration
+  users.acl: ""
 kind: ConfigMap
 metadata:
   labels:
     app.kubernetes.io/instance: redis
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
-    app.kubernetes.io/version: 7.4.0
-    helm.sh/chart: redis-20.0.1
+    app.kubernetes.io/version: 7.4.2
+    helm.sh/chart: redis-20.11.5
   name: redis-configuration
   namespace: redis-system
 ---
@@ -150,8 +151,8 @@ metadata:
     app.kubernetes.io/instance: redis
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
-    app.kubernetes.io/version: 7.4.0
-    helm.sh/chart: redis-20.0.1
+    app.kubernetes.io/version: 7.4.2
+    helm.sh/chart: redis-20.11.5
   name: redis-health
   namespace: redis-system
 ---
@@ -167,6 +168,9 @@ data:
     if [[ -f /opt/bitnami/redis/mounted-etc/redis.conf ]];then
         cp /opt/bitnami/redis/mounted-etc/redis.conf /opt/bitnami/redis/etc/redis.conf
     fi
+    if [[ -f /opt/bitnami/redis/mounted-etc/users.acl ]];then
+        cp /opt/bitnami/redis/mounted-etc/users.acl /opt/bitnami/redis/etc/users.acl
+    fi
     ARGS=("--port" "${REDIS_PORT}")
     ARGS+=("--requirepass" "${REDIS_PASSWORD}")
     ARGS+=("--masterauth" "${REDIS_PASSWORD}")
@@ -179,8 +183,8 @@ metadata:
     app.kubernetes.io/instance: redis
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
-    app.kubernetes.io/version: 7.4.0
-    helm.sh/chart: redis-20.0.1
+    app.kubernetes.io/version: 7.4.2
+    helm.sh/chart: redis-20.11.5
   name: redis-scripts
   namespace: redis-system
 ---
@@ -200,8 +204,8 @@ metadata:
     app.kubernetes.io/instance: redis
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
-    app.kubernetes.io/version: 7.4.0
-    helm.sh/chart: redis-20.0.1
+    app.kubernetes.io/version: 7.4.2
+    helm.sh/chart: redis-20.11.5
   name: redis-headless
   namespace: redis-system
 spec:
@@ -223,8 +227,8 @@ metadata:
     app.kubernetes.io/instance: redis
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
-    app.kubernetes.io/version: 7.4.0
-    helm.sh/chart: redis-20.0.1
+    app.kubernetes.io/version: 7.4.2
+    helm.sh/chart: redis-20.11.5
   name: redis-master
   namespace: redis-system
 spec:
@@ -249,8 +253,8 @@ metadata:
     app.kubernetes.io/instance: redis
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
-    app.kubernetes.io/version: 7.4.0
-    helm.sh/chart: redis-20.0.1
+    app.kubernetes.io/version: 7.4.2
+    helm.sh/chart: redis-20.11.5
   name: redis-master
   namespace: redis-system
 spec:
@@ -265,9 +269,9 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/configmap: ca6edb8ca47e9d42f141ebebe7f53df50ea5cc0989cd2d2f29012e5273d203bb
+        checksum/configmap: 8abdadaeaffd4be91dfd61eff1778ddf013b22519d7b383e7475f4ba52b67b62
         checksum/health: aff24913d801436ea469d8d374b2ddb3ec4c43ee7ab24663d5f8ff1a1b6991a9
-        checksum/scripts: 560c33ff34d845009b51830c332aa05fa211444d1877d3526d3599be7543aaa5
+        checksum/scripts: 0717e77fd3bb941f602860e9be4f2ed87b481cddeadf37be463f8512ecde0c3e
         checksum/secret: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
         logs.grafana.com/scrape: "true"
       labels:
@@ -275,8 +279,8 @@ spec:
         app.kubernetes.io/instance: redis
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: redis
-        app.kubernetes.io/version: 7.4.0
-        helm.sh/chart: redis-20.0.1
+        app.kubernetes.io/version: 7.4.2
+        helm.sh/chart: redis-20.11.5
     spec:
       affinity:
         nodeAffinity: null
@@ -305,16 +309,13 @@ spec:
           value: master
         - name: ALLOW_EMPTY_PASSWORD
           value: "no"
-        - name: REDIS_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: redis-password
-              name: redis-credentials-9gfkgg6mb5
+        - name: REDIS_PASSWORD_FILE
+          value: /opt/bitnami/redis/secrets/redis-password
         - name: REDIS_TLS_ENABLED
           value: "no"
         - name: REDIS_PORT
           value: "6379"
-        image: docker.io/bitnami/redis:7.4.0-debian-12-r0
+        image: docker.io/bitnami/redis:7.4.2-debian-12-r6
         imagePullPolicy: IfNotPresent
         livenessProbe:
           exec:
@@ -368,6 +369,8 @@ spec:
           name: start-scripts
         - mountPath: /health
           name: health
+        - mountPath: /opt/bitnami/redis/secrets/
+          name: redis-password
         - mountPath: /data
           name: redis-data
         - mountPath: /opt/bitnami/redis/mounted-etc
@@ -395,6 +398,12 @@ spec:
           defaultMode: 493
           name: redis-health
         name: health
+      - name: redis-password
+        secret:
+          items:
+          - key: redis-password
+            path: redis-password
+          secretName: redis-credentials-9gfkgg6mb5
       - configMap:
           name: redis-configuration
         name: config
@@ -426,8 +435,8 @@ metadata:
     app.kubernetes.io/instance: redis
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
-    app.kubernetes.io/version: 7.4.0
-    helm.sh/chart: redis-20.0.1
+    app.kubernetes.io/version: 7.4.2
+    helm.sh/chart: redis-20.11.5
   name: redis-master
   namespace: redis-system
 spec:
@@ -445,8 +454,8 @@ metadata:
     app.kubernetes.io/instance: redis
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
-    app.kubernetes.io/version: 7.4.0
-    helm.sh/chart: redis-20.0.1
+    app.kubernetes.io/version: 7.4.2
+    helm.sh/chart: redis-20.11.5
   name: redis
   namespace: redis-system
 spec:
