@@ -48,11 +48,9 @@ targets:
       key: $.services.tempo.image
 
   update-tempo-image-version-in-microservices-mode:
-    kind: yaml
+    kind: file
     sourceid: tempo-version
-    transformers:
-      - addprefix: "&tempoImage ${TEMPO_IMAGE:-docker.io/grafana/tempo:"
-      - addsuffix: "}"
     spec:
       file: docker-compose/microservices-mode/traces/compose.yaml
-      key: $.services.distributor.image
+      matchpattern: 'docker.io/grafana/tempo:.*'
+      replacepattern: 'docker.io/grafana/tempo:{{ source "tempo-version" }}}'

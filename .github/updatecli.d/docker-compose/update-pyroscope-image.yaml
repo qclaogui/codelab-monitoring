@@ -48,11 +48,9 @@ targets:
       key: $.services.pyroscope.image
 
   update-pyroscope-image-version-in-microservices-mode:
-    kind: yaml
+    kind: file
     sourceid: pyroscope-version
-    transformers:
-      - addprefix: "&pyroscopeImage ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:"
-      - addsuffix: "}"
     spec:
       file: docker-compose/microservices-mode/profiles/compose.yaml
-      key: $.services.distributor.image
+      matchpattern: 'docker.io/grafana/pyroscope:.*'
+      replacepattern: 'docker.io/grafana/pyroscope:{{ source "pyroscope-version" }}}'
