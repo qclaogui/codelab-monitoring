@@ -55,8 +55,8 @@ services:
       profiles.grafana.com/service_name: tempo
     depends_on: { minio: { condition: service_healthy }, mimir: { condition: service_started } }
     environment:
-      <<: *jaeger-environment
-      JAEGER_TAGS: app=tempo
+      # https://grafana.com/docs/tempo/latest/operations/monitor/#traces
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
 
   # override compose.yaml included service mimir's labels and environment to enabled profiles and traces data collection
   mimir:
