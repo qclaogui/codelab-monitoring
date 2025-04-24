@@ -1,4 +1,3 @@
-
 # https://github.com/qclaogui/codelab-monitoring/blob/main/alloy-modules/compose/README.md
 x-labels: &profiles-labels
   profiles.grafana.com/cpu.scrape: true
@@ -31,7 +30,7 @@ services:
       metrics.grafana.com/scrape: true
       profiles.grafana.com/service_name: grafana
       profiles.grafana.com/port: 6060
-    image: ${GRAFANA_IMAGE:-docker.io/grafana/grafana:11.6.0}
+    image: ${GRAFANA_IMAGE:-docker.io/grafana/grafana:11.6.1}
     volumes:
       - ./monitoring-mixins/loki-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/loki-mixin
       - ./monitoring-mixins/tempo-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/tempo-mixin
@@ -53,7 +52,7 @@ services:
       logs.grafana.com/scrape: true
       metrics.grafana.com/scrape: true
       profiles.grafana.com/service_name: tempo
-    depends_on: { minio: { condition: service_healthy }, mimir: { condition: service_started } }
+    depends_on: {minio: {condition: service_healthy}, mimir: {condition: service_started}}
     environment:
       # https://grafana.com/docs/tempo/latest/operations/monitor/#traces
       OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
