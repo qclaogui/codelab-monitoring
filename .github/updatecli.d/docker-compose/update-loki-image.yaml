@@ -48,14 +48,12 @@ targets:
       key: $.services.loki.image
 
   update-loki-image-version-in-read-write-mode:
-    kind: yaml
+    kind: file
     sourceid: loki-version
-    transformers:
-      - addprefix: "&lokiImage ${LOKI_IMAGE:-docker.io/grafana/loki:"
-      - addsuffix: "}"
     spec:
       file: docker-compose/read-write-mode/logs/compose.yaml
-      key: $.services.loki-read.image
+      matchpattern: 'docker.io/grafana/loki:.*'
+      replacepattern: 'docker.io/grafana/loki:{{ source "loki-version" }}}'
 
   update-loki-image-version-in-microservices-mode:
     kind: file

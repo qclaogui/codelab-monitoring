@@ -93,14 +93,12 @@ targets:
       key: $.services.mimirtool.image
 
   update-mimir-image-version-in-read-write-mode:
-    kind: yaml
+    kind: file
     sourceid: mimir-version
-    transformers:
-      - addprefix: "&mimirImage ${MIMIR_IMAGE:-docker.io/grafana/mimir:"
-      - addsuffix: "}"
     spec:
       file: docker-compose/read-write-mode/metrics/compose.yaml
-      key: $.services.mimir-backend.image
+      matchpattern: 'docker.io/grafana/mimir:.*'
+      replacepattern: 'docker.io/grafana/mimir:{{ source "mimir-version" }}}'
 
   update-mimirtool-image-version-in-read-write-mode:
     kind: yaml
