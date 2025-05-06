@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: kube-state-metrics
     app.kubernetes.io/version: 2.15.0
-    helm.sh/chart: kube-state-metrics-5.32.0
+    helm.sh/chart: kube-state-metrics-5.33.0
     release: kube-prometheus-stack
   name: kube-prometheus-stack-kube-state-metrics
   namespace: monitoring-system
@@ -25,7 +25,7 @@ metadata:
     app.kubernetes.io/name: prometheus-node-exporter
     app.kubernetes.io/part-of: prometheus-node-exporter
     app.kubernetes.io/version: 1.9.1
-    helm.sh/chart: prometheus-node-exporter-4.45.2
+    helm.sh/chart: prometheus-node-exporter-4.46.0
     release: kube-prometheus-stack
   name: kube-prometheus-stack-prometheus-node-exporter
   namespace: monitoring-system
@@ -40,7 +40,7 @@ metadata:
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: kube-state-metrics
     app.kubernetes.io/version: 2.15.0
-    helm.sh/chart: kube-state-metrics-5.32.0
+    helm.sh/chart: kube-state-metrics-5.33.0
     release: kube-prometheus-stack
   name: kube-prometheus-stack-kube-state-metrics
 rules:
@@ -255,7 +255,7 @@ metadata:
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: kube-state-metrics
     app.kubernetes.io/version: 2.15.0
-    helm.sh/chart: kube-state-metrics-5.32.0
+    helm.sh/chart: kube-state-metrics-5.33.0
     release: kube-prometheus-stack
   name: kube-prometheus-stack-kube-state-metrics
 roleRef:
@@ -344,8 +344,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     grafana_dashboard: "1"
     heritage: Helm
     release: kube-prometheus-stack
@@ -463,8 +463,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     grafana_dashboard: "1"
     heritage: Helm
     release: kube-prometheus-stack
@@ -522,8 +522,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     grafana_dashboard: "1"
     heritage: Helm
     release: kube-prometheus-stack
@@ -589,8 +589,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     grafana_dashboard: "1"
     heritage: Helm
     release: kube-prometheus-stack
@@ -631,8 +631,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     grafana_dashboard: "1"
     heritage: Helm
     release: kube-prometheus-stack
@@ -659,48 +659,65 @@ data:
     or\nsum(rate(coredns_dns_requests_total{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\"}[5m]))","interval":"1m","intervalFactor":2,"legendFormat":"total","refId":"B","step":40}],"title":"Requests
     (DO bit)","type":"timeseries"},{"datasource":{"uid":"$datasource"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisColorMode":"text","axisLabel":"","axisPlacement":"auto","barAlignment":0,"drawStyle":"line","fillOpacity":10,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"linear","lineWidth":2,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"never","spanNulls":true,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"off"}},"links":[],"mappings":[],"min":0,"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"red","value":80}]},"unit":"bytes","unitScale":true},"overrides":[{"matcher":{"id":"byName","options":"tcp:90"},"properties":[{"id":"unit","value":"short"}]},{"matcher":{"id":"byName","options":"tcp:99
     "},"properties":[{"id":"unit","value":"short"}]},{"matcher":{"id":"byName","options":"tcp:50"},"properties":[{"id":"unit","value":"short"}]}]},"gridPos":{"h":7,"w":6,"x":12,"y":7},"id":10,"links":[],"options":{"legend":{"calcs":[],"displayMode":"list","placement":"bottom","showLegend":true},"tooltip":{"mode":"multi","sort":"none"}},"pluginVersion":"10.3.3","targets":[{"datasource":{"uid":"$datasource"},"expr":"histogram_quantile(0.99,
-    sum(rate(coredns_dns_request_size_bytes_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"udp\"}[5m]))
-    by (le,proto))","interval":"1m","intervalFactor":2,"legendFormat":"{{ proto }}:99
+    (sum(rate(coredns_dns_request_size_bytes{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"udp\"}[5m]))
+    by (proto))) or (sum(rate(coredns_dns_request_size_bytes_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"udp\"}[5m]))
+    by (le,proto)))","interval":"1m","intervalFactor":2,"legendFormat":"{{ proto }}:99
     ","refId":"A","step":60},{"datasource":{"uid":"$datasource"},"expr":"histogram_quantile(0.90,
-    sum(rate(coredns_dns_request_size_bytes_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"udp\"}[5m]))
-    by (le,proto))","intervalFactor":2,"legendFormat":"{{ proto }}:90","refId":"B","step":60},{"datasource":{"uid":"$datasource"},"expr":"histogram_quantile(0.50,
-    sum(rate(coredns_dns_request_size_bytes_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"udp\"}[5m]))
-    by (le,proto))","intervalFactor":2,"legendFormat":"{{ proto }}:50","refId":"C","step":60}],"title":"Requests
+    (sum(rate(coredns_dns_request_size_bytes{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"udp\"}[5m]))
+    by (proto))) or (sum(rate(coredns_dns_request_size_bytes_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"udp\"}[5m]))
+    by (le,proto)))","intervalFactor":2,"legendFormat":"{{ proto }}:90","refId":"B","step":60},{"datasource":{"uid":"$datasource"},"expr":"histogram_quantile(0.50,
+    (sum(rate(coredns_dns_request_size_bytes{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"udp\"}[5m]))
+    by (proto))) or (sum(rate(coredns_dns_request_size_bytes_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"udp\"}[5m]))
+    by (le,proto)))","intervalFactor":2,"legendFormat":"{{ proto }}:50","refId":"C","step":60}],"title":"Requests
     (size, udp)","type":"timeseries"},{"datasource":{"uid":"$datasource"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisColorMode":"text","axisLabel":"","axisPlacement":"auto","barAlignment":0,"drawStyle":"line","fillOpacity":10,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"linear","lineWidth":2,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"never","spanNulls":true,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"off"}},"links":[],"mappings":[],"min":0,"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"red","value":80}]},"unit":"bytes","unitScale":true},"overrides":[]},"gridPos":{"h":7,"w":6,"x":18,"y":7},"id":12,"links":[],"options":{"legend":{"calcs":[],"displayMode":"list","placement":"bottom","showLegend":true},"tooltip":{"mode":"multi","sort":"none"}},"pluginVersion":"10.3.3","targets":[{"datasource":{"uid":"$datasource"},"expr":"histogram_quantile(0.99,
-    sum(rate(coredns_dns_request_size_bytes_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"tcp\"}[5m]))
-    by (le,proto))","format":"time_series","interval":"1m","intervalFactor":2,"legendFormat":"{{
+    (sum(rate(coredns_dns_request_size_bytes{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"tcp\"}[5m]))
+    by (proto)) or (sum(rate(coredns_dns_request_size_bytes_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"tcp\"}[5m]))
+    by (le,proto)))","format":"time_series","interval":"1m","intervalFactor":2,"legendFormat":"{{
     proto }}:99 ","refId":"A","step":60},{"datasource":{"uid":"$datasource"},"expr":"histogram_quantile(0.90,
-    sum(rate(coredns_dns_request_size_bytes_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"tcp\"}[5m]))
-    by (le,proto))","format":"time_series","interval":"1m","intervalFactor":2,"legendFormat":"{{
+    (sum(rate(coredns_dns_request_size_bytes{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"tcp\"}[5m]))
+    by (proto)) or (sum(rate(coredns_dns_request_size_bytes_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"tcp\"}[5m]))
+    by (le,proto)))","format":"time_series","interval":"1m","intervalFactor":2,"legendFormat":"{{
     proto }}:90","refId":"B","step":60},{"datasource":{"uid":"$datasource"},"expr":"histogram_quantile(0.50,
-    sum(rate(coredns_dns_request_size_bytes_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"tcp\"}[5m]))
-    by (le,proto))","format":"time_series","interval":"1m","intervalFactor":2,"legendFormat":"{{
+    (sum(rate(coredns_dns_request_size_bytes{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"tcp\"}[5m]))
+    by (proto)) or (sum(rate(coredns_dns_request_size_bytes_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"tcp\"}[5m]))
+    by (le,proto)))","format":"time_series","interval":"1m","intervalFactor":2,"legendFormat":"{{
     proto }}:50","refId":"C","step":60}],"title":"Requests (size,tcp)","type":"timeseries"},{"datasource":{"uid":"$datasource"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisColorMode":"text","axisLabel":"","axisPlacement":"auto","barAlignment":0,"drawStyle":"line","fillOpacity":10,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"linear","lineWidth":2,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"never","spanNulls":true,"stacking":{"group":"A","mode":"normal"},"thresholdsStyle":{"mode":"off"}},"links":[],"mappings":[],"min":0,"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"red","value":80}]},"unit":"pps","unitScale":true},"overrides":[]},"gridPos":{"h":7,"w":12,"x":0,"y":14},"id":14,"links":[],"options":{"legend":{"calcs":[],"displayMode":"list","placement":"bottom","showLegend":true},"tooltip":{"mode":"multi","sort":"desc"}},"pluginVersion":"10.3.3","targets":[{"datasource":{"uid":"$datasource"},"expr":"sum(rate(coredns_dns_response_rcode_count_total{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\"}[5m]))
     by (rcode) or\nsum(rate(coredns_dns_responses_total{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\"}[5m]))
     by (rcode)","interval":"1m","intervalFactor":2,"legendFormat":"{{ rcode }}","refId":"A","step":40}],"title":"Responses
     (by rcode)","type":"timeseries"},{"datasource":{"uid":"$datasource"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisColorMode":"text","axisLabel":"","axisPlacement":"auto","barAlignment":0,"drawStyle":"line","fillOpacity":10,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"linear","lineWidth":2,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"never","spanNulls":true,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"off"}},"links":[],"mappings":[],"min":0,"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"red","value":80}]},"unit":"s","unitScale":true},"overrides":[]},"gridPos":{"h":7,"w":12,"x":12,"y":14},"id":32,"links":[],"options":{"legend":{"calcs":[],"displayMode":"list","placement":"bottom","showLegend":true},"tooltip":{"mode":"multi","sort":"none"}},"pluginVersion":"10.3.3","targets":[{"datasource":{"uid":"$datasource"},"expr":"histogram_quantile(0.99,
-    sum(rate(coredns_dns_request_duration_seconds_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\"}[5m]))
-    by (le, job))","format":"time_series","intervalFactor":2,"legendFormat":"99%","refId":"A","step":40},{"datasource":{"uid":"$datasource"},"expr":"histogram_quantile(0.90,
-    sum(rate(coredns_dns_request_duration_seconds_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\"}[5m]))
-    by (le))","format":"time_series","intervalFactor":2,"legendFormat":"90%","refId":"B","step":40},{"datasource":{"uid":"$datasource"},"expr":"histogram_quantile(0.50,
-    sum(rate(coredns_dns_request_duration_seconds_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\"}[5m]))
-    by (le))","format":"time_series","intervalFactor":2,"legendFormat":"50%","refId":"C","step":40}],"title":"Responses
+    (sum(rate(coredns_dns_request_duration_seconds{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\"}[5m]))
+    by (job)) or (sum(rate(coredns_dns_request_duration_seconds_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\"}[5m]))
+    by (le, job)))","format":"time_series","intervalFactor":2,"legendFormat":"99%","refId":"A","step":40},{"datasource":{"uid":"$datasource"},"expr":"histogram_quantile(0.90,
+    (sum(rate(coredns_dns_request_duration_seconds{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\"}[5m]))
+    by ()) or (sum(rate(coredns_dns_request_duration_seconds_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\"}[5m]))
+    by (le)))","format":"time_series","intervalFactor":2,"legendFormat":"90%","refId":"B","step":40},{"datasource":{"uid":"$datasource"},"expr":"histogram_quantile(0.50,
+    (sum(rate(coredns_dns_request_duration_seconds{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\"}[5m]))
+    by ()) or (sum(rate(coredns_dns_request_duration_seconds_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\"}[5m]))
+    by (le)))","format":"time_series","intervalFactor":2,"legendFormat":"50%","refId":"C","step":40}],"title":"Responses
     (duration)","type":"timeseries"},{"datasource":{"uid":"$datasource"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisColorMode":"text","axisLabel":"","axisPlacement":"auto","barAlignment":0,"drawStyle":"line","fillOpacity":10,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"linear","lineWidth":2,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"never","spanNulls":true,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"off"}},"links":[],"mappings":[],"min":0,"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"red","value":80}]},"unit":"bytes","unitScale":true},"overrides":[{"matcher":{"id":"byName","options":"tcp:50%"},"properties":[{"id":"unit","value":"short"}]},{"matcher":{"id":"byName","options":"tcp:90%"},"properties":[{"id":"unit","value":"short"}]},{"matcher":{"id":"byName","options":"tcp:99%"},"properties":[{"id":"unit","value":"short"}]}]},"gridPos":{"h":7,"w":12,"x":0,"y":21},"id":18,"links":[],"options":{"legend":{"calcs":[],"displayMode":"list","placement":"bottom","showLegend":true},"tooltip":{"mode":"multi","sort":"none"}},"pluginVersion":"10.3.3","targets":[{"datasource":{"uid":"$datasource"},"expr":"histogram_quantile(0.99,
-    sum(rate(coredns_dns_response_size_bytes_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"udp\"}[5m]))
-    by (le,proto)) ","interval":"1m","intervalFactor":2,"legendFormat":"{{ proto }}:99%","refId":"A","step":40},{"datasource":{"uid":"$datasource"},"expr":"histogram_quantile(0.90,
-    sum(rate(coredns_dns_response_size_bytes_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"udp\"}[5m]))
-    by (le,proto)) ","interval":"1m","intervalFactor":2,"legendFormat":"{{ proto }}:90%","refId":"B","step":40},{"datasource":{"uid":"$datasource"},"expr":"histogram_quantile(0.50,
-    sum(rate(coredns_dns_response_size_bytes_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"udp\"}[5m]))
-    by (le,proto)) ","hide":false,"intervalFactor":2,"legendFormat":"{{ proto }}:50%","metric":"","refId":"C","step":40}],"title":"Responses
+    (sum(rate(coredns_dns_response_size_bytes{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"udp\"}[5m]))
+    by (proto)) or (sum(rate(coredns_dns_response_size_bytes_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"udp\"}[5m]))
+    by (le,proto))) ","interval":"1m","intervalFactor":2,"legendFormat":"{{ proto
+    }}:99%","refId":"A","step":40},{"datasource":{"uid":"$datasource"},"expr":"histogram_quantile(0.90,
+    (sum(rate(coredns_dns_response_size_bytes{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"udp\"}[5m]))
+    by (proto)) or (sum(rate(coredns_dns_response_size_bytes_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"udp\"}[5m]))
+    by (le,proto))) ","interval":"1m","intervalFactor":2,"legendFormat":"{{ proto
+    }}:90%","refId":"B","step":40},{"datasource":{"uid":"$datasource"},"expr":"histogram_quantile(0.50,
+    (sum(rate(coredns_dns_response_size_bytes{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"udp\"}[5m]))
+    by (proto)) or (sum(rate(coredns_dns_response_size_bytes_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"udp\"}[5m]))
+    by (le,proto))) ","hide":false,"intervalFactor":2,"legendFormat":"{{ proto }}:50%","metric":"","refId":"C","step":40}],"title":"Responses
     (size, udp)","type":"timeseries"},{"datasource":{"uid":"$datasource"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisColorMode":"text","axisLabel":"","axisPlacement":"auto","barAlignment":0,"drawStyle":"line","fillOpacity":10,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"linear","lineWidth":2,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"never","spanNulls":true,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"off"}},"links":[],"mappings":[],"min":0,"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"red","value":80}]},"unit":"bytes","unitScale":true},"overrides":[]},"gridPos":{"h":7,"w":12,"x":12,"y":21},"id":20,"links":[],"options":{"legend":{"calcs":[],"displayMode":"list","placement":"bottom","showLegend":true},"tooltip":{"mode":"multi","sort":"none"}},"pluginVersion":"10.3.3","targets":[{"datasource":{"uid":"$datasource"},"expr":"histogram_quantile(0.99,
-    sum(rate(coredns_dns_response_size_bytes_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"tcp\"}[5m]))
-    by (le,proto)) ","format":"time_series","intervalFactor":2,"legendFormat":"{{
+    (sum(rate(coredns_dns_response_size_bytes{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"tcp\"}[5m]))
+    by (proto)) or (sum(rate(coredns_dns_response_size_bytes_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"tcp\"}[5m]))
+    by (le,proto))) ","format":"time_series","intervalFactor":2,"legendFormat":"{{
     proto }}:99%","refId":"A","step":40},{"datasource":{"uid":"$datasource"},"expr":"histogram_quantile(0.90,
-    sum(rate(coredns_dns_response_size_bytes_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"tcp\"}[5m]))
-    by (le,proto)) ","format":"time_series","intervalFactor":2,"legendFormat":"{{
+    (sum(rate(coredns_dns_response_size_bytes{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"tcp\"}[5m]))
+    by (proto)) or (sum(rate(coredns_dns_response_size_bytes_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"tcp\"}[5m]))
+    by (le,proto))) ","format":"time_series","intervalFactor":2,"legendFormat":"{{
     proto }}:90%","refId":"B","step":40},{"datasource":{"uid":"$datasource"},"expr":"histogram_quantile(0.50,
-    sum(rate(coredns_dns_response_size_bytes_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"tcp\"}[5m]))
-    by (le, proto)) ","format":"time_series","intervalFactor":2,"legendFormat":"{{
+    (sum(rate(coredns_dns_response_size_bytes{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"tcp\"}[5m]))
+    by (proto)) or (sum(rate(coredns_dns_response_size_bytes_bucket{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\",proto=\"tcp\"}[5m]))
+    by (le,proto))) ","format":"time_series","intervalFactor":2,"legendFormat":"{{
     proto }}:50%","metric":"","refId":"C","step":40}],"title":"Responses (size, tcp)","type":"timeseries"},{"datasource":{"uid":"$datasource"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisColorMode":"text","axisLabel":"","axisPlacement":"auto","barAlignment":0,"drawStyle":"line","fillOpacity":10,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"linear","lineWidth":2,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"never","spanNulls":true,"stacking":{"group":"A","mode":"normal"},"thresholdsStyle":{"mode":"off"}},"links":[],"mappings":[],"min":0,"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"red","value":80}]},"unit":"decbytes","unitScale":true},"overrides":[]},"gridPos":{"h":7,"w":12,"x":0,"y":28},"id":22,"links":[],"options":{"legend":{"calcs":[],"displayMode":"list","placement":"bottom","showLegend":true},"tooltip":{"mode":"multi","sort":"desc"}},"pluginVersion":"10.3.3","targets":[{"datasource":{"uid":"$datasource"},"expr":"sum(coredns_cache_size{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\"})
     by (type) or\nsum(coredns_cache_entries{job=~\"$job\",cluster=~\"$cluster\",instance=~\"$instance\"})
     by (type)","interval":"1m","intervalFactor":2,"legendFormat":"{{ type }}","refId":"A","step":40}],"title":"Cache
@@ -722,8 +739,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     grafana_dashboard: "1"
     heritage: Helm
     release: kube-prometheus-stack
@@ -897,8 +914,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     grafana_dashboard: "1"
     heritage: Helm
     release: kube-prometheus-stack
@@ -971,8 +988,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     grafana_dashboard: "1"
     heritage: Helm
     release: kube-prometheus-stack
@@ -1148,8 +1165,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     grafana_dashboard: "1"
     heritage: Helm
     release: kube-prometheus-stack
@@ -1219,8 +1236,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     grafana_dashboard: "1"
     heritage: Helm
     release: kube-prometheus-stack
@@ -1383,8 +1400,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     grafana_dashboard: "1"
     heritage: Helm
     release: kube-prometheus-stack
@@ -1561,8 +1578,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     grafana_dashboard: "1"
     heritage: Helm
     release: kube-prometheus-stack
@@ -1746,8 +1763,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     grafana_dashboard: "1"
     heritage: Helm
     release: kube-prometheus-stack
@@ -1862,8 +1879,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     grafana_dashboard: "1"
     heritage: Helm
     release: kube-prometheus-stack
@@ -1954,8 +1971,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     grafana_dashboard: "1"
     heritage: Helm
     release: kube-prometheus-stack
@@ -2078,8 +2095,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     grafana_dashboard: "1"
     heritage: Helm
     release: kube-prometheus-stack
@@ -2131,8 +2148,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     grafana_dashboard: "1"
     heritage: Helm
     release: kube-prometheus-stack
@@ -2179,8 +2196,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     grafana_dashboard: "1"
     heritage: Helm
     release: kube-prometheus-stack
@@ -2252,8 +2269,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     grafana_dashboard: "1"
     heritage: Helm
     release: kube-prometheus-stack
@@ -2321,8 +2338,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     grafana_dashboard: "1"
     heritage: Helm
     release: kube-prometheus-stack
@@ -2377,8 +2394,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     grafana_dashboard: "1"
     heritage: Helm
     release: kube-prometheus-stack
@@ -2426,8 +2443,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     grafana_dashboard: "1"
     heritage: Helm
     release: kube-prometheus-stack
@@ -2484,8 +2501,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     grafana_dashboard: "1"
     heritage: Helm
     release: kube-prometheus-stack
@@ -2545,8 +2562,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     grafana_dashboard: "1"
     heritage: Helm
     release: kube-prometheus-stack
@@ -2615,8 +2632,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     grafana_dashboard: "1"
     heritage: Helm
     release: kube-prometheus-stack
@@ -2691,8 +2708,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     grafana_dashboard: "1"
     heritage: Helm
     release: kube-prometheus-stack
@@ -2709,7 +2726,7 @@ metadata:
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: kube-state-metrics
     app.kubernetes.io/version: 2.15.0
-    helm.sh/chart: kube-state-metrics-5.32.0
+    helm.sh/chart: kube-state-metrics-5.33.0
     release: kube-prometheus-stack
   name: kube-prometheus-stack-kube-state-metrics
   namespace: monitoring-system
@@ -2736,7 +2753,7 @@ metadata:
     app.kubernetes.io/name: prometheus-node-exporter
     app.kubernetes.io/part-of: prometheus-node-exporter
     app.kubernetes.io/version: 1.9.1
-    helm.sh/chart: prometheus-node-exporter-4.45.2
+    helm.sh/chart: prometheus-node-exporter-4.46.0
     jobLabel: node-exporter
     release: kube-prometheus-stack
   name: kube-prometheus-stack-prometheus-node-exporter
@@ -2762,7 +2779,7 @@ metadata:
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: kube-state-metrics
     app.kubernetes.io/version: 2.15.0
-    helm.sh/chart: kube-state-metrics-5.32.0
+    helm.sh/chart: kube-state-metrics-5.33.0
     release: kube-prometheus-stack
   name: kube-prometheus-stack-kube-state-metrics
   namespace: monitoring-system
@@ -2784,7 +2801,7 @@ spec:
         app.kubernetes.io/name: kube-state-metrics
         app.kubernetes.io/part-of: kube-state-metrics
         app.kubernetes.io/version: 2.15.0
-        helm.sh/chart: kube-state-metrics-5.32.0
+        helm.sh/chart: kube-state-metrics-5.33.0
         release: kube-prometheus-stack
     spec:
       automountServiceAccountToken: true
@@ -2848,7 +2865,7 @@ metadata:
     app.kubernetes.io/name: prometheus-node-exporter
     app.kubernetes.io/part-of: prometheus-node-exporter
     app.kubernetes.io/version: 1.9.1
-    helm.sh/chart: prometheus-node-exporter-4.45.2
+    helm.sh/chart: prometheus-node-exporter-4.46.0
     release: kube-prometheus-stack
   name: kube-prometheus-stack-prometheus-node-exporter
   namespace: monitoring-system
@@ -2869,7 +2886,7 @@ spec:
         app.kubernetes.io/name: prometheus-node-exporter
         app.kubernetes.io/part-of: prometheus-node-exporter
         app.kubernetes.io/version: 1.9.1
-        helm.sh/chart: prometheus-node-exporter-4.45.2
+        helm.sh/chart: prometheus-node-exporter-4.46.0
         jobLabel: node-exporter
         release: kube-prometheus-stack
     spec:
@@ -2978,8 +2995,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-alertmanager.rules
@@ -3137,8 +3154,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-config-reloaders
@@ -3168,8 +3185,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-etcd
@@ -3369,8 +3386,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-general.rules
@@ -3429,8 +3446,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-k8s.rules.container-cpu-usage-seconds-tot
@@ -3462,8 +3479,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-k8s.rules.container-memory-cache
@@ -3487,8 +3504,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-k8s.rules.container-memory-rss
@@ -3512,8 +3529,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-k8s.rules.container-memory-swap
@@ -3537,8 +3554,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-k8s.rules.container-memory-working-set-by
@@ -3562,8 +3579,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-k8s.rules.container-resource
@@ -3649,8 +3666,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-k8s.rules.pod-owner
@@ -3715,8 +3732,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-kube-apiserver-availability.rules
@@ -3837,8 +3854,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-kube-apiserver-burnrate.rules
@@ -4157,8 +4174,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-kube-apiserver-histogram.rules
@@ -4188,8 +4205,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-kube-apiserver-slos
@@ -4267,8 +4284,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-kube-prometheus-general.rules
@@ -4290,8 +4307,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-kube-prometheus-node-recording.rules
@@ -4325,8 +4342,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-kube-scheduler.rules
@@ -4389,8 +4406,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-kube-state-metrics
@@ -4464,8 +4481,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-kubelet.rules
@@ -4501,8 +4518,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-kubernetes-apps
@@ -4790,8 +4807,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-kubernetes-resources
@@ -4922,8 +4939,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-kubernetes-storage
@@ -5048,8 +5065,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-kubernetes-system
@@ -5093,8 +5110,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-kubernetes-system-apiserver
@@ -5185,8 +5202,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-kubernetes-system-controller-manager
@@ -5214,8 +5231,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-kubernetes-system-kube-proxy
@@ -5242,8 +5259,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-kubernetes-system-kubelet
@@ -5447,8 +5464,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-kubernetes-system-scheduler
@@ -5475,8 +5492,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-node-exporter
@@ -5844,8 +5861,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-node-exporter.rules
@@ -5925,8 +5942,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-node-network
@@ -5954,8 +5971,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-node.rules
@@ -6009,8 +6026,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-prometheus
@@ -6352,8 +6369,8 @@ metadata:
     app.kubernetes.io/instance: kube-prometheus-stack
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 70.7.0
-    chart: kube-prometheus-stack-70.7.0
+    app.kubernetes.io/version: 72.0.0
+    chart: kube-prometheus-stack-72.0.0
     heritage: Helm
     release: kube-prometheus-stack
   name: kube-prometheus-stack-prometheus-operator
@@ -6468,7 +6485,7 @@ metadata:
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: kube-state-metrics
     app.kubernetes.io/version: 2.15.0
-    helm.sh/chart: kube-state-metrics-5.32.0
+    helm.sh/chart: kube-state-metrics-5.33.0
     release: kube-prometheus-stack
   name: kube-prometheus-stack-kube-state-metrics
   namespace: monitoring-system
@@ -6492,7 +6509,7 @@ metadata:
     app.kubernetes.io/name: prometheus-node-exporter
     app.kubernetes.io/part-of: prometheus-node-exporter
     app.kubernetes.io/version: 1.9.1
-    helm.sh/chart: prometheus-node-exporter-4.45.2
+    helm.sh/chart: prometheus-node-exporter-4.46.0
     release: kube-prometheus-stack
   name: kube-prometheus-stack-prometheus-node-exporter
   namespace: monitoring-system
