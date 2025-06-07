@@ -8,8 +8,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.8.3
-    helm.sh/chart: alloy-1.0.3
+    app.kubernetes.io/version: v1.9.1
+    helm.sh/chart: alloy-1.1.1
   name: alloy
   namespace: monitoring-system
 ---
@@ -22,8 +22,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.8.3
-    helm.sh/chart: alloy-1.0.3
+    app.kubernetes.io/version: v1.9.1
+    helm.sh/chart: alloy-1.1.1
   name: alloy
 rules:
 - apiGroups:
@@ -127,8 +127,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.8.3
-    helm.sh/chart: alloy-1.0.3
+    app.kubernetes.io/version: v1.9.1
+    helm.sh/chart: alloy-1.1.1
   name: alloy
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -1060,10 +1060,13 @@ apiVersion: v1
 data:
   config.alloy: "logging {\n\tlevel  = coalesce(sys.env(\"ALLOY_LOG_LEVEL\"), \"warn\")\n\tformat
     = \"logfmt\"\n}\n\n/********************************************\n * Grafana LGTMP
-    Stack Receiver Provider\n ********************************************/\nimport.git
-    \"provider\" {\n\trepository     = \"https://github.com/qclaogui/codelab-monitoring.git\"\n\trevision
-    \      = \"main\"\n\tpath           = \"alloy-modules/provider\"\n\tpull_frequency
-    = \"24h\"\n}\n\nprovider.self_hosted_stack \"kubernetes\" {\n\tmetrics_endpoint_url
+    Stack Receiver Provider\n ********************************************/\n// import.git
+    \"provider\" {\n// \trepository     = \"https://github.com/qclaogui/codelab-monitoring.git\"\n//
+    \trevision       = \"main\"\n// \tpath           = \"alloy-modules/provider\"\n//
+    \t// pull_frequency set to \"0s\": the Git repository is pulled only once during
+    initialization.\n// \tpull_frequency = \"0s\"\n// }\n\n// local file\nimport.file
+    \"provider\" {\n\tfilename = coalesce(sys.env(\"ALLOY_MODULES_FOLDER\"), \"/etc/alloy/modules\")
+    + \"/provider\"\n}\n\nprovider.self_hosted_stack \"kubernetes\" {\n\tmetrics_endpoint_url
     = coalesce(sys.env(\"SELF_HOSTED_METRICS_ENDPOINT_URL\"), \"http://nginx.gateway.svc:8080/api/v1/push\")\n}\n\n/********************************************\n
     * Metrics\n ********************************************/\nimport.file \"metrics\"
     {\n\tfilename = coalesce(sys.env(\"ALLOY_MODULES_FOLDER\"), \"/etc/alloy/modules\")
@@ -1083,7 +1086,7 @@ data:
     = [provider.self_hosted_stack.kubernetes.metrics_receiver]\n}\n"
 kind: ConfigMap
 metadata:
-  name: alloy-config-d9dc7m282m
+  name: alloy-config-6c9m574cht
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -2923,6 +2926,89 @@ data:
 kind: ConfigMap
 metadata:
   name: alloy-modules-kubernetes-traces-4h9946thb4
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  grafana_cloud.alloy: "/*******************************************************\n*
+    Module Components: grafana_cloud\n* Description: Grafana Cloud Receiver Provider\n*******************************************************/\n\ndeclare
+    \"grafana_cloud\" {\n\t/*\n\tTo create a token:\n\t\t1. Navigate to the Grafana
+    Cloud Portal: https://grafana.com/profile/org\n\t\t2. Go to either the Access
+    Policies or API Keys page, located in the Security section\n\t\t3. Create an Access
+    Policy or API token with the correct permissions\n\n\tThe token must have permissions
+    to read stack information. The setup of these permissions depends on the type
+    of token:\n\t\tAccess Policies need the stacks:read scope\n\t\tAPI Keys need at
+    least the the MetricsPublisher role\n\t*/\n\n\t/***************************************************\n\t*
+    ARGUMENTS\n\t***************************************************/\n\targument
+    \"stack_name\" {\n\t\tcomment = \"Name of your stack as shown in the account console\"\n\t}\n\n\targument
+    \"token\" {\n\t\tcomment = \"Access policy token or API Key.\"\n\t}\n\n\t/***************************************************\n\t*
+    External information\n\t***************************************************/\n\tremote.http
+    \"json_config\" {\n\t\turl = \"https://grafana.com/api/instances/\" + argument.stack_name.value\n\n\t\tclient
+    {\n\t\t\tbearer_token = argument.token.value\n\t\t}\n\t\tpoll_frequency = \"24h\"\n\t}\n\n\t/***************************************************\n\t*
+    Setup Receivers\n\t***************************************************/\n\tprometheus.remote_write
+    \"grafana_cloud\" {\n\t\tendpoint {\n\t\t\turl = json_decode(remote.http.json_config.content)[\"hmInstancePromUrl\"]
+    + \"/api/prom/push\"\n\n\t\t\tbasic_auth {\n\t\t\t\tusername = json_decode(remote.http.json_config.content)[\"hmInstancePromId\"]\n\t\t\t\tpassword
+    = argument.token.value\n\t\t\t}\n\t\t}\n\t}\n\n\tloki.write \"grafana_cloud\"
+    {\n\t\tendpoint {\n\t\t\turl = json_decode(remote.http.json_config.content)[\"hlInstanceUrl\"]
+    + \"/loki/api/v1/push\"\n\n\t\t\tbasic_auth {\n\t\t\t\tusername = json_decode(remote.http.json_config.content)[\"hlInstanceId\"]\n\t\t\t\tpassword
+    = argument.token.value\n\t\t\t}\n\t\t}\n\t}\n\n\totelcol.auth.basic \"grafana_cloud\"
+    {\n\t\tusername = json_decode(remote.http.json_config.content)[\"htInstanceId\"]\n\t\tpassword
+    = argument.token.value\n\t}\n\n\totelcol.exporter.otlp \"grafana_cloud\" {\n\t\tclient
+    {\n\t\t\tendpoint = json_decode(remote.http.json_config.content)[\"htInstanceUrl\"]
+    + \":443\"\n\t\t\tauth     = otelcol.auth.basic.grafana_cloud.handler\n\t\t}\n\t}\n\n\tpyroscope.write
+    \"grafana_cloud\" {\n\t\tendpoint {\n\t\t\turl = json_decode(remote.http.json_config.content)[\"hpInstanceUrl\"]\n\n\t\t\tbasic_auth
+    {\n\t\t\t\tusername = json_decode(remote.http.json_config.content)[\"hpInstanceId\"]\n\t\t\t\tpassword
+    = argument.token.value\n\t\t\t}\n\t\t}\n\t}\n\n\t/***************************************************\n\t*
+    EXPORTS\n\t***************************************************/\n\texport \"metrics_receiver\"
+    {\n\t\tvalue = prometheus.remote_write.grafana_cloud.receiver\n\t}\n\n\texport
+    \"logs_receiver\" {\n\t\tvalue = loki.write.grafana_cloud.receiver\n\t}\n\n\texport
+    \"traces_receiver\" {\n\t\tvalue = otelcol.exporter.otlp.grafana_cloud.input\n\t}\n\n\texport
+    \"profiles_receiver\" {\n\t\tvalue = pyroscope.write.grafana_cloud.receiver\n\t}\n\n\texport
+    \"stack_information\" {\n\t\tvalue = json_decode(remote.http.json_config.content)\n\t}\n}\n"
+  self_hosted.alloy: "/*******************************************************\n*
+    Module Components: self_hosted_stack\n* Description: Self Hosted Receiver Provider\n*******************************************************/\n\ndeclare
+    \"self_hosted_stack\" {\n\n\t/***************************************************\n\t*
+    ARGUMENTS\n\t***************************************************/\n\targument
+    \"metrics_endpoint_url\" {\n\t\tcomment  = \"Where to send collected metrics.\"\n\t\toptional
+    = true\n\t\tdefault  = coalesce(sys.env(\"SELF_HOSTED_METRICS_ENDPOINT_URL\"),
+    \"http://mimir:8080/api/v1/push\")\n\t}\n\n\targument \"logs_endpoint_url\" {\n\t\tcomment
+    \ = \"Where to send collected logs.\"\n\t\toptional = true\n\t\tdefault  = coalesce(sys.env(\"SELF_HOSTED_LOGS_ENDPOINT_URL\"),
+    \"http://loki:3100/loki/api/v1/push\")\n\t}\n\n\targument \"traces_endpoint_url\"
+    {\n\t\tcomment  = \"Where to send collected traces.\"\n\t\toptional = true\n\t\tdefault
+    \ = coalesce(sys.env(\"SELF_HOSTED_TRACES_ENDPOINT_URL\"), \"http://tempo:4318\")\n\t}\n\n\targument
+    \"profiles_endpoint_url\" {\n\t\tcomment  = \"Where to send collected profiles.\"\n\t\toptional
+    = true\n\t\tdefault  = coalesce(sys.env(\"SELF_HOSTED_PROFILES_ENDPOINT_URL\"),
+    \"http://pyroscope:4040\")\n\t}\n\n\t/***************************************************\n\t*
+    Setup Receivers\n\t***************************************************/\n\tprometheus.remote_write
+    \"self_hosted\" {\n\t\tendpoint {\n\t\t\turl                    = argument.metrics_endpoint_url.value\n\t\t\tsend_native_histograms
+    = true\n\n\t\t\tbasic_auth {\n\t\t\t\tpassword_file = coalesce(sys.env(\"SELF_HOSTED_METRICS_BASIC_AUTH_PASSWORD_FILE\"),
+    sys.env(\"SELF_HOSTED_BASIC_AUTH_PASSWORD_FILE\"))\n\t\t\t\tpassword      = coalesce(sys.env(\"SELF_HOSTED_METRICS_BASIC_AUTH_PASSWORD\"),
+    sys.env(\"SELF_HOSTED_BASIC_AUTH_PASSWORD\"))\n\t\t\t\tusername      = coalesce(sys.env(\"SELF_HOSTED_METRICS_BASIC_AUTH_USERNAME\"),
+    sys.env(\"SELF_HOSTED_BASIC_AUTH_USERNAME\"))\n\t\t\t}\n\t\t}\n\t}\n\n\tloki.write
+    \"self_hosted\" {\n\t\tendpoint {\n\t\t\turl = argument.logs_endpoint_url.value\n\n\t\t\tbasic_auth
+    {\n\t\t\t\tpassword_file = coalesce(sys.env(\"SELF_HOSTED_LOGS_BASIC_AUTH_PASSWORD_FILE\"),
+    sys.env(\"SELF_HOSTED_BASIC_AUTH_PASSWORD_FILE\"))\n\t\t\t\tpassword      = coalesce(sys.env(\"SELF_HOSTED_LOGS_BASIC_AUTH_PASSWORD\"),
+    sys.env(\"SELF_HOSTED_BASIC_AUTH_PASSWORD\"))\n\t\t\t\tusername      = coalesce(sys.env(\"SELF_HOSTED_LOGS_BASIC_AUTH_USERNAME\"),
+    sys.env(\"SELF_HOSTED_BASIC_AUTH_USERNAME\"))\n\t\t\t}\n\t\t}\n\t}\n\n\totelcol.auth.basic
+    \"self_hosted\" {\n\t\tusername = coalesce(sys.env(\"SELF_HOSTED_TRACES_BASIC_AUTH_USERNAME\"),
+    sys.env(\"SELF_HOSTED_BASIC_AUTH_USERNAME\"))\n\t\tpassword = coalesce(sys.env(\"SELF_HOSTED_TRACES_BASIC_AUTH_PASSWORD\"),
+    sys.env(\"SELF_HOSTED_BASIC_AUTH_PASSWORD\"))\n\t}\n\n\totelcol.exporter.otlphttp
+    \"self_hosted\" {\n\t\tclient {\n\t\t\tendpoint = argument.traces_endpoint_url.value\n\t\t\tauth
+    \    = otelcol.auth.basic.self_hosted.handler\n\n\t\t\ttls {\n\t\t\t\tinsecure
+    \            = true\n\t\t\t\tinsecure_skip_verify = true\n\t\t\t}\n\t\t}\n\t}\n\n\tpyroscope.write
+    \"self_hosted\" {\n\t\tendpoint {\n\t\t\turl = argument.profiles_endpoint_url.value\n\n\t\t\tbasic_auth
+    {\n\t\t\t\tpassword_file = coalesce(sys.env(\"SELF_HOSTED_PROFILES_BASIC_AUTH_PASSWORD_FILE\"),
+    sys.env(\"SELF_HOSTED_BASIC_AUTH_PASSWORD_FILE\"))\n\t\t\t\tpassword      = coalesce(sys.env(\"SELF_HOSTED_PROFILES_BASIC_AUTH_PASSWORD\"),
+    sys.env(\"SELF_HOSTED_BASIC_AUTH_PASSWORD\"))\n\t\t\t\tusername      = coalesce(sys.env(\"SELF_HOSTED_PROFILES_BASIC_AUTH_USERNAME\"),
+    sys.env(\"SELF_HOSTED_BASIC_AUTH_USERNAME\"))\n\t\t\t}\n\t\t}\n\t}\n\n\t/***************************************************\n\t*
+    EXPORTS\n\t***************************************************/\n\texport \"metrics_receiver\"
+    {\n\t\tvalue = prometheus.remote_write.self_hosted.receiver\n\t}\n\n\texport \"logs_receiver\"
+    {\n\t\tvalue = loki.write.self_hosted.receiver\n\t}\n\n\texport \"traces_receiver\"
+    {\n\t\tvalue = otelcol.exporter.otlphttp.self_hosted.input\n\t}\n\n\texport \"profiles_receiver\"
+    {\n\t\tvalue = pyroscope.write.self_hosted.receiver\n\t}\n}\n"
+kind: ConfigMap
+metadata:
+  name: alloy-modules-receiver-provider-7hd5m984c2
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -5026,8 +5112,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.8.3
-    helm.sh/chart: alloy-1.0.3
+    app.kubernetes.io/version: v1.9.1
+    helm.sh/chart: alloy-1.1.1
   name: alloy
   namespace: monitoring-system
 spec:
@@ -5067,8 +5153,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.8.3
-    helm.sh/chart: alloy-1.0.3
+    app.kubernetes.io/version: v1.9.1
+    helm.sh/chart: alloy-1.1.1
   name: alloy-cluster
   namespace: monitoring-system
 spec:
@@ -5421,8 +5507,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.8.3
-    helm.sh/chart: alloy-1.0.3
+    app.kubernetes.io/version: v1.9.1
+    helm.sh/chart: alloy-1.1.1
   name: alloy
   namespace: monitoring-system
 spec:
@@ -5475,7 +5561,7 @@ spec:
         - secretRef:
             name: alloy-env
             optional: true
-        image: docker.io/grafana/alloy:v1.8.3
+        image: docker.io/grafana/alloy:v1.9.1
         imagePullPolicy: IfNotPresent
         name: alloy
         ports:
@@ -5512,6 +5598,8 @@ spec:
         volumeMounts:
         - mountPath: /etc/alloy
           name: config
+        - mountPath: /etc/alloy/modules/provider
+          name: modules-receiver-provider
         - mountPath: /etc/alloy/modules/kubernetes/metrics
           name: modules-kubernetes-metrics
         - mountPath: /etc/alloy/modules/kubernetes/logs
@@ -5528,8 +5616,11 @@ spec:
       serviceAccountName: alloy
       volumes:
       - configMap:
-          name: alloy-config-d9dc7m282m
+          name: alloy-config-6c9m574cht
         name: config
+      - configMap:
+          name: alloy-modules-receiver-provider-7hd5m984c2
+        name: modules-receiver-provider
       - configMap:
           name: alloy-modules-kubernetes-metrics-8287kbcb62
         name: modules-kubernetes-metrics
@@ -5753,8 +5844,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.8.3
-    helm.sh/chart: alloy-1.0.3
+    app.kubernetes.io/version: v1.9.1
+    helm.sh/chart: alloy-1.1.1
   name: alloy
   namespace: monitoring-system
 spec:
@@ -5875,8 +5966,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.8.3
-    helm.sh/chart: alloy-1.0.3
+    app.kubernetes.io/version: v1.9.1
+    helm.sh/chart: alloy-1.1.1
   name: alloy
   namespace: monitoring-system
 spec:

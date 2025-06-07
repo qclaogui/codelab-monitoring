@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    prometheus.io/service-monitor: "false"
+  name: tempo-memberlist
+spec:
+  clusterIP: None
+  ports:
+  - name: tcp-gossip-ring
+    appProtocol: tcp
+    port: 7946
+    protocol: TCP
+    targetPort: 7946
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/part-of: memberlist

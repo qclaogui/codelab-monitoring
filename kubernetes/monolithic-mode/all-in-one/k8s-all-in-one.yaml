@@ -17,6 +17,12 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
+  labels:
+    app.kubernetes.io/component: tempo
+    app.kubernetes.io/instance: tempo-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: tempo
+    app.kubernetes.io/version: 2.8.0
   name: tracing-system
 ---
 apiVersion: v1
@@ -42,8 +48,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.8.3
-    helm.sh/chart: alloy-1.0.3
+    app.kubernetes.io/version: v1.9.1
+    helm.sh/chart: alloy-1.1.1
   name: alloy
   namespace: monitoring-system
 ---
@@ -106,11 +112,11 @@ automountServiceAccountToken: true
 kind: ServiceAccount
 metadata:
   labels:
-    app.kubernetes.io/instance: tempo
-    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: tempo
+    app.kubernetes.io/instance: tempo-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: tempo
-    app.kubernetes.io/version: 2.7.1
-    helm.sh/chart: tempo-1.21.1
+    app.kubernetes.io/version: 2.8.0
   name: tempo
   namespace: tracing-system
 ---
@@ -123,8 +129,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.8.3
-    helm.sh/chart: alloy-1.0.3
+    app.kubernetes.io/version: v1.9.1
+    helm.sh/chart: alloy-1.1.1
   name: alloy
 rules:
 - apiGroups:
@@ -463,8 +469,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.8.3
-    helm.sh/chart: alloy-1.0.3
+    app.kubernetes.io/version: v1.9.1
+    helm.sh/chart: alloy-1.1.1
   name: alloy
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -679,14 +685,14 @@ data:
     \   }\n    location = /zipkin/spans {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:9411/spans;\n
     \   }\n    location = /v1/traces {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:4318/v1/traces;\n
     \   }\n    location = /otlp/v1/traces {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:4318/v1/traces;\n
-    \   }\n\n    location = /distributor/ring {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:3100$request_uri;\n
-    \   }\n    location = /ingester/ring {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:3100$request_uri;\n
+    \   }\n\n    location = /distributor/ring {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:3200$request_uri;\n
+    \   }\n    location = /ingester/ring {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:3200$request_uri;\n
     \   }\n    \n    # Ingester endpoints\n    location = /flush {\n      proxy_pass
-    \     http://${TEMPO_INGESTER_HOST}:3100$request_uri;\n    }\n    location = /shutdown
-    {\n      proxy_pass      http://${TEMPO_INGESTER_HOST}:3100$request_uri;\n    }\n\n
-    \   # Query endpoints\n    location ^~ /api {\n      proxy_pass      http://${TEMPO_QUERY_FRONTEND_HOST}:3100$request_uri;\n
+    \     http://${TEMPO_INGESTER_HOST}:3200$request_uri;\n    }\n    location = /shutdown
+    {\n      proxy_pass      http://${TEMPO_INGESTER_HOST}:3200$request_uri;\n    }\n\n
+    \   # Query endpoints\n    location ^~ /api {\n      proxy_pass      http://${TEMPO_QUERY_FRONTEND_HOST}:3200$request_uri;\n
     \   }\n\n    # Compactor endpoint\n    location = /compactor/ring {\n      proxy_pass
-    \     http://${TEMPO_COMPACTOR_HOST}:3100$request_uri;\n    }\n}"
+    \     http://${TEMPO_COMPACTOR_HOST}:3200$request_uri;\n    }\n}"
 kind: ConfigMap
 metadata:
   name: nginx-templates
@@ -1739,10 +1745,13 @@ apiVersion: v1
 data:
   config.alloy: "logging {\n\tlevel  = coalesce(sys.env(\"ALLOY_LOG_LEVEL\"), \"warn\")\n\tformat
     = \"logfmt\"\n}\n\n/********************************************\n * Grafana LGTMP
-    Stack Receiver Provider\n ********************************************/\nimport.git
-    \"provider\" {\n\trepository     = \"https://github.com/qclaogui/codelab-monitoring.git\"\n\trevision
-    \      = \"main\"\n\tpath           = \"alloy-modules/provider\"\n\tpull_frequency
-    = \"24h\"\n}\n\nprovider.self_hosted_stack \"kubernetes\" {\n\tmetrics_endpoint_url
+    Stack Receiver Provider\n ********************************************/\n// import.git
+    \"provider\" {\n// \trepository     = \"https://github.com/qclaogui/codelab-monitoring.git\"\n//
+    \trevision       = \"main\"\n// \tpath           = \"alloy-modules/provider\"\n//
+    \t// pull_frequency set to \"0s\": the Git repository is pulled only once during
+    initialization.\n// \tpull_frequency = \"0s\"\n// }\n\n// local file\nimport.file
+    \"provider\" {\n\tfilename = coalesce(sys.env(\"ALLOY_MODULES_FOLDER\"), \"/etc/alloy/modules\")
+    + \"/provider\"\n}\n\nprovider.self_hosted_stack \"kubernetes\" {\n\tmetrics_endpoint_url
     \ = coalesce(sys.env(\"SELF_HOSTED_METRICS_ENDPOINT_URL\"), \"http://nginx.gateway.svc:8080/api/v1/push\")\n\tlogs_endpoint_url
     \    = coalesce(sys.env(\"SELF_HOSTED_LOGS_ENDPOINT_URL\"), \"http://nginx.gateway.svc:3100/loki/api/v1/push\")\n\ttraces_endpoint_url
     \  = coalesce(sys.env(\"SELF_HOSTED_TRACES_ENDPOINT_URL\"), \"http://nginx.gateway.svc:4318\")\n\tprofiles_endpoint_url
@@ -1796,7 +1805,7 @@ data:
     \tforward_to = [provider.self_hosted_stack.kubernetes.metrics_receiver]\n// }\n"
 kind: ConfigMap
 metadata:
-  name: alloy-config-4kc5ch6gb2
+  name: alloy-config-hgg87mgmhg
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -3636,6 +3645,89 @@ data:
 kind: ConfigMap
 metadata:
   name: alloy-modules-kubernetes-traces-4h9946thb4
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  grafana_cloud.alloy: "/*******************************************************\n*
+    Module Components: grafana_cloud\n* Description: Grafana Cloud Receiver Provider\n*******************************************************/\n\ndeclare
+    \"grafana_cloud\" {\n\t/*\n\tTo create a token:\n\t\t1. Navigate to the Grafana
+    Cloud Portal: https://grafana.com/profile/org\n\t\t2. Go to either the Access
+    Policies or API Keys page, located in the Security section\n\t\t3. Create an Access
+    Policy or API token with the correct permissions\n\n\tThe token must have permissions
+    to read stack information. The setup of these permissions depends on the type
+    of token:\n\t\tAccess Policies need the stacks:read scope\n\t\tAPI Keys need at
+    least the the MetricsPublisher role\n\t*/\n\n\t/***************************************************\n\t*
+    ARGUMENTS\n\t***************************************************/\n\targument
+    \"stack_name\" {\n\t\tcomment = \"Name of your stack as shown in the account console\"\n\t}\n\n\targument
+    \"token\" {\n\t\tcomment = \"Access policy token or API Key.\"\n\t}\n\n\t/***************************************************\n\t*
+    External information\n\t***************************************************/\n\tremote.http
+    \"json_config\" {\n\t\turl = \"https://grafana.com/api/instances/\" + argument.stack_name.value\n\n\t\tclient
+    {\n\t\t\tbearer_token = argument.token.value\n\t\t}\n\t\tpoll_frequency = \"24h\"\n\t}\n\n\t/***************************************************\n\t*
+    Setup Receivers\n\t***************************************************/\n\tprometheus.remote_write
+    \"grafana_cloud\" {\n\t\tendpoint {\n\t\t\turl = json_decode(remote.http.json_config.content)[\"hmInstancePromUrl\"]
+    + \"/api/prom/push\"\n\n\t\t\tbasic_auth {\n\t\t\t\tusername = json_decode(remote.http.json_config.content)[\"hmInstancePromId\"]\n\t\t\t\tpassword
+    = argument.token.value\n\t\t\t}\n\t\t}\n\t}\n\n\tloki.write \"grafana_cloud\"
+    {\n\t\tendpoint {\n\t\t\turl = json_decode(remote.http.json_config.content)[\"hlInstanceUrl\"]
+    + \"/loki/api/v1/push\"\n\n\t\t\tbasic_auth {\n\t\t\t\tusername = json_decode(remote.http.json_config.content)[\"hlInstanceId\"]\n\t\t\t\tpassword
+    = argument.token.value\n\t\t\t}\n\t\t}\n\t}\n\n\totelcol.auth.basic \"grafana_cloud\"
+    {\n\t\tusername = json_decode(remote.http.json_config.content)[\"htInstanceId\"]\n\t\tpassword
+    = argument.token.value\n\t}\n\n\totelcol.exporter.otlp \"grafana_cloud\" {\n\t\tclient
+    {\n\t\t\tendpoint = json_decode(remote.http.json_config.content)[\"htInstanceUrl\"]
+    + \":443\"\n\t\t\tauth     = otelcol.auth.basic.grafana_cloud.handler\n\t\t}\n\t}\n\n\tpyroscope.write
+    \"grafana_cloud\" {\n\t\tendpoint {\n\t\t\turl = json_decode(remote.http.json_config.content)[\"hpInstanceUrl\"]\n\n\t\t\tbasic_auth
+    {\n\t\t\t\tusername = json_decode(remote.http.json_config.content)[\"hpInstanceId\"]\n\t\t\t\tpassword
+    = argument.token.value\n\t\t\t}\n\t\t}\n\t}\n\n\t/***************************************************\n\t*
+    EXPORTS\n\t***************************************************/\n\texport \"metrics_receiver\"
+    {\n\t\tvalue = prometheus.remote_write.grafana_cloud.receiver\n\t}\n\n\texport
+    \"logs_receiver\" {\n\t\tvalue = loki.write.grafana_cloud.receiver\n\t}\n\n\texport
+    \"traces_receiver\" {\n\t\tvalue = otelcol.exporter.otlp.grafana_cloud.input\n\t}\n\n\texport
+    \"profiles_receiver\" {\n\t\tvalue = pyroscope.write.grafana_cloud.receiver\n\t}\n\n\texport
+    \"stack_information\" {\n\t\tvalue = json_decode(remote.http.json_config.content)\n\t}\n}\n"
+  self_hosted.alloy: "/*******************************************************\n*
+    Module Components: self_hosted_stack\n* Description: Self Hosted Receiver Provider\n*******************************************************/\n\ndeclare
+    \"self_hosted_stack\" {\n\n\t/***************************************************\n\t*
+    ARGUMENTS\n\t***************************************************/\n\targument
+    \"metrics_endpoint_url\" {\n\t\tcomment  = \"Where to send collected metrics.\"\n\t\toptional
+    = true\n\t\tdefault  = coalesce(sys.env(\"SELF_HOSTED_METRICS_ENDPOINT_URL\"),
+    \"http://mimir:8080/api/v1/push\")\n\t}\n\n\targument \"logs_endpoint_url\" {\n\t\tcomment
+    \ = \"Where to send collected logs.\"\n\t\toptional = true\n\t\tdefault  = coalesce(sys.env(\"SELF_HOSTED_LOGS_ENDPOINT_URL\"),
+    \"http://loki:3100/loki/api/v1/push\")\n\t}\n\n\targument \"traces_endpoint_url\"
+    {\n\t\tcomment  = \"Where to send collected traces.\"\n\t\toptional = true\n\t\tdefault
+    \ = coalesce(sys.env(\"SELF_HOSTED_TRACES_ENDPOINT_URL\"), \"http://tempo:4318\")\n\t}\n\n\targument
+    \"profiles_endpoint_url\" {\n\t\tcomment  = \"Where to send collected profiles.\"\n\t\toptional
+    = true\n\t\tdefault  = coalesce(sys.env(\"SELF_HOSTED_PROFILES_ENDPOINT_URL\"),
+    \"http://pyroscope:4040\")\n\t}\n\n\t/***************************************************\n\t*
+    Setup Receivers\n\t***************************************************/\n\tprometheus.remote_write
+    \"self_hosted\" {\n\t\tendpoint {\n\t\t\turl                    = argument.metrics_endpoint_url.value\n\t\t\tsend_native_histograms
+    = true\n\n\t\t\tbasic_auth {\n\t\t\t\tpassword_file = coalesce(sys.env(\"SELF_HOSTED_METRICS_BASIC_AUTH_PASSWORD_FILE\"),
+    sys.env(\"SELF_HOSTED_BASIC_AUTH_PASSWORD_FILE\"))\n\t\t\t\tpassword      = coalesce(sys.env(\"SELF_HOSTED_METRICS_BASIC_AUTH_PASSWORD\"),
+    sys.env(\"SELF_HOSTED_BASIC_AUTH_PASSWORD\"))\n\t\t\t\tusername      = coalesce(sys.env(\"SELF_HOSTED_METRICS_BASIC_AUTH_USERNAME\"),
+    sys.env(\"SELF_HOSTED_BASIC_AUTH_USERNAME\"))\n\t\t\t}\n\t\t}\n\t}\n\n\tloki.write
+    \"self_hosted\" {\n\t\tendpoint {\n\t\t\turl = argument.logs_endpoint_url.value\n\n\t\t\tbasic_auth
+    {\n\t\t\t\tpassword_file = coalesce(sys.env(\"SELF_HOSTED_LOGS_BASIC_AUTH_PASSWORD_FILE\"),
+    sys.env(\"SELF_HOSTED_BASIC_AUTH_PASSWORD_FILE\"))\n\t\t\t\tpassword      = coalesce(sys.env(\"SELF_HOSTED_LOGS_BASIC_AUTH_PASSWORD\"),
+    sys.env(\"SELF_HOSTED_BASIC_AUTH_PASSWORD\"))\n\t\t\t\tusername      = coalesce(sys.env(\"SELF_HOSTED_LOGS_BASIC_AUTH_USERNAME\"),
+    sys.env(\"SELF_HOSTED_BASIC_AUTH_USERNAME\"))\n\t\t\t}\n\t\t}\n\t}\n\n\totelcol.auth.basic
+    \"self_hosted\" {\n\t\tusername = coalesce(sys.env(\"SELF_HOSTED_TRACES_BASIC_AUTH_USERNAME\"),
+    sys.env(\"SELF_HOSTED_BASIC_AUTH_USERNAME\"))\n\t\tpassword = coalesce(sys.env(\"SELF_HOSTED_TRACES_BASIC_AUTH_PASSWORD\"),
+    sys.env(\"SELF_HOSTED_BASIC_AUTH_PASSWORD\"))\n\t}\n\n\totelcol.exporter.otlphttp
+    \"self_hosted\" {\n\t\tclient {\n\t\t\tendpoint = argument.traces_endpoint_url.value\n\t\t\tauth
+    \    = otelcol.auth.basic.self_hosted.handler\n\n\t\t\ttls {\n\t\t\t\tinsecure
+    \            = true\n\t\t\t\tinsecure_skip_verify = true\n\t\t\t}\n\t\t}\n\t}\n\n\tpyroscope.write
+    \"self_hosted\" {\n\t\tendpoint {\n\t\t\turl = argument.profiles_endpoint_url.value\n\n\t\t\tbasic_auth
+    {\n\t\t\t\tpassword_file = coalesce(sys.env(\"SELF_HOSTED_PROFILES_BASIC_AUTH_PASSWORD_FILE\"),
+    sys.env(\"SELF_HOSTED_BASIC_AUTH_PASSWORD_FILE\"))\n\t\t\t\tpassword      = coalesce(sys.env(\"SELF_HOSTED_PROFILES_BASIC_AUTH_PASSWORD\"),
+    sys.env(\"SELF_HOSTED_BASIC_AUTH_PASSWORD\"))\n\t\t\t\tusername      = coalesce(sys.env(\"SELF_HOSTED_PROFILES_BASIC_AUTH_USERNAME\"),
+    sys.env(\"SELF_HOSTED_BASIC_AUTH_USERNAME\"))\n\t\t\t}\n\t\t}\n\t}\n\n\t/***************************************************\n\t*
+    EXPORTS\n\t***************************************************/\n\texport \"metrics_receiver\"
+    {\n\t\tvalue = prometheus.remote_write.self_hosted.receiver\n\t}\n\n\texport \"logs_receiver\"
+    {\n\t\tvalue = loki.write.self_hosted.receiver\n\t}\n\n\texport \"traces_receiver\"
+    {\n\t\tvalue = otelcol.exporter.otlphttp.self_hosted.input\n\t}\n\n\texport \"profiles_receiver\"
+    {\n\t\tvalue = pyroscope.write.self_hosted.receiver\n\t}\n}\n"
+kind: ConfigMap
+metadata:
+  name: alloy-modules-receiver-provider-7hd5m984c2
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -5766,18 +5858,19 @@ data:
       compaction:
         block_retention: 1h
 
+    memberlist:
+      join_members: [ tempo-memberlist:7946 ]
+
     distributor:
       receivers:
         otlp:
           protocols:
             grpc:
-              endpoint: tempo:4317
+              endpoint: 0.0.0.0:4317
             http:
-              endpoint: tempo:4318
+              endpoint: 0.0.0.0:4318
 
     ingester:
-      trace_idle_period: 10s
-      max_block_bytes: 1_000_000
       max_block_duration: 5m
 
     metrics_generator:
@@ -5810,7 +5903,7 @@ data:
         path: /tmp/tempo/generator/traces
 
     server:
-      http_listen_port: 3100
+      http_listen_port: 3200
       grpc_listen_port: 9095
 
     storage:
@@ -5828,8 +5921,6 @@ data:
 
     # https://github.com/grafana/tempo/blob/main/docs/sources/tempo/configuration/_index.md#cache
     cache:
-      background:
-        writeback_goroutines: 5
       caches:
       - roles:
         - bloom
@@ -5852,15 +5943,22 @@ data:
           - span-metrics
           - local-blocks
           generate_native_histograms: both
+
+    querier:
+      frontend_worker:
+        frontend_address: tempo:9095
+
+    query_frontend:
+      multi_tenant_queries_enabled: true
 kind: ConfigMap
 metadata:
   labels:
-    app.kubernetes.io/instance: tempo
-    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: tempo
+    app.kubernetes.io/instance: tempo-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: tempo
-    app.kubernetes.io/version: 2.7.1
-    helm.sh/chart: tempo-1.21.1
-  name: tempo
+    app.kubernetes.io/version: 2.8.0
+  name: tempo-bt8c6t2gf9
   namespace: tracing-system
 ---
 apiVersion: v1
@@ -5944,6 +6042,12 @@ data:
   TEMPO_S3_SECRET_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
 kind: Secret
 metadata:
+  labels:
+    app.kubernetes.io/component: tempo
+    app.kubernetes.io/instance: tempo-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: tempo
+    app.kubernetes.io/version: 2.8.0
   name: tempo-env-d27hgh97m9
   namespace: tracing-system
 type: Opaque
@@ -6026,8 +6130,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.8.3
-    helm.sh/chart: alloy-1.0.3
+    app.kubernetes.io/version: v1.9.1
+    helm.sh/chart: alloy-1.1.1
   name: alloy
   namespace: monitoring-system
 spec:
@@ -6067,8 +6171,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.8.3
-    helm.sh/chart: alloy-1.0.3
+    app.kubernetes.io/version: v1.9.1
+    helm.sh/chart: alloy-1.1.1
   name: alloy-cluster
   namespace: monitoring-system
 spec:
@@ -6277,66 +6381,95 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app.kubernetes.io/instance: tempo
-    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: tempo
+    app.kubernetes.io/instance: tempo-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: tempo
-    app.kubernetes.io/version: 2.7.1
-    helm.sh/chart: tempo-1.21.1
+    app.kubernetes.io/version: 2.8.0
   name: tempo
   namespace: tracing-system
 spec:
   ports:
-  - name: tempo-grpc
+  - name: grpc-tempo
     port: 9095
     targetPort: 9095
-  - name: tempo-jaeger-thrift-compact
-    port: 6831
-    protocol: UDP
-    targetPort: 6831
-  - name: tempo-jaeger-thrift-binary
-    port: 6832
-    protocol: UDP
-    targetPort: 6832
-  - name: tempo-prom-metrics
-    port: 3100
-    protocol: TCP
-    targetPort: 3100
-  - name: tempo-jaeger-thrift-http
-    port: 14268
-    protocol: TCP
-    targetPort: 14268
-  - name: grpc-tempo-jaeger
-    port: 14250
-    protocol: TCP
-    targetPort: 14250
-  - name: tempo-zipkin
-    port: 9411
-    protocol: TCP
-    targetPort: 9411
-  - name: tempo-otlp-legacy
-    port: 55680
-    protocol: TCP
-    targetPort: 55680
-  - name: tempo-otlp-http-legacy
-    port: 55681
-    protocol: TCP
-    targetPort: 55681
-  - name: grpc-tempo-otlp
+  - name: http-metrics
+    port: 3200
+    targetPort: 3200
+  - name: grpc-otlp
     port: 4317
     protocol: TCP
     targetPort: 4317
-  - name: tempo-otlp-http
+  - name: http-otlp
     port: 4318
     protocol: TCP
     targetPort: 4318
-  - name: tempo-opencensus
-    port: 55678
-    protocol: TCP
-    targetPort: 55678
   selector:
-    app.kubernetes.io/instance: tempo
+    app.kubernetes.io/component: tempo
+    app.kubernetes.io/instance: tempo-monolithic-mode
     app.kubernetes.io/name: tempo
-  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: tempo
+    app.kubernetes.io/instance: tempo-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: tempo
+    app.kubernetes.io/version: 2.8.0
+    prometheus.io/service-monitor: "false"
+  name: tempo-headless
+  namespace: tracing-system
+spec:
+  clusterIP: None
+  ports:
+  - name: grpc-tempo
+    port: 9095
+    targetPort: 9095
+  - name: http-metrics
+    port: 3200
+    targetPort: 3200
+  - name: grpc-otlp
+    port: 4317
+    protocol: TCP
+    targetPort: 4317
+  - name: http-otlp
+    port: 4318
+    protocol: TCP
+    targetPort: 4318
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/component: tempo
+    app.kubernetes.io/instance: tempo-monolithic-mode
+    app.kubernetes.io/name: tempo
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: tempo
+    app.kubernetes.io/instance: tempo-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: tempo
+    app.kubernetes.io/version: 2.8.0
+    prometheus.io/service-monitor: "false"
+  name: tempo-memberlist
+  namespace: tracing-system
+spec:
+  clusterIP: None
+  ports:
+  - appProtocol: tcp
+    name: tcp-gossip-ring
+    port: 7946
+    protocol: TCP
+    targetPort: 7946
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/component: tempo
+    app.kubernetes.io/instance: tempo-monolithic-mode
+    app.kubernetes.io/name: tempo
+    app.kubernetes.io/part-of: memberlist
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -6642,8 +6775,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.8.3
-    helm.sh/chart: alloy-1.0.3
+    app.kubernetes.io/version: v1.9.1
+    helm.sh/chart: alloy-1.1.1
   name: alloy
   namespace: monitoring-system
 spec:
@@ -6696,7 +6829,7 @@ spec:
         - secretRef:
             name: alloy-env
             optional: true
-        image: docker.io/grafana/alloy:v1.8.3
+        image: docker.io/grafana/alloy:v1.9.1
         imagePullPolicy: IfNotPresent
         name: alloy
         ports:
@@ -6733,6 +6866,8 @@ spec:
         volumeMounts:
         - mountPath: /etc/alloy
           name: config
+        - mountPath: /etc/alloy/modules/provider
+          name: modules-receiver-provider
         - mountPath: /etc/alloy/modules/kubernetes/metrics
           name: modules-kubernetes-metrics
         - mountPath: /etc/alloy/modules/kubernetes/logs
@@ -6749,8 +6884,11 @@ spec:
       serviceAccountName: alloy
       volumes:
       - configMap:
-          name: alloy-config-4kc5ch6gb2
+          name: alloy-config-hgg87mgmhg
         name: config
+      - configMap:
+          name: alloy-modules-receiver-provider-7hd5m984c2
+        name: modules-receiver-provider
       - configMap:
           name: alloy-modules-kubernetes-metrics-8287kbcb62
         name: modules-kubernetes-metrics
@@ -6879,94 +7017,63 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   labels:
-    app.kubernetes.io/instance: tempo
-    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: tempo
+    app.kubernetes.io/instance: tempo-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: tempo
-    app.kubernetes.io/version: 2.7.1
-    helm.sh/chart: tempo-1.21.1
+    app.kubernetes.io/part-of: memberlist
+    app.kubernetes.io/version: 2.8.0
   name: tempo
   namespace: tracing-system
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/instance: tempo
+      app.kubernetes.io/component: tempo
+      app.kubernetes.io/instance: tempo-monolithic-mode
       app.kubernetes.io/name: tempo
+      app.kubernetes.io/part-of: memberlist
   serviceName: tempo-headless
   template:
     metadata:
       annotations:
-        checksum/config: 5f68c279dcb546a847acf574ae17b35672d3496869d225a4844390c473b9f20a
         logs.grafana.com/scrape: "true"
         logs.grafana.com/scrub-level: info
-        profiles.grafana.com/cpu.port_name: prom-metrics
+        profiles.grafana.com/cpu.port_name: http-metrics
         profiles.grafana.com/cpu.scrape: "true"
-        profiles.grafana.com/goroutine.port_name: prom-metrics
+        profiles.grafana.com/goroutine.port_name: http-metrics
         profiles.grafana.com/goroutine.scrape: "true"
-        profiles.grafana.com/memory.port_name: prom-metrics
+        profiles.grafana.com/memory.port_name: http-metrics
         profiles.grafana.com/memory.scrape: "true"
         pyroscope.io/service_name: tempo
       labels:
-        app.kubernetes.io/instance: tempo
+        app.kubernetes.io/component: tempo
+        app.kubernetes.io/instance: tempo-monolithic-mode
         app.kubernetes.io/name: tempo
+        app.kubernetes.io/part-of: memberlist
     spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - -target=scalable-single-binary
         - -config.file=/conf/tempo.yaml
         - -mem-ballast-size-mbs=1024
         - -config.expand-env=true
         envFrom:
         - secretRef:
             name: tempo-env-d27hgh97m9
-        image: grafana/tempo:2.7.1
+        image: docker.io/grafana/tempo:2.7.2
         imagePullPolicy: IfNotPresent
-        livenessProbe:
-          failureThreshold: 3
-          httpGet:
-            path: /ready
-            port: 3100
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 5
         name: tempo
         ports:
         - containerPort: 9095
-          name: tempo-grpc
-        - containerPort: 3100
-          name: prom-metrics
-        - containerPort: 6831
-          name: jaeger-thrift-c
-          protocol: UDP
-        - containerPort: 6832
-          name: jaeger-thrift-b
-          protocol: UDP
-        - containerPort: 14268
-          name: jaeger-thrift-h
-        - containerPort: 14250
-          name: jaeger-grpc
-        - containerPort: 9411
-          name: zipkin
-        - containerPort: 55680
-          name: otlp-legacy
+          name: grpc-tempo
+        - containerPort: 3200
+          name: http-metrics
         - containerPort: 4317
-          name: otlp-grpc
-        - containerPort: 55681
-          name: otlp-httplegacy
+          name: grpc-otlp
         - containerPort: 4318
-          name: otlp-http
-        - containerPort: 55678
-          name: opencensus
-        readinessProbe:
-          failureThreshold: 3
-          httpGet:
-            path: /ready
-            port: 3100
-          initialDelaySeconds: 20
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 5
+          name: http-otlp
         resources:
           limits:
             cpu: 999m
@@ -6987,7 +7094,7 @@ spec:
       serviceAccountName: tempo
       volumes:
       - configMap:
-          name: tempo
+          name: tempo-bt8c6t2gf9
         name: tempo-conf
       - emptyDir: {}
         name: tmp
@@ -7370,8 +7477,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.8.3
-    helm.sh/chart: alloy-1.0.3
+    app.kubernetes.io/version: v1.9.1
+    helm.sh/chart: alloy-1.1.1
   name: alloy
   namespace: monitoring-system
 spec:
@@ -7457,12 +7564,18 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
+  labels:
+    app.kubernetes.io/component: tempo
+    app.kubernetes.io/instance: tempo-monolithic-mode
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/name: tempo
+    app.kubernetes.io/version: 2.8.0
   name: tempo
   namespace: tracing-system
 spec:
   endpoints:
   - interval: 15s
-    port: tempo-prom-metrics
+    port: http-metrics
     relabelings:
     - action: replace
       replacement: tracing-system/tempo
@@ -7492,8 +7605,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.8.3
-    helm.sh/chart: alloy-1.0.3
+    app.kubernetes.io/version: v1.9.1
+    helm.sh/chart: alloy-1.1.1
   name: alloy
   namespace: monitoring-system
 spec:

@@ -1,0 +1,88 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app.kubernetes.io/part-of: memberlist
+  name: tempo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: memberlist
+  serviceName: tempo-headless
+  template:
+    metadata:
+      annotations:
+        logs.grafana.com/scrape: "true"
+        logs.grafana.com/scrub-level: info
+        profiles.grafana.com/cpu.port_name: http-metrics
+        profiles.grafana.com/cpu.scrape: "true"
+        profiles.grafana.com/goroutine.port_name: http-metrics
+        profiles.grafana.com/goroutine.scrape: "true"
+        profiles.grafana.com/memory.port_name: http-metrics
+        profiles.grafana.com/memory.scrape: "true"
+        pyroscope.io/service_name: tempo
+      labels:
+        app.kubernetes.io/part-of: memberlist
+    spec:
+      automountServiceAccountToken: true
+      containers:
+      - args:
+        - -target=scalable-single-binary
+        - -config.file=/conf/tempo.yaml
+        - -mem-ballast-size-mbs=1024
+        - -config.expand-env=true
+        envFrom:
+        - secretRef:
+            name: tempo-env
+        image: docker.io/grafana/tempo
+        imagePullPolicy: IfNotPresent
+        # livenessProbe:
+        #   failureThreshold: 3
+        #   httpGet:
+        #     path: /ready
+        #     port: 3200
+        #   initialDelaySeconds: 30
+        name: tempo
+        ports:
+        - containerPort: 9095
+          name: grpc-tempo
+        - containerPort: 3200
+          name: http-metrics
+        - containerPort: 4317
+          name: grpc-otlp
+        - containerPort: 4318
+          name: http-otlp
+        # readinessProbe:
+        #   failureThreshold: 3
+        #   httpGet:
+        #     path: /ready
+        #     port: 3200
+        #   initialDelaySeconds: 20
+        resources:
+          limits:
+            cpu: 999m
+            memory: 1Gi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        volumeMounts:
+        - mountPath: /conf
+          name: tempo-conf
+        - mountPath: /tmp
+          name: tmp
+      securityContext:
+        fsGroup: 10001
+        runAsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+      serviceAccountName: tempo
+      volumes:
+      - configMap:
+          name: tempo
+        name: tempo-conf
+      - emptyDir: {}
+        name: tmp
+  updateStrategy:
+    type: RollingUpdate

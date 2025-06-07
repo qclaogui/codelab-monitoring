@@ -1,50 +1,56 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+
 namespace: tracing-system
-helmCharts:
-- name: tempo
-  version: 1.21.1
-  repo: https://grafana.github.io/helm-charts
-  releaseName: tempo
-  namespace: tracing-system
-  includeCRDs: false
-  additionalValuesFiles:
-  - values-k3d-k3s.yaml
-patches:
-- patch: |-
-    apiVersion: apps/v1
-    kind: StatefulSet
-    metadata:
-      name: tempo
-      namespace: tracing-system
-    spec:
-      template:
-        spec:
-          containers:
-            - name: tempo
-              ports:
-                - name: tempo-grpc
-                  containerPort: 9095
-- patch: |-
-    apiVersion: v1
-    kind: Service
-    metadata:
-      name: tempo
-      namespace: tracing-system
-    spec:
-      ports:
-        - name: tempo-grpc
-          port: 9095
-          targetPort: 9095
+
+labels:
+- includeSelectors: true
+  pairs:
+    app.kubernetes.io/component: tempo
+    app.kubernetes.io/instance: tempo-monolithic-mode
+    app.kubernetes.io/name: tempo
+- includeSelectors: false
+  pairs:
+    app.kubernetes.io/managed-by: Kustomize
+    app.kubernetes.io/version: 2.8.0
+
+images:
+- name: docker.io/grafana/tempo
+  newTag: 2.7.2
+
+
+# Horizontally scale up support(Monolithic mode)
+# https://grafana.com/docs/tempo/latest/setup/deployment/#scaling-monolithic-mode
+replicas:
+- count: 1
+  name: tempo
+
+
 resources:
-- servicemonitor.yaml
 - namespace.yaml
+- tempo-sts.yaml
+- tempo-svc.yaml
+- tempo-headless.yaml
+- tempo-memberlist-svc.yaml
+- tempo-servicemonitor.yaml
+- tempo-rbac.yaml
+
+
 secretGenerator:
 - name: tempo-env
   namespace: tracing-system
   literals:
   - TEMPO_S3_SECRET_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
   - OTEL_EXPORTER_OTLP_ENDPOINT=http://alloy.monitoring-system.svc.cluster.local:4318
+
+
+configMapGenerator:
+- name: tempo
+  files:
+  - configs/tempo.yaml
+  - configs/overrides.yaml
+
+
 # # Use kustomize build --enable-helm configMapGenerator not work well:
 # # https://github.com/kubernetes-sigs/kustomize/issues/4799#issuecomment-1260408886
 # configMapGenerator:
@@ -55,15 +61,15 @@ secretGenerator:
 #   - configs/overrides.yaml
 # Solution:
 #   Move the configMapGenerator, as a plugin, under generators because kustomize runs plugins after built-in fields
-generators:
-# - configmap-generator.yaml
-- |-
-  apiVersion: builtin
-  kind: ConfigMapGenerator
-  metadata:
-    name: tempo
-    namespace: tracing-system
-  behavior: replace
-  files:
-  - configs/tempo.yaml
-  - configs/overrides.yaml
+# generators:
+# # - configmap-generator.yaml
+# - |-
+#   apiVersion: builtin
+#   kind: ConfigMapGenerator
+#   metadata:
+#     name: tempo
+#     namespace: tracing-system
+#   behavior: replace
+#   files:
+#   - configs/tempo.yaml
+#   - configs/overrides.yaml

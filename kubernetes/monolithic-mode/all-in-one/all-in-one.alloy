@@ -6,11 +6,17 @@ logging {
 /********************************************
  * Grafana LGTMP Stack Receiver Provider
  ********************************************/
-import.git "provider" {
-	repository     = "https://github.com/qclaogui/codelab-monitoring.git"
-	revision       = "main"
-	path           = "alloy-modules/provider"
-	pull_frequency = "24h"
+// import.git "provider" {
+// 	repository     = "https://github.com/qclaogui/codelab-monitoring.git"
+// 	revision       = "main"
+// 	path           = "alloy-modules/provider"
+// 	// pull_frequency set to "0s": the Git repository is pulled only once during initialization.
+// 	pull_frequency = "0s"
+// }
+
+// local file
+import.file "provider" {
+	filename = coalesce(sys.env("ALLOY_MODULES_FOLDER"), "/etc/alloy/modules") + "/provider"
 }
 
 provider.self_hosted_stack "kubernetes" {
