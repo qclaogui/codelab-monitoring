@@ -5517,9 +5517,9 @@ data:
         otlp:
           protocols:
             grpc:
-              endpoint: 0.0.0.0:4317
+              endpoint: tempo-headless:4317
             http:
-              endpoint: 0.0.0.0:4318
+              endpoint: tempo-headless:4318
 
     ingester:
       max_block_duration: 5m
@@ -5609,7 +5609,7 @@ metadata:
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.8.0
-  name: tempo-bt8c6t2gf9
+  name: tempo-9fctm9hd4h
   namespace: tracing-system
 ---
 apiVersion: v1
@@ -5919,18 +5919,14 @@ spec:
   ports:
   - name: grpc-tempo
     port: 9095
-    targetPort: 9095
   - name: http-metrics
     port: 3200
-    targetPort: 3200
   - name: grpc-otlp
     port: 4317
     protocol: TCP
-    targetPort: 4317
   - name: http-otlp
     port: 4318
     protocol: TCP
-    targetPort: 4318
   selector:
     app.kubernetes.io/component: tempo
     app.kubernetes.io/instance: tempo-monolithic-mode
@@ -5953,18 +5949,12 @@ spec:
   ports:
   - name: grpc-tempo
     port: 9095
-    targetPort: 9095
   - name: http-metrics
     port: 3200
-    targetPort: 3200
   - name: grpc-otlp
     port: 4317
-    protocol: TCP
-    targetPort: 4317
   - name: http-otlp
     port: 4318
-    protocol: TCP
-    targetPort: 4318
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/component: tempo
@@ -6406,6 +6396,8 @@ spec:
           name: grpc-tempo
         - containerPort: 3200
           name: http-metrics
+        - containerPort: 7946
+          name: tcp-gossip-ring
         - containerPort: 4317
           name: grpc-otlp
         - containerPort: 4318
@@ -6430,7 +6422,7 @@ spec:
       serviceAccountName: tempo
       volumes:
       - configMap:
-          name: tempo-bt8c6t2gf9
+          name: tempo-9fctm9hd4h
         name: tempo-conf
       - emptyDir: {}
         name: tmp

@@ -5489,9 +5489,9 @@ data:
         otlp:
           protocols:
             grpc:
-              endpoint: tempo-distributed-distributor:4317
+              endpoint: tempo-distributed-distributor-discovery:4317
             http:
-              endpoint: tempo-distributed-distributor:4318
+              endpoint: tempo-distributed-distributor-discovery:4318
 
       ring:
         kvstore:
@@ -5509,7 +5509,6 @@ data:
         tokens_file_path: /var/tempo/tokens.json
 
     memberlist:
-      abort_if_cluster_join_fails: false
       join_members:
       - dns+tempo-distributed-gossip-ring:7946
 
@@ -5565,8 +5564,6 @@ data:
 
     # https://github.com/grafana/tempo/blob/main/docs/sources/tempo/configuration/_index.md#cache
     cache:
-      background:
-        writeback_goroutines: 5
       caches:
       - roles:
         - bloom
@@ -5994,6 +5991,7 @@ spec:
     port: 55680
     protocol: TCP
     targetPort: grpc-otlp
+  publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/component: distributor
     app.kubernetes.io/instance: tempo-distributed
