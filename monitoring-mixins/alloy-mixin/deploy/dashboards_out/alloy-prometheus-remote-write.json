@@ -242,7 +242,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "sum without (remote_name, url) (\n    rate(prometheus_remote_storage_bytes_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval]) +\n    rate(prometheus_remote_storage_metadata_bytes_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
+                  "expr": "sum by (instance, component_path, component_id) (\n    rate(prometheus_remote_storage_bytes_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval]) +\n    rate(prometheus_remote_storage_metadata_bytes_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
                   "instant": false,
                   "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
                   "range": true
@@ -330,7 +330,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "sum without (remote_name, url) (\n    prometheus_remote_storage_shards{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}\n)\n",
+                  "expr": "sum by (instance, component_path, component_id) (\n    prometheus_remote_storage_shards{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}\n)\n",
                   "instant": false,
                   "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
                   "range": true
@@ -377,7 +377,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "sum without (url, remote_name) (\n  rate(prometheus_remote_storage_samples_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
+                  "expr": "sum by (instance, component_path, component_id) (\n  rate(prometheus_remote_storage_samples_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
                   "instant": false,
                   "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
                   "range": true
@@ -410,7 +410,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "sum without (url,remote_name) (\n  rate(prometheus_remote_storage_samples_failed_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
+                  "expr": "sum by (instance, component_path, component_id) (\n  rate(prometheus_remote_storage_samples_failed_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
                   "instant": false,
                   "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
                   "range": true
@@ -443,7 +443,7 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "sum without (url,remote_name) (\n  rate(prometheus_remote_storage_samples_retried_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
+                  "expr": "sum by (instance, component_path, component_id) (\n  rate(prometheus_remote_storage_samples_retried_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
                   "instant": false,
                   "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
                   "range": true
@@ -454,7 +454,7 @@
          },
          {
             "datasource": "${datasource}",
-            "description": "Total number of active series across all components.\n\nAn \"active series\" is a series that prometheus.remote_write recently\nreceived a sample for. Active series are garbage collected whenever a\ntruncation of the WAL occurs.\n",
+            "description": "Total number of active series across all components.\n\nAn \"active series\" is a series that prometheus.remote_write recently\nreceived a sample for. Active series are garbage collected whenever a\ntruncation of the WAL occurs.\n\nNOTE: This metric is not available when using prometheus.write.queue component.\n",
             "fieldConfig": {
                "defaults": {
                   "unit": "short"
@@ -485,7 +485,7 @@
          },
          {
             "datasource": "${datasource}",
-            "description": "Total number of active series which are currently being tracked by\nprometheus.remote_write components, with separate lines for each Alloy instance.\n\nAn \"active series\" is a series that prometheus.remote_write recently\nreceived a sample for. Active series are garbage collected whenever a\ntruncation of the WAL occurs.\n",
+            "description": "Total number of active series which are currently being tracked by\nprometheus.remote_write components, with separate lines for each Alloy instance.\n\nAn \"active series\" is a series that prometheus.remote_write recently\nreceived a sample for. Active series are garbage collected whenever a\ntruncation of the WAL occurs.\n\nNOTE: This metric is not available when using prometheus.write.queue component.\n",
             "fieldConfig": {
                "defaults": {
                   "unit": "short"
@@ -511,7 +511,7 @@
          },
          {
             "datasource": "${datasource}",
-            "description": "Total number of active series which are currently being tracked by\nprometheus.remote_write components, aggregated across all instances.\n\nAn \"active series\" is a series that prometheus.remote_write recently\nreceived a sample for. Active series are garbage collected whenever a\ntruncation of the WAL occurs.\n",
+            "description": "Total number of active series which are currently being tracked by\nprometheus.remote_write components, aggregated across all instances.\n\nAn \"active series\" is a series that prometheus.remote_write recently\nreceived a sample for. Active series are garbage collected whenever a\ntruncation of the WAL occurs.\n\nNOTE: This metric is not available when using prometheus.write.queue component.\n",
             "fieldConfig": {
                "defaults": {
                   "unit": "short"

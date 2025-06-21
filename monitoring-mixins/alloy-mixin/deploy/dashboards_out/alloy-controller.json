@@ -344,10 +344,10 @@
          },
          {
             "datasource": "${datasource}",
-            "description": "The percentage of time spent evaluating 'slow' components - components that took longer than 1 minute to evaluate.\n\nIdeally, no component should take more than 1 minute to evaluate. The components displayed in this chart\nmay be a sign of a problem with the pipeline.\n",
+            "description": "The maximum duration of slow component evaluations over time.\n\nThis shows components that took longer than 1 minute to evaluate. Ideally, no component \nshould take more than 1 minute to evaluate. The components displayed in this chart\nmay be a sign of a problem with the pipeline or performance issues.\n",
             "fieldConfig": {
                "defaults": {
-                  "unit": "percentunit"
+                  "unit": "s"
                }
             },
             "gridPos": {
@@ -359,9 +359,9 @@
             "targets": [
                {
                   "datasource": "${datasource}",
-                  "expr": "sum by (component_path, component_id) (rate(alloy_component_evaluation_slow_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval]))\n/ scalar(sum(rate(alloy_component_evaluation_seconds_sum{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval])))\n",
+                  "expr": "max_over_time(alloy_component_evaluation_slow_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__interval])\n",
                   "instant": false,
-                  "legendFormat": "{{component path}} {{component_id}}",
+                  "legendFormat": "{{instance}} {{controller_path}} {{component_id}}",
                   "range": true
                }
             ],
