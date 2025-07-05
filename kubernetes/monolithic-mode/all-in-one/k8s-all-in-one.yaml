@@ -90,8 +90,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: prometheus-node-exporter
     app.kubernetes.io/part-of: prometheus-node-exporter
-    app.kubernetes.io/version: 1.8.2
-    helm.sh/chart: prometheus-node-exporter-4.38.0
+    app.kubernetes.io/version: 1.9.1
+    helm.sh/chart: prometheus-node-exporter-4.47.1
   name: prometheus-node-exporter
   namespace: monitoring-system
 ---
@@ -6355,8 +6355,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: prometheus-node-exporter
     app.kubernetes.io/part-of: prometheus-node-exporter
-    app.kubernetes.io/version: 1.8.2
-    helm.sh/chart: prometheus-node-exporter-4.38.0
+    app.kubernetes.io/version: 1.9.1
+    helm.sh/chart: prometheus-node-exporter-4.47.1
   name: prometheus-node-exporter
   namespace: monitoring-system
 spec:
@@ -7189,8 +7189,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: prometheus-node-exporter
     app.kubernetes.io/part-of: prometheus-node-exporter
-    app.kubernetes.io/version: 1.8.2
-    helm.sh/chart: prometheus-node-exporter-4.38.0
+    app.kubernetes.io/version: 1.9.1
+    helm.sh/chart: prometheus-node-exporter-4.47.1
   name: prometheus-node-exporter
   namespace: monitoring-system
 spec:
@@ -7209,9 +7209,22 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: prometheus-node-exporter
         app.kubernetes.io/part-of: prometheus-node-exporter
-        app.kubernetes.io/version: 1.8.2
-        helm.sh/chart: prometheus-node-exporter-4.38.0
+        app.kubernetes.io/version: 1.9.1
+        helm.sh/chart: prometheus-node-exporter-4.47.1
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: eks.amazonaws.com/compute-type
+                operator: NotIn
+                values:
+                - fargate
+              - key: type
+                operator: NotIn
+                values:
+                - virtual-kubelet
       automountServiceAccountToken: false
       containers:
       - args:
@@ -7223,14 +7236,14 @@ spec:
         env:
         - name: HOST_IP
           value: 0.0.0.0
-        image: quay.io/prometheus/node-exporter:v1.8.2
+        image: quay.io/prometheus/node-exporter:v1.9.1
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
           httpGet:
             httpHeaders: null
             path: /
-            port: 9100
+            port: metrics
             scheme: HTTP
           initialDelaySeconds: 0
           periodSeconds: 10
@@ -7246,7 +7259,7 @@ spec:
           httpGet:
             httpHeaders: null
             path: /
-            port: 9100
+            port: metrics
             scheme: HTTP
           initialDelaySeconds: 0
           periodSeconds: 10
