@@ -25,8 +25,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.9.1
-    helm.sh/chart: alloy-1.1.1
+    app.kubernetes.io/version: v1.9.2
+    helm.sh/chart: alloy-1.1.2
   name: alloy
   namespace: monitoring-system
 ---
@@ -51,8 +51,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.9.1
-    helm.sh/chart: alloy-1.1.1
+    app.kubernetes.io/version: v1.9.2
+    helm.sh/chart: alloy-1.1.2
   name: alloy
 rules:
 - apiGroups:
@@ -176,8 +176,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.9.1
-    helm.sh/chart: alloy-1.1.1
+    app.kubernetes.io/version: v1.9.2
+    helm.sh/chart: alloy-1.1.2
   name: alloy
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -1134,11 +1134,49 @@ data:
              },
              {
                 "datasource": "${datasource}",
-                "description": "The number of cluster peers seen by each instance.\n\nWhen cluster is converged, every peer should see all the other instances. When we have a split brain or one\npeer not joining the cluster, we will see two or more groups of instances that report different peer numbers\nfor an extended period of time and not converging.\n\nThis graph helps to identify which instances may be in a split brain state.\n",
+                "description": "The number of cluster peers seen by each instance.\n\nWhen cluster is converged, every peer should see all the other instances. When we have a split brain or one\npeer not joining the cluster, we will see two or more groups of instances that report different peer numbers\nfor an extended period of time and not converging.\n\nThis graph helps to identify which instances may be in a split brain state.\n\nThe minimum cluster size shows the value of the --cluster.wait-for-size flag, which specifies the minimum \nnumber of instances required before cluster-enabled components begin processing traffic.\n",
                 "fieldConfig": {
                    "defaults": {
                       "unit": "peers"
-                   }
+                   },
+                   "overrides": [
+                      {
+                         "matcher": {
+                            "id": "byName",
+                            "options": "Minimum cluster size"
+                         },
+                         "properties": [
+                            {
+                               "id": "color",
+                               "value": {
+                                  "fixedColor": "red",
+                                  "mode": "fixed"
+                               }
+                            },
+                            {
+                               "id": "custom.lineStyle",
+                               "value": {
+                                  "dash": [
+                                     10,
+                                     10
+                                  ],
+                                  "fill": "dash"
+                               }
+                            },
+                            {
+                               "id": "custom.lineWidth",
+                               "value": 1
+                            },
+                            {
+                               "id": "custom.dashPattern",
+                               "value": [
+                                  10,
+                                  10
+                               ]
+                            }
+                         ]
+                      }
+                   ]
                 },
                 "gridPos": {
                    "h": 12,
@@ -1152,6 +1190,13 @@ data:
                       "expr": "sum by(instance) (cluster_node_peers{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"})\n",
                       "instant": false,
                       "legendFormat": "{{instance}}",
+                      "range": true
+                   },
+                   {
+                      "datasource": "${datasource}",
+                      "expr": "avg(cluster_minimum_size{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"})\n",
+                      "instant": false,
+                      "legendFormat": "Minimum cluster size",
                       "range": true
                    }
                 ],
@@ -1653,10 +1698,10 @@ data:
              },
              {
                 "datasource": "${datasource}",
-                "description": "The percentage of time spent evaluating 'slow' components - components that took longer than 1 minute to evaluate.\n\nIdeally, no component should take more than 1 minute to evaluate. The components displayed in this chart\nmay be a sign of a problem with the pipeline.\n",
+                "description": "The maximum duration of slow component evaluations over time.\n\nThis shows components that took longer than 1 minute to evaluate. Ideally, no component \nshould take more than 1 minute to evaluate. The components displayed in this chart\nmay be a sign of a problem with the pipeline or performance issues.\n",
                 "fieldConfig": {
                    "defaults": {
-                      "unit": "percentunit"
+                      "unit": "s"
                    }
                 },
                 "gridPos": {
@@ -1668,9 +1713,9 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by (component_path, component_id) (rate(alloy_component_evaluation_slow_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval]))\n/ scalar(sum(rate(alloy_component_evaluation_seconds_sum{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval])))\n",
+                      "expr": "max_over_time(alloy_component_evaluation_slow_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__interval])\n",
                       "instant": false,
-                      "legendFormat": "{{component path}} {{component_id}}",
+                      "legendFormat": "{{instance}} {{controller_path}} {{component_id}}",
                       "range": true
                    }
                 ],
@@ -3268,7 +3313,8 @@ data:
                          "stacking": {
                             "mode": "normal"
                          }
-                      }
+                      },
+                      "unit": "cps"
                    }
                 },
                 "gridPos": {
@@ -3300,7 +3346,8 @@ data:
                          "stacking": {
                             "mode": "normal"
                          }
-                      }
+                      },
+                      "unit": "cps"
                    }
                 },
                 "gridPos": {
@@ -3332,7 +3379,8 @@ data:
                          "stacking": {
                             "mode": "normal"
                          }
-                      }
+                      },
+                      "unit": "cps"
                    }
                 },
                 "gridPos": {
@@ -3364,7 +3412,8 @@ data:
                          "stacking": {
                             "mode": "normal"
                          }
-                      }
+                      },
+                      "unit": "cps"
                    }
                 },
                 "gridPos": {
@@ -3396,7 +3445,8 @@ data:
                          "stacking": {
                             "mode": "normal"
                          }
-                      }
+                      },
+                      "unit": "cps"
                    }
                 },
                 "gridPos": {
@@ -3428,7 +3478,8 @@ data:
                          "stacking": {
                             "mode": "normal"
                          }
-                      }
+                      },
+                      "unit": "cps"
                    }
                 },
                 "gridPos": {
@@ -3612,6 +3663,11 @@ data:
              {
                 "datasource": "${datasource}",
                 "description": "Number of distinct metadata value combinations being processed\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "short"
+                   }
+                },
                 "gridPos": {
                    "h": 10,
                    "w": 8,
@@ -3633,6 +3689,11 @@ data:
              {
                 "datasource": "${datasource}",
                 "description": "Number of times the batch was sent due to a timeout trigger\n",
+                "fieldConfig": {
+                   "defaults": {
+                      "unit": "cps"
+                   }
+                },
                 "gridPos": {
                    "h": 10,
                    "w": 8,
@@ -3673,7 +3734,8 @@ data:
                          "stacking": {
                             "mode": "normal"
                          }
-                      }
+                      },
+                      "unit": "cps"
                    }
                 },
                 "gridPos": {
@@ -3705,7 +3767,8 @@ data:
                          "stacking": {
                             "mode": "normal"
                          }
-                      }
+                      },
+                      "unit": "cps"
                    }
                 },
                 "gridPos": {
@@ -3737,7 +3800,8 @@ data:
                          "stacking": {
                             "mode": "normal"
                          }
-                      }
+                      },
+                      "unit": "cps"
                    }
                 },
                 "gridPos": {
@@ -3769,7 +3833,8 @@ data:
                          "stacking": {
                             "mode": "normal"
                          }
-                      }
+                      },
+                      "unit": "cps"
                    }
                 },
                 "gridPos": {
@@ -3801,7 +3866,8 @@ data:
                          "stacking": {
                             "mode": "normal"
                          }
-                      }
+                      },
+                      "unit": "cps"
                    }
                 },
                 "gridPos": {
@@ -3833,7 +3899,8 @@ data:
                          "stacking": {
                             "mode": "normal"
                          }
-                      }
+                      },
+                      "unit": "cps"
                    }
                 },
                 "gridPos": {
@@ -4317,7 +4384,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum without (remote_name, url) (\n    rate(prometheus_remote_storage_bytes_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval]) +\n    rate(prometheus_remote_storage_metadata_bytes_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
+                      "expr": "sum by (instance, component_path, component_id) (\n    rate(prometheus_remote_storage_bytes_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval]) +\n    rate(prometheus_remote_storage_metadata_bytes_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
                       "instant": false,
                       "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
                       "range": true
@@ -4405,7 +4472,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum without (remote_name, url) (\n    prometheus_remote_storage_shards{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}\n)\n",
+                      "expr": "sum by (instance, component_path, component_id) (\n    prometheus_remote_storage_shards{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}\n)\n",
                       "instant": false,
                       "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
                       "range": true
@@ -4452,7 +4519,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum without (url, remote_name) (\n  rate(prometheus_remote_storage_samples_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
+                      "expr": "sum by (instance, component_path, component_id) (\n  rate(prometheus_remote_storage_samples_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
                       "instant": false,
                       "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
                       "range": true
@@ -4485,7 +4552,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum without (url,remote_name) (\n  rate(prometheus_remote_storage_samples_failed_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
+                      "expr": "sum by (instance, component_path, component_id) (\n  rate(prometheus_remote_storage_samples_failed_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
                       "instant": false,
                       "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
                       "range": true
@@ -4518,7 +4585,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum without (url,remote_name) (\n  rate(prometheus_remote_storage_samples_retried_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
+                      "expr": "sum by (instance, component_path, component_id) (\n  rate(prometheus_remote_storage_samples_retried_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
                       "instant": false,
                       "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
                       "range": true
@@ -4529,7 +4596,7 @@ data:
              },
              {
                 "datasource": "${datasource}",
-                "description": "Total number of active series across all components.\n\nAn \"active series\" is a series that prometheus.remote_write recently\nreceived a sample for. Active series are garbage collected whenever a\ntruncation of the WAL occurs.\n",
+                "description": "Total number of active series across all components.\n\nAn \"active series\" is a series that prometheus.remote_write recently\nreceived a sample for. Active series are garbage collected whenever a\ntruncation of the WAL occurs.\n\nNOTE: This metric is not available when using prometheus.write.queue component.\n",
                 "fieldConfig": {
                    "defaults": {
                       "unit": "short"
@@ -4560,7 +4627,7 @@ data:
              },
              {
                 "datasource": "${datasource}",
-                "description": "Total number of active series which are currently being tracked by\nprometheus.remote_write components, with separate lines for each Alloy instance.\n\nAn \"active series\" is a series that prometheus.remote_write recently\nreceived a sample for. Active series are garbage collected whenever a\ntruncation of the WAL occurs.\n",
+                "description": "Total number of active series which are currently being tracked by\nprometheus.remote_write components, with separate lines for each Alloy instance.\n\nAn \"active series\" is a series that prometheus.remote_write recently\nreceived a sample for. Active series are garbage collected whenever a\ntruncation of the WAL occurs.\n\nNOTE: This metric is not available when using prometheus.write.queue component.\n",
                 "fieldConfig": {
                    "defaults": {
                       "unit": "short"
@@ -4586,7 +4653,7 @@ data:
              },
              {
                 "datasource": "${datasource}",
-                "description": "Total number of active series which are currently being tracked by\nprometheus.remote_write components, aggregated across all instances.\n\nAn \"active series\" is a series that prometheus.remote_write recently\nreceived a sample for. Active series are garbage collected whenever a\ntruncation of the WAL occurs.\n",
+                "description": "Total number of active series which are currently being tracked by\nprometheus.remote_write components, aggregated across all instances.\n\nAn \"active series\" is a series that prometheus.remote_write recently\nreceived a sample for. Active series are garbage collected whenever a\ntruncation of the WAL occurs.\n\nNOTE: This metric is not available when using prometheus.write.queue component.\n",
                 "fieldConfig": {
                    "defaults": {
                       "unit": "short"
@@ -5555,8 +5622,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.9.1
-    helm.sh/chart: alloy-1.1.1
+    app.kubernetes.io/version: v1.9.2
+    helm.sh/chart: alloy-1.1.2
   name: alloy
   namespace: monitoring-system
 spec:
@@ -5596,8 +5663,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.9.1
-    helm.sh/chart: alloy-1.1.1
+    app.kubernetes.io/version: v1.9.2
+    helm.sh/chart: alloy-1.1.2
   name: alloy-cluster
   namespace: monitoring-system
 spec:
@@ -6129,8 +6196,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.9.1
-    helm.sh/chart: alloy-1.1.1
+    app.kubernetes.io/version: v1.9.2
+    helm.sh/chart: alloy-1.1.2
   name: alloy
   namespace: monitoring-system
 spec:
@@ -6183,7 +6250,7 @@ spec:
         - secretRef:
             name: alloy-env
             optional: true
-        image: docker.io/grafana/alloy:v1.9.1
+        image: docker.io/grafana/alloy:v1.9.2
         imagePullPolicy: IfNotPresent
         name: alloy
         ports:
@@ -6523,8 +6590,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.9.1
-    helm.sh/chart: alloy-1.1.1
+    app.kubernetes.io/version: v1.9.2
+    helm.sh/chart: alloy-1.1.2
   name: alloy
   namespace: monitoring-system
 spec:
@@ -6580,8 +6647,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.9.1
-    helm.sh/chart: alloy-1.1.1
+    app.kubernetes.io/version: v1.9.2
+    helm.sh/chart: alloy-1.1.2
   name: alloy
   namespace: monitoring-system
 spec:
