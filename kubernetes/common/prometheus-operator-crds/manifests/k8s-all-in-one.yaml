@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.18.0
-    operator.prometheus.io/version: 0.83.0
+    operator.prometheus.io/version: 0.84.0
   name: alertmanagerconfigs.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -10803,7 +10803,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.18.0
-    operator.prometheus.io/version: 0.83.0
+    operator.prometheus.io/version: 0.84.0
   name: alertmanagers.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -11832,6 +11832,7 @@ spec:
                       The default value is `OnNamespace`.
                     enum:
                     - OnNamespace
+                    - OnNamespaceExceptForAlertmanagerNamespace
                     - None
                     type: string
                 type: object
@@ -12627,6 +12628,17 @@ spec:
                                 type: string
                             type: object
                         type: object
+                      jira:
+                        description: The default configuration for Jira.
+                        properties:
+                          apiURL:
+                            description: |-
+                              The default Jira API URL.
+
+                              It requires Alertmanager >= v0.28.0.
+                            pattern: ^(http|https)://.+$
+                            type: string
+                        type: object
                       opsGenieApiKey:
                         description: The default OpsGenie API Key.
                         properties:
@@ -12685,6 +12697,71 @@ spec:
                           This has no impact on alerts from Prometheus, as they always include EndsAt.
                         pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                         type: string
+                      rocketChat:
+                        description: The default configuration for Rocket Chat.
+                        properties:
+                          apiURL:
+                            description: |-
+                              The default Rocket Chat API URL.
+
+                              It requires Alertmanager >= v0.28.0.
+                            pattern: ^(http|https)://.+$
+                            type: string
+                          token:
+                            description: |-
+                              The default Rocket Chat token.
+
+                              It requires Alertmanager >= v0.28.0.
+                            properties:
+                              key:
+                                description: The key of the secret to select from.  Must
+                                  be a valid secret key.
+                                type: string
+                              name:
+                                default: ""
+                                description: |-
+                                  Name of the referent.
+                                  This field is effectively required, but due to backwards compatibility is
+                                  allowed to be empty. Instances of this type with an empty value here are
+                                  almost certainly wrong.
+                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                type: string
+                              optional:
+                                description: Specify whether the Secret or its key
+                                  must be defined
+                                type: boolean
+                            required:
+                            - key
+                            type: object
+                            x-kubernetes-map-type: atomic
+                          tokenID:
+                            description: |-
+                              The default Rocket Chat Token ID.
+
+                              It requires Alertmanager >= v0.28.0.
+                            properties:
+                              key:
+                                description: The key of the secret to select from.  Must
+                                  be a valid secret key.
+                                type: string
+                              name:
+                                default: ""
+                                description: |-
+                                  Name of the referent.
+                                  This field is effectively required, but due to backwards compatibility is
+                                  allowed to be empty. Instances of this type with an empty value here are
+                                  almost certainly wrong.
+                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                type: string
+                              optional:
+                                description: Specify whether the Secret or its key
+                                  must be defined
+                                type: boolean
+                            required:
+                            - key
+                            type: object
+                            x-kubernetes-map-type: atomic
+                        type: object
                       slackApiUrl:
                         description: The default Slack API URL.
                         properties:
@@ -12963,6 +13040,98 @@ spec:
                                 description: Used to verify the hostname for the targets.
                                 type: string
                             type: object
+                        type: object
+                      telegram:
+                        description: The default Telegram config
+                        properties:
+                          apiURL:
+                            description: |-
+                              The default Telegram API URL.
+
+                              It requires Alertmanager >= v0.24.0.
+                            pattern: ^(http|https)://.+$
+                            type: string
+                        type: object
+                      victorops:
+                        description: The default configuration for VictorOps.
+                        properties:
+                          apiKey:
+                            description: The default VictorOps API Key.
+                            properties:
+                              key:
+                                description: The key of the secret to select from.  Must
+                                  be a valid secret key.
+                                type: string
+                              name:
+                                default: ""
+                                description: |-
+                                  Name of the referent.
+                                  This field is effectively required, but due to backwards compatibility is
+                                  allowed to be empty. Instances of this type with an empty value here are
+                                  almost certainly wrong.
+                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                type: string
+                              optional:
+                                description: Specify whether the Secret or its key
+                                  must be defined
+                                type: boolean
+                            required:
+                            - key
+                            type: object
+                            x-kubernetes-map-type: atomic
+                          apiURL:
+                            description: The default VictorOps API URL.
+                            pattern: ^(http|https)://.+$
+                            type: string
+                        type: object
+                      webex:
+                        description: The default configuration for Jira.
+                        properties:
+                          apiURL:
+                            description: |-
+                              The default Webex API URL.
+
+                              It requires Alertmanager >= v0.25.0.
+                            pattern: ^(http|https)://.+$
+                            type: string
+                        type: object
+                      wechat:
+                        description: The default WeChat Config
+                        properties:
+                          apiCorpID:
+                            description: The default WeChat API Corporate ID.
+                            minLength: 1
+                            type: string
+                          apiSecret:
+                            description: The default WeChat API Secret.
+                            properties:
+                              key:
+                                description: The key of the secret to select from.  Must
+                                  be a valid secret key.
+                                type: string
+                              name:
+                                default: ""
+                                description: |-
+                                  Name of the referent.
+                                  This field is effectively required, but due to backwards compatibility is
+                                  allowed to be empty. Instances of this type with an empty value here are
+                                  almost certainly wrong.
+                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                type: string
+                              optional:
+                                description: Specify whether the Secret or its key
+                                  must be defined
+                                type: boolean
+                            required:
+                            - key
+                            type: object
+                            x-kubernetes-map-type: atomic
+                          apiURL:
+                            description: |-
+                              The default WeChat API URL.
+                              The default value is "https://qyapi.weixin.qq.com/cgi-bin/"
+                            pattern: ^(http|https)://.+$
+                            type: string
                         type: object
                     type: object
                   name:
@@ -15028,7 +15197,7 @@ spec:
                 description: |-
                   An optional list of references to secrets in the same namespace
                   to use for pulling prometheus and alertmanager images from registries
-                  see http://kubernetes.io/docs/user-guide/images#specifying-imagepullsecrets-on-a-pod
+                  see https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
                 items:
                   description: |-
                     LocalObjectReference contains enough information to let you locate the
@@ -16585,7 +16754,7 @@ spec:
                       Annotations is an unstructured key value map stored with a resource that may be
                       set by external tools to store and retrieve arbitrary metadata. They are not
                       queryable and should be preserved when modifying objects.
-                      More info: http://kubernetes.io/docs/user-guide/annotations
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
                     type: object
                   labels:
                     additionalProperties:
@@ -16594,7 +16763,7 @@ spec:
                       Map of string keys and values that can be used to organize and categorize
                       (scope and select) objects. May match selectors of replication controllers
                       and services.
-                      More info: http://kubernetes.io/docs/user-guide/labels
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
                     type: object
                   name:
                     description: |-
@@ -16603,7 +16772,7 @@ spec:
                       automatically. Name is primarily intended for creation idempotence and configuration
                       definition.
                       Cannot be updated.
-                      More info: http://kubernetes.io/docs/user-guide/identifiers#names
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
                     type: string
                 type: object
               portName:
@@ -17274,7 +17443,7 @@ spec:
                               Annotations is an unstructured key value map stored with a resource that may be
                               set by external tools to store and retrieve arbitrary metadata. They are not
                               queryable and should be preserved when modifying objects.
-                              More info: http://kubernetes.io/docs/user-guide/annotations
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
                             type: object
                           labels:
                             additionalProperties:
@@ -17283,7 +17452,7 @@ spec:
                               Map of string keys and values that can be used to organize and categorize
                               (scope and select) objects. May match selectors of replication controllers
                               and services.
-                              More info: http://kubernetes.io/docs/user-guide/labels
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
                             type: object
                           name:
                             description: |-
@@ -17292,7 +17461,7 @@ spec:
                               automatically. Name is primarily intended for creation idempotence and configuration
                               definition.
                               Cannot be updated.
-                              More info: http://kubernetes.io/docs/user-guide/identifiers#names
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
                             type: string
                         type: object
                       spec:
@@ -20153,7 +20322,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.18.0
-    operator.prometheus.io/version: 0.83.0
+    operator.prometheus.io/version: 0.84.0
   name: podmonitors.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -20579,6 +20748,14 @@ spec:
                             type: string
                         type: object
                       type: array
+                    noProxy:
+                      description: |-
+                        `noProxy` is a comma-separated string that can contain IPs, CIDR notation, domain names
+                        that should be excluded from proxying. IP and domain names can
+                        contain port numbers.
+
+                        It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.
+                      type: string
                     oauth2:
                       description: |-
                         `oauth2` configures the OAuth2 settings to use when scraping the target.
@@ -20935,10 +21112,49 @@ spec:
                       maximum: 65535
                       minimum: 1
                       type: integer
-                    proxyUrl:
+                    proxyConnectHeader:
+                      additionalProperties:
+                        items:
+                          description: SecretKeySelector selects a key of a Secret.
+                          properties:
+                            key:
+                              description: The key of the secret to select from.  Must
+                                be a valid secret key.
+                              type: string
+                            name:
+                              default: ""
+                              description: |-
+                                Name of the referent.
+                                This field is effectively required, but due to backwards compatibility is
+                                allowed to be empty. Instances of this type with an empty value here are
+                                almost certainly wrong.
+                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              type: string
+                            optional:
+                              description: Specify whether the Secret or its key must
+                                be defined
+                              type: boolean
+                          required:
+                          - key
+                          type: object
+                          x-kubernetes-map-type: atomic
+                        type: array
                       description: |-
-                        `proxyURL` configures the HTTP Proxy URL (e.g.
-                        "http://proxyserver:2195") to go through when scraping the target.
+                        ProxyConnectHeader optionally specifies headers to send to
+                        proxies during CONNECT requests.
+
+                        It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.
+                      type: object
+                      x-kubernetes-map-type: atomic
+                    proxyFromEnvironment:
+                      description: |-
+                        Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).
+
+                        It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.
+                      type: boolean
+                    proxyUrl:
+                      description: '`proxyURL` defines the HTTP proxy server to use.'
+                      pattern: ^(http|https|socks5)://.+$
                       type: string
                     relabelings:
                       description: |-
@@ -21365,7 +21581,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.18.0
-    operator.prometheus.io/version: 0.83.0
+    operator.prometheus.io/version: 0.84.0
   name: probes.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -22022,14 +22238,63 @@ spec:
                   Specification for the prober to use for probing targets.
                   The prober.URL parameter is required. Targets cannot be probed if left empty.
                 properties:
+                  noProxy:
+                    description: |-
+                      `noProxy` is a comma-separated string that can contain IPs, CIDR notation, domain names
+                      that should be excluded from proxying. IP and domain names can
+                      contain port numbers.
+
+                      It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.
+                    type: string
                   path:
                     default: /probe
                     description: |-
                       Path to collect metrics from.
                       Defaults to `/probe`.
                     type: string
+                  proxyConnectHeader:
+                    additionalProperties:
+                      items:
+                        description: SecretKeySelector selects a key of a Secret.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      type: array
+                    description: |-
+                      ProxyConnectHeader optionally specifies headers to send to
+                      proxies during CONNECT requests.
+
+                      It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  proxyFromEnvironment:
+                    description: |-
+                      Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).
+
+                      It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.
+                    type: boolean
                   proxyUrl:
-                    description: Optional ProxyURL.
+                    description: '`proxyURL` defines the HTTP proxy server to use.'
+                    pattern: ^(http|https|socks5)://.+$
                     type: string
                   scheme:
                     description: |-
@@ -22544,7 +22809,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.18.0
-    operator.prometheus.io/version: 0.83.0
+    operator.prometheus.io/version: 0.84.0
   name: prometheusagents.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -23721,6 +23986,58 @@ spec:
                     description: |-
                       Kubernetes API address consisting of a hostname or IP address followed
                       by an optional port number.
+                    type: string
+                  noProxy:
+                    description: |-
+                      `noProxy` is a comma-separated string that can contain IPs, CIDR notation, domain names
+                      that should be excluded from proxying. IP and domain names can
+                      contain port numbers.
+
+                      It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.
+                    type: string
+                  proxyConnectHeader:
+                    additionalProperties:
+                      items:
+                        description: SecretKeySelector selects a key of a Secret.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      type: array
+                    description: |-
+                      ProxyConnectHeader optionally specifies headers to send to
+                      proxies during CONNECT requests.
+
+                      It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  proxyFromEnvironment:
+                    description: |-
+                      Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).
+
+                      It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.
+                    type: boolean
+                  proxyUrl:
+                    description: '`proxyURL` defines the HTTP proxy server to use.'
+                    pattern: ^(http|https|socks5)://.+$
                     type: string
                   tlsConfig:
                     description: TLS Config to use for the API server.
@@ -25702,7 +26019,7 @@ spec:
                   Use the host's network namespace if true.
 
                   Make sure to understand the security implications if you want to enable
-                  it (https://kubernetes.io/docs/concepts/configuration/overview/).
+                  it (https://kubernetes.io/docs/concepts/configuration/overview/ ).
 
                   When hostNetwork is enabled, this will set the DNS policy to
                   `ClusterFirstWithHostNet` automatically (unless `.spec.DNSPolicy` is set
@@ -27416,7 +27733,7 @@ spec:
                       Annotations is an unstructured key value map stored with a resource that may be
                       set by external tools to store and retrieve arbitrary metadata. They are not
                       queryable and should be preserved when modifying objects.
-                      More info: http://kubernetes.io/docs/user-guide/annotations
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
                     type: object
                   labels:
                     additionalProperties:
@@ -27425,7 +27742,7 @@ spec:
                       Map of string keys and values that can be used to organize and categorize
                       (scope and select) objects. May match selectors of replication controllers
                       and services.
-                      More info: http://kubernetes.io/docs/user-guide/labels
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
                     type: object
                   name:
                     description: |-
@@ -27434,7 +27751,7 @@ spec:
                       automatically. Name is primarily intended for creation idempotence and configuration
                       definition.
                       Cannot be updated.
-                      More info: http://kubernetes.io/docs/user-guide/identifiers#names
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
                     type: string
                 type: object
               podMonitorNamespaceSelector:
@@ -29362,6 +29679,11 @@ spec:
                 x-kubernetes-list-map-keys:
                 - name
                 x-kubernetes-list-type: map
+              scrapeClassicHistograms:
+                description: |-
+                  Whether to scrape a classic histogram that is also exposed as a native histogram.
+                  It requires Prometheus >= v3.5.0.
+                type: boolean
               scrapeConfigNamespaceSelector:
                 description: |-
                   Namespaces to match for ScrapeConfig discovery. An empty label selector
@@ -30245,7 +30567,7 @@ spec:
                               Annotations is an unstructured key value map stored with a resource that may be
                               set by external tools to store and retrieve arbitrary metadata. They are not
                               queryable and should be preserved when modifying objects.
-                              More info: http://kubernetes.io/docs/user-guide/annotations
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
                             type: object
                           labels:
                             additionalProperties:
@@ -30254,7 +30576,7 @@ spec:
                               Map of string keys and values that can be used to organize and categorize
                               (scope and select) objects. May match selectors of replication controllers
                               and services.
-                              More info: http://kubernetes.io/docs/user-guide/labels
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
                             type: object
                           name:
                             description: |-
@@ -30263,7 +30585,7 @@ spec:
                               automatically. Name is primarily intended for creation idempotence and configuration
                               definition.
                               Cannot be updated.
-                              More info: http://kubernetes.io/docs/user-guide/identifiers#names
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
                             type: string
                         type: object
                       spec:
@@ -33282,6 +33604,17 @@ spec:
                     type: object
                 type: object
             type: object
+            x-kubernetes-validations:
+            - message: replicas cannot be set when mode is DaemonSet
+              rule: '!(has(self.mode) && self.mode == ''DaemonSet'' && has(self.replicas))'
+            - message: storage cannot be set when mode is DaemonSet
+              rule: '!(has(self.mode) && self.mode == ''DaemonSet'' && has(self.storage))'
+            - message: shards cannot be greater than 1 when mode is DaemonSet
+              rule: '!(has(self.mode) && self.mode == ''DaemonSet'' && has(self.shards)
+                && self.shards > 1)'
+            - message: persistentVolumeClaimRetentionPolicy cannot be set when mode
+                is DaemonSet
+              rule: '!(has(self.mode) && self.mode == ''DaemonSet'' && has(self.persistentVolumeClaimRetentionPolicy))'
           status:
             description: |-
               Most recent observed status of the Prometheus cluster. Read-only.
@@ -33433,7 +33766,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.18.0
-    operator.prometheus.io/version: 0.83.0
+    operator.prometheus.io/version: 0.84.0
   name: prometheuses.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -35345,6 +35678,58 @@ spec:
                     description: |-
                       Kubernetes API address consisting of a hostname or IP address followed
                       by an optional port number.
+                    type: string
+                  noProxy:
+                    description: |-
+                      `noProxy` is a comma-separated string that can contain IPs, CIDR notation, domain names
+                      that should be excluded from proxying. IP and domain names can
+                      contain port numbers.
+
+                      It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.
+                    type: string
+                  proxyConnectHeader:
+                    additionalProperties:
+                      items:
+                        description: SecretKeySelector selects a key of a Secret.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      type: array
+                    description: |-
+                      ProxyConnectHeader optionally specifies headers to send to
+                      proxies during CONNECT requests.
+
+                      It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  proxyFromEnvironment:
+                    description: |-
+                      Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).
+
+                      It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.
+                    type: boolean
+                  proxyUrl:
+                    description: '`proxyURL` defines the HTTP proxy server to use.'
+                    pattern: ^(http|https|socks5)://.+$
                     type: string
                   tlsConfig:
                     description: TLS Config to use for the API server.
@@ -37371,7 +37756,7 @@ spec:
                   Use the host's network namespace if true.
 
                   Make sure to understand the security implications if you want to enable
-                  it (https://kubernetes.io/docs/concepts/configuration/overview/).
+                  it (https://kubernetes.io/docs/concepts/configuration/overview/ ).
 
                   When hostNetwork is enabled, this will set the DNS policy to
                   `ClusterFirstWithHostNet` automatically (unless `.spec.DNSPolicy` is set
@@ -39076,7 +39461,7 @@ spec:
                       Annotations is an unstructured key value map stored with a resource that may be
                       set by external tools to store and retrieve arbitrary metadata. They are not
                       queryable and should be preserved when modifying objects.
-                      More info: http://kubernetes.io/docs/user-guide/annotations
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
                     type: object
                   labels:
                     additionalProperties:
@@ -39085,7 +39470,7 @@ spec:
                       Map of string keys and values that can be used to organize and categorize
                       (scope and select) objects. May match selectors of replication controllers
                       and services.
-                      More info: http://kubernetes.io/docs/user-guide/labels
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
                     type: object
                   name:
                     description: |-
@@ -39094,7 +39479,7 @@ spec:
                       automatically. Name is primarily intended for creation idempotence and configuration
                       definition.
                       Cannot be updated.
-                      More info: http://kubernetes.io/docs/user-guide/identifiers#names
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
                     type: string
                 type: object
               podMonitorNamespaceSelector:
@@ -41960,6 +42345,11 @@ spec:
                 x-kubernetes-list-map-keys:
                 - name
                 x-kubernetes-list-type: map
+              scrapeClassicHistograms:
+                description: |-
+                  Whether to scrape a classic histogram that is also exposed as a native histogram.
+                  It requires Prometheus >= v3.5.0.
+                type: boolean
               scrapeConfigNamespaceSelector:
                 description: |-
                   Namespaces to match for ScrapeConfig discovery. An empty label selector
@@ -42883,7 +43273,7 @@ spec:
                               Annotations is an unstructured key value map stored with a resource that may be
                               set by external tools to store and retrieve arbitrary metadata. They are not
                               queryable and should be preserved when modifying objects.
-                              More info: http://kubernetes.io/docs/user-guide/annotations
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
                             type: object
                           labels:
                             additionalProperties:
@@ -42892,7 +43282,7 @@ spec:
                               Map of string keys and values that can be used to organize and categorize
                               (scope and select) objects. May match selectors of replication controllers
                               and services.
-                              More info: http://kubernetes.io/docs/user-guide/labels
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
                             type: object
                           name:
                             description: |-
@@ -42901,7 +43291,7 @@ spec:
                               automatically. Name is primarily intended for creation idempotence and configuration
                               definition.
                               Cannot be updated.
-                              More info: http://kubernetes.io/docs/user-guide/identifiers#names
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
                             type: string
                         type: object
                       spec:
@@ -46588,7 +46978,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.18.0
-    operator.prometheus.io/version: 0.83.0
+    operator.prometheus.io/version: 0.84.0
   name: prometheusrules.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -46747,7 +47137,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.18.0
-    operator.prometheus.io/version: 0.83.0
+    operator.prometheus.io/version: 0.84.0
   name: scrapeconfigs.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -51690,6 +52080,12 @@ spec:
                       description: Configure whether HTTP requests follow HTTP 3xx
                         redirects.
                       type: boolean
+                    labelSelector:
+                      description: |-
+                        Label selector used to filter the servers when fetching them from the API.
+                        It requires Prometheus >= v3.5.0.
+                      minLength: 1
+                      type: string
                     noProxy:
                       description: |-
                         `noProxy` is a comma-separated string that can contain IPs, CIDR notation, domain names
@@ -59286,7 +59682,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.18.0
-    operator.prometheus.io/version: 0.83.0
+    operator.prometheus.io/version: 0.84.0
   name: servicemonitors.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -59635,6 +60031,14 @@ spec:
                             type: string
                         type: object
                       type: array
+                    noProxy:
+                      description: |-
+                        `noProxy` is a comma-separated string that can contain IPs, CIDR notation, domain names
+                        that should be excluded from proxying. IP and domain names can
+                        contain port numbers.
+
+                        It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.
+                      type: string
                     oauth2:
                       description: |-
                         `oauth2` configures the OAuth2 settings to use when scraping the target.
@@ -59985,10 +60389,49 @@ spec:
 
                         It takes precedence over `targetPort`.
                       type: string
-                    proxyUrl:
+                    proxyConnectHeader:
+                      additionalProperties:
+                        items:
+                          description: SecretKeySelector selects a key of a Secret.
+                          properties:
+                            key:
+                              description: The key of the secret to select from.  Must
+                                be a valid secret key.
+                              type: string
+                            name:
+                              default: ""
+                              description: |-
+                                Name of the referent.
+                                This field is effectively required, but due to backwards compatibility is
+                                allowed to be empty. Instances of this type with an empty value here are
+                                almost certainly wrong.
+                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              type: string
+                            optional:
+                              description: Specify whether the Secret or its key must
+                                be defined
+                              type: boolean
+                          required:
+                          - key
+                          type: object
+                          x-kubernetes-map-type: atomic
+                        type: array
                       description: |-
-                        `proxyURL` configures the HTTP Proxy URL (e.g.
-                        "http://proxyserver:2195") to go through when scraping the target.
+                        ProxyConnectHeader optionally specifies headers to send to
+                        proxies during CONNECT requests.
+
+                        It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.
+                      type: object
+                      x-kubernetes-map-type: atomic
+                    proxyFromEnvironment:
+                      description: |-
+                        Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).
+
+                        It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.
+                      type: boolean
+                    proxyUrl:
+                      description: '`proxyURL` defines the HTTP proxy server to use.'
+                      pattern: ^(http|https|socks5)://.+$
                       type: string
                     relabelings:
                       description: |-
@@ -60509,18 +60952,113 @@ spec:
             - endpoints
             - selector
             type: object
+          status:
+            description: |-
+              This Status subresource is under active development and is updated only when the
+              "StatusForConfigurationResources" feature gate is enabled.
+
+              Most recent observed status of the ServiceMonitor. Read-only.
+              More info:
+              https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
+            properties:
+              bindings:
+                description: The list of workload resources (Prometheus or PrometheusAgent)
+                  which select the configuration resource.
+                items:
+                  description: WorkloadBinding is a link between a configuration resource
+                    and a workload resource.
+                  properties:
+                    conditions:
+                      description: The current state of the configuration resource
+                        when bound to the referenced Prometheus object.
+                      items:
+                        description: ConfigResourceCondition describes the status
+                          of configuration resources linked to Prometheus, PrometheusAgent,
+                          Alertmanager, or ThanosRuler.
+                        properties:
+                          lastTransitionTime:
+                            description: LastTransitionTime is the time of the last
+                              update to the current status property.
+                            format: date-time
+                            type: string
+                          message:
+                            description: Human-readable message indicating details
+                              for the condition's last transition.
+                            type: string
+                          observedGeneration:
+                            description: |-
+                              ObservedGeneration represents the .metadata.generation that the
+                              condition was set based upon. For instance, if `.metadata.generation` is
+                              currently 12, but the `.status.conditions[].observedGeneration` is 9, the
+                              condition is out of date with respect to the current state of the object.
+                            format: int64
+                            type: integer
+                          reason:
+                            description: Reason for the condition's last transition.
+                            type: string
+                          status:
+                            description: Status of the condition.
+                            minLength: 1
+                            type: string
+                          type:
+                            description: |-
+                              Type of the condition being reported.
+                              Currently, only "Accepted" is supported.
+                            enum:
+                            - Accepted
+                            minLength: 1
+                            type: string
+                        required:
+                        - lastTransitionTime
+                        - status
+                        - type
+                        type: object
+                      type: array
+                      x-kubernetes-list-map-keys:
+                      - type
+                      x-kubernetes-list-type: map
+                    group:
+                      description: The group of the referenced resource.
+                      enum:
+                      - monitoring.coreos.com
+                      type: string
+                    name:
+                      description: The name of the referenced object.
+                      minLength: 1
+                      type: string
+                    namespace:
+                      description: The namespace of the referenced object.
+                      minLength: 1
+                      type: string
+                    resource:
+                      description: The type of resource being referenced (e.g. Prometheus
+                        or PrometheusAgent).
+                      enum:
+                      - prometheuses
+                      - prometheusagents
+                      type: string
+                  required:
+                  - group
+                  - name
+                  - namespace
+                  - resource
+                  type: object
+                type: array
+            type: object
         required:
         - spec
         type: object
     served: true
     storage: true
+    subresources:
+      status: {}
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.18.0
-    operator.prometheus.io/version: 0.83.0
+    operator.prometheus.io/version: 0.84.0
   name: thanosrulers.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -64958,7 +65496,7 @@ spec:
                       Annotations is an unstructured key value map stored with a resource that may be
                       set by external tools to store and retrieve arbitrary metadata. They are not
                       queryable and should be preserved when modifying objects.
-                      More info: http://kubernetes.io/docs/user-guide/annotations
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
                     type: object
                   labels:
                     additionalProperties:
@@ -64967,7 +65505,7 @@ spec:
                       Map of string keys and values that can be used to organize and categorize
                       (scope and select) objects. May match selectors of replication controllers
                       and services.
-                      More info: http://kubernetes.io/docs/user-guide/labels
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
                     type: object
                   name:
                     description: |-
@@ -64976,7 +65514,7 @@ spec:
                       automatically. Name is primarily intended for creation idempotence and configuration
                       definition.
                       Cannot be updated.
-                      More info: http://kubernetes.io/docs/user-guide/identifiers#names
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
                     type: string
                 type: object
               portName:
@@ -66232,6 +66770,13 @@ spec:
                 description: The route prefix ThanosRuler registers HTTP handlers
                   for. This allows thanos UI to be served on a sub-path.
                 type: string
+              ruleConcurrentEval:
+                description: |-
+                  How many rules can be evaluated concurrently.
+                  It requires Thanos >= v0.37.0.
+                format: int32
+                minimum: 1
+                type: integer
               ruleNamespaceSelector:
                 description: |-
                   Namespaces to be selected for Rules discovery. If unspecified, only
@@ -66280,6 +66825,18 @@ spec:
                     type: object
                 type: object
                 x-kubernetes-map-type: atomic
+              ruleOutageTolerance:
+                description: |-
+                  Max time to tolerate prometheus outage for restoring "for" state of alert.
+                  It requires Thanos >= v0.30.0.
+                pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
+                type: string
+              ruleQueryOffset:
+                description: |-
+                  The default rule group's query offset duration to use.
+                  It requires Thanos >= v0.38.0.
+                pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
+                type: string
               ruleSelector:
                 description: |-
                   PrometheusRule objects to be selected for rule evaluation. An empty
@@ -66890,7 +67447,7 @@ spec:
                               Annotations is an unstructured key value map stored with a resource that may be
                               set by external tools to store and retrieve arbitrary metadata. They are not
                               queryable and should be preserved when modifying objects.
-                              More info: http://kubernetes.io/docs/user-guide/annotations
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
                             type: object
                           labels:
                             additionalProperties:
@@ -66899,7 +67456,7 @@ spec:
                               Map of string keys and values that can be used to organize and categorize
                               (scope and select) objects. May match selectors of replication controllers
                               and services.
-                              More info: http://kubernetes.io/docs/user-guide/labels
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
                             type: object
                           name:
                             description: |-
@@ -66908,7 +67465,7 @@ spec:
                               automatically. Name is primarily intended for creation idempotence and configuration
                               definition.
                               Cannot be updated.
-                              More info: http://kubernetes.io/docs/user-guide/identifiers#names
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
                             type: string
                         type: object
                       spec:
