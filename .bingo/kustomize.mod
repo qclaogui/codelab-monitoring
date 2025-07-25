@@ -4,4 +4,4 @@ go 1.22.7
 
 toolchain go1.23.2
 
-require sigs.k8s.io/kustomize/kustomize/v5 v5.6.0
+require sigs.k8s.io/kustomize/kustomize/v5 v5.7.1
