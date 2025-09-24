@@ -83,9 +83,9 @@ $(MIXTOOL): $(BINGO_DIR)/mixtool.mod
 	@echo "(re)installing $(GOBIN)/mixtool-v0.0.0-20250819083739-3a8bcbe73b71"
 	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=mixtool.mod -o=$(GOBIN)/mixtool-v0.0.0-20250819083739-3a8bcbe73b71 "github.com/monitoring-mixins/mixtool/cmd/mixtool"
 
-UPDATECLI := $(GOBIN)/updatecli-v0.105.1
+UPDATECLI := $(GOBIN)/updatecli-v0.107.0
 $(UPDATECLI): $(BINGO_DIR)/updatecli.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
-	@echo "(re)installing $(GOBIN)/updatecli-v0.105.1"
-	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=updatecli.mod -o=$(GOBIN)/updatecli-v0.105.1 "github.com/updatecli/updatecli"
+	@echo "(re)installing $(GOBIN)/updatecli-v0.107.0"
+	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=updatecli.mod -o=$(GOBIN)/updatecli-v0.107.0 "github.com/updatecli/updatecli"
 
