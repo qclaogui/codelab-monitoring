@@ -6,11 +6,28 @@ local utils = import 'mixin-utils/utils.libsonnet';
     assert std.isArray(strings) : 'simpleRegexpOpt requires that `strings` is an array of strings`';
     '(' + std.join('|', strings) + ')',
 
-  local groupDeploymentByRolloutGroup(metricName) =
-    'sum without(deployment) (label_replace(%s, "rollout_group", "$1", "deployment", "(.*?)(?:-zone-[a-z])?"))' % metricName,
+  local excludeWorkloads(labelName, values) =
+    if std.length(values) == 0 then '' else '{%s!~"%s"}' % [labelName, std.join('|', values)],
 
-  local groupStatefulSetByRolloutGroup(metricName) =
-    'sum without(statefulset) (label_replace(%s, "rollout_group", "$1", "statefulset", "(.*?)(?:-zone-[a-z])?"))' % metricName,
+  local groupDeploymentByRolloutGroup(metricName, ignore) =
+    'sum without(deployment) (label_replace(%s%s, "rollout_group", "$1", "deployment", "(.*?)(?:-zone-[a-z])?"))' % [
+      metricName,
+      excludeWorkloads('deployment', ignore),
+    ],
+
+  local groupStatefulSetByRolloutGroup(metricName, ignore) =
+    'sum by (%s, rollout_group) (label_replace(%s%s, "rollout_group", "$1", "statefulset", "(.*?)(?:-zone-[a-z])?"))' % [
+      $._config.alert_aggregation_labels,
+      metricName,
+      excludeWorkloads('statefulset', ignore),
+    ],
+
+  local groupStatefulSetByRolloutGroupAndRevision(metricName, ignore) =
+    'sum by (%s, rollout_group, revision) (label_replace(%s%s, "rollout_group", "$1", "statefulset", "(.*?)(?:-zone-[a-z])?"))' % [
+      $._config.alert_aggregation_labels,
+      metricName,
+      excludeWorkloads('statefulset', ignore),
+    ],
 
   local request_metric = 'cortex_request_duration_seconds',
 
@@ -163,25 +180,6 @@ local utils = import 'mixin-utils/utils.libsonnet';
           },
         },
         {
-          alert: $.alertName('FrontendQueriesStuck'),
-          expr: |||
-            sum by (%(group_by)s, %(job_label)s) (min_over_time(cortex_query_frontend_queue_length[%(range_interval)s])) > 0
-          ||| % {
-            group_by: $._config.alert_aggregation_labels,
-            job_label: $._config.per_job_label,
-            range_interval: $.alertRangeInterval(1),
-          },
-          'for': '5m',  // We don't want to block for longer.
-          labels: {
-            severity: 'critical',
-          },
-          annotations: {
-            message: |||
-              There are {{ $value }} queued up queries in %(alert_aggregation_variables)s {{ $labels.%(per_job_label)s }}.
-            ||| % $._config,
-          },
-        },
-        {
           alert: $.alertName('SchedulerQueriesStuck'),
           expr: |||
             sum by (%(group_by)s, %(job_label)s) (min_over_time(cortex_query_scheduler_queue_length[%(range_interval)s])) > 0
@@ -235,7 +233,7 @@ local utils = import 'mixin-utils/utils.libsonnet';
           expr: |||
             (
               sum by(%(alert_aggregation_labels)s, %(per_instance_label)s) (
-                increase(kube_pod_container_status_restarts_total{container=~"(%(ingester)s|%(mimir_write)s)"}[30m])
+                increase(kube_pod_container_status_restarts_total{container=~"(%(ingester)s)"}[30m])
               )
               >= 2
             )
@@ -245,7 +243,6 @@ local utils = import 'mixin-utils/utils.libsonnet';
             )
           ||| % $._config {
             ingester: $._config.container_names.ingester,
-            mimir_write: $._config.container_names.mimir_write,
           },
           labels: {
             // This alert is on a cause not symptom. A couple of ingesters restarts may be suspicious but
@@ -393,6 +390,40 @@ local utils = import 'mixin-utils/utils.libsonnet';
             message: '%(product)s store-gateway in %(alert_aggregation_variables)s is experiencing {{ $value | humanizePercentage }} errors while doing {{ $labels.operation }} on the object storage.' % $._config,
           },
         },
+        {
+          // Alert if servers are receiving requests with invalid cluster validation labels (i.e. meant for other clusters).
+          alert: $.alertName('ServerInvalidClusterValidationLabelRequests'),
+          expr: |||
+            (sum by (%(alert_aggregation_labels)s, protocol) (rate(cortex_server_invalid_cluster_validation_label_requests_total{}[%(range_interval)s]))) > 0
+            # Alert only for namespaces with Mimir clusters.
+            and on (%(alert_aggregation_labels)s) (mimir_build_info > 0)
+          ||| % $._config {
+            range_interval: $.alertRangeInterval(5),
+          },
+          labels: {
+            severity: 'warning',
+          },
+          annotations: {
+            message: '%(product)s servers in %(alert_aggregation_variables)s are receiving requests with invalid cluster validation labels.' % $._config,
+          },
+        },
+        {
+          // Alert if clients' requests are rejected due to invalid cluster validation labels (i.e. there's a mismatch between clients' and servers' cluster validation labels).
+          alert: $.alertName('ClientInvalidClusterValidationLabelRequests'),
+          expr: |||
+            (sum by (%(alert_aggregation_labels)s, protocol) (rate(cortex_client_invalid_cluster_validation_label_requests_total{}[%(range_interval)s]))) > 0
+            # Alert only for namespaces with Mimir clusters.
+            and on (%(alert_aggregation_labels)s) (mimir_build_info > 0)
+          ||| % $._config {
+            range_interval: $.alertRangeInterval(5),
+          },
+          labels: {
+            severity: 'warning',
+          },
+          annotations: {
+            message: '%(product)s clients in %(alert_aggregation_variables)s are having requests rejected due to invalid cluster validation labels.' % $._config,
+          },
+        },
       ] + [
         {
           alert: $.alertName('RingMembersMismatch'),
@@ -424,6 +455,25 @@ local utils = import 'mixin-utils/utils.libsonnet';
             message: |||
               Number of members in %(product)s ingester hash ring does not match the expected number in %(alert_aggregation_variables)s.
             ||| % { alert_aggregation_variables: $._config.alert_aggregation_variables, product: $._config.product },
+          },
+        },
+
+        {
+          alert: $.alertName('HighGRPCConcurrentStreamsPerConnection'),
+          expr: |||
+            max(avg_over_time(grpc_concurrent_streams_by_conn_max[10m])) by (%(alert_aggregation_labels)s, container)
+            /
+            min(cortex_grpc_concurrent_streams_limit) by (%(alert_aggregation_labels)s, container) > 0.9
+          ||| % {
+            alert_aggregation_labels: $._config.alert_aggregation_labels,
+          },
+          labels: {
+            severity: 'warning',
+          },
+          annotations: {
+            message: |||
+              Container {{ $labels.container }} in %(alert_aggregation_variables)s is experiencing high GRPC concurrent streams per connection.
+            ||| % $._config,
           },
         },
       ],
@@ -545,78 +595,92 @@ local utils = import 'mixin-utils/utils.libsonnet';
       ],
     },
     {
+      local statefulset_rollout_stuck(for_duration, severity) = {
+        alert: $.alertName('RolloutStuck'),
+        expr: |||
+          (
+            # Query for rollout groups in certain namespaces that are being updated, dropping the revision label.
+            max by (%(aggregation_labels)s, rollout_group) (
+              %(kube_statefulset_status_current_revision)s
+                unless
+              %(kube_statefulset_status_update_revision)s
+            )
+              # Multiply by replicas in corresponding rollout groups not fully updated to the current revision.
+              *
+            (
+              %(kube_statefulset_replicas)s
+                !=
+              %(kube_statefulset_status_replicas_updated)s
+            )
+          ) and (
+            # Pick only those which are unchanging for the interval.
+            changes(%(kube_statefulset_status_replicas_updated)s[%(range_interval)s])
+              ==
+            0
+          )
+          # Include only Mimir namespaces.
+          * on(%(aggregation_labels)s) group_left max by(%(aggregation_labels)s) (cortex_build_info)
+        ||| % {
+          aggregation_labels: $._config.alert_aggregation_labels,
+          // Indicates the revision of the StatefulSet used to generate current replicas.
+          kube_statefulset_status_current_revision: groupStatefulSetByRolloutGroupAndRevision('kube_statefulset_status_current_revision', $._config.rollout_stuck_alert_ignore_statefulsets),
+          // Indicates the revision of the StatefulSet used to generate replicas being updated.
+          kube_statefulset_status_update_revision: groupStatefulSetByRolloutGroupAndRevision('kube_statefulset_status_update_revision', $._config.rollout_stuck_alert_ignore_statefulsets),
+          kube_statefulset_replicas: groupStatefulSetByRolloutGroup('kube_statefulset_replicas', $._config.rollout_stuck_alert_ignore_statefulsets),
+          kube_statefulset_status_replicas_updated: groupStatefulSetByRolloutGroup('kube_statefulset_status_replicas_updated', $._config.rollout_stuck_alert_ignore_statefulsets),
+          range_interval: '15m:' + $.alertRangeInterval(1),
+        },
+        'for': for_duration,
+        labels: {
+          severity: severity,
+          workload_type: 'statefulset',
+        },
+        annotations: {
+          message: |||
+            The {{ $labels.rollout_group }} rollout is stuck in %(alert_aggregation_variables)s.
+          ||| % $._config,
+        },
+      },
+
+      local deployment_rollout_stuck(for_duration, severity) = {
+        alert: $.alertName('RolloutStuck'),
+        expr: |||
+          (
+            %(kube_deployment_spec_replicas)s
+              !=
+            %(kube_deployment_status_replicas_updated)s
+          ) and (
+            changes(%(kube_deployment_status_replicas_updated)s[%(range_interval)s])
+              ==
+            0
+          )
+          * on(%(aggregation_labels)s) group_left max by(%(aggregation_labels)s) (cortex_build_info)
+        ||| % {
+          aggregation_labels: $._config.alert_aggregation_labels,
+          kube_deployment_spec_replicas: groupDeploymentByRolloutGroup('kube_deployment_spec_replicas', $._config.rollout_stuck_alert_ignore_deployments),
+          kube_deployment_status_replicas_updated: groupDeploymentByRolloutGroup('kube_deployment_status_replicas_updated', $._config.rollout_stuck_alert_ignore_deployments),
+          range_interval: '15m:' + $.alertRangeInterval(1),
+        },
+        'for': for_duration,
+        labels: {
+          severity: severity,
+          workload_type: 'deployment',
+        },
+        annotations: {
+          message: |||
+            The {{ $labels.rollout_group }} rollout is stuck in %(alert_aggregation_variables)s.
+          ||| % $._config,
+        },
+      },
+
+
       name: 'mimir-rollout-alerts',
       rules: [
-        {
-          alert: $.alertName('RolloutStuck'),
-          expr: |||
-            (
-              max without (revision) (
-                %(kube_statefulset_status_current_revision)s
-                  unless
-                %(kube_statefulset_status_update_revision)s
-              )
-                *
-              (
-                %(kube_statefulset_replicas)s
-                  !=
-                %(kube_statefulset_status_replicas_updated)s
-              )
-            ) and (
-              changes(%(kube_statefulset_status_replicas_updated)s[%(range_interval)s])
-                ==
-              0
-            )
-            * on(%(aggregation_labels)s) group_left max by(%(aggregation_labels)s) (cortex_build_info)
-          ||| % {
-            aggregation_labels: $._config.alert_aggregation_labels,
-            kube_statefulset_status_current_revision: groupStatefulSetByRolloutGroup('kube_statefulset_status_current_revision'),
-            kube_statefulset_status_update_revision: groupStatefulSetByRolloutGroup('kube_statefulset_status_update_revision'),
-            kube_statefulset_replicas: groupStatefulSetByRolloutGroup('kube_statefulset_replicas'),
-            kube_statefulset_status_replicas_updated: groupStatefulSetByRolloutGroup('kube_statefulset_status_replicas_updated'),
-            range_interval: '15m:' + $.alertRangeInterval(1),
-          },
-          'for': '30m',
-          labels: {
-            severity: 'warning',
-            workload_type: 'statefulset',
-          },
-          annotations: {
-            message: |||
-              The {{ $labels.rollout_group }} rollout is stuck in %(alert_aggregation_variables)s.
-            ||| % $._config,
-          },
-        },
-        {
-          alert: $.alertName('RolloutStuck'),
-          expr: |||
-            (
-              %(kube_deployment_spec_replicas)s
-                !=
-              %(kube_deployment_status_replicas_updated)s
-            ) and (
-              changes(%(kube_deployment_status_replicas_updated)s[%(range_interval)s])
-                ==
-              0
-            )
-            * on(%(aggregation_labels)s) group_left max by(%(aggregation_labels)s) (cortex_build_info)
-          ||| % {
-            aggregation_labels: $._config.alert_aggregation_labels,
-            kube_deployment_spec_replicas: groupDeploymentByRolloutGroup('kube_deployment_spec_replicas'),
-            kube_deployment_status_replicas_updated: groupDeploymentByRolloutGroup('kube_deployment_status_replicas_updated'),
-            range_interval: '15m:' + $.alertRangeInterval(1),
-          },
-          'for': '30m',
-          labels: {
-            severity: 'warning',
-            workload_type: 'deployment',
-          },
-          annotations: {
-            message: |||
-              The {{ $labels.rollout_group }} rollout is stuck in %(alert_aggregation_variables)s.
-            ||| % $._config,
-          },
-        },
+        statefulset_rollout_stuck('30m', 'warning'),
+        statefulset_rollout_stuck('6h', 'critical'),
+        deployment_rollout_stuck('30m', 'warning'),
+        deployment_rollout_stuck('6h', 'critical'),
+
         {
           alert: 'RolloutOperatorNotReconciling',
           expr: |||
@@ -642,8 +706,6 @@ local utils = import 'mixin-utils/utils.libsonnet';
           expr: $._config.ingester_alerts[$._config.deployment_type].memory_allocation % $._config {
             threshold: '0.65',
             ingester: $._config.container_names.ingester,
-            mimir_write: $._config.container_names.mimir_write,
-            mimir_backend: $._config.container_names.mimir_backend,
           },
           'for': '15m',
           labels: {
@@ -660,8 +722,6 @@ local utils = import 'mixin-utils/utils.libsonnet';
           expr: $._config.ingester_alerts[$._config.deployment_type].memory_allocation % $._config {
             threshold: '0.8',
             ingester: $._config.container_names.ingester,
-            mimir_write: $._config.container_names.mimir_write,
-            mimir_backend: $._config.container_names.mimir_backend,
           },
           'for': '15m',
           labels: {
@@ -873,47 +933,34 @@ local utils = import 'mixin-utils/utils.libsonnet';
       ],
     },
     {
-      name: 'etcd_alerts',
-      rules: [
-        {
-          alert: 'EtcdAllocatingTooMuchMemory',
-          expr: |||
-            (
-              container_memory_rss{container="etcd"}
-                /
-              ( container_spec_memory_limit_bytes{container="etcd"} > 0 )
-            ) > 0.65
-          |||,
-          'for': '15m',
-          labels: {
-            severity: 'warning',
-          },
-          annotations: {
-            message: |||
-              Too much memory being used by {{ $labels.namespace }}/%(alert_instance_variable)s - bump memory limit.
-            ||| % $._config,
-          },
-        },
-        {
-          alert: 'EtcdAllocatingTooMuchMemory',
-          expr: |||
-            (
-              container_memory_rss{container="etcd"}
-                /
-              ( container_spec_memory_limit_bytes{container="etcd"} > 0 )
-            ) > 0.8
-          |||,
-          'for': '15m',
-          labels: {
-            severity: 'critical',
-          },
-          annotations: {
-            message: |||
-              Too much memory being used by {{ $labels.namespace }}/%(alert_instance_variable)s - bump memory limit.
-            ||| % $._config,
-          },
-        },
-      ],
+      name: 'golang_alerts',
+      rules: (
+        [
+          {
+            alert: $.alertName('GoThreadsTooHigh'),
+            expr: |||
+              # We filter by the namespace because go_threads can be very high cardinality in a large organization.
+              max by(%(alert_aggregation_labels)s, %(per_instance_label)s) (go_threads{job=~".*(cortex|mimir).*"} > %(threshold)s)
+
+              # Further filter on namespaces actually running Mimir.
+              and on (%(alert_aggregation_labels)s) (count by (%(alert_aggregation_labels)s) (cortex_build_info))
+            ||| % ($._config + settings),
+            'for': '15m',
+            labels: {
+              severity: settings.severity,
+            },
+            annotations: {
+              message: |||
+                %(product)s %(alert_instance_variable)s in %(alert_aggregation_variables)s is running a very high number of Go threads.
+              ||| % $._config,
+            },
+          }
+          for settings in [
+            { severity: 'warning', threshold: 5000 },
+            { severity: 'critical', threshold: 8000 },
+          ]
+        ]
+      ),
     },
   ],
 

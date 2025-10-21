@@ -91,6 +91,40 @@ dashboard_utils {
         )
       )
       .addRow(
+        g.row('Memcached')
+        .addPanel(
+          $.containerCPUUsagePanel('CPU', $._config.jobs.memcached),
+        )
+        .addPanel(
+          $.containerMemoryWorkingSetPanel('Memory (workingset)', $._config.jobs.memcached),
+        )
+      )
+
+      .addRow(
+        g.row('Backend scheduler')
+        .addPanel(
+          $.containerCPUUsagePanel('CPU', $._config.jobs.backend_scheduler),
+        )
+        .addPanel(
+          $.containerMemoryWorkingSetPanel('Memory (workingset)', $._config.jobs.backend_scheduler),
+        )
+        .addPanel(
+          $.goHeapInUsePanel('Memory (go heap inuse)', $.jobMatcher($._config.jobs.backend_scheduler)),
+        )
+      )
+      .addRow(
+        g.row('Backend worker')
+        .addPanel(
+          $.containerCPUUsagePanel('CPU', $._config.jobs.backend_worker),
+        )
+        .addPanel(
+          $.containerMemoryWorkingSetPanel('Memory (workingset)', $._config.jobs.backend_worker),
+        )
+        .addPanel(
+          $.goHeapInUsePanel('Memory (go heap inuse)', $.jobMatcher($._config.jobs.backend_worker)),
+        )
+      )
+      .addRow(
         g.row('Block builder')
         .addPanel(
           $.containerCPUUsagePanel('CPU', $._config.jobs.block_builder),
@@ -101,6 +135,7 @@ dashboard_utils {
         .addPanel(
           $.goHeapInUsePanel('Memory (go heap inuse)', $.jobMatcher($._config.jobs.block_builder)),
         )
+
       ),
   },
 }

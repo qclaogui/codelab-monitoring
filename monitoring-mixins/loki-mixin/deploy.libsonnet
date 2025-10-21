@@ -7,6 +7,11 @@
       enabled: false,
     },
 
+    thanos: {
+      // Whether or not to include thanos specific dashboards
+      enabled: false,
+    },
+
     operational: {
       // Whether or not to include memcached in the operational dashboard
       memcached: true,

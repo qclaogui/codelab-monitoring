@@ -6,7 +6,7 @@ local filename = 'tempo-rollout-progress.json';
     namespace_matcher: $.namespaceMatcher(),
     per_cluster_label: $._config.per_cluster_label,
     gateway_job_matcher: $.jobMatcher($._config.jobs.gateway),
-    gateway_write_routes_regex: 'opentelemetry_proto_collector_trace_v1_traceservice_export',
+    gateway_write_routes_regex: '(opentelemetry_proto_collector_trace_v1_traceservice_export|otlp_v1_traces)',
     gateway_read_routes_regex: 'tempo_api_.*',
     all_services_regex: '.*(%s).*' % std.join('|', ['cortex-gw', 'distributor', 'ingester', 'query-frontend', 'querier', 'compactor', 'metrics-generator']),
   },
@@ -282,7 +282,7 @@ local filename = 'tempo-rollout-progress.json';
         //
         // Performance comparison with 24h ago
         //
-        $.panel('Latency vs 24h ago') +
+        $.timeseriesPanel('Latency vs 24h ago') +
         $.queryPanel([|||
           1 - (
             avg_over_time(histogram_quantile(0.99, sum by (le) (tempo_request_duration_seconds_bucket{%(gateway_job_matcher)s, route=~"%(gateway_write_routes_regex)s"} offset 24h))[1h:])

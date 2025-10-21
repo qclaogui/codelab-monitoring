@@ -25,6 +25,29 @@
     // Added default flag for GEM-specific dashboards and alerts.
     gem_enabled: false,
 
+    rollout_operator_dashboard_enable: true,
+    rollout_operator_dashboard_title: 'rollout-operator',
+    // This is the md5 of the rollout-operator dashboard name.
+    // This is set such that if the name / uid was to change an error will be raised in dashboard generation.
+    // This ensures that the uid is consistent and can be reliably linked to.
+    rollout_operator_dashboard_uid: 'f40e8042a6be71a98444a29b2c4e9421',
+    rollout_operator_container_name: 'rollout-operator',
+    rollout_operator_links: [
+      {
+        asDropdown: true,
+        icon: 'external link',
+        includeVars: true,
+        keepTime: true,
+        tags: $._config.tags,
+        targetBlank: false,
+        title: '%(product)s dashboards' % $._config,
+        type: 'dashboards',
+      },
+    ],
+    rollout_operator_instance_matcher:
+      if std.get($._config, 'helm', '') == '' then $._config.rollout_operator_container_name + '.*' else '(.*%g-)?%g.*' % [$._config.helm, $._config.rollout_operator_container_name],
+    rollout_operator_resources_panel_queries: self.resources_panel_queries.kubernetes,
+
     // This is mapping between a Mimir component name and the regular expression that should be used
     // to match its instance and container name. Mimir jsonnet and Helm guarantee that the instance name
     // (e.g. Kubernetes Deployment) and container name always match, so it's safe to use a shared mapping.
@@ -32,14 +55,12 @@
     // This mapping is intentionally local and can't be overridden. If the final user needs to customize
     // dashboards and alerts, they should override the final matcher regexp (e.g. container_names or instance_names).
     local componentNameRegexp = {
-      // Microservices deployment mode. The following matchers MUST match only
-      // the instance when deployed in microservices mode (e.g. "distributor"
-      // matcher shouldn't match "mimir-write" too).
       compactor: 'compactor',
       alertmanager: 'alertmanager',
       alertmanager_im: 'alertmanager-im',
       ingester: 'ingester',
       block_builder: 'block-builder',
+      block_builder_scheduler: 'block-builder-scheduler',
       distributor: 'distributor',
       querier: 'querier',
       query_frontend: 'query-frontend',
@@ -52,12 +73,6 @@
       overrides_exporter: 'overrides-exporter',
       gateway: '(gateway|cortex-gw|cortex-gw-internal)',
 
-      // Read-write deployment mode. The following matchers MUST match only
-      // the instance when deployed in read-write deployment mode (e.g. "mimir-write"
-      // matcher shouldn't match "distributor" too).
-      mimir_write: 'mimir-write',
-      mimir_read: 'mimir-read',
-      mimir_backend: 'mimir-backend',
       federation_frontend: 'federation-frontend',
     },
 
@@ -65,9 +80,9 @@
     // This mapping configures which components belong to each group. A component can belong
     // to multiple groups.
     local componentGroups = {
-      write: ['distributor', 'ingester', 'mimir_write'],
-      read: ['query_frontend', 'querier', 'ruler_query_frontend', 'ruler_querier', 'mimir_read'],
-      backend: ['query_scheduler', 'ruler_query_scheduler', 'ruler', 'store_gateway', 'compactor', 'alertmanager', 'overrides_exporter', 'mimir_backend'],
+      write: ['distributor', 'ingester'],
+      read: ['query_frontend', 'querier', 'ruler_query_frontend', 'ruler_querier'],
+      backend: ['query_scheduler', 'ruler_query_scheduler', 'ruler', 'store_gateway', 'compactor', 'alertmanager', 'overrides_exporter'],
       remote_ruler_read: ['ruler_query_frontend', 'ruler_query_scheduler', 'ruler_querier'],
     },
 
@@ -76,32 +91,33 @@
     // Whenever you do any change here, please reflect it in the doc at:
     // docs/sources/mimir/manage/monitoring-grafana-mimir/requirements.md
     job_names: {
-      ingester: ['ingester.*', 'cortex', 'mimir', 'mimir-write.*'],  // Match also custom and per-zone ingester deployments.
+      ingester: ['ingester.*', 'cortex', 'mimir'],  // Match also custom and per-zone ingester deployments.
       ingester_partition: ['ingester.*-partition'],  // Match exclusively temporarily partition ingesters run during the migration to ingest storage.
       block_builder: ['block-builder.*'],
-      distributor: ['distributor.*', 'cortex', 'mimir', 'mimir-write.*'],  // Match also per-zone distributor deployments.
-      querier: ['querier.*', 'cortex', 'mimir', 'mimir-read.*'],  // Match also custom querier deployments.
+      block_builder_scheduler: ['block-builder-scheduler.*'],
+      distributor: ['distributor.*', 'cortex', 'mimir'],  // Match also per-zone distributor deployments.
+      querier: ['querier.*', 'cortex', 'mimir'],  // Match also custom querier deployments.
       ruler_querier: ['ruler-querier.*'],  // Match also custom querier deployments.
-      ruler: ['ruler', 'cortex', 'mimir', 'mimir-backend.*'],
-      query_frontend: ['query-frontend.*', 'cortex', 'mimir', 'mimir-read.*'],  // Match also custom query-frontend deployments.
+      ruler: ['ruler', 'cortex', 'mimir'],
+      query_frontend: ['query-frontend.*', 'cortex', 'mimir'],  // Match also custom query-frontend deployments.
       ruler_query_frontend: ['ruler-query-frontend.*'],  // Match also custom ruler-query-frontend deployments.
-      query_scheduler: ['query-scheduler.*', 'mimir-backend.*'],  // Not part of single-binary. Match also custom query-scheduler deployments.
+      query_scheduler: ['query-scheduler.*'],  // Not part of single-binary. Match also custom query-scheduler deployments.
       ruler_query_scheduler: ['ruler-query-scheduler.*'],  // Not part of single-binary. Match also custom query-scheduler deployments.
-      ring_members: ['admin-api', 'alertmanager', 'compactor.*', 'distributor.*', 'ingester.*', 'query-frontend.*', 'querier.*', 'ruler', 'ruler-querier.*', 'store-gateway.*', 'cortex', 'mimir', 'mimir-write.*', 'mimir-read.*', 'mimir-backend.*'],
-      store_gateway: ['store-gateway.*', 'cortex', 'mimir', 'mimir-backend.*'],  // Match also per-zone store-gateway deployments.
+      ring_members: ['admin-api', 'alertmanager', 'compactor.*', 'distributor.*', 'ingester.*', 'query-frontend.*', 'querier.*', 'ruler', 'ruler-querier.*', 'store-gateway.*', 'cortex', 'mimir'],
+      store_gateway: ['store-gateway.*', 'cortex', 'mimir'],  // Match also per-zone store-gateway deployments.
       gateway: ['gateway', 'cortex-gw.*'],  // Match also custom and per-zone gateway deployments.
-      compactor: ['compactor.*', 'cortex', 'mimir', 'mimir-backend.*'],  // Match also custom compactor deployments.
-      alertmanager: ['alertmanager', 'cortex', 'mimir', 'mimir-backend.*'],
-      overrides_exporter: ['overrides-exporter', 'mimir-backend.*'],
+      compactor: ['compactor.*', 'cortex', 'mimir'],  // Match also custom compactor deployments.
+      alertmanager: ['alertmanager', 'cortex', 'mimir'],
+      overrides_exporter: ['overrides-exporter'],
 
       // The following are job matchers used to select all components in the read path.
       main_read_path: std.uniq(std.sort(self.query_frontend + self.query_scheduler + self.querier)),
       remote_ruler_read_path: std.uniq(std.sort(self.ruler_query_frontend + self.ruler_query_scheduler + self.ruler_querier)),
 
       // The following are job matchers used to select all components in a given "path".
-      write: ['distributor.*', 'ingester.*', 'mimir-write.*'],
-      read: ['query-frontend.*', 'querier.*', 'ruler-query-frontend.*', 'ruler-querier.*', 'mimir-read.*'],
-      backend: ['ruler', 'query-scheduler.*', 'ruler-query-scheduler.*', 'store-gateway.*', 'compactor.*', 'alertmanager', 'overrides-exporter', 'mimir-backend.*'],
+      write: ['distributor.*', 'ingester.*'],
+      read: ['query-frontend.*', 'querier.*', 'ruler-query-frontend.*', 'ruler-querier.*'],
+      backend: ['ruler', 'query-scheduler.*', 'ruler-query-scheduler.*', 'store-gateway.*', 'compactor.*', 'alertmanager', 'overrides-exporter'],
 
       federation_frontend: ['federation-frontend.*'],  // Match federation-frontend deployments
     },
@@ -114,11 +130,10 @@
       local baremetalCompatibleMatcher = function(regexp) if $._config.deployment_type == 'baremetal' then '.*%s' % regexp else regexp,
       local instanceMatcher = function(regexp) baremetalCompatibleMatcher(helmCompatibleMatcher('%s.*' % regexp)),
 
-      // Microservices deployment mode. The following matchers MUST match only
-      // the instance when deployed in microservices mode (e.g. "distributor"
-      // matcher shouldn't match "mimir-write" too).
+      // The following matchers MUST match only the individual instances.
       compactor: instanceMatcher(componentNameRegexp.compactor),
       block_builder: instanceMatcher(componentNameRegexp.block_builder),
+      block_builder_scheduler: instanceMatcher(componentNameRegexp.block_builder_scheduler),
       alertmanager: instanceMatcher(componentNameRegexp.alertmanager),
       alertmanager_im: instanceMatcher(componentNameRegexp.alertmanager_im),
       ingester: instanceMatcher(componentNameRegexp.ingester),
@@ -134,15 +149,7 @@
       overrides_exporter: instanceMatcher(componentNameRegexp.overrides_exporter),
       gateway: instanceMatcher(componentNameRegexp.gateway),
 
-      // Read-write deployment mode. The following matchers MUST match only
-      // the instance when deployed in read-write deployment mode (e.g. "mimir-write"
-      // matcher shouldn't match "distributor" too).
-      mimir_write: instanceMatcher(componentNameRegexp.mimir_write),
-      mimir_read: instanceMatcher(componentNameRegexp.mimir_read),
-      mimir_backend: instanceMatcher(componentNameRegexp.mimir_backend),
-
       // The following are instance matchers used to select all components in a given "path".
-      // These matchers CAN match both instances deployed in "microservices" and "read-write" mode.
       local componentsGroupMatcher = function(components)
         instanceMatcher('(%s)' % std.join('|', std.map(function(name) componentNameRegexp[name], components))),
 
@@ -156,10 +163,9 @@
     all_instances: std.join('|', std.map(function(name) componentNameRegexp[name], componentGroups.write + componentGroups.read + componentGroups.backend)),
 
     container_names: {
-      // Microservices deployment mode. The following matchers MUST match only
-      // the instance when deployed in microservices mode (e.g. "distributor"
-      // matcher shouldn't match "mimir-write" too).
+      // The following matchers MUST match only the individual instances.
       block_builder: componentNameRegexp.block_builder,
+      block_builder_scheduler: componentNameRegexp.block_builder_scheduler,
       gateway: componentNameRegexp.gateway,
       distributor: componentNameRegexp.distributor,
       ingester: componentNameRegexp.ingester,
@@ -175,15 +181,7 @@
       alertmanager_im: componentNameRegexp.alertmanager_im,
       compactor: componentNameRegexp.compactor,
 
-      // Read-write deployment mode. The following matchers MUST match only
-      // the container when deployed in read-write deployment mode (e.g. "mimir-write"
-      // matcher shouldn't match "distributor" too).
-      mimir_write: componentNameRegexp.mimir_write,
-      mimir_read: componentNameRegexp.mimir_read,
-      mimir_backend: componentNameRegexp.mimir_backend,
-
       // The following are container matchers used to select all components in a given "path".
-      // These matchers CAN match both instances deployed in "microservices" and "read-write" mode.
       local componentsGroupMatcher = function(components) std.join('|', std.map(function(name) componentNameRegexp[name], components)),
 
       write: componentsGroupMatcher(componentGroups.write),
@@ -229,6 +227,10 @@
     // The alertname is used to create a hyperlink to the runbooks. Currenlty we only have a single set of runbooks, so different products (e.g. GEM) should still use the same runbooks.
     alert_product: $._config.product,
 
+    // The Deployment or StatefulSet names (eg. 'querier' or 'ingester-zone-a') to exclude from the MimirRolloutStuck alert.
+    rollout_stuck_alert_ignore_deployments: [],
+    rollout_stuck_alert_ignore_statefulsets: [],
+
     // Whether alerts for experimental ingest storage are enabled.
     ingest_storage_enabled: true,
 
@@ -242,6 +244,7 @@
 
     // Whether mimir gateway is enabled. The gateway is usually enabled in GEM deployments.
     gateway_enabled: $._config.gem_enabled,
+    gateway_per_tenant_metrics_enabled: false,
 
     // Whether grafana cloud alertmanager instance-mapper is enabled
     alertmanager_im_enabled: false,
@@ -256,6 +259,10 @@
     // Resource consumption threshold to accomodate node loss
     // used for baremetal deployment only
     resource_threshold: 0.66,
+
+    // Threshold for DistributorGcUsesTooMuchCpu
+    distributor_gc_cpu_threshold: 10,
+
     alertmanager_alerts: {
       kubernetes: {
         memory_allocation: |||
@@ -276,9 +283,9 @@
           (
             # We use RSS instead of working set memory because of the ingester's extensive usage of mmap.
             # See: https://github.com/grafana/mimir/issues/2466
-            container_memory_rss{container=~"(%(ingester)s|%(mimir_write)s|%(mimir_backend)s)"}
+            container_memory_rss{container=~"(%(ingester)s)"}
               /
-            ( container_spec_memory_limit_bytes{container=~"(%(ingester)s|%(mimir_write)s|%(mimir_backend)s)"} > 0 )
+            ( container_spec_memory_limit_bytes{container=~"(%(ingester)s)"} > 0 )
           )
           # Match only Mimir namespaces.
           * on(%(alert_aggregation_labels)s) group_left max by(%(alert_aggregation_labels)s) (cortex_build_info)
@@ -288,7 +295,7 @@
       baremetal: {
         memory_allocation: |||
           (
-            process_resident_memory_bytes{job=~".*/(%(ingester)s|%(mimir_write)s|%(mimir_backend)s)"}
+            process_resident_memory_bytes{job=~".*/(%(ingester)s)"}
               /
             on(%(per_instance_label)s) node_memory_MemTotal_bytes{}
           ) > %(threshold)s
@@ -300,18 +307,28 @@
         actual_replicas_count:
           |||
             # Convenience rule to get the number of replicas for both a deployment and a statefulset.
-            # Multi-zone deployments are grouped together removing the "zone-X" suffix.
+            #
+            # Notes:
+            # - Multi-zone deployments are grouped together removing the "zone-X" suffix.
+            # - To avoid "vector cannot contain metrics with the same labelset" errors we need to add an additional
+            #   label "deployment_without_zone" first, then run the aggregation, and finally rename "deployment_without_zone"
+            #   to "deployment".
             sum by (%(alert_aggregation_labels)s, deployment) (
               label_replace(
-                kube_deployment_spec_replicas,
-                # The question mark in "(.*?)" is used to make it non-greedy, otherwise it
-                # always matches everything and the (optional) zone is not removed.
-                "deployment", "$1", "deployment", "(.*?)(?:-zone-[a-z])?"
+                sum by (%(alert_aggregation_labels)s, deployment_without_zone) (
+                  label_replace(
+                    kube_deployment_spec_replicas,
+                    # The question mark in "(.*?)" is used to make it non-greedy, otherwise it
+                    # always matches everything and the (optional) zone is not removed.
+                    "deployment_without_zone", "$1", "deployment", "(.*?)(?:-zone-[a-z])?"
+                  )
+                )
+                or
+                sum by (%(alert_aggregation_labels)s, deployment_without_zone) (
+                  label_replace(kube_statefulset_replicas, "deployment_without_zone", "$1", "statefulset", "(.*?)(?:-zone-[a-z])?")
+                ),
+                "deployment", "$1", "deployment_without_zone", "(.*)"
               )
-            )
-            or
-            sum by (%(alert_aggregation_labels)s, deployment) (
-              label_replace(kube_statefulset_replicas, "deployment", "$1", "statefulset", "(.*?)(?:-zone-[a-z])?")
             )
           |||,
         cpu_usage_seconds_total:
@@ -691,6 +708,10 @@
         enabled: false,
         hpa_name: $._config.autoscaling_hpa_prefix + 'compactor',
       },
+      block_builder: {
+        enabled: false,
+        hpa_name: $._config.autoscaling_hpa_prefix + 'block-builder',
+      },
     },
 
 
@@ -740,6 +761,6 @@
     show_grpc_ingestion_panels: true,
 
     // Show panels that use queries for "ingest storage" ingestion (distributor -> Kafka, Kafka -> ingesters)
-    show_ingest_storage_panels: false,
+    show_ingest_storage_panels: true,
   },
 }

@@ -10,6 +10,9 @@
         distributor: '(tempo|distributor)',
         compactor: '(tempo|compactor)',
         block_builder: '(tempo|block-builder)',
+        backend_scheduler: 'backend-scheduler',
+        backend_worker: 'backend-worker',
+        memcached: 'memcached',
       }
     }
 }
