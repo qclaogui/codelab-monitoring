@@ -117,13 +117,13 @@ spec:
                   unless
                 kube_statefulset_status_update_revision{job="integrations/kubernetes/kube-state-metrics"}
               )
-                *
+                * on(namespace, statefulset, job, cluster)
               (
                 kube_statefulset_replicas{job="integrations/kubernetes/kube-state-metrics"}
                   !=
                 kube_statefulset_status_replicas_updated{job="integrations/kubernetes/kube-state-metrics"}
               )
-            )  and (
+            )  and on(namespace, statefulset, job, cluster) (
               changes(kube_statefulset_status_replicas_updated{job="integrations/kubernetes/kube-state-metrics"}[5m])
                 ==
               0
@@ -140,19 +140,19 @@ spec:
             (
               (
                 kube_daemonset_status_current_number_scheduled{job="integrations/kubernetes/kube-state-metrics"}
-                 !=
+                  !=
                 kube_daemonset_status_desired_number_scheduled{job="integrations/kubernetes/kube-state-metrics"}
               ) or (
                 kube_daemonset_status_number_misscheduled{job="integrations/kubernetes/kube-state-metrics"}
-                 !=
+                  !=
                 0
               ) or (
                 kube_daemonset_status_updated_number_scheduled{job="integrations/kubernetes/kube-state-metrics"}
-                 !=
+                  !=
                 kube_daemonset_status_desired_number_scheduled{job="integrations/kubernetes/kube-state-metrics"}
               ) or (
                 kube_daemonset_status_number_available{job="integrations/kubernetes/kube-state-metrics"}
-                 !=
+                  !=
                 kube_daemonset_status_desired_number_scheduled{job="integrations/kubernetes/kube-state-metrics"}
               )
             ) and (
@@ -250,17 +250,53 @@ spec:
           for: 15m
           labels:
             severity: warning
+        - alert: KubePdbNotEnoughHealthyPods
+          annotations:
+            description: PDB {{ $labels.cluster }}/{{ $labels.namespace }}/{{ $labels.poddisruptionbudget }} expects {{ $value }} more healthy pods. The desired number of healthy pods has not been met for at least 15m.
+            runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepdbnotenoughhealthypods
+            summary: PDB does not have enough healthy pods.
+          expr: |
+            (
+              kube_poddisruptionbudget_status_desired_healthy{job="integrations/kubernetes/kube-state-metrics"}
+              -
+              kube_poddisruptionbudget_status_current_healthy{job="integrations/kubernetes/kube-state-metrics"}
+            )
+            > 0
+          for: 15m
+          labels:
+            severity: warning
     - name: kubernetes-resources
       rules:
         - alert: KubeCPUOvercommit
           annotations:
-            description: Cluster {{ $labels.cluster }} has overcommitted CPU resource requests for Pods by {{ $value }} CPU shares and cannot tolerate node failure.
+            description: Cluster {{ $labels.cluster }} has overcommitted CPU resource requests for Pods by {{ printf "%.2f" $value }} CPU shares and cannot tolerate node failure.
             runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubecpuovercommit
             summary: Cluster has overcommitted CPU resource requests.
           expr: |
-            sum(namespace_cpu:kube_pod_container_resource_requests:sum{}) by (cluster) - (sum(kube_node_status_allocatable{job="integrations/kubernetes/kube-state-metrics",resource="cpu"}) by (cluster) - max(kube_node_status_allocatable{job="integrations/kubernetes/kube-state-metrics",resource="cpu"}) by (cluster)) > 0
-            and
-            (sum(kube_node_status_allocatable{job="integrations/kubernetes/kube-state-metrics",resource="cpu"}) by (cluster) - max(kube_node_status_allocatable{job="integrations/kubernetes/kube-state-metrics",resource="cpu"}) by (cluster)) > 0
+            # Non-HA clusters.
+            (
+              (
+                sum by(cluster) (namespace_cpu:kube_pod_container_resource_requests:sum{})
+                -
+                sum by(cluster) (kube_node_status_allocatable{job="integrations/kubernetes/kube-state-metrics",resource="cpu"}) > 0
+              )
+              and
+              count by (cluster) (max by (cluster, node) (kube_node_role{job="integrations/kubernetes/kube-state-metrics", role="control-plane"})) < 3
+            )
+            or
+            # HA clusters.
+            (
+              sum by(cluster) (namespace_cpu:kube_pod_container_resource_requests:sum{})
+              -
+              (
+                # Skip clusters with only one allocatable node.
+                (
+                  sum by (cluster) (kube_node_status_allocatable{job="integrations/kubernetes/kube-state-metrics",resource="cpu"})
+                  -
+                  max by (cluster) (kube_node_status_allocatable{job="integrations/kubernetes/kube-state-metrics",resource="cpu"})
+                ) > 0
+              ) > 0
+            )
           for: 10m
           labels:
             severity: warning
@@ -270,35 +306,62 @@ spec:
             runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubememoryovercommit
             summary: Cluster has overcommitted memory resource requests.
           expr: |
-            sum(namespace_memory:kube_pod_container_resource_requests:sum{}) by (cluster) - (sum(kube_node_status_allocatable{resource="memory", job="integrations/kubernetes/kube-state-metrics"}) by (cluster) - max(kube_node_status_allocatable{resource="memory", job="integrations/kubernetes/kube-state-metrics"}) by (cluster)) > 0
-            and
-            (sum(kube_node_status_allocatable{resource="memory", job="integrations/kubernetes/kube-state-metrics"}) by (cluster) - max(kube_node_status_allocatable{resource="memory", job="integrations/kubernetes/kube-state-metrics"}) by (cluster)) > 0
+            # Non-HA clusters.
+            (
+              (
+                sum by(cluster) (namespace_memory:kube_pod_container_resource_requests:sum{})
+                -
+                sum by(cluster) (kube_node_status_allocatable{job="integrations/kubernetes/kube-state-metrics",resource="memory"}) > 0
+              )
+              and
+              count by (cluster) (max by (cluster, node) (kube_node_role{job="integrations/kubernetes/kube-state-metrics", role="control-plane"})) < 3
+            )
+            or
+            # HA clusters.
+            (
+              sum by(cluster) (namespace_memory:kube_pod_container_resource_requests:sum{})
+              -
+              (
+                # Skip clusters with only one allocatable node.
+                (
+                  sum by (cluster) (kube_node_status_allocatable{job="integrations/kubernetes/kube-state-metrics",resource="memory"})
+                  -
+                  max by (cluster) (kube_node_status_allocatable{job="integrations/kubernetes/kube-state-metrics",resource="memory"})
+                ) > 0
+              ) > 0
+            )
           for: 10m
           labels:
             severity: warning
         - alert: KubeCPUQuotaOvercommit
           annotations:
-            description: Cluster {{ $labels.cluster }}  has overcommitted CPU resource requests for Namespaces.
+            description: Cluster {{ $labels.cluster }} has overcommitted CPU resource requests for Namespaces.
             runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubecpuquotaovercommit
             summary: Cluster has overcommitted CPU resource requests.
           expr: |
-            sum(min without(resource) (kube_resourcequota{job="integrations/kubernetes/kube-state-metrics", type="hard", resource=~"(cpu|requests.cpu)"})) by (cluster)
-              /
-            sum(kube_node_status_allocatable{resource="cpu", job="integrations/kubernetes/kube-state-metrics"}) by (cluster)
-              > 1.5
+            sum by(cluster) (
+              min without(resource) (kube_resourcequota{job="integrations/kubernetes/kube-state-metrics", type="hard", resource=~"(cpu|requests.cpu)"})
+            )
+            /
+            sum by(cluster) (
+              kube_node_status_allocatable{resource="cpu", job="integrations/kubernetes/kube-state-metrics"}
+            ) > 1.5
           for: 5m
           labels:
             severity: warning
         - alert: KubeMemoryQuotaOvercommit
           annotations:
-            description: Cluster {{ $labels.cluster }}  has overcommitted memory resource requests for Namespaces.
+            description: Cluster {{ $labels.cluster }} has overcommitted memory resource requests for Namespaces.
             runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubememoryquotaovercommit
             summary: Cluster has overcommitted memory resource requests.
           expr: |
-            sum(min without(resource) (kube_resourcequota{job="integrations/kubernetes/kube-state-metrics", type="hard", resource=~"(memory|requests.memory)"})) by (cluster)
-              /
-            sum(kube_node_status_allocatable{resource="memory", job="integrations/kubernetes/kube-state-metrics"}) by (cluster)
-              > 1.5
+            sum by(cluster) (
+              min without(resource) (kube_resourcequota{job="integrations/kubernetes/kube-state-metrics", type="hard", resource=~"(memory|requests.memory)"})
+            )
+            /
+            sum by(cluster) (
+              kube_node_status_allocatable{resource="memory", job="integrations/kubernetes/kube-state-metrics"}
+            ) > 1.5
           for: 5m
           labels:
             severity: warning
@@ -700,7 +763,18 @@ spec:
             runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeletpodstartuplatencyhigh
             summary: Kubelet Pod startup latency is too high.
           expr: |
-            histogram_quantile(0.99, sum(rate(kubelet_pod_worker_duration_seconds_bucket{job="integrations/kubernetes/kubelet"}[5m])) by (cluster, instance, le)) * on(cluster, instance) group_left(node) kubelet_node_name{job="integrations/kubernetes/kubelet"} > 60
+            histogram_quantile(0.99,
+              sum by (cluster, instance, le) (
+                topk by (cluster, instance, le, operation_type) (1,
+                  rate(kubelet_pod_worker_duration_seconds_bucket{job="integrations/kubernetes/kubelet"}[5m])
+                )
+              )
+            )
+            * on(cluster, instance) group_left(node)
+            topk by (cluster, instance, node) (1,
+              kubelet_node_name{job="integrations/kubernetes/kubelet"}
+            )
+            > 60
           for: 15m
           labels:
             severity: warning
