@@ -29,11 +29,11 @@ $(COPYRIGHT): $(BINGO_DIR)/copyright.mod
 	@echo "(re)installing $(GOBIN)/copyright-v0.0.0-20230505153745-6b7392939a60"
 	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=copyright.mod -o=$(GOBIN)/copyright-v0.0.0-20230505153745-6b7392939a60 "github.com/efficientgo/tools/copyright"
 
-GOFUMPT := $(GOBIN)/gofumpt-v0.9.1
+GOFUMPT := $(GOBIN)/gofumpt-v0.9.2
 $(GOFUMPT): $(BINGO_DIR)/gofumpt.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
-	@echo "(re)installing $(GOBIN)/gofumpt-v0.9.1"
-	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=gofumpt.mod -o=$(GOBIN)/gofumpt-v0.9.1 "mvdan.cc/gofumpt"
+	@echo "(re)installing $(GOBIN)/gofumpt-v0.9.2"
+	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=gofumpt.mod -o=$(GOBIN)/gofumpt-v0.9.2 "mvdan.cc/gofumpt"
 
 GOLANGCI_LINT := $(GOBIN)/golangci-lint-v2.5.0
 $(GOLANGCI_LINT): $(BINGO_DIR)/golangci-lint.mod
@@ -41,11 +41,11 @@ $(GOLANGCI_LINT): $(BINGO_DIR)/golangci-lint.mod
 	@echo "(re)installing $(GOBIN)/golangci-lint-v2.5.0"
 	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=golangci-lint.mod -o=$(GOBIN)/golangci-lint-v2.5.0 "github.com/golangci/golangci-lint/v2/cmd/golangci-lint"
 
-GORELEASER := $(GOBIN)/goreleaser-v2.12.2
+GORELEASER := $(GOBIN)/goreleaser-v2.12.6
 $(GORELEASER): $(BINGO_DIR)/goreleaser.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
-	@echo "(re)installing $(GOBIN)/goreleaser-v2.12.2"
-	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=goreleaser.mod -o=$(GOBIN)/goreleaser-v2.12.2 "github.com/goreleaser/goreleaser/v2"
+	@echo "(re)installing $(GOBIN)/goreleaser-v2.12.6"
+	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=goreleaser.mod -o=$(GOBIN)/goreleaser-v2.12.6 "github.com/goreleaser/goreleaser/v2"
 
 GRR := $(GOBIN)/grr-v0.7.1
 $(GRR): $(BINGO_DIR)/grr.mod
@@ -83,9 +83,9 @@ $(MIXTOOL): $(BINGO_DIR)/mixtool.mod
 	@echo "(re)installing $(GOBIN)/mixtool-v0.0.0-20250819083739-3a8bcbe73b71"
 	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=mixtool.mod -o=$(GOBIN)/mixtool-v0.0.0-20250819083739-3a8bcbe73b71 "github.com/monitoring-mixins/mixtool/cmd/mixtool"
 
-UPDATECLI := $(GOBIN)/updatecli-v0.107.0
+UPDATECLI := $(GOBIN)/updatecli-v0.999.0
 $(UPDATECLI): $(BINGO_DIR)/updatecli.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
-	@echo "(re)installing $(GOBIN)/updatecli-v0.107.0"
-	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=updatecli.mod -o=$(GOBIN)/updatecli-v0.107.0 "github.com/updatecli/updatecli"
+	@echo "(re)installing $(GOBIN)/updatecli-v0.999.0"
+	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=updatecli.mod -o=$(GOBIN)/updatecli-v0.999.0 "github.com/updatecli/updatecli"
 
