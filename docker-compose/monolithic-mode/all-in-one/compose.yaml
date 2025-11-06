@@ -68,7 +68,7 @@ services:
       metrics.grafana.com/scrape: false
       profiles.grafana.com/service_name: loki
     depends_on: {minio: {condition: service_healthy}}
-    image: ${LOKI_IMAGE:-docker.io/grafana/loki:3.5.7}
+    image: ${LOKI_IMAGE:-docker.io/grafana/loki:3.5.8}
     configs:
       - source: loki_config_file
         target: /etc/loki/config.yaml
@@ -160,16 +160,16 @@ services:
     entrypoint: mimirtool rules sync --rule-dirs=/rules/
     deploy:
       restart_policy:
-        condition: any    # Always restart the container under any circumstances
+        condition: any # Always restart the container under any circumstances
       update_config:
-        delay: 3600s      # The delay time for service update is 1 hour
+        delay: 3600s # The delay time for service update is 1 hour
 
   pyroscope:
     labels:
       metrics.grafana.com/scrape: false
       profiles.grafana.com/service_name: pyroscope
     depends_on: {minio: {condition: service_healthy}}
-    image: ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:1.15.0}
+    image: ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:1.16.0}
     configs:
       - source: pyroscope_config_file
         target: /etc/pyroscope/config.yaml
