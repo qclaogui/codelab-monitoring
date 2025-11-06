@@ -150,16 +150,19 @@ services:
   mimirtool:
     labels:
       metrics.grafana.com/scrape: false
-    image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:2.17.1}
+    image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:2.17.2}
     volumes:
-      - ../../../monitoring-mixins/crontab:/etc/crontabs/root
       - ../../../monitoring-mixins/alloy-mixin/deploy/alloy-mixin-alerts.yaml:/rules/alloy-mixin-alerts.yaml
-      # - ../../../monitoring-mixins/memcached-mixin/deploy/memcached-mixin-alerts.yaml:/rules/memcached-mixin-alerts.yaml
+      - ../../../monitoring-mixins/memcached-mixin/deploy/memcached-mixin-alerts.yaml:/rules/memcached-mixin-alerts.yaml
     environment:
       - MIMIR_ADDRESS=http://gateway:8080
       - MIMIR_TENANT_ID=anonymous
-    entrypoint: crond -f
-    restart: always
+    entrypoint: mimirtool rules sync --rule-dirs=/rules/
+    deploy:
+      restart_policy:
+        condition: any    # Always restart the container under any circumstances
+      update_config:
+        delay: 3600s      # The delay time for service update is 1 hour
 
   pyroscope:
     labels:
