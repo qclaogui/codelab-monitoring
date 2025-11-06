@@ -60,11 +60,28 @@ Docker compose
 </summary>
 
 ```shell
+Dependencies
+  install-build-deps                        Install dependencies tools
+  update-helm-charts                        Update helm charts dependencies
+  update-docker-images                      Update docker image dependencies
+
+Lint & fmt
+  copyright                                 Add Copyright header to .go files.
+  alloy-fmt                                 Uses Grafana Alloy to fmt the config
+
+Docker compose
+  up-monolithic-mode-metrics                Run monolithic-mode Mimir for metrics
+  up-monolithic-mode-logs                   Run monolithic-mode Loki for logs
+  up-monolithic-mode-traces                 Run monolithic-mode Tempo for traces
+  up-monolithic-mode-profiles               Run monolithic-mode Pyroscope for profiles
+  up-monolithic-mode-all-in-one             Run monolithic-mode all-in-one
+  up-read-write-mode-metrics                Run read-write-mode Mimir for metrics
   up-read-write-mode-logs                   Run read-write-mode Loki for logs
   up-microservices-mode-metrics             Run microservices-mode Mimir for metrics
   up-microservices-mode-logs                Run microservices-mode Loki for logs
   up-microservices-mode-traces              Run microservices-mode Tempo for traces
   up-microservices-mode-profiles            Run microservices-mode Pyroscope for profiles
+
 Kubernetes
   cluster                                   Create k3s cluster
   clean                                     Clean cluster
@@ -82,13 +99,23 @@ Kubernetes
   deploy-microservices-mode-profiles        Deploy microservices-mode Pyroscope for profiles
   deploy-microservices-mode-traces          Deploy microservices-mode Tempo for traces
 
+Grafana Alloy Integrations
+  deploy-mysql                              Deploy integration mysql manifests
+  deploy-redis                              Deploy integration redis manifests
+
 Build
   generate                                  generate embed deps
   build                                     Build binary for current OS and place it at ./bin/lgtmp_$(GOOS)_$(GOARCH)
   build-all                                 Build binaries for Linux and Mac and place them in dist/
 
+Release
+  prepare-release-candidate                 Create release candidate
+  prepare-release                           Create release
+  print-version                             Prints the upcoming release number
+
 General
   console-token                             Prints the minio-operator console jwt token
+  mixin-screenshots                         Generates mixin dashboards screenshots.
   help                                      Display this help. Thanks to https://www.thapaliya.com/en/writings/well-documented-makefiles/
 ```
 
@@ -259,4 +286,4 @@ Use "lgtmp [command] --help" for more information about a command.
 - <https://github.com/docker/compose>
 - <https://github.com/k3d-io/k3d>
 - <https://github.com/k3s-io/k3s>
-- [Grafana Agent Configuration Generator](https://github.com/grafana/agent-configurator) a tool allows for easy configuration of Grafana Agents Flow system
+- [Grafana Alloy Configuration Generator](https://github.com/grafana/alloy-configurator) s an easy to use web     interface for creating and editing alloy configuration files. It targets the flow configuration format.
