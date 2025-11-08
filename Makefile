@@ -8,7 +8,7 @@ include .bingo/Variables.mk
 install-build-deps: ## Install dependencies tools
 	$(info ******************** downloading dependencies ********************)
 	@echo ">> building bingo and setup dependencies tools"
-	@go install github.com/bwplotka/bingo@v0.9.0
+	@go install github.com/bwplotka/bingo@v0.10.0
 
 .PHONY: update-helm-charts
 update-helm-charts: $(UPDATECLI) ## Update helm charts dependencies
@@ -38,7 +38,7 @@ ALLOY_CONFIG_FILES_IN_DOCKER = $(subst ./, /data/, $(ALLOY_CONFIG_FILES))
 alloy-fmt: ## Uses Grafana Alloy to fmt the config
 	@for c in $(ALLOY_CONFIG_FILES_IN_DOCKER); do \
 		echo "$$c"; \
-		docker run --rm --volume "$(shell pwd):/data" -u $(shell id -u) grafana/alloy:v1.8.3 fmt -w $$c ; \
+		docker run --rm --volume "$(shell pwd):/data" -u $(shell id -u) grafana/alloy:v1.11.3 fmt -w $$c ; \
 	done
 
 .PHONY: go-fmt
