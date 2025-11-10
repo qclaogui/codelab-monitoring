@@ -19,10 +19,6 @@ docker run \
   --env "MIMIR_NAMESPACE=monitoring-system" \
   --env "ALERTMANAGER_NAMESPACE=monitoring-system" \
   --env "MIMIR_USER=anonymous" \
-  -v "${SCRIPT_DIR}/../../docker-compose/common/config/grafana/provisioning/dashboards/docker.json:/input/docker.json" \
-  -v "${SCRIPT_DIR}/../../docker-compose/common/config/grafana/provisioning/dashboards/minio-dashboard.json:/input/minio-dashboard.json" \
+  -v "${SCRIPT_DIR}/../../docker-compose/common/config/grafana/provisioning/dashboards:/input" \
   -v "${SCRIPT_DIR}/../../docs/dashboards:/output" \
-  -v "${SCRIPT_DIR}:/sources" \
-  --entrypoint "" \
-  "${DOCKER_APP_IMAGE}" \
-  /bin/bash -c 'cp /sources/app.js /app/app.js && node /app/app.js'
+  "${DOCKER_APP_IMAGE}"
