@@ -1,7 +1,16 @@
-FROM node:20-bullseye
+FROM golang:1.25.2 AS builder
 
-# Install chromium along with its dependencies.
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+COPY main.go ./
+RUN CGO_ENABLED=0 go build -o mimir-mixin-screenshots main.go
+
+FROM debian:bullseye-slim
+
+# Install Chromium and dependencies (works across architectures)
 RUN apt-get update && apt-get install -y \
+    chromium \
     libnss3 \
     libatk1.0-0 \
     libatk-bridge2.0-0 \
@@ -14,15 +23,9 @@ RUN apt-get update && apt-get install -y \
     libgbm-dev \
     libasound2 \
     pngquant \
-    chromium
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-# Tell puppeter to skip chromium installation
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+COPY --from=builder /app/mimir-mixin-screenshots /usr/local/bin/mimir-mixin-screenshots
 
-# Install sources and dependencies.
-RUN mkdir /app
-COPY package*.json app.js /app/
-RUN cd /app && npm ci
-
-WORKDIR /app
+ENTRYPOINT ["/usr/local/bin/mimir-mixin-screenshots"]
