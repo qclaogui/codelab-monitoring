@@ -1,10 +1,10 @@
-FROM golang:1.25.2 AS builder
+FROM golang:1.25 AS builder
 
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY main.go ./
-RUN CGO_ENABLED=0 go build -o mimir-mixin-screenshots main.go
+RUN CGO_ENABLED=0 go build -o mixin-screenshots main.go
 
 FROM debian:bullseye-slim
 
@@ -26,6 +26,6 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /app/mimir-mixin-screenshots /usr/local/bin/mimir-mixin-screenshots
+COPY --from=builder /app/mixin-screenshots /usr/local/bin/mixin-screenshots
 
-ENTRYPOINT ["/usr/local/bin/mimir-mixin-screenshots"]
+ENTRYPOINT ["/usr/local/bin/mixin-screenshots"]
