@@ -16,13 +16,6 @@ include:
 x-labels: &loki-labels
   logs.grafana.com/log-format: json
 
-# Configure a check that's run to determine whether or not containers for this service are "healthy".
-# docs: https://docs.docker.com/compose/compose-file/compose-file-v3/#healthcheck
-x-healthcheck: &status-healthcheck
-  interval: 5s
-  timeout: 2s
-  retries: 10
-
 configs:
   alloy_config_file:
     file: ../../common/config/alloy/logs.alloy
@@ -37,7 +30,7 @@ services:
     labels:
       metrics.grafana.com/scrape: false
       logs.grafana.com/log-format: nginx
-    depends_on: {distributor: {condition: service_healthy}}
+    depends_on: {distributor: {condition: service_started}}
     image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.29-alpine}
     volumes:
       - ../../common/config/nginx/10-default-lgtmp.envsh:/docker-entrypoint.d/10-default-lgtmp.envsh
@@ -61,7 +54,7 @@ services:
 
   distributor:
     labels: *loki-labels
-    depends_on: {ingester: {condition: service_healthy}}
+    depends_on: {ingester: {condition: service_started}}
     image: &lokiImage ${LOKI_IMAGE:-docker.io/grafana/loki:3.6.0}
     configs:
       - source: loki_config_file
@@ -72,9 +65,6 @@ services:
       - -config.file=/etc/loki/config.yaml
       - -target=distributor
       - -config.expand-env=true
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1"]
-      <<: *status-healthcheck
     deploy:
       replicas: 2
     networks:
@@ -95,9 +85,6 @@ services:
       - -config.file=/etc/loki/config.yaml
       - -target=ingester
       - -config.expand-env=true
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1"]
-      <<: *status-healthcheck
     deploy:
       replicas: 3
     networks:
@@ -118,9 +105,6 @@ services:
       - -config.file=/etc/loki/config.yaml
       - -target=pattern-ingester
       - -config.expand-env=true
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1"]
-      <<: *status-healthcheck
     deploy:
       replicas: 1
     networks:
@@ -130,7 +114,7 @@ services:
 
   index-gateway:
     labels: *loki-labels
-    depends_on: {query-scheduler: {condition: service_healthy}}
+    depends_on: {query-scheduler: {condition: service_started}}
     image: *lokiImage
     configs:
       - source: loki_config_file
@@ -144,7 +128,7 @@ services:
 
   query-frontend:
     labels: *loki-labels
-    depends_on: {query-scheduler: {condition: service_healthy}}
+    depends_on: {query-scheduler: {condition: service_started}}
     image: *lokiImage
     configs:
       - source: loki_config_file
@@ -168,9 +152,6 @@ services:
       - -config.file=/etc/loki/config.yaml
       - -target=query-scheduler
       - -config.expand-env=true
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1"]
-      <<: *status-healthcheck
     deploy:
       replicas: 2
     networks:
@@ -180,7 +161,7 @@ services:
 
   querier:
     labels: *loki-labels
-    depends_on: {query-scheduler: {condition: service_healthy}}
+    depends_on: {query-scheduler: {condition: service_started}}
     image: *lokiImage
     configs:
       - source: loki_config_file
@@ -229,7 +210,7 @@ services:
 
   bloom-builder:
     labels: *loki-labels
-    # depends_on: { query-scheduler: { condition: service_healthy } }
+    depends_on: { query-scheduler: { condition: service_started } }
     image: *lokiImage
     configs:
       - source: loki_config_file
@@ -243,7 +224,7 @@ services:
 
   bloom-gateway:
     labels: *loki-labels
-    # depends_on: { query-scheduler: { condition: service_healthy } }
+    depends_on: { query-scheduler: { condition: service_started } }
     image: *lokiImage
     configs:
       - source: loki_config_file
@@ -257,7 +238,7 @@ services:
 
   bloom-planner:
     labels: *loki-labels
-    # depends_on: { query-scheduler: { condition: service_healthy } }
+    depends_on: { query-scheduler: { condition: service_started } }
     image: *lokiImage
     configs:
       - source: loki_config_file

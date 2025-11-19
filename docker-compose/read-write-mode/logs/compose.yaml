@@ -12,13 +12,6 @@ include:
   - path: ../../common/compose-include/grafana.yaml
   - path: ../../common/compose-include/alloy.yaml
 
-# Configure a check that's run to determine whether or not containers for this service are "healthy".
-# docs: https://docs.docker.com/compose/compose-file/compose-file-v3/#healthcheck
-x-healthcheck: &status-healthcheck
-  interval: 5s
-  timeout: 2s
-  retries: 10
-
 configs:
   alloy_config_file:
     file: ../../common/config/alloy/logs.alloy
@@ -32,7 +25,7 @@ services:
     # https://github.com/qclaogui/codelab-monitoring/blob/main/alloy-modules/compose/README.md
     labels:
       metrics.grafana.com/scrape: false
-    depends_on: {loki-write: {condition: service_healthy}}
+    depends_on: {loki-write: {condition: service_started}}
     image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.29-alpine}
     volumes:
       - ../../common/config/nginx/10-default-lgtmp.envsh:/docker-entrypoint.d/10-default-lgtmp.envsh
@@ -67,9 +60,6 @@ services:
       - -target=read
       - -legacy-read-mode=false
       - -config.expand-env=true
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1"]
-      <<: *status-healthcheck
     deploy:
       replicas: 2
     networks:
@@ -89,9 +79,6 @@ services:
       - -config.file=/etc/loki/config.yaml
       - -target=write
       - -config.expand-env=true
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1"]
-      <<: *status-healthcheck
     deploy:
       replicas: 3
     networks:
@@ -112,9 +99,6 @@ services:
       - -target=backend
       - -legacy-read-mode=false
       - -config.expand-env=true
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1"]
-      <<: *status-healthcheck
     deploy:
       replicas: 2
     networks:
