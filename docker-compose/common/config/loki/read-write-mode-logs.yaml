@@ -12,13 +12,16 @@ server:
   log_format: json
 
 common:
+  ring:
+    kvstore:
+      store: memberlist
   compactor_address: http://loki-backend:3100
-  path_prefix: /loki
+  path_prefix: /tmp
   replication_factor: 1
   storage:
     s3:
       bucketnames: loki-data
-      endpoint: ${LOKI_S3_ENDPOINT:-minio:9000}
+      endpoint: ${LOKI_S3_ENDPOINT:-http://minio:9000}
       access_key_id: ${LOKI_S3_ACCESS_KEY_ID:-lgtmp}
       secret_access_key: ${LOKI_S3_SECRET_ACCESS_KEY:-supersecret}
       insecure: ${LOKI_S3_INSECURE:-true}
@@ -41,7 +44,7 @@ index_gateway:
   mode: simple
 
 compactor:
-  working_directory: /tmp/compactor
+  working_directory: /tmp/loki/compactor
 
 memberlist:
   join_members:
@@ -84,7 +87,7 @@ runtime_config:
 
 schema_config:
   configs:
-  - from: "2023-08-01"
+  - from: "2025-11-11"
     index:
       prefix: loki_index_
       period: 24h
@@ -94,8 +97,8 @@ schema_config:
 
 storage_config:
   tsdb_shipper:
-    active_index_directory: /loki/index
-    cache_location: /loki/cache
+    active_index_directory: /tmp/loki/index
+    cache_location: /tmp/loki/index_cache
     index_gateway_client:
       server_address: "dns+loki-backend:9095"
 
