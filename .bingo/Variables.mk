@@ -41,11 +41,11 @@ $(GOFUMPT): $(BINGO_DIR)/gofumpt.mod
 	@echo "(re)installing $(GOBIN)/gofumpt-v0.9.2"
 	@cd $(BINGO_DIR) && GOWORK=off GOOS=$(GOHOSTOS) GOARCH=$(GOHOSTARCH) GOARM=$(GOHOSTARM) $(GO) build -mod=mod -modfile=gofumpt.mod -o=$(GOBIN)/gofumpt-v0.9.2 "mvdan.cc/gofumpt"
 
-GOLANGCI_LINT := $(GOBIN)/golangci-lint-v2.6.1
+GOLANGCI_LINT := $(GOBIN)/golangci-lint-v2.6.2
 $(GOLANGCI_LINT): $(BINGO_DIR)/golangci-lint.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
-	@echo "(re)installing $(GOBIN)/golangci-lint-v2.6.1"
-	@cd $(BINGO_DIR) && GOWORK=off GOOS=$(GOHOSTOS) GOARCH=$(GOHOSTARCH) GOARM=$(GOHOSTARM) $(GO) build -mod=mod -modfile=golangci-lint.mod -o=$(GOBIN)/golangci-lint-v2.6.1 "github.com/golangci/golangci-lint/v2/cmd/golangci-lint"
+	@echo "(re)installing $(GOBIN)/golangci-lint-v2.6.2"
+	@cd $(BINGO_DIR) && GOWORK=off GOOS=$(GOHOSTOS) GOARCH=$(GOHOSTARCH) GOARM=$(GOHOSTARM) $(GO) build -mod=mod -modfile=golangci-lint.mod -o=$(GOBIN)/golangci-lint-v2.6.2 "github.com/golangci/golangci-lint/v2/cmd/golangci-lint"
 
 GORELEASER := $(GOBIN)/goreleaser-v2.12.7
 $(GORELEASER): $(BINGO_DIR)/goreleaser.mod
@@ -77,11 +77,11 @@ $(K3D): $(BINGO_DIR)/k3d.mod
 	@echo "(re)installing $(GOBIN)/k3d-v5.8.3"
 	@cd $(BINGO_DIR) && GOWORK=off GOOS=$(GOHOSTOS) GOARCH=$(GOHOSTARCH) GOARM=$(GOHOSTARM) $(GO) build -mod=mod -modfile=k3d.mod -o=$(GOBIN)/k3d-v5.8.3 "github.com/k3d-io/k3d/v5"
 
-KUSTOMIZE := $(GOBIN)/kustomize-v5.7.1
+KUSTOMIZE := $(GOBIN)/kustomize-v5.8.0
 $(KUSTOMIZE): $(BINGO_DIR)/kustomize.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
-	@echo "(re)installing $(GOBIN)/kustomize-v5.7.1"
-	@cd $(BINGO_DIR) && GOWORK=off GOOS=$(GOHOSTOS) GOARCH=$(GOHOSTARCH) GOARM=$(GOHOSTARM) $(GO) build -mod=mod -modfile=kustomize.mod -o=$(GOBIN)/kustomize-v5.7.1 "sigs.k8s.io/kustomize/kustomize/v5"
+	@echo "(re)installing $(GOBIN)/kustomize-v5.8.0"
+	@cd $(BINGO_DIR) && GOWORK=off GOOS=$(GOHOSTOS) GOARCH=$(GOHOSTARCH) GOARM=$(GOHOSTARM) $(GO) build -mod=mod -modfile=kustomize.mod -o=$(GOBIN)/kustomize-v5.8.0 "sigs.k8s.io/kustomize/kustomize/v5"
 
 MIXTOOL := $(GOBIN)/mixtool-v0.0.0-20250819083739-3a8bcbe73b71
 $(MIXTOOL): $(BINGO_DIR)/mixtool.mod
