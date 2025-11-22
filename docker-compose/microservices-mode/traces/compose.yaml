@@ -13,19 +13,6 @@ include:
   - path: ../../common/compose-include/grafana.yaml
   - path: ../../common/compose-include/alloy.yaml
 
-x-environment: &jaeger-environment
-  JAEGER_AGENT_HOST: alloy
-  JAEGER_AGENT_PORT: 6831
-  JAEGER_SAMPLER_TYPE: const
-  JAEGER_SAMPLER_PARAM: 1
-
-# Configure a check that's run to determine whether or not containers for this service are "healthy".
-# docs: https://docs.docker.com/compose/compose-file/compose-file-v3/#healthcheck
-x-healthcheck: &status-healthcheck
-  interval: 5s
-  timeout: 2s
-  retries: 10
-
 configs:
   alloy_config_file:
     file: ../../common/config/alloy/traces.alloy
@@ -41,7 +28,7 @@ services:
     # https://github.com/qclaogui/codelab-monitoring/blob/main/alloy-modules/compose/README.md
     labels:
       metrics.grafana.com/scrape: false
-    depends_on: {distributor: {condition: service_healthy}}
+    depends_on: {distributor: {condition: service_started}}
     image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.29-alpine}
     restart: always
     volumes:
@@ -64,7 +51,7 @@ services:
       - "33200:3200"
 
   distributor:
-    depends_on: {ingester: {condition: service_healthy}}
+    depends_on: {ingester: {condition: service_started}}
     image: &tempoImage ${TEMPO_IMAGE:-docker.io/grafana/tempo:2.9.0}
     configs:
       - source: tempo_config_file
@@ -76,11 +63,7 @@ services:
       - -target=distributor
       - -config.expand-env=true
     environment:
-      <<: *jaeger-environment
-      JAEGER_TAGS: app=distributor
-    healthcheck:
-      test: ["CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3200/ready"]
-      <<: *status-healthcheck
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
 
   ingester:
     depends_on: {minio: {condition: service_healthy}}
@@ -95,11 +78,7 @@ services:
       - -target=ingester
       - -config.expand-env=true
     environment:
-      <<: *jaeger-environment
-      JAEGER_TAGS: app=ingester
-    healthcheck:
-      test: ["CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3200/ready"]
-      <<: *status-healthcheck
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
     deploy:
       replicas: 3
     networks:
@@ -120,8 +99,7 @@ services:
       - -target=query-frontend
       - -config.expand-env=true
     environment:
-      <<: *jaeger-environment
-      JAEGER_TAGS: app=query-frontend
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
 
   querier:
     depends_on: {minio: {condition: service_healthy}}
@@ -136,8 +114,7 @@ services:
       - -target=querier
       - -config.expand-env=true
     environment:
-      <<: *jaeger-environment
-      JAEGER_TAGS: app=querier
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
 
   compactor:
     depends_on: {minio: {condition: service_healthy}}
@@ -152,8 +129,7 @@ services:
       - -target=compactor
       - -config.expand-env=true
     environment:
-      <<: *jaeger-environment
-      JAEGER_TAGS: app=compactor
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
 
   metrics-generator:
     depends_on: {minio: {condition: service_healthy}}
@@ -168,5 +144,4 @@ services:
       - -target=metrics-generator
       - -config.expand-env=true
     environment:
-      <<: *jaeger-environment
-      JAEGER_TAGS: app=metrics-generator
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
