@@ -59,6 +59,12 @@ $(GRR): $(BINGO_DIR)/grr.mod
 	@echo "(re)installing $(GOBIN)/grr-v0.7.1"
 	@cd $(BINGO_DIR) && GOWORK=off GOOS=$(GOHOSTOS) GOARCH=$(GOHOSTARCH) GOARM=$(GOHOSTARM) $(GO) build -mod=mod -modfile=grr.mod -o=$(GOBIN)/grr-v0.7.1 "github.com/grafana/grizzly/cmd/grr"
 
+HELM := $(GOBIN)/helm-v3.19.2
+$(HELM): $(BINGO_DIR)/helm.mod
+	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
+	@echo "(re)installing $(GOBIN)/helm-v3.19.2"
+	@cd $(BINGO_DIR) && GOWORK=off GOOS=$(GOHOSTOS) GOARCH=$(GOHOSTARCH) GOARM=$(GOHOSTARM) $(GO) build -mod=mod -modfile=helm.mod -o=$(GOBIN)/helm-v3.19.2 "helm.sh/helm/v3/cmd/helm"
+
 JB := $(GOBIN)/jb-v0.6.0
 $(JB): $(BINGO_DIR)/jb.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
@@ -77,11 +83,11 @@ $(K3D): $(BINGO_DIR)/k3d.mod
 	@echo "(re)installing $(GOBIN)/k3d-v5.8.3"
 	@cd $(BINGO_DIR) && GOWORK=off GOOS=$(GOHOSTOS) GOARCH=$(GOHOSTARCH) GOARM=$(GOHOSTARM) $(GO) build -mod=mod -modfile=k3d.mod -o=$(GOBIN)/k3d-v5.8.3 "github.com/k3d-io/k3d/v5"
 
-KUSTOMIZE := $(GOBIN)/kustomize-v5.8.0
+KUSTOMIZE := $(GOBIN)/kustomize-v5.7.1
 $(KUSTOMIZE): $(BINGO_DIR)/kustomize.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
-	@echo "(re)installing $(GOBIN)/kustomize-v5.8.0"
-	@cd $(BINGO_DIR) && GOWORK=off GOOS=$(GOHOSTOS) GOARCH=$(GOHOSTARCH) GOARM=$(GOHOSTARM) $(GO) build -mod=mod -modfile=kustomize.mod -o=$(GOBIN)/kustomize-v5.8.0 "sigs.k8s.io/kustomize/kustomize/v5"
+	@echo "(re)installing $(GOBIN)/kustomize-v5.7.1"
+	@cd $(BINGO_DIR) && GOWORK=off GOOS=$(GOHOSTOS) GOARCH=$(GOHOSTARCH) GOARM=$(GOHOSTARM) $(GO) build -mod=mod -modfile=kustomize.mod -o=$(GOBIN)/kustomize-v5.7.1 "sigs.k8s.io/kustomize/kustomize/v5"
 
 MIXTOOL := $(GOBIN)/mixtool-v0.0.0-20250819083739-3a8bcbe73b71
 $(MIXTOOL): $(BINGO_DIR)/mixtool.mod
