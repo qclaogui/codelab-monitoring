@@ -14290,6 +14290,25 @@ subjects:
   namespace: cert-manager
 ---
 apiVersion: v1
+data:
+  config.yaml: |
+    apiVersion: controller.config.cert-manager.io/v1alpha1
+    enableGatewayAPI: true
+    kind: ControllerConfiguration
+kind: ConfigMap
+metadata:
+  labels:
+    app: cert-manager
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: cert-manager
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/version: v1.19.1
+    helm.sh/chart: cert-manager-v1.19.1
+  name: cert-manager
+  namespace: cert-manager
+---
+apiVersion: v1
 kind: Service
 metadata:
   labels:
@@ -14405,10 +14424,10 @@ spec:
       containers:
       - args:
         - --v=2
+        - --config=/var/cert-manager/config/config.yaml
         - --cluster-resource-namespace=$(POD_NAMESPACE)
         - --leader-election-namespace=kube-system
         - --acme-http01-solver-image=quay.io/jetstack/cert-manager-acmesolver:v1.19.1
-        - --feature-gates=ExperimentalGatewayAPISupport=true
         - --max-concurrent-challenges=60
         env:
         - name: POD_NAMESPACE
@@ -14435,19 +14454,15 @@ spec:
         - containerPort: 9403
           name: http-healthz
           protocol: TCP
-        resources:
-          limits:
-            cpu: 100m
-            memory: 128Mi
-          requests:
-            cpu: 10m
-            memory: 32Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
             drop:
             - ALL
           readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /var/cert-manager/config
+          name: config
       enableServiceLinks: false
       nodeSelector:
         kubernetes.io/os: linux
@@ -14456,6 +14471,10 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       serviceAccountName: cert-manager
+      volumes:
+      - configMap:
+          name: cert-manager
+        name: config
 ---
 apiVersion: apps/v1
 kind: Deployment
