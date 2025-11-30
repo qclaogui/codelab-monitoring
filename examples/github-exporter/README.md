@@ -17,7 +17,7 @@ services:
   github-exporter:
     labels:
       metrics.grafana.com/scrape: true
-    image: githubexporter/github-exporter:1.3.1
+    image: githubexporter/github-exporter:v2.1.0
     environment:
     - REPOS=grafana/alloy
 ```
