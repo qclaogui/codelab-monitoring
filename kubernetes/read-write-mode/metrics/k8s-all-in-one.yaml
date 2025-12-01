@@ -5704,6 +5704,26 @@ spec:
           name: alloy-modules-kubernetes-jobs-8c76t6t6b7
         name: modules-kubernetes-jobs
 ---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: alloy
+  namespace: monitoring-system
+spec:
+  hostnames:
+  - alloy.docker.localhost
+  parentRefs:
+  - name: traefik-gateway
+    namespace: kube-system
+  rules:
+  - backendRefs:
+    - name: alloy
+      port: 12345
+    matches:
+    - path:
+        type: PathPrefix
+        value: /
+---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -6023,29 +6043,3 @@ spec:
       app.kubernetes.io/component: mimir-write
       app.kubernetes.io/instance: mimir-read-write-mode
       app.kubernetes.io/name: mimir
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  labels:
-    app.kubernetes.io/component: networking
-    app.kubernetes.io/instance: alloy
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: alloy
-    app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.11.3
-    helm.sh/chart: alloy-1.4.0
-  name: alloy
-  namespace: monitoring-system
-spec:
-  rules:
-  - host: alloy.localhost
-    http:
-      paths:
-      - backend:
-          service:
-            name: alloy
-            port:
-              number: 12345
-        path: /
-        pathType: Prefix
