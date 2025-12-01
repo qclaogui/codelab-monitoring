@@ -23,11 +23,21 @@ serviceMonitor:
   interval: 15s
   scrapeTimeout: 10s
 
-ingress:
-  enabled: true
-  hosts:
-  - grafana.localhost
-  - localhost
+route:
+  main:
+    enabled: true
+    apiVersion: gateway.networking.k8s.io/v1
+    kind: HTTPRoute
+    hostnames:
+    - grafana.docker.localhost
+    - localhost
+    parentRefs:
+    - name: traefik-gateway
+      namespace: kube-system
+    matches:
+    - path:
+        type: PathPrefix
+        value: /
 
 resources:
   limits:
