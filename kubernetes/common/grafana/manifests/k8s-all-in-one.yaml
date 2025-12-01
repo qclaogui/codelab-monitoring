@@ -4255,7 +4255,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 1120aef9f995c07acee41c7a4606678ccfc19213f1be038c204f23a193a59ee2
+        checksum/config: 0e9cbd0ea8e24e32f7dfca5bab17a2ba05652642f0a09a4882833ae88e4cc4a3
         checksum/sc-dashboard-provider-config: a0c14ec48c732bce9563a691da03becdcb64b4ad0056b890bee49de38ae261d2
         kubectl.kubernetes.io/default-container: grafana
         logs.grafana.com/scrape: "true"
@@ -4453,6 +4453,33 @@ spec:
       - emptyDir: {}
         name: sc-datasources-volume
 ---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  labels:
+    app: grafana-prometheus
+    app.kubernetes.io/instance: grafana
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/version: 12.0.1
+    helm.sh/chart: grafana-9.2.2
+  name: grafana
+  namespace: monitoring-system
+spec:
+  hostnames:
+  - grafana.docker.localhost
+  - localhost
+  parentRefs:
+  - name: traefik-gateway
+    namespace: kube-system
+  rules:
+  - backendRefs:
+    - name: grafana
+      port: 80
+    matches:
+    - path:
+        type: PathPrefix
+        value: /
+---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -4479,36 +4506,3 @@ spec:
     matchLabels:
       app.kubernetes.io/instance: grafana
       app.kubernetes.io/name: grafana
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  labels:
-    app.kubernetes.io/instance: grafana
-    app.kubernetes.io/name: grafana
-    app.kubernetes.io/version: 12.0.1
-    helm.sh/chart: grafana-9.2.2
-  name: grafana
-  namespace: monitoring-system
-spec:
-  rules:
-  - host: grafana.localhost
-    http:
-      paths:
-      - backend:
-          service:
-            name: grafana
-            port:
-              number: 80
-        path: /
-        pathType: Prefix
-  - host: localhost
-    http:
-      paths:
-      - backend:
-          service:
-            name: grafana
-            port:
-              number: 80
-        path: /
-        pathType: Prefix
