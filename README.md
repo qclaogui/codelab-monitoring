@@ -54,7 +54,7 @@ Docker compose
   up-monolithic-mode-traces                 Run monolithic-mode Tempo for traces
   up-monolithic-mode-profiles               Run monolithic-mode Pyroscope for profiles
   up-monolithic-mode-all-in-one             Run monolithic-mode all-in-one
-  up-read-write-mode-metrics                Run read-write-mode Mimir for metrics
+  up-read-write-mode-logs                   Run read-write-mode Loki for logs
 ```
 
 </summary>
@@ -75,7 +75,6 @@ Docker compose
   up-monolithic-mode-traces                 Run monolithic-mode Tempo for traces
   up-monolithic-mode-profiles               Run monolithic-mode Pyroscope for profiles
   up-monolithic-mode-all-in-one             Run monolithic-mode all-in-one
-  up-read-write-mode-metrics                Run read-write-mode Mimir for metrics
   up-read-write-mode-logs                   Run read-write-mode Loki for logs
   up-microservices-mode-metrics             Run microservices-mode Mimir for metrics
   up-microservices-mode-logs                Run microservices-mode Loki for logs
@@ -92,7 +91,6 @@ Kubernetes
   deploy-monolithic-mode-profiles           Deploy monolithic-mode Pyroscope for profiles
   deploy-monolithic-mode-traces             Deploy monolithic-mode Tempo for traces
   deploy-monolithic-mode-all-in-one         Deploy monolithic-mode all-in-one
-  deploy-read-write-mode-metrics            Deploy read-write-mode Mimir for metrics
   deploy-read-write-mode-logs               Deploy read-write-mode Loki for logs
   deploy-microservices-mode-logs            Deploy microservices-mode Loki for logs
   deploy-microservices-mode-metrics         Deploy microservices-mode Mimir for metrics
@@ -141,9 +139,6 @@ The easiest way to run project locally is to use docker compose, these instructi
 ### [Read-Write mode (读写模式)](./docker-compose/read-write-mode)
 
 - [Logs [Loki (Read + Write + Backend)]](./docker-compose/read-write-mode/logs)
-- Traces
-- [Metrics [Mimir (Read + Write + Backend)]](./docker-compose/read-write-mode/metrics)
-- Profiles
 
 ### [Microservices mode (微服务模式)](./docker-compose/microservices-mode)
 
@@ -183,9 +178,6 @@ This project uses [bingo](https://github.com/bwplotka/bingo) (located in [.bingo
 ### [Read-Write mode (读写模式)](./kubernetes/read-write-mode)
 
 - [Logs [Loki (Read + Write + Backend)]](./kubernetes/read-write-mode/logs)
-- Traces
-- [Metrics [Mimir (Read + Write + Backend)]](./kubernetes/read-write-mode/metrics)
-- Profiles
 
 ### [Microservices mode (微服务模式)](./kubernetes/microservices-mode)
 
