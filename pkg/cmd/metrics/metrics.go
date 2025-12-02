@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	supportedModes = []string{"monolithic-mode", "read-write-mode", "microservices-mode"}
+	supportedModes = []string{"monolithic-mode", "microservices-mode"}
 	mode           string
 )
 

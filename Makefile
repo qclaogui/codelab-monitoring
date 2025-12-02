@@ -126,19 +126,6 @@ down-monolithic-mode-all-in-one:
 	docker compose --project-name all-in-one down $(opts)
 
 
-.PHONY: up-read-write-mode-metrics
-up-read-write-mode-metrics: ## Run read-write-mode Mimir for metrics
-	$(info ******************** run read-write-mode metrics ********************)
-	docker compose \
-		--project-name read-write-metrics \
-		--project-directory docker-compose/read-write-mode/metrics \
-		--file docker-compose/read-write-mode/metrics/compose.yaml \
-		--env-file docker-compose/common/config/.env \
-		up -d --remove-orphans $(opts)
-	@$(call echo_info, "Go to http://localhost:3000/explore for the metrics.")
-down-read-write-mode-metrics:
-	docker compose --project-name read-write-metrics down $(opts)
-
 .PHONY: up-read-write-mode-logs
 up-read-write-mode-logs: ## Run read-write-mode Loki for logs
 	$(info ******************** run read-write-mode logs ********************)
@@ -257,7 +244,6 @@ manifests-monolithic-mode: $(KUSTOMIZE)
 manifests-read-write-mode: $(KUSTOMIZE)
 	$(info ******************** generates read-write-mode manifests ********************)
 	@$(KUSTOMIZE) build --helm-command $(HELM) --helm-kube-version ${helmKubeVersion} --enable-helm kubernetes/read-write-mode/logs > kubernetes/read-write-mode/logs/k8s-all-in-one.yaml
-	@$(KUSTOMIZE) build --helm-command $(HELM) --helm-kube-version ${helmKubeVersion} --enable-helm kubernetes/read-write-mode/metrics > kubernetes/read-write-mode/metrics/k8s-all-in-one.yaml
 
 manifests-microservices-mode: $(KUSTOMIZE)
 	$(info ******************** generates microservices-mode manifests ********************)
@@ -373,17 +359,6 @@ deploy-monolithic-mode-all-in-one: deploy-memcached ## Deploy monolithic-mode al
 	@$(call config_changes_trigger_pod_restart, "Go to http://localhost:8080/explore for the all-in-one.")
 delete-monolithic-mode-all-in-one: delete-memcached
 	@kubectl delete --ignore-not-found -f kubernetes/monolithic-mode/all-in-one/k8s-all-in-one.yaml
-
-
-
-.PHONY: deploy-read-write-mode-metrics
-deploy-read-write-mode-metrics: deploy-memcached ## Deploy read-write-mode Mimir for metrics
-	$(info ******************** deploy read-write-mode metrics manifests ********************)
-	@kubectl apply -f kubernetes/read-write-mode/metrics/k8s-all-in-one.yaml
-	@kubectl rollout status -n monitoring-system deployment/mimir-write --watch --timeout=600s
-	@$(call config_changes_trigger_pod_restart, "Go to http://localhost:8080/explore for the metrics.")
-delete-read-write-mode-metrics: delete-memcached
-	@kubectl delete --ignore-not-found -f kubernetes/read-write-mode/metrics/k8s-all-in-one.yaml
 
 
 .PHONY: deploy-read-write-mode-logs
