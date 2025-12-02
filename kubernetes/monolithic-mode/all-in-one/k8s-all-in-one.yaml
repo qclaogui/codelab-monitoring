@@ -63,8 +63,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: kube-state-metrics
-    app.kubernetes.io/version: 2.13.0
-    helm.sh/chart: kube-state-metrics-5.25.1
+    app.kubernetes.io/version: 2.17.0
+    helm.sh/chart: kube-state-metrics-6.4.2
   name: kube-state-metrics
   namespace: monitoring-system
 ---
@@ -90,8 +90,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: prometheus-node-exporter
     app.kubernetes.io/part-of: prometheus-node-exporter
-    app.kubernetes.io/version: 1.9.1
-    helm.sh/chart: prometheus-node-exporter-4.47.1
+    app.kubernetes.io/version: 1.10.2
+    helm.sh/chart: prometheus-node-exporter-4.49.2
   name: prometheus-node-exporter
   namespace: monitoring-system
 ---
@@ -234,8 +234,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: kube-state-metrics
-    app.kubernetes.io/version: 2.13.0
-    helm.sh/chart: kube-state-metrics-5.25.1
+    app.kubernetes.io/version: 2.17.0
+    helm.sh/chart: kube-state-metrics-6.4.2
   name: kube-state-metrics
 rules:
 - apiGroups:
@@ -260,7 +260,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - extensions
   - apps
   resources:
   - daemonsets
@@ -268,7 +267,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - extensions
   - apps
   resources:
   - deployments
@@ -290,7 +288,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - extensions
   - networking.k8s.io
   resources:
   - ingresses
@@ -375,7 +372,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - extensions
   - apps
   resources:
   - replicasets
@@ -490,8 +486,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: kube-state-metrics
-    app.kubernetes.io/version: 2.13.0
-    helm.sh/chart: kube-state-metrics-5.25.1
+    app.kubernetes.io/version: 2.17.0
+    helm.sh/chart: kube-state-metrics-6.4.2
   name: kube-state-metrics
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -6280,8 +6276,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: kube-state-metrics
-    app.kubernetes.io/version: 2.13.0
-    helm.sh/chart: kube-state-metrics-5.25.1
+    app.kubernetes.io/version: 2.17.0
+    helm.sh/chart: kube-state-metrics-6.4.2
   name: kube-state-metrics
   namespace: monitoring-system
 spec:
@@ -6289,7 +6285,7 @@ spec:
   - name: http
     port: 8080
     protocol: TCP
-    targetPort: 8080
+    targetPort: http
   selector:
     app.kubernetes.io/instance: kube-state-metrics
     app.kubernetes.io/name: kube-state-metrics
@@ -6355,8 +6351,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: prometheus-node-exporter
     app.kubernetes.io/part-of: prometheus-node-exporter
-    app.kubernetes.io/version: 1.9.1
-    helm.sh/chart: prometheus-node-exporter-4.47.1
+    app.kubernetes.io/version: 1.10.2
+    helm.sh/chart: prometheus-node-exporter-4.49.2
   name: prometheus-node-exporter
   namespace: monitoring-system
 spec:
@@ -6537,8 +6533,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: kube-state-metrics
-    app.kubernetes.io/version: 2.13.0
-    helm.sh/chart: kube-state-metrics-5.25.1
+    app.kubernetes.io/version: 2.17.0
+    helm.sh/chart: kube-state-metrics-6.4.2
   name: kube-state-metrics
   namespace: monitoring-system
 spec:
@@ -6558,15 +6554,15 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: kube-state-metrics
         app.kubernetes.io/part-of: kube-state-metrics
-        app.kubernetes.io/version: 2.13.0
-        helm.sh/chart: kube-state-metrics-5.25.1
+        app.kubernetes.io/version: 2.17.0
+        helm.sh/chart: kube-state-metrics-6.4.2
     spec:
       automountServiceAccountToken: true
       containers:
       - args:
         - --port=8080
         - --resources=certificatesigningrequests,configmaps,cronjobs,daemonsets,deployments,endpoints,horizontalpodautoscalers,ingresses,jobs,leases,limitranges,mutatingwebhookconfigurations,namespaces,networkpolicies,nodes,persistentvolumeclaims,persistentvolumes,poddisruptionbudgets,pods,replicasets,replicationcontrollers,resourcequotas,secrets,services,statefulsets,storageclasses,validatingwebhookconfigurations,volumeattachments
-        image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.13.0
+        image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.17.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -6588,7 +6584,7 @@ spec:
           httpGet:
             httpHeaders: null
             path: /readyz
-            port: 8080
+            port: 8081
             scheme: HTTP
           initialDelaySeconds: 5
           periodSeconds: 10
@@ -6601,6 +6597,7 @@ spec:
             drop:
             - ALL
           readOnlyRootFilesystem: true
+      dnsPolicy: ClusterFirst
       hostNetwork: false
       securityContext:
         fsGroup: 65534
@@ -7189,8 +7186,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: prometheus-node-exporter
     app.kubernetes.io/part-of: prometheus-node-exporter
-    app.kubernetes.io/version: 1.9.1
-    helm.sh/chart: prometheus-node-exporter-4.47.1
+    app.kubernetes.io/version: 1.10.2
+    helm.sh/chart: prometheus-node-exporter-4.49.2
   name: prometheus-node-exporter
   namespace: monitoring-system
 spec:
@@ -7209,8 +7206,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: prometheus-node-exporter
         app.kubernetes.io/part-of: prometheus-node-exporter
-        app.kubernetes.io/version: 1.9.1
-        helm.sh/chart: prometheus-node-exporter-4.47.1
+        app.kubernetes.io/version: 1.10.2
+        helm.sh/chart: prometheus-node-exporter-4.49.2
     spec:
       affinity:
         nodeAffinity:
@@ -7236,7 +7233,7 @@ spec:
         env:
         - name: HOST_IP
           value: 0.0.0.0
-        image: quay.io/prometheus/node-exporter:v1.9.1
+        image: quay.io/prometheus/node-exporter:v1.10.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
