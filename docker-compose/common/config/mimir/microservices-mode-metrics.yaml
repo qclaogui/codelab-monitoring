@@ -2,7 +2,6 @@
 # It is for demonstration purposes only.
 multitenancy_enabled: true
 
-# -usage-stats.enabled=false
 usage_stats:
   enabled: false
 
@@ -10,6 +9,7 @@ server:
   http_listen_port: 8080
   grpc_listen_port: 9095
   log_level: info
+  trace_request_headers: true
 
 common:
   storage:
@@ -21,6 +21,9 @@ common:
       insecure:          ${MIMIR_S3_INSECURE:true}
       http:
         insecure_skip_verify: true
+
+ingest_storage:
+  enabled: false
 
 alertmanager:
   data_dir: /data/alertmanager
@@ -39,9 +42,6 @@ blocks_storage:
     bucket_name: mimir-blocks
   tsdb:
     dir: /data/ingester
-    ship_interval: 1m
-    block_ranges_period: [ 2h ]
-    retention_period: 3h
   bucket_store:
     index_cache:
       backend: memcached
@@ -57,6 +57,8 @@ blocks_storage:
       backend: memcached
       memcached:
         addresses: dns+memcached:11211
+      bucket_index_content_ttl: 10s
+
 
 frontend:
   parallelize_shardable_queries: true
@@ -90,7 +92,7 @@ compactor:
 
 limits:
   native_histograms_ingestion_enabled: true
-
+  ingestion_rate: 100000
 
 overrides_exporter:
   ring:

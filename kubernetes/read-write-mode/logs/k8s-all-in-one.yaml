@@ -5210,7 +5210,6 @@ data:
     # It is for demonstration purposes only.
     multitenancy_enabled: true
 
-    # -usage-stats.enabled=false
     usage_stats:
       enabled: false
 
@@ -5218,6 +5217,7 @@ data:
       http_listen_port: 8080
       grpc_listen_port: 9095
       log_level: info
+      trace_request_headers: true
 
     # https://grafana.com/docs/mimir/latest/references/configuration-parameters/#use-environment-variables-in-the-configuration
     common:
@@ -5230,6 +5230,9 @@ data:
           insecure:          ${MIMIR_S3_INSECURE:false}
           http:
             insecure_skip_verify: true
+
+    ingest_storage:
+      enabled: false
 
     alertmanager:
       data_dir: /data/alertmanager
@@ -5297,6 +5300,7 @@ data:
 
     limits:
       native_histograms_ingestion_enabled: true
+      ingestion_rate: 100000
 
     overrides_exporter:
       ring:
@@ -5308,19 +5312,19 @@ data:
   runtime.yaml: |-
     # This file can be used to set overrides or other runtime config.
     ingester_limits: # limits that each ingester replica enforces
-      max_ingestion_rate: 20000
+      max_ingestion_rate: 200000
       max_series: 1500000
       max_tenants: 1000
       max_inflight_push_requests: 30000
 
     distributor_limits: # limits that each distributor replica enforces
-      max_ingestion_rate: 20000
+      max_ingestion_rate: 200000
       max_inflight_push_requests: 30000
       max_inflight_push_requests_bytes: 50000000
 
     overrides:
       anonymous: # limits for anonymous that the whole cluster enforces
-        # ingestion_tenant_shard_size: 9
+        ingestion_rate: 100000
         max_global_series_per_user: 1500000
         max_fetched_series_per_query: 100000
         native_histograms_ingestion_enabled: true
@@ -5333,7 +5337,7 @@ metadata:
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: mimir
     app.kubernetes.io/version: 3.0.1
-  name: mimir-config-d7f5b92t7c
+  name: mimir-config-288hmdc6k4
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -5934,7 +5938,7 @@ spec:
       terminationGracePeriodSeconds: 60
       volumes:
       - configMap:
-          name: mimir-config-d7f5b92t7c
+          name: mimir-config-288hmdc6k4
         name: config
       - emptyDir: {}
         name: storage

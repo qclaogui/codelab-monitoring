@@ -20,8 +20,8 @@ metadata:
     app.kubernetes.io/instance: mimir-distributed
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed
   namespace: monitoring-system
 ---
@@ -5010,8 +5010,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-alertmanager-fallback-config
   namespace: monitoring-system
 ---
@@ -5044,26 +5044,24 @@ data:
         bucket_name: mimir-blocks
       tsdb:
         dir: /data/tsdb
-        ship_interval: 1m
-        block_ranges_period: [ 2h ]
-        retention_period: 3h
+        head_compaction_interval: 15m
+        wal_replay_concurrency: 3
       bucket_store:
         sync_dir: /data/tsdb-sync
         index_cache:
           backend: memcached
           memcached:
-            addresses: dns+memcached.memcached-system.svc:11211
+            addresses: dnssrvnoa+memcached.memcached-system.svc.cluster.local.:11211
 
         chunks_cache:
           backend: memcached
           memcached:
-            addresses: dns+memcached.memcached-system.svc:11211
+            addresses: dnssrvnoa+memcached.memcached-system.svc.cluster.local.:11211
 
         metadata_cache:
           backend: memcached
           memcached:
-            addresses: dns+memcached.memcached-system.svc:11211
-
+            addresses: dnssrvnoa+memcached.memcached-system.svc.cluster.local.:11211
 
     common:
       storage:
@@ -5087,6 +5085,9 @@ data:
         wait_stability_min_duration: 1m
       symbols_flushers_concurrency: 4
 
+    distributor:
+      remote_timeout: 5s
+
     frontend:
       parallelize_shardable_queries: true
       scheduler_address: mimir-distributed-query-scheduler-headless.monitoring-system.svc:9095
@@ -5095,16 +5096,26 @@ data:
       results_cache:
         backend: memcached
         memcached:
-          addresses: dns+memcached.memcached-system.svc:11211
+          addresses: dnssrvnoa+memcached.memcached-system.svc.cluster.local.:11211
 
     frontend_worker:
       grpc_client_config:
         max_send_msg_size: 419430400
       scheduler_address: mimir-distributed-query-scheduler-headless.monitoring-system.svc:9095
 
+    ingest_storage:
+      enabled: false
+      kafka:
+        auto_create_topic_default_partitions: 100
+        auto_create_topic_enabled: true
+        topic: mimir-ingest
+
     ingester:
+      push_grpc_method_enabled: true
       ring:
         final_sleep: 0s
+        heartbeat_period: 2m
+        heartbeat_timeout: 10m
         num_tokens: 512
         tokens_file_path: /data/tokens
         unregister_on_shutdown: false
@@ -5117,13 +5128,13 @@ data:
       max_cache_freshness: 10m
       max_query_parallelism: 240
       max_total_query_length: 12000h
-      native_histograms_ingestion_enabled: true
+      ingestion_rate: 100000
 
     memberlist:
       abort_if_cluster_join_fails: false
       compression_enabled: false
       join_members:
-      - dns+mimir-distributed-gossip-ring.monitoring-system.svc.cluster.local:7946
+      - dns+mimir-distributed-gossip-ring.monitoring-system.svc.cluster.local.:7946
 
     querier:
       max_concurrent: 16
@@ -5132,7 +5143,7 @@ data:
       max_outstanding_requests_per_tenant: 800
 
     ruler:
-      alertmanager_url: dnssrvnoa+http://_http-metrics._tcp.mimir-distributed-alertmanager-headless.monitoring-system.svc.cluster.local/alertmanager
+      alertmanager_url: dnssrvnoa+http://_http-metrics._tcp.mimir-distributed-alertmanager-headless.monitoring-system.svc.cluster.local./alertmanager
       enable_api: true
       rule_path: /data
     ruler_storage:
@@ -5142,7 +5153,7 @@ data:
       cache:
         backend: memcached
         memcached:
-          addresses: dns+memcached.memcached-system.svc:11211
+          addresses: dnssrvnoa+memcached.memcached-system.svc.cluster.local.:11211
 
     runtime_config:
       file: /var/mimir/runtime.yaml
@@ -5154,10 +5165,12 @@ data:
       grpc_server_max_connection_idle: 1m
       http_listen_port: 8080
       grpc_listen_port: 9095
-      log_level: warn
+      trace_request_headers: true
 
     store_gateway:
       sharding_ring:
+        heartbeat_period: 1m
+        heartbeat_timeout: 10m
         tokens_file_path: /data/tokens
         unregister_on_shutdown: false
         wait_stability_min_duration: 1m
@@ -5167,8 +5180,8 @@ metadata:
     app.kubernetes.io/instance: mimir-distributed
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-config
   namespace: monitoring-system
 ---
@@ -5177,19 +5190,19 @@ data:
   runtime.yaml: |-
     # This file can be used to set overrides or other runtime config.
     ingester_limits: # limits that each ingester replica enforces
-      max_ingestion_rate: 20000
+      max_ingestion_rate: 200000
       max_series: 1500000
       max_tenants: 1000
       max_inflight_push_requests: 30000
 
     distributor_limits: # limits that each distributor replica enforces
-      max_ingestion_rate: 20000
+      max_ingestion_rate: 200000
       max_inflight_push_requests: 30000
       max_inflight_push_requests_bytes: 50000000
 
     overrides:
       anonymous: # limits for anonymous that the whole cluster enforces
-        # ingestion_tenant_shard_size: 9
+        ingestion_rate: 100000
         max_global_series_per_user: 1500000
         max_fetched_series_per_query: 100000
         native_histograms_ingestion_enabled: true
@@ -5200,8 +5213,8 @@ metadata:
     app.kubernetes.io/instance: mimir-distributed
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-runtime
   namespace: monitoring-system
 ---
@@ -5340,8 +5353,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-alertmanager
   namespace: monitoring-system
 spec:
@@ -5370,8 +5383,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
     prometheus.io/service-monitor: "false"
   name: mimir-distributed-alertmanager-headless
   namespace: monitoring-system
@@ -5405,8 +5418,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-compactor
   namespace: monitoring-system
 spec:
@@ -5435,8 +5448,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-distributor
   namespace: monitoring-system
 spec:
@@ -5465,8 +5478,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
     prometheus.io/service-monitor: "false"
   name: mimir-distributed-distributor-headless
   namespace: monitoring-system
@@ -5495,8 +5508,8 @@ metadata:
     app.kubernetes.io/instance: mimir-distributed
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-gossip-ring
   namespace: monitoring-system
 spec:
@@ -5523,8 +5536,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-ingester
   namespace: monitoring-system
 spec:
@@ -5553,8 +5566,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
     prometheus.io/service-monitor: "false"
   name: mimir-distributed-ingester-headless
   namespace: monitoring-system
@@ -5583,8 +5596,8 @@ metadata:
     app.kubernetes.io/instance: mimir-distributed
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-overrides-exporter
   namespace: monitoring-system
 spec:
@@ -5613,8 +5626,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-querier
   namespace: monitoring-system
 spec:
@@ -5642,8 +5655,8 @@ metadata:
     app.kubernetes.io/instance: mimir-distributed
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-query-frontend
   namespace: monitoring-system
 spec:
@@ -5671,8 +5684,8 @@ metadata:
     app.kubernetes.io/instance: mimir-distributed
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-query-scheduler
   namespace: monitoring-system
 spec:
@@ -5700,8 +5713,8 @@ metadata:
     app.kubernetes.io/instance: mimir-distributed
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
     prometheus.io/service-monitor: "false"
   name: mimir-distributed-query-scheduler-headless
   namespace: monitoring-system
@@ -5732,8 +5745,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-ruler
   namespace: monitoring-system
 spec:
@@ -5758,8 +5771,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-store-gateway
   namespace: monitoring-system
 spec:
@@ -5788,8 +5801,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
     prometheus.io/service-monitor: "false"
   name: mimir-distributed-store-gateway-headless
   namespace: monitoring-system
@@ -5819,8 +5832,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-distributor
   namespace: monitoring-system
 spec:
@@ -5838,15 +5851,15 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: a894e76aa261eb0e2933bcd34aba83bbe407224e27746f09771029410177b70e
+        checksum/config: 6158489e72b32f49afe15a8a18cf39694b4a2bfa4077291df2f5d603ab09a215
       labels:
         app.kubernetes.io/component: distributor
         app.kubernetes.io/instance: mimir-distributed
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: mimir
         app.kubernetes.io/part-of: memberlist
-        app.kubernetes.io/version: 2.16.0
-        helm.sh/chart: mimir-distributed-5.7.0
+        app.kubernetes.io/version: 3.0.1
+        helm.sh/chart: mimir-distributed-6.0.5
       namespace: monitoring-system
     spec:
       containers:
@@ -5861,12 +5874,10 @@ spec:
         env:
         - name: GOMAXPROCS
           value: "8"
-        - name: JAEGER_REPORTER_MAX_QUEUE_SIZE
-          value: "1000"
         envFrom:
         - secretRef:
             name: mimir-distributed-env-92ddctt858
-        image: grafana/mimir:2.16.0
+        image: grafana/mimir:3.0.1
         imagePullPolicy: IfNotPresent
         livenessProbe: null
         name: distributor
@@ -5945,8 +5956,8 @@ metadata:
     app.kubernetes.io/instance: mimir-distributed
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-overrides-exporter
   namespace: monitoring-system
 spec:
@@ -5964,14 +5975,14 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: a894e76aa261eb0e2933bcd34aba83bbe407224e27746f09771029410177b70e
+        checksum/config: 6158489e72b32f49afe15a8a18cf39694b4a2bfa4077291df2f5d603ab09a215
       labels:
         app.kubernetes.io/component: overrides-exporter
         app.kubernetes.io/instance: mimir-distributed
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: mimir
-        app.kubernetes.io/version: 2.16.0
-        helm.sh/chart: mimir-distributed-5.7.0
+        app.kubernetes.io/version: 3.0.1
+        helm.sh/chart: mimir-distributed-6.0.5
       namespace: monitoring-system
     spec:
       containers:
@@ -5979,10 +5990,11 @@ spec:
         - -target=overrides-exporter
         - -config.expand-env=true
         - -config.file=/etc/mimir/mimir.yaml
+        env: []
         envFrom:
         - secretRef:
             name: mimir-distributed-env-92ddctt858
-        image: grafana/mimir:2.16.0
+        image: grafana/mimir:3.0.1
         imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
@@ -6054,8 +6066,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-querier
   namespace: monitoring-system
 spec:
@@ -6073,30 +6085,29 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: a894e76aa261eb0e2933bcd34aba83bbe407224e27746f09771029410177b70e
+        checksum/config: 6158489e72b32f49afe15a8a18cf39694b4a2bfa4077291df2f5d603ab09a215
       labels:
         app.kubernetes.io/component: querier
         app.kubernetes.io/instance: mimir-distributed
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: mimir
         app.kubernetes.io/part-of: memberlist
-        app.kubernetes.io/version: 2.16.0
-        helm.sh/chart: mimir-distributed-5.7.0
+        app.kubernetes.io/version: 3.0.1
+        helm.sh/chart: mimir-distributed-6.0.5
     spec:
       containers:
       - args:
         - -target=querier
         - -config.expand-env=true
         - -config.file=/etc/mimir/mimir.yaml
+        - -querier.store-gateway-client.grpc-max-recv-msg-size=209715200
         env:
         - name: GOMAXPROCS
           value: "5"
-        - name: JAEGER_REPORTER_MAX_QUEUE_SIZE
-          value: "5000"
         envFrom:
         - secretRef:
             name: mimir-distributed-env-92ddctt858
-        image: grafana/mimir:2.16.0
+        image: grafana/mimir:3.0.1
         imagePullPolicy: IfNotPresent
         livenessProbe: null
         name: querier
@@ -6175,8 +6186,8 @@ metadata:
     app.kubernetes.io/instance: mimir-distributed
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-query-frontend
   namespace: monitoring-system
 spec:
@@ -6194,14 +6205,14 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: a894e76aa261eb0e2933bcd34aba83bbe407224e27746f09771029410177b70e
+        checksum/config: 6158489e72b32f49afe15a8a18cf39694b4a2bfa4077291df2f5d603ab09a215
       labels:
         app.kubernetes.io/component: query-frontend
         app.kubernetes.io/instance: mimir-distributed
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: mimir
-        app.kubernetes.io/version: 2.16.0
-        helm.sh/chart: mimir-distributed-5.7.0
+        app.kubernetes.io/version: 3.0.1
+        helm.sh/chart: mimir-distributed-6.0.5
       namespace: monitoring-system
     spec:
       containers:
@@ -6211,13 +6222,11 @@ spec:
         - -config.file=/etc/mimir/mimir.yaml
         - -server.grpc.keepalive.max-connection-age=30s
         - -shutdown-delay=90s
-        env:
-        - name: JAEGER_REPORTER_MAX_QUEUE_SIZE
-          value: "5000"
+        env: []
         envFrom:
         - secretRef:
             name: mimir-distributed-env-92ddctt858
-        image: grafana/mimir:2.16.0
+        image: grafana/mimir:3.0.1
         imagePullPolicy: IfNotPresent
         livenessProbe: null
         name: query-frontend
@@ -6293,8 +6302,8 @@ metadata:
     app.kubernetes.io/instance: mimir-distributed
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-query-scheduler
   namespace: monitoring-system
 spec:
@@ -6312,24 +6321,25 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: a894e76aa261eb0e2933bcd34aba83bbe407224e27746f09771029410177b70e
+        checksum/config: 6158489e72b32f49afe15a8a18cf39694b4a2bfa4077291df2f5d603ab09a215
       labels:
         app.kubernetes.io/component: query-scheduler
         app.kubernetes.io/instance: mimir-distributed
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: mimir
-        app.kubernetes.io/version: 2.16.0
-        helm.sh/chart: mimir-distributed-5.7.0
+        app.kubernetes.io/version: 3.0.1
+        helm.sh/chart: mimir-distributed-6.0.5
     spec:
       containers:
       - args:
         - -target=query-scheduler
         - -config.expand-env=true
         - -config.file=/etc/mimir/mimir.yaml
+        env: []
         envFrom:
         - secretRef:
             name: mimir-distributed-env-92ddctt858
-        image: grafana/mimir:2.16.0
+        image: grafana/mimir:3.0.1
         imagePullPolicy: IfNotPresent
         livenessProbe: null
         name: query-scheduler
@@ -6406,8 +6416,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-ruler
   namespace: monitoring-system
 spec:
@@ -6425,15 +6435,15 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: a894e76aa261eb0e2933bcd34aba83bbe407224e27746f09771029410177b70e
+        checksum/config: 6158489e72b32f49afe15a8a18cf39694b4a2bfa4077291df2f5d603ab09a215
       labels:
         app.kubernetes.io/component: ruler
         app.kubernetes.io/instance: mimir-distributed
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: mimir
         app.kubernetes.io/part-of: memberlist
-        app.kubernetes.io/version: 2.16.0
-        helm.sh/chart: mimir-distributed-5.7.0
+        app.kubernetes.io/version: 3.0.1
+        helm.sh/chart: mimir-distributed-6.0.5
       namespace: monitoring-system
     spec:
       containers:
@@ -6442,13 +6452,11 @@ spec:
         - -config.expand-env=true
         - -config.file=/etc/mimir/mimir.yaml
         - -distributor.remote-timeout=10s
-        env:
-        - name: JAEGER_REPORTER_MAX_QUEUE_SIZE
-          value: "1000"
+        env: []
         envFrom:
         - secretRef:
             name: mimir-distributed-env-92ddctt858
-        image: grafana/mimir:2.16.0
+        image: grafana/mimir:3.0.1
         imagePullPolicy: IfNotPresent
         livenessProbe: null
         name: ruler
@@ -6666,8 +6674,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-alertmanager
   namespace: monitoring-system
 spec:
@@ -6681,16 +6689,16 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/alertmanager-fallback-config: f58c25b049e4d6cf3c9d0891d67919e94a0bde9001b9889ef517087b8b5ffb08
-        checksum/config: a894e76aa261eb0e2933bcd34aba83bbe407224e27746f09771029410177b70e
+        checksum/alertmanager-fallback-config: f8984375cb38d648921efe36fab3d394a0f8a3ecc9f4b7c0f2723989bd7957c6
+        checksum/config: 6158489e72b32f49afe15a8a18cf39694b4a2bfa4077291df2f5d603ab09a215
       labels:
         app.kubernetes.io/component: alertmanager
         app.kubernetes.io/instance: mimir-distributed
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: mimir
         app.kubernetes.io/part-of: memberlist
-        app.kubernetes.io/version: 2.16.0
-        helm.sh/chart: mimir-distributed-5.7.0
+        app.kubernetes.io/version: 3.0.1
+        helm.sh/chart: mimir-distributed-6.0.5
       namespace: monitoring-system
     spec:
       containers:
@@ -6699,10 +6707,11 @@ spec:
         - -config.expand-env=true
         - -config.file=/etc/mimir/mimir.yaml
         - -server.http-idle-timeout=6m
+        env: []
         envFrom:
         - secretRef:
             name: mimir-distributed-env-92ddctt858
-        image: grafana/mimir:2.16.0
+        image: grafana/mimir:3.0.1
         imagePullPolicy: IfNotPresent
         livenessProbe: null
         name: alertmanager
@@ -6802,8 +6811,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-compactor
   namespace: monitoring-system
 spec:
@@ -6818,15 +6827,15 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: a894e76aa261eb0e2933bcd34aba83bbe407224e27746f09771029410177b70e
+        checksum/config: 6158489e72b32f49afe15a8a18cf39694b4a2bfa4077291df2f5d603ab09a215
       labels:
         app.kubernetes.io/component: compactor
         app.kubernetes.io/instance: mimir-distributed
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: mimir
         app.kubernetes.io/part-of: memberlist
-        app.kubernetes.io/version: 2.16.0
-        helm.sh/chart: mimir-distributed-5.7.0
+        app.kubernetes.io/version: 3.0.1
+        helm.sh/chart: mimir-distributed-6.0.5
       namespace: monitoring-system
     spec:
       containers:
@@ -6834,10 +6843,11 @@ spec:
         - -target=compactor
         - -config.expand-env=true
         - -config.file=/etc/mimir/mimir.yaml
+        env: []
         envFrom:
         - secretRef:
             name: mimir-distributed-env-92ddctt858
-        image: grafana/mimir:2.16.0
+        image: grafana/mimir:3.0.1
         imagePullPolicy: IfNotPresent
         livenessProbe: null
         name: compactor
@@ -6928,8 +6938,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-ingester
   namespace: monitoring-system
 spec:
@@ -6944,15 +6954,15 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: a894e76aa261eb0e2933bcd34aba83bbe407224e27746f09771029410177b70e
+        checksum/config: 6158489e72b32f49afe15a8a18cf39694b4a2bfa4077291df2f5d603ab09a215
       labels:
         app.kubernetes.io/component: ingester
         app.kubernetes.io/instance: mimir-distributed
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: mimir
         app.kubernetes.io/part-of: memberlist
-        app.kubernetes.io/version: 2.16.0
-        helm.sh/chart: mimir-distributed-5.7.0
+        app.kubernetes.io/version: 3.0.1
+        helm.sh/chart: mimir-distributed-6.0.5
       namespace: monitoring-system
     spec:
       containers:
@@ -6962,15 +6972,14 @@ spec:
         - -config.file=/etc/mimir/mimir.yaml
         - -ingester.ring.instance-availability-zone=zone-default
         - -server.grpc-max-concurrent-streams=500
+        - -memberlist.abort-if-fast-join-fails=true
         env:
         - name: GOMAXPROCS
           value: "4"
-        - name: JAEGER_REPORTER_MAX_QUEUE_SIZE
-          value: "1000"
         envFrom:
         - secretRef:
             name: mimir-distributed-env-92ddctt858
-        image: grafana/mimir:2.16.0
+        image: grafana/mimir:3.0.1
         imagePullPolicy: IfNotPresent
         livenessProbe: null
         name: ingester
@@ -7061,8 +7070,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-store-gateway
   namespace: monitoring-system
 spec:
@@ -7077,15 +7086,15 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: a894e76aa261eb0e2933bcd34aba83bbe407224e27746f09771029410177b70e
+        checksum/config: 6158489e72b32f49afe15a8a18cf39694b4a2bfa4077291df2f5d603ab09a215
       labels:
         app.kubernetes.io/component: store-gateway
         app.kubernetes.io/instance: mimir-distributed
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: mimir
         app.kubernetes.io/part-of: memberlist
-        app.kubernetes.io/version: 2.16.0
-        helm.sh/chart: mimir-distributed-5.7.0
+        app.kubernetes.io/version: 3.0.1
+        helm.sh/chart: mimir-distributed-6.0.5
       namespace: monitoring-system
     spec:
       containers:
@@ -7093,17 +7102,16 @@ spec:
         - -target=store-gateway
         - -config.expand-env=true
         - -config.file=/etc/mimir/mimir.yaml
+        - -server.grpc-max-send-msg-size-bytes=209715200
         env:
         - name: GOMAXPROCS
           value: "5"
         - name: GOMEMLIMIT
           value: "134217728"
-        - name: JAEGER_REPORTER_MAX_QUEUE_SIZE
-          value: "1000"
         envFrom:
         - secretRef:
             name: mimir-distributed-env-92ddctt858
-        image: grafana/mimir:2.16.0
+        image: grafana/mimir:3.0.1
         imagePullPolicy: IfNotPresent
         livenessProbe: null
         name: store-gateway
@@ -7193,8 +7201,8 @@ metadata:
     app.kubernetes.io/instance: mimir-distributed
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-alertmanager
   namespace: monitoring-system
 spec:
@@ -7213,8 +7221,8 @@ metadata:
     app.kubernetes.io/instance: mimir-distributed
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-compactor
   namespace: monitoring-system
 spec:
@@ -7233,8 +7241,8 @@ metadata:
     app.kubernetes.io/instance: mimir-distributed
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-distributor
   namespace: monitoring-system
 spec:
@@ -7253,8 +7261,8 @@ metadata:
     app.kubernetes.io/instance: mimir-distributed
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-ingester
   namespace: monitoring-system
 spec:
@@ -7273,8 +7281,8 @@ metadata:
     app.kubernetes.io/instance: mimir-distributed
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-overrides-exporter
   namespace: monitoring-system
 spec:
@@ -7293,8 +7301,8 @@ metadata:
     app.kubernetes.io/instance: mimir-distributed
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-querier
   namespace: monitoring-system
 spec:
@@ -7313,8 +7321,8 @@ metadata:
     app.kubernetes.io/instance: mimir-distributed
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-query-frontend
   namespace: monitoring-system
 spec:
@@ -7333,8 +7341,8 @@ metadata:
     app.kubernetes.io/instance: mimir-distributed
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-query-scheduler
   namespace: monitoring-system
 spec:
@@ -7353,8 +7361,8 @@ metadata:
     app.kubernetes.io/instance: mimir-distributed
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-ruler
   namespace: monitoring-system
 spec:
@@ -7373,8 +7381,8 @@ metadata:
     app.kubernetes.io/instance: mimir-distributed
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-store-gateway
   namespace: monitoring-system
 spec:
@@ -7635,8 +7643,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-alertmanager
   namespace: monitoring-system
 spec:
@@ -7675,8 +7683,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-compactor
   namespace: monitoring-system
 spec:
@@ -7715,8 +7723,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-distributor
   namespace: monitoring-system
 spec:
@@ -7755,8 +7763,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-ingester
   namespace: monitoring-system
 spec:
@@ -7794,8 +7802,8 @@ metadata:
     app.kubernetes.io/instance: mimir-distributed
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-overrides-exporter
   namespace: monitoring-system
 spec:
@@ -7834,8 +7842,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-querier
   namespace: monitoring-system
 spec:
@@ -7873,8 +7881,8 @@ metadata:
     app.kubernetes.io/instance: mimir-distributed
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-query-frontend
   namespace: monitoring-system
 spec:
@@ -7912,8 +7920,8 @@ metadata:
     app.kubernetes.io/instance: mimir-distributed
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-query-scheduler
   namespace: monitoring-system
 spec:
@@ -7952,8 +7960,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-ruler
   namespace: monitoring-system
 spec:
@@ -7992,8 +8000,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: mimir
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 2.16.0
-    helm.sh/chart: mimir-distributed-5.7.0
+    app.kubernetes.io/version: 3.0.1
+    helm.sh/chart: mimir-distributed-6.0.5
   name: mimir-distributed-store-gateway
   namespace: monitoring-system
 spec:
