@@ -6,32 +6,40 @@ auth_enabled: true
 analytics:
  reporting_enabled: false
 
+tracing:
+  enabled: true
+
 server:
   http_listen_port: 3100
   grpc_listen_port: 9095
   log_level: info
   log_format: json
 
+bloom_build:
+  enabled: true
+  builder:
+    planner_address: loki-backend-headless.logging-system.svc.cluster.local:9095
+
+bloom_gateway:
+  enabled: true
+  client:
+    addresses: dnssrvnoa+_grpc._tcp.loki-backend-headless.logging-system.svc.cluster.local
+
 # https://grafana.com/docs/loki/latest/configure/#use-environment-variables-in-the-configuration
 common:
-  compactor_address: http://loki-backend.logging-system.svc.cluster.local:3100
+  compactor_grpc_address: 'loki-backend.logging-system.svc.cluster.local:9095'
   path_prefix: /var/loki
-  replication_factor: 1
+  replication_factor: 3
   storage:
     s3:
       bucketnames: loki-data
-      endpoint: ${LOKI_S3_ENDPOINT:-minio.minio-system.svc.cluster.local:443}
+      endpoint: ${LOKI_S3_ENDPOINT:-https://minio.minio-system.svc.cluster.local:443}
       access_key_id: ${LOKI_S3_ACCESS_KEY_ID:-lgtmp}
       secret_access_key: ${LOKI_S3_SECRET_ACCESS_KEY:-supersecret}
       insecure: ${LOKI_S3_INSECURE:-false}
       s3forcepathstyle: true
       http_config:
         insecure_skip_verify: true
-
-bloom_gateway:
-  enabled: true
-  client:
-    addresses: "dns+loki-backend.logging-system.svc.cluster.local:9095"
 
 frontend:
   scheduler_address: loki-query-scheduler-discovery.logging-system.svc.cluster.local:9095
@@ -68,6 +76,11 @@ pattern_ingester:
   enabled: true
 
 limits_config:
+  max_cache_freshness_per_query: 10m
+  query_timeout: 300s
+  reject_old_samples: true
+  reject_old_samples_max_age: 168h
+  split_queries_by_interval: 15m
   max_global_streams_per_user: 0
   ingestion_rate_mb: 50000
   ingestion_burst_size_mb: 50000
@@ -84,7 +97,7 @@ runtime_config:
 
 schema_config:
   configs:
-  - from: "2024-04-08"
+  - from: "2025-11-11"
     index:
       period: 24h
       prefix: loki_index_
@@ -99,7 +112,7 @@ storage_config:
     index_gateway_client:
       server_address: dns+loki-backend-headless.logging-system.svc.cluster.local:9095
   bloom_shipper:
-    working_directory: /var/loki/blooms
+    working_directory: /var/loki/data/bloomshipper
 
 chunk_store_config:
   chunk_cache_config:

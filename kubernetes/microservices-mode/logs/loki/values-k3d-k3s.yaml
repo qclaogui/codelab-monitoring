@@ -1,9 +1,6 @@
 deploymentMode: Distributed
 
 loki:
-  readinessProbe:
-    initialDelaySeconds: 10
-
   useTestSchema: true
   configStorageType: ConfigMap
   configObjectName: loki-config
@@ -14,6 +11,10 @@ test:
 
 lokiCanary:
   enabled: false
+
+memberlist:
+  service:
+    publishNotReadyAddresses: true
 
 gateway:
   enabled: false
@@ -138,6 +139,15 @@ ruler:
   enabled: true
   replicas: 1
   maxUnavailable: 1
+  extraArgs:
+  - -config.expand-env=true
+  extraEnvFrom:
+  - secretRef:
+      name: loki-env
+
+overridesExporter:
+  enabled: true
+  replicas: 1
   extraArgs:
   - -config.expand-env=true
   extraEnvFrom:

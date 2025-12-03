@@ -10,8 +10,8 @@ metadata:
   labels:
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.5.0
-    helm.sh/chart: loki-6.30.1
+    app.kubernetes.io/version: 3.5.7
+    helm.sh/chart: loki-6.46.0
   name: loki
   namespace: logging-system
 ---
@@ -161,8 +161,8 @@ metadata:
   labels:
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.5.0
-    helm.sh/chart: loki-6.30.1
+    app.kubernetes.io/version: 3.5.7
+    helm.sh/chart: loki-6.46.0
   name: loki-clusterrole
 rules:
 - apiGroups:
@@ -202,8 +202,8 @@ metadata:
   labels:
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.5.0
-    helm.sh/chart: loki-6.30.1
+    app.kubernetes.io/version: 3.5.7
+    helm.sh/chart: loki-6.46.0
   name: loki-clusterrolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -239,32 +239,40 @@ data:
     analytics:
      reporting_enabled: false
 
+    tracing:
+      enabled: true
+
     server:
       http_listen_port: 3100
       grpc_listen_port: 9095
       log_level: info
       log_format: json
 
+    bloom_build:
+      enabled: true
+      builder:
+        planner_address: loki-backend-headless.logging-system.svc.cluster.local:9095
+
+    bloom_gateway:
+      enabled: true
+      client:
+        addresses: dnssrvnoa+_grpc._tcp.loki-backend-headless.logging-system.svc.cluster.local
+
     # https://grafana.com/docs/loki/latest/configure/#use-environment-variables-in-the-configuration
     common:
-      compactor_address: http://loki-backend.logging-system.svc.cluster.local:3100
+      compactor_grpc_address: 'loki-backend.logging-system.svc.cluster.local:9095'
       path_prefix: /var/loki
-      replication_factor: 1
+      replication_factor: 3
       storage:
         s3:
           bucketnames: loki-data
-          endpoint: ${LOKI_S3_ENDPOINT:-minio.minio-system.svc.cluster.local:443}
+          endpoint: ${LOKI_S3_ENDPOINT:-https://minio.minio-system.svc.cluster.local:443}
           access_key_id: ${LOKI_S3_ACCESS_KEY_ID:-lgtmp}
           secret_access_key: ${LOKI_S3_SECRET_ACCESS_KEY:-supersecret}
           insecure: ${LOKI_S3_INSECURE:-false}
           s3forcepathstyle: true
           http_config:
             insecure_skip_verify: true
-
-    bloom_gateway:
-      enabled: true
-      client:
-        addresses: "dns+loki-backend.logging-system.svc.cluster.local:9095"
 
     frontend:
       scheduler_address: loki-query-scheduler-discovery.logging-system.svc.cluster.local:9095
@@ -301,6 +309,11 @@ data:
       enabled: true
 
     limits_config:
+      max_cache_freshness_per_query: 10m
+      query_timeout: 300s
+      reject_old_samples: true
+      reject_old_samples_max_age: 168h
+      split_queries_by_interval: 15m
       max_global_streams_per_user: 0
       ingestion_rate_mb: 50000
       ingestion_burst_size_mb: 50000
@@ -317,7 +330,7 @@ data:
 
     schema_config:
       configs:
-      - from: "2024-04-08"
+      - from: "2025-11-11"
         index:
           period: 24h
           prefix: loki_index_
@@ -332,7 +345,7 @@ data:
         index_gateway_client:
           server_address: dns+loki-backend-headless.logging-system.svc.cluster.local:9095
       bloom_shipper:
-        working_directory: /var/loki/blooms
+        working_directory: /var/loki/data/bloomshipper
 
     chunk_store_config:
       chunk_cache_config:
@@ -340,7 +353,7 @@ data:
           addresses: "dns+memcached.memcached-system.svc.cluster.local:11211"
 kind: ConfigMap
 metadata:
-  name: loki-config-k765f7mf8c
+  name: loki-config-gk7d78k5cc
   namespace: logging-system
 ---
 apiVersion: v1
@@ -361,8 +374,8 @@ metadata:
   labels:
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.5.0
-    helm.sh/chart: loki-6.30.1
+    app.kubernetes.io/version: 3.5.7
+    helm.sh/chart: loki-6.46.0
   name: loki-runtime
   namespace: logging-system
 ---
@@ -5232,7 +5245,7 @@ data:
       storage:
         backend: s3
         s3:
-          endpoint:          ${MIMIR_S3_ENDPOINT:minio.minio-system.svc:443}
+          endpoint:          ${MIMIR_S3_ENDPOINT:minio.minio-system.svc.cluster.local:443}
           access_key_id:     ${MIMIR_S3_ACCESS_KEY_ID:lgtmp}
           secret_access_key: ${MIMIR_S3_SECRET_ACCESS_KEY:supersecret}
           insecure:          ${MIMIR_S3_INSECURE:false}
@@ -5345,7 +5358,7 @@ metadata:
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: mimir
     app.kubernetes.io/version: 3.0.1
-  name: mimir-config-288hmdc6k4
+  name: mimir-config-tk585gmccf
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -5413,8 +5426,8 @@ metadata:
     app.kubernetes.io/component: backend
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.5.0
-    helm.sh/chart: loki-6.30.1
+    app.kubernetes.io/version: 3.5.7
+    helm.sh/chart: loki-6.46.0
   name: loki-backend
   namespace: logging-system
 spec:
@@ -5468,8 +5481,8 @@ metadata:
   labels:
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.5.0
-    helm.sh/chart: loki-6.30.1
+    app.kubernetes.io/version: 3.5.7
+    helm.sh/chart: loki-6.46.0
   name: loki-memberlist
   namespace: logging-system
 spec:
@@ -5520,8 +5533,8 @@ metadata:
     app.kubernetes.io/component: read
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.5.0
-    helm.sh/chart: loki-6.30.1
+    app.kubernetes.io/version: 3.5.7
+    helm.sh/chart: loki-6.46.0
   name: loki-read
   namespace: logging-system
 spec:
@@ -5576,8 +5589,8 @@ metadata:
     app.kubernetes.io/component: write
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.5.0
-    helm.sh/chart: loki-6.30.1
+    app.kubernetes.io/version: 3.5.7
+    helm.sh/chart: loki-6.46.0
   name: loki-write
   namespace: logging-system
 spec:
@@ -5765,8 +5778,8 @@ metadata:
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 3.5.0
-    helm.sh/chart: loki-6.30.1
+    app.kubernetes.io/version: 3.5.7
+    helm.sh/chart: loki-6.46.0
   name: loki-read
   namespace: logging-system
 spec:
@@ -5797,6 +5810,8 @@ spec:
           - labelSelector:
               matchLabels:
                 app.kubernetes.io/component: read
+                app.kubernetes.io/instance: loki
+                app.kubernetes.io/name: loki
             topologyKey: kubernetes.io/hostname
       automountServiceAccountToken: true
       containers:
@@ -5809,7 +5824,7 @@ spec:
         envFrom:
         - secretRef:
             name: loki-env-58m52b99kc
-        image: docker.io/grafana/loki:3.5.0
+        image: docker.io/grafana/loki:3.5.7
         imagePullPolicy: IfNotPresent
         name: loki
         ports:
@@ -5823,10 +5838,13 @@ spec:
           name: http-memberlist
           protocol: TCP
         readinessProbe:
+          failureThreshold: 3
           httpGet:
             path: /ready
             port: http-metrics
-          initialDelaySeconds: 10
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          successThreshold: 1
           timeoutSeconds: 1
         resources: {}
         securityContext:
@@ -5860,7 +5878,7 @@ spec:
           items:
           - key: config.yaml
             path: config.yaml
-          name: loki-config-k765f7mf8c
+          name: loki-config-gk7d78k5cc
         name: config
       - configMap:
           name: loki-runtime
@@ -5946,7 +5964,7 @@ spec:
       terminationGracePeriodSeconds: 60
       volumes:
       - configMap:
-          name: mimir-config-288hmdc6k4
+          name: mimir-config-tk585gmccf
         name: config
       - emptyDir: {}
         name: storage
@@ -5959,8 +5977,8 @@ metadata:
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 3.5.0
-    helm.sh/chart: loki-6.30.1
+    app.kubernetes.io/version: 3.5.7
+    helm.sh/chart: loki-6.46.0
   name: loki-backend
   namespace: logging-system
 spec:
@@ -5977,13 +5995,14 @@ spec:
     metadata:
       annotations:
         checksum/config: 12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126
+        kubectl.kubernetes.io/default-container: loki
       labels:
         app.kubernetes.io/component: backend
         app.kubernetes.io/instance: loki
         app.kubernetes.io/name: loki
         app.kubernetes.io/part-of: memberlist
-        app.kubernetes.io/version: 3.5.0
-        helm.sh/chart: loki-6.30.1
+        app.kubernetes.io/version: 3.5.7
+        helm.sh/chart: loki-6.46.0
     spec:
       affinity:
         podAntiAffinity:
@@ -5991,36 +6010,11 @@ spec:
           - labelSelector:
               matchLabels:
                 app.kubernetes.io/component: backend
+                app.kubernetes.io/instance: loki
+                app.kubernetes.io/name: loki
             topologyKey: kubernetes.io/hostname
       automountServiceAccountToken: true
       containers:
-      - env:
-        - name: METHOD
-          value: WATCH
-        - name: LABEL
-          value: loki_rule
-        - name: FOLDER
-          value: /rules
-        - name: RESOURCE
-          value: both
-        - name: WATCH_SERVER_TIMEOUT
-          value: "60"
-        - name: WATCH_CLIENT_TIMEOUT
-          value: "60"
-        - name: LOG_LEVEL
-          value: INFO
-        image: kiwigrid/k8s-sidecar:1.30.3
-        imagePullPolicy: IfNotPresent
-        name: loki-sc-rules
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          readOnlyRootFilesystem: true
-        volumeMounts:
-        - mountPath: /rules
-          name: sc-rules-volume
       - args:
         - -config.file=/etc/loki/config/config.yaml
         - -target=backend
@@ -6029,7 +6023,7 @@ spec:
         envFrom:
         - secretRef:
             name: loki-env-58m52b99kc
-        image: docker.io/grafana/loki:3.5.0
+        image: docker.io/grafana/loki:3.5.7
         imagePullPolicy: IfNotPresent
         name: loki
         ports:
@@ -6043,10 +6037,13 @@ spec:
           name: http-memberlist
           protocol: TCP
         readinessProbe:
+          failureThreshold: 3
           httpGet:
             path: /ready
             port: http-metrics
-          initialDelaySeconds: 10
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          successThreshold: 1
           timeoutSeconds: 1
         resources: {}
         securityContext:
@@ -6066,6 +6063,33 @@ spec:
           name: data
         - mountPath: /rules
           name: sc-rules-volume
+      - env:
+        - name: METHOD
+          value: WATCH
+        - name: LABEL
+          value: loki_rule
+        - name: FOLDER
+          value: /rules
+        - name: RESOURCE
+          value: both
+        - name: WATCH_SERVER_TIMEOUT
+          value: "60"
+        - name: WATCH_CLIENT_TIMEOUT
+          value: "60"
+        - name: LOG_LEVEL
+          value: INFO
+        image: docker.io/kiwigrid/k8s-sidecar:1.30.10
+        imagePullPolicy: IfNotPresent
+        name: loki-sc-rules
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /rules
+          name: sc-rules-volume
       securityContext:
         fsGroup: 10001
         runAsGroup: 10001
@@ -6082,7 +6106,7 @@ spec:
           items:
           - key: config.yaml
             path: config.yaml
-          name: loki-config-k765f7mf8c
+          name: loki-config-gk7d78k5cc
         name: config
       - configMap:
           name: loki-runtime
@@ -6101,8 +6125,8 @@ metadata:
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 3.5.0
-    helm.sh/chart: loki-6.30.1
+    app.kubernetes.io/version: 3.5.7
+    helm.sh/chart: loki-6.46.0
   name: loki-write
   namespace: logging-system
 spec:
@@ -6124,8 +6148,8 @@ spec:
         app.kubernetes.io/instance: loki
         app.kubernetes.io/name: loki
         app.kubernetes.io/part-of: memberlist
-        app.kubernetes.io/version: 3.5.0
-        helm.sh/chart: loki-6.30.1
+        app.kubernetes.io/version: 3.5.7
+        helm.sh/chart: loki-6.46.0
     spec:
       affinity:
         podAntiAffinity:
@@ -6133,6 +6157,8 @@ spec:
           - labelSelector:
               matchLabels:
                 app.kubernetes.io/component: write
+                app.kubernetes.io/instance: loki
+                app.kubernetes.io/name: loki
             topologyKey: kubernetes.io/hostname
       automountServiceAccountToken: true
       containers:
@@ -6143,7 +6169,7 @@ spec:
         envFrom:
         - secretRef:
             name: loki-env-58m52b99kc
-        image: docker.io/grafana/loki:3.5.0
+        image: docker.io/grafana/loki:3.5.7
         imagePullPolicy: IfNotPresent
         name: loki
         ports:
@@ -6157,10 +6183,13 @@ spec:
           name: http-memberlist
           protocol: TCP
         readinessProbe:
+          failureThreshold: 3
           httpGet:
             path: /ready
             port: http-metrics
-          initialDelaySeconds: 10
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          successThreshold: 1
           timeoutSeconds: 1
         resources: {}
         securityContext:
@@ -6191,7 +6220,7 @@ spec:
           items:
           - key: config.yaml
             path: config.yaml
-          name: loki-config-k765f7mf8c
+          name: loki-config-gk7d78k5cc
         name: config
       - configMap:
           name: loki-runtime
@@ -6345,8 +6374,8 @@ metadata:
     app.kubernetes.io/component: backend
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.5.0
-    helm.sh/chart: loki-6.30.1
+    app.kubernetes.io/version: 3.5.7
+    helm.sh/chart: loki-6.46.0
   name: loki-backend
   namespace: logging-system
 spec:
@@ -6364,8 +6393,8 @@ metadata:
     app.kubernetes.io/component: read
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.5.0
-    helm.sh/chart: loki-6.30.1
+    app.kubernetes.io/version: 3.5.7
+    helm.sh/chart: loki-6.46.0
   name: loki-read
   namespace: logging-system
 spec:
@@ -6383,8 +6412,8 @@ metadata:
     app.kubernetes.io/component: write
     app.kubernetes.io/instance: loki
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.5.0
-    helm.sh/chart: loki-6.30.1
+    app.kubernetes.io/version: 3.5.7
+    helm.sh/chart: loki-6.46.0
   name: loki-write
   namespace: logging-system
 spec:

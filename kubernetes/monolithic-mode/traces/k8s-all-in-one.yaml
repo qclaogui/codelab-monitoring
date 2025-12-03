@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.3.0
+    app.kubernetes.io/version: 3.6.2
   name: logging-system
 ---
 apiVersion: v1
@@ -29,7 +29,7 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.3.0
+    app.kubernetes.io/version: 3.6.2
   name: loki
   namespace: logging-system
 ---
@@ -194,7 +194,7 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.3.0
+    app.kubernetes.io/version: 3.6.2
   name: loki-clusterrole
 rules:
 - apiGroups:
@@ -236,7 +236,7 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.3.0
+    app.kubernetes.io/version: 3.6.2
   name: loki-clusterrolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -416,7 +416,6 @@ data:
     # https://grafana.com/docs/loki/latest/operations/multi-tenancy/
     auth_enabled: true
 
-    # -reporting.enabled=false
     analytics:
      reporting_enabled: false
 
@@ -434,7 +433,7 @@ data:
       storage:
         s3:
           bucketnames: loki-data
-          endpoint: ${LOKI_S3_ENDPOINT:-minio.minio-system.svc.cluster.local:443}
+          endpoint: ${LOKI_S3_ENDPOINT:-https://minio.minio-system.svc.cluster.local:443}
           access_key_id: ${LOKI_S3_ACCESS_KEY_ID:-lgtmp}
           secret_access_key: ${LOKI_S3_SECRET_ACCESS_KEY:-supersecret}
           insecure: ${LOKI_S3_INSECURE:-false}
@@ -519,8 +518,8 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.3.0
-  name: loki-config-bt2mcfthd2
+    app.kubernetes.io/version: 3.6.2
+  name: loki-config-t5h2kg999t
   namespace: logging-system
 ---
 apiVersion: v1
@@ -543,7 +542,7 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.3.0
+    app.kubernetes.io/version: 3.6.2
   name: loki-runtime-9599m5k6h2
   namespace: logging-system
 ---
@@ -5438,7 +5437,7 @@ data:
       storage:
         backend: s3
         s3:
-          endpoint:          ${MIMIR_S3_ENDPOINT:minio.minio-system.svc:443}
+          endpoint:          ${MIMIR_S3_ENDPOINT:minio.minio-system.svc.cluster.local:443}
           access_key_id:     ${MIMIR_S3_ACCESS_KEY_ID:lgtmp}
           secret_access_key: ${MIMIR_S3_SECRET_ACCESS_KEY:supersecret}
           insecure:          ${MIMIR_S3_INSECURE:false}
@@ -5551,7 +5550,7 @@ metadata:
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: mimir
     app.kubernetes.io/version: 3.0.1
-  name: mimir-config-288hmdc6k4
+  name: mimir-config-tk585gmccf
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -5643,7 +5642,7 @@ data:
           path: /tmp/tempo/wal
         s3:
           bucket: tempo-data
-          endpoint: ${TEMPO_S3_ENDPOINT:-minio.minio-system.svc:443}
+          endpoint: ${TEMPO_S3_ENDPOINT:-minio.minio-system.svc.cluster.local:443}
           access_key: ${TEMPO_S3_ACCESS_KEY:-lgtmp}
           secret_key: ${TEMPO_S3_SECRET_KEY:-supersecret}
           insecure: ${TEMPO_S3_INSECURE:-false}
@@ -5688,12 +5687,15 @@ metadata:
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.8.0
-  name: tempo-9fctm9hd4h
+  name: tempo-f699fg76m7
   namespace: tracing-system
 ---
 apiVersion: v1
 data:
   LOKI_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
+  OTEL_EXPORTER_OTLP_ENDPOINT: |
+    aHR0cDovL2FsbG95Lm1vbml0b3Jpbmctc3lzdGVtLnN2Yy5jbHVzdGVyLmxvY2FsOjQzMT
+    g=
 kind: Secret
 metadata:
   labels:
@@ -5701,8 +5703,8 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.3.0
-  name: loki-env-58m52b99kc
+    app.kubernetes.io/version: 3.6.2
+  name: loki-env-85874kc6gb
   namespace: logging-system
 type: Opaque
 ---
@@ -5752,6 +5754,9 @@ type: Opaque
 apiVersion: v1
 data:
   MIMIR_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
+  OTEL_EXPORTER_OTLP_ENDPOINT: |
+    aHR0cDovL2FsbG95Lm1vbml0b3Jpbmctc3lzdGVtLnN2Yy5jbHVzdGVyLmxvY2FsOjQzMT
+    g=
 kind: Secret
 metadata:
   labels:
@@ -5760,7 +5765,7 @@ metadata:
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: mimir
     app.kubernetes.io/version: 3.0.1
-  name: mimir-env-92ddctt858
+  name: mimir-env-bbtgth2fct
   namespace: monitoring-system
 type: Opaque
 ---
@@ -5790,7 +5795,7 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.3.0
+    app.kubernetes.io/version: 3.6.2
   name: loki
   namespace: logging-system
 spec:
@@ -5813,7 +5818,7 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.3.0
+    app.kubernetes.io/version: 3.6.2
     prometheus.io/service-monitor: "false"
   name: loki-headless
   namespace: logging-system
@@ -5835,7 +5840,7 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.3.0
+    app.kubernetes.io/version: 3.6.2
     prometheus.io/service-monitor: "false"
   name: loki-memberlist
   namespace: logging-system
@@ -6117,7 +6122,7 @@ spec:
               fieldPath: status.podIP
         envFrom:
         - secretRef:
-            name: mimir-env-92ddctt858
+            name: mimir-env-bbtgth2fct
         image: docker.io/grafana/mimir:3.0.1
         imagePullPolicy: IfNotPresent
         name: mimir
@@ -6147,7 +6152,7 @@ spec:
       terminationGracePeriodSeconds: 60
       volumes:
       - configMap:
-          name: mimir-config-288hmdc6k4
+          name: mimir-config-tk585gmccf
         name: config
       - emptyDir: {}
         name: storage
@@ -6161,7 +6166,7 @@ metadata:
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 3.3.0
+    app.kubernetes.io/version: 3.6.2
   name: loki
   namespace: logging-system
 spec:
@@ -6201,8 +6206,8 @@ spec:
         - -config.expand-env=true
         envFrom:
         - secretRef:
-            name: loki-env-58m52b99kc
-        image: docker.io/grafana/loki:3.3.0
+            name: loki-env-85874kc6gb
+        image: docker.io/grafana/loki:3.6.2
         imagePullPolicy: IfNotPresent
         name: loki
         ports:
@@ -6256,7 +6261,7 @@ spec:
           items:
           - key: config.yaml
             path: config.yaml
-          name: loki-config-bt2mcfthd2
+          name: loki-config-t5h2kg999t
         name: config
       - configMap:
           name: loki-runtime-9599m5k6h2
@@ -6501,7 +6506,7 @@ spec:
       serviceAccountName: tempo
       volumes:
       - configMap:
-          name: tempo-9fctm9hd4h
+          name: tempo-f699fg76m7
         name: tempo-conf
       - emptyDir: {}
         name: tmp
@@ -6734,7 +6739,7 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.3.0
+    app.kubernetes.io/version: 3.6.2
   name: loki
   namespace: logging-system
 spec:

@@ -37,8 +37,8 @@ metadata:
     app.kubernetes.io/instance: pyroscope
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: pyroscope
-    app.kubernetes.io/version: 1.13.4
-    helm.sh/chart: pyroscope-1.13.4
+    app.kubernetes.io/version: 1.16.0
+    helm.sh/chart: pyroscope-1.16.0
   name: pyroscope
   namespace: profiles-system
 ---
@@ -5039,7 +5039,7 @@ data:
       storage:
         backend: s3
         s3:
-          endpoint:          ${MIMIR_S3_ENDPOINT:minio.minio-system.svc:443}
+          endpoint:          ${MIMIR_S3_ENDPOINT:minio.minio-system.svc.cluster.local:443}
           access_key_id:     ${MIMIR_S3_ACCESS_KEY_ID:lgtmp}
           secret_access_key: ${MIMIR_S3_SECRET_ACCESS_KEY:supersecret}
           insecure:          ${MIMIR_S3_INSECURE:false}
@@ -5152,7 +5152,7 @@ metadata:
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: mimir
     app.kubernetes.io/version: 3.0.1
-  name: mimir-config-288hmdc6k4
+  name: mimir-config-tk585gmccf
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -5173,7 +5173,7 @@ data:
       backend: s3
       s3:
         bucket_name: pyroscope-data
-        endpoint: ${PYROSCOPE_STORAGE_S3_ENDPOINT:-minio.minio-system.svc:443}
+        endpoint: ${PYROSCOPE_STORAGE_S3_ENDPOINT:-minio.minio-system.svc.cluster.local:443}
         access_key_id: ${PYROSCOPE_STORAGE_S3_ACCESS_KEY_ID:-lgtmp}
         secret_access_key: ${PYROSCOPE_STORAGE_S3_SECRET_ACCESS_KEY:-supersecret}
         insecure: ${PYROSCOPE_STORAGE_S3_INSECURE:-false}
@@ -5185,8 +5185,8 @@ metadata:
     app.kubernetes.io/instance: pyroscope
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: pyroscope
-    app.kubernetes.io/version: 1.13.4
-    helm.sh/chart: pyroscope-1.13.4
+    app.kubernetes.io/version: 1.16.0
+    helm.sh/chart: pyroscope-1.16.0
   name: pyroscope-config
   namespace: profiles-system
 ---
@@ -5194,15 +5194,17 @@ apiVersion: v1
 data:
   overrides.yaml: |
     overrides:
-      {}
+      anonymous:
+        ingestion_burst_size_mb: 2000
+        ingestion_rate_mb: 1000
 kind: ConfigMap
 metadata:
   labels:
     app.kubernetes.io/instance: pyroscope
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: pyroscope
-    app.kubernetes.io/version: 1.13.4
-    helm.sh/chart: pyroscope-1.13.4
+    app.kubernetes.io/version: 1.16.0
+    helm.sh/chart: pyroscope-1.16.0
   name: pyroscope-overrides-config
   namespace: profiles-system
 ---
@@ -5404,8 +5406,8 @@ metadata:
     app.kubernetes.io/instance: pyroscope
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: pyroscope
-    app.kubernetes.io/version: 1.13.4
-    helm.sh/chart: pyroscope-1.13.4
+    app.kubernetes.io/version: 1.16.0
+    helm.sh/chart: pyroscope-1.16.0
   name: pyroscope
   namespace: profiles-system
 spec:
@@ -5423,14 +5425,15 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  annotations:
+    prometheus.io/service-monitor: "false"
   labels:
     app.kubernetes.io/component: all
     app.kubernetes.io/instance: pyroscope
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: pyroscope
-    app.kubernetes.io/version: 1.13.4
-    helm.sh/chart: pyroscope-1.13.4
-    prometheus.io/service-monitor: "false"
+    app.kubernetes.io/version: 1.16.0
+    helm.sh/chart: pyroscope-1.16.0
   name: pyroscope-headless
   namespace: profiles-system
 spec:
@@ -5453,8 +5456,8 @@ metadata:
     app.kubernetes.io/instance: pyroscope
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: pyroscope
-    app.kubernetes.io/version: 1.13.4
-    helm.sh/chart: pyroscope-1.13.4
+    app.kubernetes.io/version: 1.16.0
+    helm.sh/chart: pyroscope-1.16.0
   name: pyroscope-memberlist
   namespace: profiles-system
 spec:
@@ -5550,7 +5553,7 @@ spec:
       terminationGracePeriodSeconds: 60
       volumes:
       - configMap:
-          name: mimir-config-288hmdc6k4
+          name: mimir-config-tk585gmccf
         name: config
       - emptyDir: {}
         name: storage
@@ -5701,8 +5704,8 @@ metadata:
     app.kubernetes.io/instance: pyroscope
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: pyroscope
-    app.kubernetes.io/version: 1.13.4
-    helm.sh/chart: pyroscope-1.13.4
+    app.kubernetes.io/version: 1.16.0
+    helm.sh/chart: pyroscope-1.16.0
   name: pyroscope
   namespace: profiles-system
 spec:
@@ -5717,14 +5720,14 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 934603b334dc0f34c2c138df0a04de1b3796663b494cba930d6e0f7049045851
+        checksum/config: 672bc9c79672534a7b7976250a2f30f8830a636a86e7dc40a23385f43de79835
         profiles.grafana.com/cpu.port_name: http2
         profiles.grafana.com/cpu.scrape: "true"
         profiles.grafana.com/goroutine.port_name: http2
         profiles.grafana.com/goroutine.scrape: "true"
         profiles.grafana.com/memory.port_name: http2
         profiles.grafana.com/memory.scrape: "true"
-        profiles.grafana.com/service_git_ref: v1.13.4
+        profiles.grafana.com/service_git_ref: v1.16.0
         profiles.grafana.com/service_repository: https://github.com/grafana/pyroscope
         pyroscope.io/service_name: pyroscope
       labels:
@@ -5751,10 +5754,14 @@ spec:
               fieldPath: metadata.name
         - name: NAMESPACE_FQDN
           value: profiles-system.svc.cluster.local.
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
         envFrom:
         - secretRef:
             name: pyroscope-env-h982fgc652
-        image: grafana/pyroscope:1.13.4
+        image: grafana/pyroscope:1.16.0
         imagePullPolicy: IfNotPresent
         name: pyroscope
         ports:
@@ -5809,8 +5816,8 @@ metadata:
     app.kubernetes.io/instance: pyroscope
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: pyroscope
-    app.kubernetes.io/version: 1.13.4
-    helm.sh/chart: pyroscope-1.13.4
+    app.kubernetes.io/version: 1.16.0
+    helm.sh/chart: pyroscope-1.16.0
   name: pyroscope
   namespace: profiles-system
 spec:
@@ -6104,8 +6111,8 @@ metadata:
     app.kubernetes.io/instance: pyroscope
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: pyroscope
-    app.kubernetes.io/version: 1.13.4
-    helm.sh/chart: pyroscope-1.13.4
+    app.kubernetes.io/version: 1.16.0
+    helm.sh/chart: pyroscope-1.16.0
   name: pyroscope
   namespace: profiles-system
 spec:

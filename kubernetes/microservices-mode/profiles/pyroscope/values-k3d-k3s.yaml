@@ -5,9 +5,19 @@ minio:
   enabled: false
 
 pyroscope:
+  extraArgs:
+    log.level: warn
+    config.expand-env: true
+    store-gateway.sharding-ring.replication-factor: "3"
+
   extraEnvFrom:
   - secretRef:
       name: pyroscope-env
+
+  podDisruptionBudget:
+    enabled: false
+    maxUnavailable: 1
+
   components:
     querier:
       kind: Deployment
@@ -35,17 +45,3 @@ pyroscope:
       replicaCount: 3
       persistence:
         enabled: false
-
-  podDisruptionBudget:
-    enabled: false
-    maxUnavailable: 1
-
-  extraArgs:
-    log.level: warn
-    config.expand-env: true
-    store-gateway.sharding-ring.replication-factor: "3"
-
-  tenantOverrides:
-    "anonymous":
-      ingestion_rate_mb: 5
-      ingestion_burst_size_mb: 10

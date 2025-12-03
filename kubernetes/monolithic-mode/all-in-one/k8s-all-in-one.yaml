@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.3.0
+    app.kubernetes.io/version: 3.6.2
   name: logging-system
 ---
 apiVersion: v1
@@ -34,7 +34,7 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.3.0
+    app.kubernetes.io/version: 3.6.2
   name: loki
   namespace: logging-system
 ---
@@ -102,8 +102,8 @@ metadata:
     app.kubernetes.io/instance: pyroscope
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: pyroscope
-    app.kubernetes.io/version: 1.13.4
-    helm.sh/chart: pyroscope-1.13.4
+    app.kubernetes.io/version: 1.16.0
+    helm.sh/chart: pyroscope-1.16.0
   name: pyroscope
   namespace: profiles-system
 ---
@@ -451,7 +451,7 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.3.0
+    app.kubernetes.io/version: 3.6.2
   name: loki-clusterrole
 rules:
 - apiGroups:
@@ -514,7 +514,7 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.3.0
+    app.kubernetes.io/version: 3.6.2
   name: loki-clusterrolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -709,7 +709,6 @@ data:
     # https://grafana.com/docs/loki/latest/operations/multi-tenancy/
     auth_enabled: true
 
-    # -reporting.enabled=false
     analytics:
      reporting_enabled: false
 
@@ -727,7 +726,7 @@ data:
       storage:
         s3:
           bucketnames: loki-data
-          endpoint: ${LOKI_S3_ENDPOINT:-minio.minio-system.svc.cluster.local:443}
+          endpoint: ${LOKI_S3_ENDPOINT:-https://minio.minio-system.svc.cluster.local:443}
           access_key_id: ${LOKI_S3_ACCESS_KEY_ID:-lgtmp}
           secret_access_key: ${LOKI_S3_SECRET_ACCESS_KEY:-supersecret}
           insecure: ${LOKI_S3_INSECURE:-false}
@@ -812,8 +811,8 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.3.0
-  name: loki-config-bt2mcfthd2
+    app.kubernetes.io/version: 3.6.2
+  name: loki-config-t5h2kg999t
   namespace: logging-system
 ---
 apiVersion: v1
@@ -836,7 +835,7 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.3.0
+    app.kubernetes.io/version: 3.6.2
   name: loki-runtime-9599m5k6h2
   namespace: logging-system
 ---
@@ -5732,7 +5731,7 @@ data:
       storage:
         backend: s3
         s3:
-          endpoint:          ${MIMIR_S3_ENDPOINT:minio.minio-system.svc:443}
+          endpoint:          ${MIMIR_S3_ENDPOINT:minio.minio-system.svc.cluster.local:443}
           access_key_id:     ${MIMIR_S3_ACCESS_KEY_ID:lgtmp}
           secret_access_key: ${MIMIR_S3_SECRET_ACCESS_KEY:supersecret}
           insecure:          ${MIMIR_S3_INSECURE:false}
@@ -5845,7 +5844,7 @@ metadata:
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: mimir
     app.kubernetes.io/version: 3.0.1
-  name: mimir-config-288hmdc6k4
+  name: mimir-config-tk585gmccf
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -5866,7 +5865,7 @@ data:
       backend: s3
       s3:
         bucket_name: pyroscope-data
-        endpoint: ${PYROSCOPE_STORAGE_S3_ENDPOINT:-minio.minio-system.svc:443}
+        endpoint: ${PYROSCOPE_STORAGE_S3_ENDPOINT:-minio.minio-system.svc.cluster.local:443}
         access_key_id: ${PYROSCOPE_STORAGE_S3_ACCESS_KEY_ID:-lgtmp}
         secret_access_key: ${PYROSCOPE_STORAGE_S3_SECRET_ACCESS_KEY:-supersecret}
         insecure: ${PYROSCOPE_STORAGE_S3_INSECURE:-false}
@@ -5878,8 +5877,8 @@ metadata:
     app.kubernetes.io/instance: pyroscope
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: pyroscope
-    app.kubernetes.io/version: 1.13.4
-    helm.sh/chart: pyroscope-1.13.4
+    app.kubernetes.io/version: 1.16.0
+    helm.sh/chart: pyroscope-1.16.0
   name: pyroscope-config
   namespace: profiles-system
 ---
@@ -5887,15 +5886,17 @@ apiVersion: v1
 data:
   overrides.yaml: |
     overrides:
-      {}
+      anonymous:
+        ingestion_burst_size_mb: 2000
+        ingestion_rate_mb: 1000
 kind: ConfigMap
 metadata:
   labels:
     app.kubernetes.io/instance: pyroscope
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: pyroscope
-    app.kubernetes.io/version: 1.13.4
-    helm.sh/chart: pyroscope-1.13.4
+    app.kubernetes.io/version: 1.16.0
+    helm.sh/chart: pyroscope-1.16.0
   name: pyroscope-overrides-config
   namespace: profiles-system
 ---
@@ -5988,7 +5989,7 @@ data:
           path: /tmp/tempo/wal
         s3:
           bucket: tempo-data
-          endpoint: ${TEMPO_S3_ENDPOINT:-minio.minio-system.svc:443}
+          endpoint: ${TEMPO_S3_ENDPOINT:-minio.minio-system.svc.cluster.local:443}
           access_key: ${TEMPO_S3_ACCESS_KEY:-lgtmp}
           secret_key: ${TEMPO_S3_SECRET_KEY:-supersecret}
           insecure: ${TEMPO_S3_INSECURE:-false}
@@ -6033,12 +6034,15 @@ metadata:
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: tempo
     app.kubernetes.io/version: 2.8.0
-  name: tempo-9fctm9hd4h
+  name: tempo-f699fg76m7
   namespace: tracing-system
 ---
 apiVersion: v1
 data:
   LOKI_S3_SECRET_ACCESS_KEY: VkQ1MzhPWXhTRWlHRDRJOW1tRmZxRk1DR3ExdklpR20=
+  OTEL_EXPORTER_OTLP_ENDPOINT: |
+    aHR0cDovL2FsbG95Lm1vbml0b3Jpbmctc3lzdGVtLnN2Yy5jbHVzdGVyLmxvY2FsOjQzMT
+    g=
 kind: Secret
 metadata:
   labels:
@@ -6046,8 +6050,8 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.3.0
-  name: loki-env-58m52b99kc
+    app.kubernetes.io/version: 3.6.2
+  name: loki-env-85874kc6gb
   namespace: logging-system
 type: Opaque
 ---
@@ -6138,7 +6142,7 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.3.0
+    app.kubernetes.io/version: 3.6.2
   name: loki
   namespace: logging-system
 spec:
@@ -6161,7 +6165,7 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.3.0
+    app.kubernetes.io/version: 3.6.2
     prometheus.io/service-monitor: "false"
   name: loki-headless
   namespace: logging-system
@@ -6183,7 +6187,7 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.3.0
+    app.kubernetes.io/version: 3.6.2
     prometheus.io/service-monitor: "false"
   name: loki-memberlist
   namespace: logging-system
@@ -6389,8 +6393,8 @@ metadata:
     app.kubernetes.io/instance: pyroscope
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: pyroscope
-    app.kubernetes.io/version: 1.13.4
-    helm.sh/chart: pyroscope-1.13.4
+    app.kubernetes.io/version: 1.16.0
+    helm.sh/chart: pyroscope-1.16.0
   name: pyroscope
   namespace: profiles-system
 spec:
@@ -6408,14 +6412,15 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  annotations:
+    prometheus.io/service-monitor: "false"
   labels:
     app.kubernetes.io/component: all
     app.kubernetes.io/instance: pyroscope
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: pyroscope
-    app.kubernetes.io/version: 1.13.4
-    helm.sh/chart: pyroscope-1.13.4
-    prometheus.io/service-monitor: "false"
+    app.kubernetes.io/version: 1.16.0
+    helm.sh/chart: pyroscope-1.16.0
   name: pyroscope-headless
   namespace: profiles-system
 spec:
@@ -6438,8 +6443,8 @@ metadata:
     app.kubernetes.io/instance: pyroscope
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: pyroscope
-    app.kubernetes.io/version: 1.13.4
-    helm.sh/chart: pyroscope-1.13.4
+    app.kubernetes.io/version: 1.16.0
+    helm.sh/chart: pyroscope-1.16.0
   name: pyroscope-memberlist
   namespace: profiles-system
 spec:
@@ -6703,7 +6708,7 @@ spec:
       terminationGracePeriodSeconds: 60
       volumes:
       - configMap:
-          name: mimir-config-288hmdc6k4
+          name: mimir-config-tk585gmccf
         name: config
       - emptyDir: {}
         name: storage
@@ -6717,7 +6722,7 @@ metadata:
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 3.3.0
+    app.kubernetes.io/version: 3.6.2
   name: loki
   namespace: logging-system
 spec:
@@ -6757,8 +6762,8 @@ spec:
         - -config.expand-env=true
         envFrom:
         - secretRef:
-            name: loki-env-58m52b99kc
-        image: docker.io/grafana/loki:3.3.0
+            name: loki-env-85874kc6gb
+        image: docker.io/grafana/loki:3.6.2
         imagePullPolicy: IfNotPresent
         name: loki
         ports:
@@ -6812,7 +6817,7 @@ spec:
           items:
           - key: config.yaml
             path: config.yaml
-          name: loki-config-bt2mcfthd2
+          name: loki-config-t5h2kg999t
         name: config
       - configMap:
           name: loki-runtime-9599m5k6h2
@@ -6982,8 +6987,8 @@ metadata:
     app.kubernetes.io/instance: pyroscope
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: pyroscope
-    app.kubernetes.io/version: 1.13.4
-    helm.sh/chart: pyroscope-1.13.4
+    app.kubernetes.io/version: 1.16.0
+    helm.sh/chart: pyroscope-1.16.0
   name: pyroscope
   namespace: profiles-system
 spec:
@@ -6998,14 +7003,14 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 934603b334dc0f34c2c138df0a04de1b3796663b494cba930d6e0f7049045851
+        checksum/config: 672bc9c79672534a7b7976250a2f30f8830a636a86e7dc40a23385f43de79835
         profiles.grafana.com/cpu.port_name: http2
         profiles.grafana.com/cpu.scrape: "true"
         profiles.grafana.com/goroutine.port_name: http2
         profiles.grafana.com/goroutine.scrape: "true"
         profiles.grafana.com/memory.port_name: http2
         profiles.grafana.com/memory.scrape: "true"
-        profiles.grafana.com/service_git_ref: v1.13.4
+        profiles.grafana.com/service_git_ref: v1.16.0
         profiles.grafana.com/service_repository: https://github.com/grafana/pyroscope
         pyroscope.io/service_name: pyroscope
       labels:
@@ -7032,10 +7037,14 @@ spec:
               fieldPath: metadata.name
         - name: NAMESPACE_FQDN
           value: profiles-system.svc.cluster.local.
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
         envFrom:
         - secretRef:
             name: pyroscope-env-h982fgc652
-        image: grafana/pyroscope:1.13.4
+        image: grafana/pyroscope:1.16.0
         imagePullPolicy: IfNotPresent
         name: pyroscope
         ports:
@@ -7165,7 +7174,7 @@ spec:
       serviceAccountName: tempo
       volumes:
       - configMap:
-          name: tempo-9fctm9hd4h
+          name: tempo-f699fg76m7
         name: tempo-conf
       - emptyDir: {}
         name: tmp
@@ -7180,8 +7189,8 @@ metadata:
     app.kubernetes.io/instance: pyroscope
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: pyroscope
-    app.kubernetes.io/version: 1.13.4
-    helm.sh/chart: pyroscope-1.13.4
+    app.kubernetes.io/version: 1.16.0
+    helm.sh/chart: pyroscope-1.16.0
   name: pyroscope
   namespace: profiles-system
 spec:
@@ -7545,7 +7554,7 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.3.0
+    app.kubernetes.io/version: 3.6.2
   name: loki
   namespace: logging-system
 spec:
@@ -7637,8 +7646,8 @@ metadata:
     app.kubernetes.io/instance: pyroscope
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: pyroscope
-    app.kubernetes.io/version: 1.13.4
-    helm.sh/chart: pyroscope-1.13.4
+    app.kubernetes.io/version: 1.16.0
+    helm.sh/chart: pyroscope-1.16.0
   name: pyroscope
   namespace: profiles-system
 spec:
