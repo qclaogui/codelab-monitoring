@@ -2,7 +2,6 @@
 # It is for demonstration purposes only.
 multitenancy_enabled: true
 
-# -usage-stats.enabled=false
 usage_stats:
   enabled: false
 
@@ -10,6 +9,7 @@ server:
   http_listen_port: 8080
   grpc_listen_port: 9095
   log_level: info
+  trace_request_headers: true
 
 # https://grafana.com/docs/mimir/latest/references/configuration-parameters/#use-environment-variables-in-the-configuration
 common:
@@ -22,6 +22,9 @@ common:
       insecure:          ${MIMIR_S3_INSECURE:false}
       http:
         insecure_skip_verify: true
+
+ingest_storage:
+  enabled: false
 
 alertmanager:
   data_dir: /data/alertmanager
@@ -89,6 +92,7 @@ compactor:
 
 limits:
   native_histograms_ingestion_enabled: true
+  ingestion_rate: 100000
 
 overrides_exporter:
   ring:

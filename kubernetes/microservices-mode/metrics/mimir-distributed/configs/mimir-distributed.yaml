@@ -24,26 +24,24 @@ blocks_storage:
     bucket_name: mimir-blocks
   tsdb:
     dir: /data/tsdb
-    ship_interval: 1m
-    block_ranges_period: [ 2h ]
-    retention_period: 3h
+    head_compaction_interval: 15m
+    wal_replay_concurrency: 3
   bucket_store:
     sync_dir: /data/tsdb-sync
     index_cache:
       backend: memcached
       memcached:
-        addresses: dns+memcached.memcached-system.svc:11211
+        addresses: dnssrvnoa+memcached.memcached-system.svc.cluster.local.:11211
 
     chunks_cache:
       backend: memcached
       memcached:
-        addresses: dns+memcached.memcached-system.svc:11211
+        addresses: dnssrvnoa+memcached.memcached-system.svc.cluster.local.:11211
 
     metadata_cache:
       backend: memcached
       memcached:
-        addresses: dns+memcached.memcached-system.svc:11211
-
+        addresses: dnssrvnoa+memcached.memcached-system.svc.cluster.local.:11211
 
 common:
   storage:
@@ -67,6 +65,9 @@ compactor:
     wait_stability_min_duration: 1m
   symbols_flushers_concurrency: 4
 
+distributor:
+  remote_timeout: 5s
+
 frontend:
   parallelize_shardable_queries: true
   scheduler_address: mimir-distributed-query-scheduler-headless.monitoring-system.svc:9095
@@ -75,16 +76,26 @@ frontend:
   results_cache:
     backend: memcached
     memcached:
-      addresses: dns+memcached.memcached-system.svc:11211
+      addresses: dnssrvnoa+memcached.memcached-system.svc.cluster.local.:11211
 
 frontend_worker:
   grpc_client_config:
     max_send_msg_size: 419430400
   scheduler_address: mimir-distributed-query-scheduler-headless.monitoring-system.svc:9095
 
+ingest_storage:
+  enabled: false
+  kafka:
+    auto_create_topic_default_partitions: 100
+    auto_create_topic_enabled: true
+    topic: mimir-ingest
+
 ingester:
+  push_grpc_method_enabled: true
   ring:
     final_sleep: 0s
+    heartbeat_period: 2m
+    heartbeat_timeout: 10m
     num_tokens: 512
     tokens_file_path: /data/tokens
     unregister_on_shutdown: false
@@ -97,13 +108,13 @@ limits:
   max_cache_freshness: 10m
   max_query_parallelism: 240
   max_total_query_length: 12000h
-  native_histograms_ingestion_enabled: true
+  ingestion_rate: 100000
 
 memberlist:
   abort_if_cluster_join_fails: false
   compression_enabled: false
   join_members:
-  - dns+mimir-distributed-gossip-ring.monitoring-system.svc.cluster.local:7946
+  - dns+mimir-distributed-gossip-ring.monitoring-system.svc.cluster.local.:7946
 
 querier:
   max_concurrent: 16
@@ -112,7 +123,7 @@ query_scheduler:
   max_outstanding_requests_per_tenant: 800
 
 ruler:
-  alertmanager_url: dnssrvnoa+http://_http-metrics._tcp.mimir-distributed-alertmanager-headless.monitoring-system.svc.cluster.local/alertmanager
+  alertmanager_url: dnssrvnoa+http://_http-metrics._tcp.mimir-distributed-alertmanager-headless.monitoring-system.svc.cluster.local./alertmanager
   enable_api: true
   rule_path: /data
 ruler_storage:
@@ -122,7 +133,7 @@ ruler_storage:
   cache:
     backend: memcached
     memcached:
-      addresses: dns+memcached.memcached-system.svc:11211
+      addresses: dnssrvnoa+memcached.memcached-system.svc.cluster.local.:11211
 
 runtime_config:
   file: /var/mimir/runtime.yaml
@@ -134,10 +145,12 @@ server:
   grpc_server_max_connection_idle: 1m
   http_listen_port: 8080
   grpc_listen_port: 9095
-  log_level: warn
+  trace_request_headers: true
 
 store_gateway:
   sharding_ring:
+    heartbeat_period: 1m
+    heartbeat_timeout: 10m
     tokens_file_path: /data/tokens
     unregister_on_shutdown: false
     wait_stability_min_duration: 1m
