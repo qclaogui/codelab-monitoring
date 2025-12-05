@@ -92,24 +92,6 @@ targets:
       file: docker-compose/monolithic-mode/all-in-one/compose.yaml
       key: $.services.mimirtool.image
 
-  update-mimir-image-version-in-read-write-mode:
-    kind: file
-    sourceid: mimir-version
-    spec:
-      file: docker-compose/read-write-mode/metrics/compose.yaml
-      matchpattern: 'docker.io/grafana/mimir:.*'
-      replacepattern: 'docker.io/grafana/mimir:{{ source "mimir-version" }}}'
-
-  update-mimirtool-image-version-in-read-write-mode:
-    kind: yaml
-    sourceid: mimirtool-version
-    transformers:
-      - addprefix: "${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:"
-      - addsuffix: "}"
-    spec:
-      file: docker-compose/read-write-mode/metrics/compose.yaml
-      key: $.services.mimirtool.image
-
   update-mimir-image-version-in-microservices-mode:
     kind: file
     sourceid: mimir-version
