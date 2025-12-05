@@ -111,6 +111,8 @@ services:
     environment:
       # https://grafana.com/docs/tempo/latest/operations/monitor/#traces
       OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
+      OTEL_SERVICE_NAME: tempo
+      OTEL_RESOURCE_ATTRIBUTES: app=tempo
     healthcheck:
       test: ["CMD", "/usr/bin/wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3200/ready"]
       <<: *status-healthcheck
@@ -139,6 +141,8 @@ services:
     environment:
       # https://grafana.com/docs/mimir/latest/configure/configure-tracing/#opentelemetry-configuration-recommended
       OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
+      OTEL_SERVICE_NAME: mimir
+      OTEL_RESOURCE_ATTRIBUTES: app=mimir
     # expose 38080 port so we can directly access mimir inside container
     ports:
       - "38080:8080"
@@ -184,6 +188,7 @@ services:
       # - -runtime-config.file=/etc/pyroscope/configs/overrides.yaml
     environment:
       <<: *jaeger-environment
+      JAEGER_SERVICE_NAME: pyroscope
       JAEGER_TAGS: app=pyroscope
     healthcheck:
       test: ["CMD", "profilecli", "ready"]

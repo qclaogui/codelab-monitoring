@@ -52,6 +52,8 @@ services:
     depends_on: {minio: {condition: service_healthy}, mimir: {condition: service_started}}
     environment:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
+      OTEL_SERVICE_NAME: tempo
+      OTEL_RESOURCE_ATTRIBUTES: app=tempo
 
   # override compose.yaml included service mimir's labels and environment to enabled profiles and traces data collection
   mimir:
@@ -62,6 +64,8 @@ services:
       profiles.grafana.com/service_name: mimir
     environment:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
+      OTEL_SERVICE_NAME: mimir
+      OTEL_RESOURCE_ATTRIBUTES: app=mimir
 
   # override included service mimirtool for rules and alerts pre-provisioning
   mimirtool:
@@ -81,4 +85,5 @@ services:
       profiles.grafana.com/service_name: pyroscope
     environment:
       <<: *jaeger-environment
+      JAEGER_SERVICE_NAME: pyroscope
       JAEGER_TAGS: app=pyroscope
