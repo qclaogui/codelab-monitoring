@@ -6,11 +6,9 @@ metadata:
     app.kubernetes.io/part-of: memberlist
   name: loki
 spec:
-  persistentVolumeClaimRetentionPolicy:
-    whenDeleted: Delete
-    whenScaled: Delete
   podManagementPolicy: Parallel
   replicas: 1
+  revisionHistoryLimit: 10
   selector:
     matchLabels:
       app.kubernetes.io/part-of: memberlist
@@ -28,7 +26,6 @@ spec:
       labels:
         app.kubernetes.io/part-of: memberlist
     spec:
-      automountServiceAccountToken: true
       containers:
       - args:
         - -config.file=/etc/loki/config/config.yaml
@@ -68,15 +65,12 @@ spec:
             - ALL
           readOnlyRootFilesystem: true
         volumeMounts:
-        - mountPath: /tmp
-          name: tmp
         - mountPath: /etc/loki/config
           name: config
         - mountPath: /etc/loki/runtime-config
           name: runtime-config
         - mountPath: /var/loki
-          name: storage
-      enableServiceLinks: true
+          name: data
       securityContext:
         fsGroup: 10001
         runAsGroup: 10001
@@ -85,8 +79,6 @@ spec:
       serviceAccountName: loki
       terminationGracePeriodSeconds: 30
       volumes:
-      - emptyDir: {}
-        name: tmp
       - configMap:
           items:
           - key: config.yaml
@@ -96,17 +88,7 @@ spec:
       - configMap:
           name: loki-runtime
         name: runtime-config
+      - emptyDir: {}
+        name: data
   updateStrategy:
-    rollingUpdate:
-      partition: 0
-  volumeClaimTemplates:
-  - apiVersion: v1
-    kind: PersistentVolumeClaim
-    metadata:
-      name: storage
-    spec:
-      accessModes:
-      - ReadWriteOnce
-      resources:
-        requests:
-          storage: 5Gi
+    type: RollingUpdate

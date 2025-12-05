@@ -455,7 +455,10 @@ data:
       mode: simple
 
     compactor:
-      working_directory: /tmp/compactor
+      working_directory: /var/loki/compactor
+      compactor_ring:
+        kvstore:
+          store: memberlist
 
     memberlist:
       join_members:
@@ -524,7 +527,7 @@ metadata:
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
     app.kubernetes.io/version: 3.6.2
-  name: loki-config-t5h2kg999t
+  name: loki-config-h496k8kh6b
   namespace: logging-system
 ---
 apiVersion: v1
@@ -7073,11 +7076,9 @@ metadata:
   name: loki
   namespace: logging-system
 spec:
-  persistentVolumeClaimRetentionPolicy:
-    whenDeleted: Delete
-    whenScaled: Delete
   podManagementPolicy: Parallel
   replicas: 1
+  revisionHistoryLimit: 10
   selector:
     matchLabels:
       app.kubernetes.io/component: loki
@@ -7101,7 +7102,6 @@ spec:
         app.kubernetes.io/name: loki
         app.kubernetes.io/part-of: memberlist
     spec:
-      automountServiceAccountToken: true
       containers:
       - args:
         - -config.file=/etc/loki/config/config.yaml
@@ -7141,15 +7141,12 @@ spec:
             - ALL
           readOnlyRootFilesystem: true
         volumeMounts:
-        - mountPath: /tmp
-          name: tmp
         - mountPath: /etc/loki/config
           name: config
         - mountPath: /etc/loki/runtime-config
           name: runtime-config
         - mountPath: /var/loki
-          name: storage
-      enableServiceLinks: true
+          name: data
       securityContext:
         fsGroup: 10001
         runAsGroup: 10001
@@ -7158,35 +7155,19 @@ spec:
       serviceAccountName: loki
       terminationGracePeriodSeconds: 30
       volumes:
-      - emptyDir: {}
-        name: tmp
       - configMap:
           items:
           - key: config.yaml
             path: config.yaml
-          name: loki-config-t5h2kg999t
+          name: loki-config-h496k8kh6b
         name: config
       - configMap:
           name: loki-runtime-9599m5k6h2
         name: runtime-config
+      - emptyDir: {}
+        name: data
   updateStrategy:
-    rollingUpdate:
-      partition: 0
-  volumeClaimTemplates:
-  - apiVersion: v1
-    kind: PersistentVolumeClaim
-    metadata:
-      labels:
-        app.kubernetes.io/component: loki
-        app.kubernetes.io/instance: loki-monolithic-mode
-        app.kubernetes.io/name: loki
-      name: storage
-    spec:
-      accessModes:
-      - ReadWriteOnce
-      resources:
-        requests:
-          storage: 5Gi
+    type: RollingUpdate
 ---
 apiVersion: apps/v1
 kind: StatefulSet
