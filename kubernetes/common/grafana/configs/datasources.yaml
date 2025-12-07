@@ -60,7 +60,10 @@ datasources:
   version: 1
   editable: true
   apiVersion: 1
+  secureJsonData:
+    httpHeaderValue1: 'anonymous'
   jsonData:
+    httpHeaderName1: 'X-Scope-OrgID'
     search:
       hide: false
     lokiSearch:
@@ -76,11 +79,14 @@ datasources:
     spanBar:
       type: 'Tag'
       tag: 'http.path'
+    streamingEnabled:
+      search: true
+      metrics: true
     tracesToMetrics:
       datasourceUid: metrics
       spanStartTimeShift: '-30m'
       spanEndTimeShift: '30m'
-      tags: [{ key: 'service.name', value: 'service' }]
+      tags: [{ key: 'service.name', value: 'service' }, { key: 'job' }]
       queries:
       - name: '(R) Rate'
         query: 'sum(rate(traces_spanmetrics_calls_total{$$__tags}[$$__rate_interval]))'
@@ -95,11 +101,14 @@ datasources:
       tags: [{ key: 'app', value: 'app' }]
       filterByTraceID: false
       filterBySpanID: false
+      customQuery: true
+      query: 'method="$${__span.tags.method}"'
     tracesToProfiles:
-      customQuery: false
       datasourceUid: "profiles"
-      profileTypeId: "process_cpu:cpu:nanoseconds:cpu:nanoseconds"
       tags: [{ key: 'app', value: 'service_name' }]
+      profileTypeId: "process_cpu:cpu:nanoseconds:cpu:nanoseconds"
+      customQuery: true
+      query: 'method="$${__span.tags.method}"'
 
 
 # Pyroscope for profiles

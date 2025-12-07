@@ -220,7 +220,10 @@ data:
       version: 1
       editable: true
       apiVersion: 1
+      secureJsonData:
+        httpHeaderValue1: 'anonymous'
       jsonData:
+        httpHeaderName1: 'X-Scope-OrgID'
         search:
           hide: false
         lokiSearch:
@@ -236,11 +239,14 @@ data:
         spanBar:
           type: 'Tag'
           tag: 'http.path'
+        streamingEnabled:
+          search: true
+          metrics: true
         tracesToMetrics:
           datasourceUid: metrics
           spanStartTimeShift: '-30m'
           spanEndTimeShift: '30m'
-          tags: [{ key: 'service.name', value: 'service' }]
+          tags: [{ key: 'service.name', value: 'service' }, { key: 'job' }]
           queries:
           - name: '(R) Rate'
             query: 'sum(rate(traces_spanmetrics_calls_total{$$__tags}[$$__rate_interval]))'
@@ -255,11 +261,14 @@ data:
           tags: [{ key: 'app', value: 'app' }]
           filterByTraceID: false
           filterBySpanID: false
+          customQuery: true
+          query: 'method="$${__span.tags.method}"'
         tracesToProfiles:
-          customQuery: false
           datasourceUid: "profiles"
-          profileTypeId: "process_cpu:cpu:nanoseconds:cpu:nanoseconds"
           tags: [{ key: 'app', value: 'service_name' }]
+          profileTypeId: "process_cpu:cpu:nanoseconds:cpu:nanoseconds"
+          customQuery: true
+          query: 'method="$${__span.tags.method}"'
 
 
     # Pyroscope for profiles
@@ -278,7 +287,7 @@ kind: ConfigMap
 metadata:
   labels:
     grafana_datasource: "1"
-  name: grafana-datasources-22t6t9c8f8
+  name: grafana-datasources-ghghk762bd
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -4190,10 +4199,7 @@ metadata:
 ---
 apiVersion: v1
 data:
-  GF_FEATURE_TOGGLES_ENABLE: |
-    dHJhY2VxbEVkaXRvciB0cmFjZXNFbWJlZGRlZEZsYW1lR3JhcGggdHJhY2VxbFNlYXJjaC
-    Bjb3JyZWxhdGlvbnMgbWV0cmljc1N1bW1hcnkgdHJhY2VUb01ldHJpY3MgdHJhY2VUb1By
-    b2ZpbGVz
+  GF_FEATURE_TOGGLES_ENABLE: cGFuZWxUaXRsZVNlYXJjaCBsb2dzUGFuZWxDb250cm9scw==
   GF_LOG_LEVEL: aW5mbw==
   NAMESPACE: bW9uaXRvcmluZy1zeXN0ZW0=
 kind: Secret

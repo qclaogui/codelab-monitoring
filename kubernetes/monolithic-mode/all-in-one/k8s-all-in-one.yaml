@@ -683,9 +683,11 @@ data:
     \   }\n}\n\nupstream http_otlp_tempo {\n    server ${TEMPO_DISTRIBUTOR_HOST}:4318;\n}\nserver
     {\n    listen 4318;\n\n    location / {\n      proxy_set_header X-Scope-OrgID
     $ensured_x_scope_orgid;\n      proxy_pass http://http_otlp_tempo;\n    }\n}\n\nserver
-    {\n    listen 3200;\n    listen [::]:3200;\n\n    location = / {\n      return
-    200 'OK';\n      auth_basic off;\n      access_log off;\n    }\n\n    # Distributor
-    endpoints\n    location = /jaeger/api/traces {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:14268/api/traces;\n
+    {\n    listen 3200;\n    listen [::]:3200;\n    http2 on; # For HTTP and gRPC\n\n
+    \   location /tempopb.StreamingQuerier/ {\n      grpc_pass grpc://${TEMPO_QUERY_FRONTEND_HOST}:3200;\n
+    \   }\n\n    location = / {\n      return 200 'OK';\n      auth_basic off;\n      access_log
+    off;\n    }\n\n    # Distributor endpoints\n    location = /jaeger/api/traces
+    {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:14268/api/traces;\n
     \   }\n    location = /zipkin/spans {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:9411/spans;\n
     \   }\n    location = /v1/traces {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:4318/v1/traces;\n
     \   }\n    location = /otlp/v1/traces {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:4318/v1/traces;\n
