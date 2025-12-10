@@ -6752,7 +6752,8 @@ spec:
       values:
       - "false"
     matchLabels:
-      app.kubernetes.io/instance: loki
+      app.kubernetes.io/component: loki
+      app.kubernetes.io/instance: loki-monolithic-mode
       app.kubernetes.io/name: loki
 ---
 apiVersion: monitoring.coreos.com/v1
@@ -6772,6 +6773,11 @@ spec:
   endpoints:
   - honorLabels: true
     port: http-metrics
+    relabelings:
+    - replacement: monitoring-system/alloy
+      sourceLabels:
+      - job
+      targetLabel: job
     scheme: http
   selector:
     matchLabels:

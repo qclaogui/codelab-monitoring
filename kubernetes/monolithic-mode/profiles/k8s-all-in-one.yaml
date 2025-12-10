@@ -5434,6 +5434,7 @@ metadata:
     app.kubernetes.io/name: pyroscope
     app.kubernetes.io/version: 1.16.0
     helm.sh/chart: pyroscope-1.16.0
+    prometheus.io/service-monitor: "false"
   name: pyroscope-headless
   namespace: profiles-system
 spec:
@@ -6063,6 +6064,11 @@ spec:
   endpoints:
   - honorLabels: true
     port: http-metrics
+    relabelings:
+    - replacement: monitoring-system/alloy
+      sourceLabels:
+      - job
+      targetLabel: job
     scheme: http
   selector:
     matchLabels:
