@@ -2801,12 +2801,12 @@ data:
     (default: 60s)\"\n\t\toptional = true\n\t}\n\n\targument \"scrape_timeout\" {\n\t\tcomment
     \ = \"How long before a scrape times out (default: 10s)\"\n\t\toptional = true\n\t}\n\n\t/*****************************************************************\n\t*
     Kubernetes Auto Scrape PodMonitors\n\t*****************************************************************/\n\tprometheus.operator.podmonitors
-    \"scrape\" {\n\t\tforward_to = [prometheus.relabel.podmonitors.receiver]\n\n\t\tscrape
-    {\n\t\t\tdefault_scrape_interval = coalesce(argument.scrape_interval.value, \"60s\")\n\t\t\tdefault_scrape_timeout
-    \ = coalesce(argument.scrape_timeout.value, \"10s\")\n\t\t}\n\n\t\tclustering
-    {\n\t\t\tenabled = true\n\t\t}\n\n\t\t// selector {\n\t\t// \tmatch_expression
-    {\n\t\t// \t\tkey      = \"team\"\n\t\t// \t\toperator = \"In\"\n\t\t// \t\tvalues
-    \  = [\"team-infra\"]\n\t\t// \t}\n\t\t// }\n\t}\n\n\t/*****************************************************************\n\t*
+    \"scrape\" {\n\t\tforward_to = [prometheus.relabel.podmonitors.receiver]\n\n\t\tkubernetes_role\t=
+    \"endpointslice\"\n\n\t\tscrape {\n\t\t\tdefault_scrape_interval = coalesce(argument.scrape_interval.value,
+    \"60s\")\n\t\t\tdefault_scrape_timeout  = coalesce(argument.scrape_timeout.value,
+    \"10s\")\n\t\t}\n\n\t\tclustering {\n\t\t\tenabled = true\n\t\t}\n\n\t\t// selector
+    {\n\t\t// \tmatch_expression {\n\t\t// \t\tkey      = \"team\"\n\t\t// \t\toperator
+    = \"In\"\n\t\t// \t\tvalues   = [\"team-infra\"]\n\t\t// \t}\n\t\t// }\n\t}\n\n\t/*****************************************************************\n\t*
     Prometheus Metric Relabelings (post-scrape)\n\t*****************************************************************/\n\t//
     perform generic relabeling using keep_metrics and drop_metrics\n\tprometheus.relabel
     \"podmonitors\" {\n\t\tforward_to = argument.forward_to.value\n\n\t\t// set the
@@ -2844,10 +2844,10 @@ data:
     (default: 60s)\"\n\t\toptional = true\n\t}\n\n\targument \"scrape_timeout\" {\n\t\tcomment
     \ = \"How long before a scrape times out (default: 10s)\"\n\t\toptional = true\n\t}\n\n\t/*****************************************************************\n\t*
     Kubernetes Auto Scrape ServiceMonitors\n\t*****************************************************************/\n\tprometheus.operator.servicemonitors
-    \"scrape\" {\n\t\tforward_to = [prometheus.relabel.servicemonitors.receiver]\n\n\t\tscrape
-    {\n\t\t\tdefault_scrape_interval = coalesce(argument.scrape_interval.value, \"60s\")\n\t\t\tdefault_scrape_timeout
-    \ = coalesce(argument.scrape_timeout.value, \"10s\")\n\t\t}\n\n\t\tclustering
-    {\n\t\t\tenabled = true\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
+    \"scrape\" {\n\t\tforward_to = [prometheus.relabel.servicemonitors.receiver]\n\n\t\tkubernetes_role\t=
+    \"endpointslice\"\n\n\t\tscrape {\n\t\t\tdefault_scrape_interval = coalesce(argument.scrape_interval.value,
+    \"60s\")\n\t\t\tdefault_scrape_timeout  = coalesce(argument.scrape_timeout.value,
+    \"10s\")\n\t\t}\n\n\t\tclustering {\n\t\t\tenabled = true\n\t\t}\n\t}\n\n\t/*****************************************************************\n\t*
     Prometheus Metric Relabelings (post-scrape)\n\t*****************************************************************/\n\t//
     perform generic relabeling using keep_metrics and drop_metrics\n\tprometheus.relabel
     \"servicemonitors\" {\n\t\tforward_to = argument.forward_to.value\n\n\t\t// set
@@ -2861,7 +2861,7 @@ data:
     \"\")\n\t\t}\n\t}\n}\n"
 kind: ConfigMap
 metadata:
-  name: alloy-modules-kubernetes-metrics-8287kbcb62
+  name: alloy-modules-kubernetes-metrics-d7th8966c9
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -6352,7 +6352,7 @@ spec:
           name: alloy-modules-receiver-provider-7hd5m984c2
         name: modules-receiver-provider
       - configMap:
-          name: alloy-modules-kubernetes-metrics-8287kbcb62
+          name: alloy-modules-kubernetes-metrics-d7th8966c9
         name: modules-kubernetes-metrics
       - configMap:
           name: alloy-modules-kubernetes-logs-b2t74ghdgm
