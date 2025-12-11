@@ -5,10 +5,31 @@ alertmanager:
   enabled: false
 
 prometheusOperator:
-  enabled: false
+  enabled: true
+  admissionWebhooks:
+    certManager:
+      enabled: true
+      issuerRef:
+        name: selfsigned-root
+        kind: ClusterIssuer
 
 prometheus:
-  enabled: false
+  enabled: true
+  route:
+    main:
+      enabled: true
+      apiVersion: gateway.networking.k8s.io/v1
+      kind: HTTPRoute
+      parentRefs:
+      - name: traefik-gateway
+        namespace: kube-system
+      hostnames:
+      - prometheus.docker.localhost
+      matches:
+      - path:
+          type: PathPrefix
+          value: /
+      
 
 grafana:
   enabled: false
@@ -40,7 +61,7 @@ kubeApiServer:
 ## Component scraping the kubelet and kubelet-hosted cAdvisor
 ##
 kubelet:
-  enabled: true
+  enabled: false
   namespace: kube-system
 
 kubeControllerManager:
@@ -53,7 +74,7 @@ kubeDns:
   enabled: false
 
 kubeEtcd:
-  enabled: true
+  enabled: false
 
 kubeScheduler:
   enabled: true
@@ -62,4 +83,4 @@ kubeProxy:
   enabled: true
 
 kubeStateMetrics:
-  enabled: true
+  enabled: false
