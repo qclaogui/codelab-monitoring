@@ -23,11 +23,11 @@ GOHOSTARM    ?= $(shell $(GO) env GOHOSTARM)
 #	@echo "Running cmctl"
 #	@$(CMCTL) <flags/args..>
 #
-CMCTL := $(GOBIN)/cmctl-v2.3.0
+CMCTL := $(GOBIN)/cmctl-v2.4.0
 $(CMCTL): $(BINGO_DIR)/cmctl.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
-	@echo "(re)installing $(GOBIN)/cmctl-v2.3.0"
-	@cd $(BINGO_DIR) && GOWORK=off GOOS=$(GOHOSTOS) GOARCH=$(GOHOSTARCH) GOARM=$(GOHOSTARM) $(GO) build -mod=mod -modfile=cmctl.mod -o=$(GOBIN)/cmctl-v2.3.0 "github.com/cert-manager/cmctl/v2"
+	@echo "(re)installing $(GOBIN)/cmctl-v2.4.0"
+	@cd $(BINGO_DIR) && GOWORK=off GOOS=$(GOHOSTOS) GOARCH=$(GOHOSTARCH) GOARM=$(GOHOSTARM) $(GO) build -mod=mod -modfile=cmctl.mod -o=$(GOBIN)/cmctl-v2.4.0 "github.com/cert-manager/cmctl/v2"
 
 COPYRIGHT := $(GOBIN)/copyright-v0.0.0-20230505153745-6b7392939a60
 $(COPYRIGHT): $(BINGO_DIR)/copyright.mod
