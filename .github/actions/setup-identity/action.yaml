@@ -21,9 +21,15 @@ runs:
       shell: bash
       run: |
         git config --global --add safe.directory '/__w/codelab-monitoring/codelab-monitoring'
-        git config user.name "${{ inputs.name }}"
-        git config user.email "${{ inputs.email }}"
+        git config user.name "${INPUTS_NAME}"
+        git config user.email "${INPUTS_EMAIL}"
+      env:
+        INPUTS_NAME: ${{ inputs.name }}
+        INPUTS_EMAIL: ${{ inputs.email }}
     - name: Log in with GH CLI
       shell: bash
       run: |
-        echo "${{ inputs.token }}" | gh auth login --with-token
+        echo "${INPUTS_TOKEN}" | gh auth login --with-token
+
+      env:
+        INPUTS_TOKEN: ${{ inputs.token }}
