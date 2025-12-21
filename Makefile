@@ -29,7 +29,7 @@ copyright: $(COPYRIGHT) ## Add Copyright header to .go files.
 fmt: go-fmt alloy-fmt
 
 .PHONY: lint
-lint: go-lint goreleaser-lint
+lint: go-lint goreleaser-lint action-lint
 
 ALLOY_CONFIG_FILES = $(shell find . -type f -name '*.alloy')
 ALLOY_CONFIG_FILES_IN_DOCKER = $(subst ./, /data/, $(ALLOY_CONFIG_FILES))
@@ -53,9 +53,15 @@ goreleaser-lint: $(GORELEASER)
 	@for config_file in $(shell ls .github/.goreleaser*); do cat $${config_file} > .github/.goreleaser.combined.yml; done
 	@$(GORELEASER) check -f .github/.goreleaser.combined.yml || exit 1 && rm .github/.goreleaser.combined.yml
 
+.PHONY: go-lint
 go-lint: $(GOLANGCI_LINT)
 	@echo ">> run golangci-lint"
 	@$(GOLANGCI_LINT) run --timeout=15m
+
+.PHONY: action-lint
+ALL_FILES_FOR_ACTIONLINT = $(shell find .github/workflows -name "*.yml" -o -name "*.yaml")
+action-lint: $(ACTIONLINT) ## Lint GitHub Action workflows
+	@$(ACTIONLINT) $(ALL_FILES_FOR_ACTIONLINT);
 
 ##@ Docker compose
 
