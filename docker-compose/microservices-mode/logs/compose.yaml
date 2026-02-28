@@ -30,7 +30,7 @@ services:
     labels:
       metrics.grafana.com/scrape: false
       logs.grafana.com/log-format: nginx
-    depends_on: {distributor: {condition: service_started}}
+    depends_on: {distributor: {condition: service_healthy}}
     image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.29-alpine}
     volumes:
       - ../../common/config/nginx/10-default-lgtmp.envsh:/docker-entrypoint.d/10-default-lgtmp.envsh
@@ -54,8 +54,8 @@ services:
 
   distributor:
     labels: *loki-labels
-    depends_on: {ingester: {condition: service_started}}
-    image: &lokiImage ${LOKI_IMAGE:-docker.io/grafana/loki:3.6.3}
+    depends_on: {ingester: {condition: service_healthy}}
+    image: &lokiImage ${LOKI_IMAGE:-docker.io/grafana/loki:3.6.7}
     configs:
       - source: loki_config_file
         target: /etc/loki/config.yaml
@@ -65,6 +65,11 @@ services:
       - -config.file=/etc/loki/config.yaml
       - -target=distributor
       - -config.expand-env=true
+    healthcheck:
+      test: ["CMD", "loki", "-health"]
+      interval: 3s
+      timeout: 1s
+      retries: 15
     deploy:
       replicas: 2
     networks:
@@ -85,6 +90,11 @@ services:
       - -config.file=/etc/loki/config.yaml
       - -target=ingester
       - -config.expand-env=true
+    healthcheck:
+      test: ["CMD", "loki", "-health"]
+      interval: 3s
+      timeout: 1s
+      retries: 15
     deploy:
       replicas: 3
     networks:
