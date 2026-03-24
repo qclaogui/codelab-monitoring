@@ -64,8 +64,10 @@ declare "grafana_cloud" {
 	}
 
 	otelcol.auth.basic "grafana_cloud" {
-		username = json_decode(remote.http.json_config.content)["htInstanceId"]
-		password = argument.token.value
+		client_auth {
+			username = json_decode(remote.http.json_config.content)["htInstanceId"]
+			password = argument.token.value
+		}
 	}
 
 	otelcol.exporter.otlp "grafana_cloud" {

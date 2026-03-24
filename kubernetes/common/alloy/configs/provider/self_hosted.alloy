@@ -60,15 +60,17 @@ declare "self_hosted_stack" {
 		}
 	}
 
-	otelcol.auth.basic "self_hosted" {
-		username = coalesce(sys.env("SELF_HOSTED_TRACES_BASIC_AUTH_USERNAME"), sys.env("SELF_HOSTED_BASIC_AUTH_USERNAME"))
-		password = coalesce(sys.env("SELF_HOSTED_TRACES_BASIC_AUTH_PASSWORD"), sys.env("SELF_HOSTED_BASIC_AUTH_PASSWORD"))
-	}
+	// otelcol.auth.basic "self_hosted" {
+	// 	client_auth {
+	// 		username = coalesce(sys.env("SELF_HOSTED_TRACES_BASIC_AUTH_USERNAME"), sys.env("SELF_HOSTED_BASIC_AUTH_USERNAME"))
+	// 		password = coalesce(sys.env("SELF_HOSTED_TRACES_BASIC_AUTH_PASSWORD"), sys.env("SELF_HOSTED_BASIC_AUTH_PASSWORD"))
+	// 	}
+	// }
 
 	otelcol.exporter.otlphttp "self_hosted" {
 		client {
 			endpoint = argument.traces_endpoint_url.value
-			auth     = otelcol.auth.basic.self_hosted.handler
+			// auth     = otelcol.auth.basic.self_hosted.handler
 
 			tls {
 				insecure             = true

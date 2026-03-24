@@ -37,8 +37,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.12.1
-    helm.sh/chart: alloy-1.5.1
+    app.kubernetes.io/version: v1.14.0
+    helm.sh/chart: alloy-1.6.2
   name: alloy
   namespace: monitoring-system
 ---
@@ -76,8 +76,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.12.1
-    helm.sh/chart: alloy-1.5.1
+    app.kubernetes.io/version: v1.14.0
+    helm.sh/chart: alloy-1.6.2
   name: alloy
 rules:
 - apiGroups:
@@ -169,7 +169,21 @@ rules:
   - ""
   resources:
   - nodes
-  - nodes/proxy
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes/pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - nodes/metrics
   verbs:
   - get
@@ -210,8 +224,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.12.1
-    helm.sh/chart: alloy-1.5.1
+    app.kubernetes.io/version: v1.14.0
+    helm.sh/chart: alloy-1.6.2
   name: alloy
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -3420,9 +3434,9 @@ data:
     {\n\t\tendpoint {\n\t\t\turl = json_decode(remote.http.json_config.content)[\"hlInstanceUrl\"]
     + \"/loki/api/v1/push\"\n\n\t\t\tbasic_auth {\n\t\t\t\tusername = json_decode(remote.http.json_config.content)[\"hlInstanceId\"]\n\t\t\t\tpassword
     = argument.token.value\n\t\t\t}\n\t\t}\n\t}\n\n\totelcol.auth.basic \"grafana_cloud\"
-    {\n\t\tusername = json_decode(remote.http.json_config.content)[\"htInstanceId\"]\n\t\tpassword
-    = argument.token.value\n\t}\n\n\totelcol.exporter.otlp \"grafana_cloud\" {\n\t\tclient
-    {\n\t\t\tendpoint = json_decode(remote.http.json_config.content)[\"htInstanceUrl\"]
+    {\n\t\tclient_auth {\n\t\t\tusername = json_decode(remote.http.json_config.content)[\"htInstanceId\"]\n\t\t\tpassword
+    = argument.token.value\n\t\t}\n\t}\n\n\totelcol.exporter.otlp \"grafana_cloud\"
+    {\n\t\tclient {\n\t\t\tendpoint = json_decode(remote.http.json_config.content)[\"htInstanceUrl\"]
     + \":443\"\n\t\t\tauth     = otelcol.auth.basic.grafana_cloud.handler\n\t\t}\n\t}\n\n\tpyroscope.write
     \"grafana_cloud\" {\n\t\tendpoint {\n\t\t\turl = json_decode(remote.http.json_config.content)[\"hpInstanceUrl\"]\n\n\t\t\tbasic_auth
     {\n\t\t\t\tusername = json_decode(remote.http.json_config.content)[\"hpInstanceId\"]\n\t\t\t\tpassword
@@ -3457,12 +3471,12 @@ data:
     {\n\t\t\t\tpassword_file = coalesce(sys.env(\"SELF_HOSTED_LOGS_BASIC_AUTH_PASSWORD_FILE\"),
     sys.env(\"SELF_HOSTED_BASIC_AUTH_PASSWORD_FILE\"))\n\t\t\t\tpassword      = coalesce(sys.env(\"SELF_HOSTED_LOGS_BASIC_AUTH_PASSWORD\"),
     sys.env(\"SELF_HOSTED_BASIC_AUTH_PASSWORD\"))\n\t\t\t\tusername      = coalesce(sys.env(\"SELF_HOSTED_LOGS_BASIC_AUTH_USERNAME\"),
-    sys.env(\"SELF_HOSTED_BASIC_AUTH_USERNAME\"))\n\t\t\t}\n\t\t}\n\t}\n\n\totelcol.auth.basic
-    \"self_hosted\" {\n\t\tusername = coalesce(sys.env(\"SELF_HOSTED_TRACES_BASIC_AUTH_USERNAME\"),
-    sys.env(\"SELF_HOSTED_BASIC_AUTH_USERNAME\"))\n\t\tpassword = coalesce(sys.env(\"SELF_HOSTED_TRACES_BASIC_AUTH_PASSWORD\"),
-    sys.env(\"SELF_HOSTED_BASIC_AUTH_PASSWORD\"))\n\t}\n\n\totelcol.exporter.otlphttp
-    \"self_hosted\" {\n\t\tclient {\n\t\t\tendpoint = argument.traces_endpoint_url.value\n\t\t\tauth
-    \    = otelcol.auth.basic.self_hosted.handler\n\n\t\t\ttls {\n\t\t\t\tinsecure
+    sys.env(\"SELF_HOSTED_BASIC_AUTH_USERNAME\"))\n\t\t\t}\n\t\t}\n\t}\n\n\t// otelcol.auth.basic
+    \"self_hosted\" {\n\t// \tclient_auth {\n\t// \t\tusername = coalesce(sys.env(\"SELF_HOSTED_TRACES_BASIC_AUTH_USERNAME\"),
+    sys.env(\"SELF_HOSTED_BASIC_AUTH_USERNAME\"))\n\t// \t\tpassword = coalesce(sys.env(\"SELF_HOSTED_TRACES_BASIC_AUTH_PASSWORD\"),
+    sys.env(\"SELF_HOSTED_BASIC_AUTH_PASSWORD\"))\n\t// \t}\n\t// }\n\n\totelcol.exporter.otlphttp
+    \"self_hosted\" {\n\t\tclient {\n\t\t\tendpoint = argument.traces_endpoint_url.value\n\t\t\t//
+    auth     = otelcol.auth.basic.self_hosted.handler\n\n\t\t\ttls {\n\t\t\t\tinsecure
     \            = true\n\t\t\t\tinsecure_skip_verify = true\n\t\t\t}\n\t\t}\n\t}\n\n\tpyroscope.write
     \"self_hosted\" {\n\t\tendpoint {\n\t\t\turl = argument.profiles_endpoint_url.value\n\n\t\t\tbasic_auth
     {\n\t\t\t\tpassword_file = coalesce(sys.env(\"SELF_HOSTED_PROFILES_BASIC_AUTH_PASSWORD_FILE\"),
@@ -3476,7 +3490,7 @@ data:
     {\n\t\tvalue = pyroscope.write.self_hosted.receiver\n\t}\n}\n"
 kind: ConfigMap
 metadata:
-  name: alloy-modules-receiver-provider-7hd5m984c2
+  name: alloy-modules-receiver-provider-6b55cm4h6h
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -5850,8 +5864,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.12.1
-    helm.sh/chart: alloy-1.5.1
+    app.kubernetes.io/version: v1.14.0
+    helm.sh/chart: alloy-1.6.2
   name: alloy
   namespace: monitoring-system
 spec:
@@ -5891,8 +5905,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.12.1
-    helm.sh/chart: alloy-1.5.1
+    app.kubernetes.io/version: v1.14.0
+    helm.sh/chart: alloy-1.6.2
   name: alloy-cluster
   namespace: monitoring-system
 spec:
@@ -7179,8 +7193,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.12.1
-    helm.sh/chart: alloy-1.5.1
+    app.kubernetes.io/version: v1.14.0
+    helm.sh/chart: alloy-1.6.2
   name: alloy
   namespace: monitoring-system
 spec:
@@ -7233,7 +7247,7 @@ spec:
         - secretRef:
             name: alloy-env
             optional: true
-        image: docker.io/grafana/alloy:v1.12.1
+        image: docker.io/grafana/alloy:v1.14.0
         imagePullPolicy: IfNotPresent
         name: alloy
         ports:
@@ -7291,7 +7305,7 @@ spec:
           name: alloy-config-25tc2c4dck
         name: config
       - configMap:
-          name: alloy-modules-receiver-provider-7hd5m984c2
+          name: alloy-modules-receiver-provider-6b55cm4h6h
         name: modules-receiver-provider
       - configMap:
           name: alloy-modules-kubernetes-metrics-mk6dkk489b
@@ -7730,8 +7744,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.12.1
-    helm.sh/chart: alloy-1.5.1
+    app.kubernetes.io/version: v1.14.0
+    helm.sh/chart: alloy-1.6.2
   name: alloy
   namespace: monitoring-system
 spec:
