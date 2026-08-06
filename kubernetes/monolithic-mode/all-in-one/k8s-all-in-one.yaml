@@ -48,8 +48,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.14.0
-    helm.sh/chart: alloy-1.6.2
+    app.kubernetes.io/version: v1.19.0
+    helm.sh/chart: alloy-1.12.0
   name: alloy
   namespace: monitoring-system
 ---
@@ -63,8 +63,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: kube-state-metrics
-    app.kubernetes.io/version: 2.17.0
-    helm.sh/chart: kube-state-metrics-6.4.2
+    app.kubernetes.io/version: 2.20.0
+    helm.sh/chart: kube-state-metrics-8.4.0
   name: kube-state-metrics
   namespace: monitoring-system
 ---
@@ -90,8 +90,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: prometheus-node-exporter
     app.kubernetes.io/part-of: prometheus-node-exporter
-    app.kubernetes.io/version: 1.10.2
-    helm.sh/chart: prometheus-node-exporter-4.49.2
+    app.kubernetes.io/version: 1.12.1
+    helm.sh/chart: prometheus-node-exporter-4.56.1
   name: prometheus-node-exporter
   namespace: monitoring-system
 ---
@@ -129,8 +129,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.14.0
-    helm.sh/chart: alloy-1.6.2
+    app.kubernetes.io/version: v1.19.0
+    helm.sh/chart: alloy-1.12.0
   name: alloy
 rules:
 - apiGroups:
@@ -256,8 +256,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: kube-state-metrics
-    app.kubernetes.io/version: 2.17.0
-    helm.sh/chart: kube-state-metrics-6.4.2
+    app.kubernetes.io/version: 2.20.0
+    helm.sh/chart: kube-state-metrics-8.4.0
   name: kube-state-metrics
 rules:
 - apiGroups:
@@ -296,9 +296,9 @@ rules:
   - list
   - watch
 - apiGroups:
-  - ""
+  - discovery.k8s.io
   resources:
-  - endpoints
+  - endpointslices
   verbs:
   - list
   - watch
@@ -487,8 +487,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.14.0
-    helm.sh/chart: alloy-1.6.2
+    app.kubernetes.io/version: v1.19.0
+    helm.sh/chart: alloy-1.12.0
   name: alloy
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -508,8 +508,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: kube-state-metrics
-    app.kubernetes.io/version: 2.17.0
-    helm.sh/chart: kube-state-metrics-6.4.2
+    app.kubernetes.io/version: 2.20.0
+    helm.sh/chart: kube-state-metrics-8.4.0
   name: kube-state-metrics
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -695,13 +695,12 @@ data:
     {\n    listen 4317;\n    http2 on;\n\n    location / {\n      grpc_set_header
     X-Scope-OrgID $ensured_x_scope_orgid;\n      grpc_pass grpc://grpc_otlp_tempo;\n
     \   }\n}\n\nupstream http_otlp_tempo {\n    server ${TEMPO_DISTRIBUTOR_HOST}:4318;\n}\nserver
-    {\n    listen 4318;\n\n    location / {\n      proxy_set_header X-Scope-OrgID
-    $ensured_x_scope_orgid;\n      proxy_pass http://http_otlp_tempo;\n    }\n}\n\nserver
-    {\n    listen 3200;\n    listen [::]:3200;\n    http2 on; # For HTTP and gRPC\n\n
-    \   location /tempopb.StreamingQuerier/ {\n      grpc_pass grpc://${TEMPO_QUERY_FRONTEND_HOST}:3200;\n
-    \   }\n\n    location = / {\n      return 200 'OK';\n      auth_basic off;\n      access_log
-    off;\n    }\n\n    # Distributor endpoints\n    location = /jaeger/api/traces
-    {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:14268/api/traces;\n
+    {\n    listen 4318;\n\n    location / {\n      proxy_pass http://http_otlp_tempo;\n
+    \   }\n}\n\nserver {\n    listen 3200;\n    listen [::]:3200;\n    http2 on; #
+    For HTTP and gRPC\n\n    location /tempopb.StreamingQuerier/ {\n      grpc_pass
+    grpc://${TEMPO_QUERY_FRONTEND_HOST}:3200;\n    }\n\n    location = / {\n      return
+    200 'OK';\n      auth_basic off;\n      access_log off;\n    }\n\n    # Distributor
+    endpoints\n    location = /jaeger/api/traces {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:14268/api/traces;\n
     \   }\n    location = /zipkin/spans {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:9411/spans;\n
     \   }\n    location = /v1/traces {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:4318/v1/traces;\n
     \   }\n    location = /otlp/v1/traces {\n      proxy_pass      http://${TEMPO_DISTRIBUTOR_HOST}:4318/v1/traces;\n
@@ -6237,8 +6236,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.14.0
-    helm.sh/chart: alloy-1.6.2
+    app.kubernetes.io/version: v1.19.0
+    helm.sh/chart: alloy-1.12.0
   name: alloy
   namespace: monitoring-system
 spec:
@@ -6278,8 +6277,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.14.0
-    helm.sh/chart: alloy-1.6.2
+    app.kubernetes.io/version: v1.19.0
+    helm.sh/chart: alloy-1.12.0
   name: alloy-cluster
   namespace: monitoring-system
 spec:
@@ -6320,8 +6319,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: kube-state-metrics
-    app.kubernetes.io/version: 2.17.0
-    helm.sh/chart: kube-state-metrics-6.4.2
+    app.kubernetes.io/version: 2.20.0
+    helm.sh/chart: kube-state-metrics-8.4.0
   name: kube-state-metrics
   namespace: monitoring-system
 spec:
@@ -6395,8 +6394,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: prometheus-node-exporter
     app.kubernetes.io/part-of: prometheus-node-exporter
-    app.kubernetes.io/version: 1.10.2
-    helm.sh/chart: prometheus-node-exporter-4.49.2
+    app.kubernetes.io/version: 1.12.1
+    helm.sh/chart: prometheus-node-exporter-4.56.1
   name: prometheus-node-exporter
   namespace: monitoring-system
 spec:
@@ -6579,8 +6578,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: kube-state-metrics
-    app.kubernetes.io/version: 2.17.0
-    helm.sh/chart: kube-state-metrics-6.4.2
+    app.kubernetes.io/version: 2.20.0
+    helm.sh/chart: kube-state-metrics-8.4.0
   name: kube-state-metrics
   namespace: monitoring-system
 spec:
@@ -6600,22 +6599,21 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: kube-state-metrics
         app.kubernetes.io/part-of: kube-state-metrics
-        app.kubernetes.io/version: 2.17.0
-        helm.sh/chart: kube-state-metrics-6.4.2
+        app.kubernetes.io/version: 2.20.0
+        helm.sh/chart: kube-state-metrics-8.4.0
     spec:
       automountServiceAccountToken: true
       containers:
       - args:
         - --port=8080
-        - --resources=certificatesigningrequests,configmaps,cronjobs,daemonsets,deployments,endpoints,horizontalpodautoscalers,ingresses,jobs,leases,limitranges,mutatingwebhookconfigurations,namespaces,networkpolicies,nodes,persistentvolumeclaims,persistentvolumes,poddisruptionbudgets,pods,replicasets,replicationcontrollers,resourcequotas,secrets,services,statefulsets,storageclasses,validatingwebhookconfigurations,volumeattachments
-        image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.17.0
+        - --resources=certificatesigningrequests,configmaps,cronjobs,daemonsets,deployments,endpointslices,horizontalpodautoscalers,ingresses,jobs,leases,limitranges,mutatingwebhookconfigurations,namespaces,networkpolicies,nodes,persistentvolumeclaims,persistentvolumes,poddisruptionbudgets,pods,replicasets,replicationcontrollers,resourcequotas,secrets,services,statefulsets,storageclasses,validatingwebhookconfigurations,volumeattachments
+        image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.20.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
           httpGet:
-            httpHeaders: null
             path: /livez
-            port: 8080
+            port: http
             scheme: HTTP
           initialDelaySeconds: 5
           periodSeconds: 10
@@ -6625,12 +6623,13 @@ spec:
         ports:
         - containerPort: 8080
           name: http
+        - containerPort: 8081
+          name: metrics
         readinessProbe:
           failureThreshold: 3
           httpGet:
-            httpHeaders: null
             path: /readyz
-            port: 8081
+            port: metrics
             scheme: HTTP
           initialDelaySeconds: 5
           periodSeconds: 10
@@ -6853,8 +6852,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.14.0
-    helm.sh/chart: alloy-1.6.2
+    app.kubernetes.io/version: v1.19.0
+    helm.sh/chart: alloy-1.12.0
   name: alloy
   namespace: monitoring-system
 spec:
@@ -6903,11 +6902,15 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
+        - name: K8S_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
         envFrom:
         - secretRef:
             name: alloy-env
             optional: true
-        image: docker.io/grafana/alloy:v1.14.0
+        image: docker.io/grafana/alloy:v1.19.0
         imagePullPolicy: IfNotPresent
         name: alloy
         ports:
@@ -7214,8 +7217,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: prometheus-node-exporter
     app.kubernetes.io/part-of: prometheus-node-exporter
-    app.kubernetes.io/version: 1.10.2
-    helm.sh/chart: prometheus-node-exporter-4.49.2
+    app.kubernetes.io/version: 1.12.1
+    helm.sh/chart: prometheus-node-exporter-4.56.1
   name: prometheus-node-exporter
   namespace: monitoring-system
 spec:
@@ -7234,8 +7237,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: prometheus-node-exporter
         app.kubernetes.io/part-of: prometheus-node-exporter
-        app.kubernetes.io/version: 1.10.2
-        helm.sh/chart: prometheus-node-exporter-4.49.2
+        app.kubernetes.io/version: 1.12.1
+        helm.sh/chart: prometheus-node-exporter-4.56.1
     spec:
       affinity:
         nodeAffinity:
@@ -7261,7 +7264,7 @@ spec:
         env:
         - name: HOST_IP
           value: 0.0.0.0
-        image: quay.io/prometheus/node-exporter:v1.10.2
+        image: quay.io/prometheus/node-exporter:v1.12.1
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -7595,8 +7598,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.14.0
-    helm.sh/chart: alloy-1.6.2
+    app.kubernetes.io/version: v1.19.0
+    helm.sh/chart: alloy-1.12.0
   name: alloy
   namespace: monitoring-system
 spec:

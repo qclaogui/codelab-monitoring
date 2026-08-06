@@ -2,8 +2,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.90.0
+    controller-gen.kubebuilder.io/version: v0.21.0
+    operator.prometheus.io/version: 0.93.1
   name: alertmanagerconfigs.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -759,7 +759,7 @@ spec:
                                   tokenUrl:
                                     description: tokenUrl defines the URL to fetch
                                       the token from.
-                                    minLength: 1
+                                    pattern: ^(http|https)://.+$
                                     type: string
                                 required:
                                 - clientId
@@ -1153,6 +1153,22 @@ spec:
                               This provides a fallback for email clients that don't support HTML.
                             minLength: 1
                             type: string
+                          threading:
+                            description: |-
+                              threading defines the threading configuration for email receiver.
+                              It requires Alertmanager >= v0.30.0.
+                            properties:
+                              threadByDate:
+                                description: |-
+                                  threadByDate defines what granularity of current date to thread by. Accepted values: Daily, None.
+                                  (None means group by alert group key, no date).
+                                enum:
+                                - Daily
+                                - None
+                                type: string
+                            required:
+                            - threadByDate
+                            type: object
                           tlsConfig:
                             description: |-
                               tlsConfig defines the TLS configuration for SMTP connections.
@@ -1816,7 +1832,7 @@ spec:
                                   tokenUrl:
                                     description: tokenUrl defines the URL to fetch
                                       the token from.
-                                    minLength: 1
+                                    pattern: ^(http|https)://.+$
                                     type: string
                                 required:
                                 - clientId
@@ -2583,7 +2599,7 @@ spec:
                                   tokenUrl:
                                     description: tokenUrl defines the URL to fetch
                                       the token from.
-                                    minLength: 1
+                                    pattern: ^(http|https)://.+$
                                     type: string
                                 required:
                                 - clientId
@@ -3421,7 +3437,7 @@ spec:
                                   tokenUrl:
                                     description: tokenUrl defines the URL to fetch
                                       the token from.
-                                    minLength: 1
+                                    pattern: ^(http|https)://.+$
                                     type: string
                                 required:
                                 - clientId
@@ -4269,7 +4285,7 @@ spec:
                                   tokenUrl:
                                     description: tokenUrl defines the URL to fetch
                                       the token from.
-                                    minLength: 1
+                                    pattern: ^(http|https)://.+$
                                     type: string
                                 required:
                                 - clientId
@@ -5129,7 +5145,7 @@ spec:
                                   tokenUrl:
                                     description: tokenUrl defines the URL to fetch
                                       the token from.
-                                    minLength: 1
+                                    pattern: ^(http|https)://.+$
                                     type: string
                                 required:
                                 - clientId
@@ -6057,7 +6073,7 @@ spec:
                                   tokenUrl:
                                     description: tokenUrl defines the URL to fetch
                                       the token from.
-                                    minLength: 1
+                                    pattern: ^(http|https)://.+$
                                     type: string
                                 required:
                                 - clientId
@@ -7050,7 +7066,7 @@ spec:
                                   tokenUrl:
                                     description: tokenUrl defines the URL to fetch
                                       the token from.
-                                    minLength: 1
+                                    pattern: ^(http|https)://.+$
                                     type: string
                                 required:
                                 - clientId
@@ -7355,6 +7371,12 @@ spec:
                             description: titleLink defines the URL that the title
                               will link to when clicked.
                             type: string
+                          updateMessage:
+                            description: |-
+                              updateMessage enables updating existing Slack messages instead of creating new ones
+                              when alert state changes. Please note that Webhook URLs do not support updates.
+                              It requires Alertmanager >= v0.32.0.
+                            type: boolean
                           username:
                             description: username defines the slack bot user name.
                             minLength: 1
@@ -7857,7 +7879,7 @@ spec:
                                   tokenUrl:
                                     description: tokenUrl defines the URL to fetch
                                       the token from.
-                                    minLength: 1
+                                    pattern: ^(http|https)://.+$
                                     type: string
                                 required:
                                 - clientId
@@ -8134,6 +8156,12 @@ spec:
                                 - key
                                 type: object
                                 x-kubernetes-map-type: atomic
+                              externalId:
+                                description: |-
+                                  externalId defines the external ID used when assuming an AWS role. Can only be used with roleArn.
+                                  It requires Prometheus >= v3.11.0 or Alertmanager >= v0.33.0. Currently not supported by Thanos.
+                                minLength: 1
+                                type: string
                               profile:
                                 description: profile defines the named AWS profile
                                   used to authenticate.
@@ -8178,6 +8206,10 @@ spec:
                                   It requires Prometheus >= v2.54.0.
                                 type: boolean
                             type: object
+                            x-kubernetes-validations:
+                            - message: externalId can only be used when roleArn is
+                                specified
+                              rule: '!has(self.externalId) || has(self.roleArn)'
                           subject:
                             description: |-
                               subject defines the subject line when the message is delivered to email endpoints.
@@ -8196,6 +8228,14 @@ spec:
                               If you don't specify this value, you must specify a value for the PhoneNumber or TargetARN.
                             minLength: 1
                             type: string
+                          useAWSHTTPClient:
+                            description: |-
+                              useAWSHTTPClient forces the AWS SDK's BuildableClient instead of
+                              alertmanager's tracing-wrapped HTTP client. Auto-enabled when AWS_CA_BUNDLE
+                              is set; set explicitly when configuring ca_bundle via shared AWS config.
+
+                              It requires Alertmanager >= 0.33.0.
+                            type: boolean
                         type: object
                       type: array
                       x-kubernetes-list-type: atomic
@@ -8734,7 +8774,7 @@ spec:
                                   tokenUrl:
                                     description: tokenUrl defines the URL to fetch
                                       the token from.
-                                    minLength: 1
+                                    pattern: ^(http|https)://.+$
                                     type: string
                                 required:
                                 - clientId
@@ -9542,7 +9582,7 @@ spec:
                                   tokenUrl:
                                     description: tokenUrl defines the URL to fetch
                                       the token from.
-                                    minLength: 1
+                                    pattern: ^(http|https)://.+$
                                     type: string
                                 required:
                                 - clientId
@@ -10292,7 +10332,7 @@ spec:
                                   tokenUrl:
                                     description: tokenUrl defines the URL to fetch
                                       the token from.
-                                    minLength: 1
+                                    pattern: ^(http|https)://.+$
                                     type: string
                                 required:
                                 - clientId
@@ -11022,7 +11062,7 @@ spec:
                                   tokenUrl:
                                     description: tokenUrl defines the URL to fetch
                                       the token from.
-                                    minLength: 1
+                                    pattern: ^(http|https)://.+$
                                     type: string
                                 required:
                                 - clientId
@@ -11259,6 +11299,14 @@ spec:
                             format: int32
                             minimum: 0
                             type: integer
+                          payload:
+                            description: |-
+                              payload define custom payload to be sent to the webhook endpoint.
+                              This is an advanced configuration option that allows you
+                              to define a custom payload using Go templates.
+                              It requires Alertmanager >= v0.32.0.
+                            minLength: 1
+                            type: string
                           sendResolved:
                             description: sendResolved defines whether or not to notify
                               about resolved alerts.
@@ -11834,7 +11882,7 @@ spec:
                                   tokenUrl:
                                     description: tokenUrl defines the URL to fetch
                                       the token from.
-                                    minLength: 1
+                                    pattern: ^(http|https)://.+$
                                     type: string
                                 required:
                                 - clientId
@@ -12335,8 +12383,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.90.0
+    controller-gen.kubebuilder.io/version: v0.21.0
+    operator.prometheus.io/version: 0.93.1
   name: alertmanagers.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -13960,7 +14008,7 @@ spec:
                               tokenUrl:
                                 description: tokenUrl defines the URL to fetch the
                                   token from.
-                                minLength: 1
+                                pattern: ^(http|https)://.+$
                                 type: string
                             required:
                             - clientId
@@ -14192,6 +14240,37 @@ spec:
                               It requires Alertmanager >= v0.28.0.
                             pattern: ^(http|https)://.+$
                             type: string
+                        type: object
+                      mattermost:
+                        description: mattermost defines the default Mattermost Config
+                        properties:
+                          webhookURL:
+                            description: |-
+                              webhookURL defines the default Mattermost Webhook URL.
+
+                              It requires Alertmanager >= v0.32.0.
+                            properties:
+                              key:
+                                description: The key of the secret to select from.  Must
+                                  be a valid secret key.
+                                type: string
+                              name:
+                                default: ""
+                                description: |-
+                                  Name of the referent.
+                                  This field is effectively required, but due to backwards compatibility is
+                                  allowed to be empty. Instances of this type with an empty value here are
+                                  almost certainly wrong.
+                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                type: string
+                              optional:
+                                description: Specify whether the Secret or its key
+                                  must be defined
+                                type: boolean
+                            required:
+                            - key
+                            type: object
+                            x-kubernetes-map-type: atomic
                         type: object
                       opsGenieApiKey:
                         description: opsGenieApiKey defines the default OpsGenie API
@@ -16341,7 +16420,6 @@ spec:
                             procMount denotes the type of proc mount to use for the containers.
                             The default value is Default which uses the container runtime defaults for
                             readonly paths and masked paths.
-                            This requires the ProcMountType feature flag to be enabled.
                             Note that this field cannot be set when spec.os.name is windows.
                           type: string
                         readOnlyRootFilesystem:
@@ -18041,7 +18119,6 @@ spec:
                             procMount denotes the type of proc mount to use for the containers.
                             The default value is Default which uses the container runtime defaults for
                             readonly paths and masked paths.
-                            This requires the ProcMountType feature flag to be enabled.
                             Note that this field cannot be set when spec.os.name is windows.
                           type: string
                         readOnlyRootFilesystem:
@@ -20945,7 +21022,7 @@ spec:
                         A failure to resolve or pull the image during pod startup will block containers from starting and may add significant latency. Failures will be retried using normal volume backoff and will be reported on the pod reason and message.
                         The types of objects that may be mounted by this volume are defined by the container runtime implementation on a host machine and at minimum must include all valid types supported by the container image field.
                         The OCI object gets mounted in a single directory (spec.containers[*].volumeMounts.mountPath) by merging the manifest layers in the same way as for container images.
-                        The volume will be mounted read-only (ro) and non-executable files (noexec).
+                        The volume will be mounted read-only (ro).
                         Sub path mounts for containers are not supported (spec.containers[*].volumeMounts.subpath) before 1.33.
                         The field spec.securityContext.fsGroupChangePolicy has no effect on this volume type.
                       properties:
@@ -21117,8 +21194,7 @@ spec:
                       description: |-
                         portworxVolume represents a portworx volume attached and mounted on kubelets host machine.
                         Deprecated: PortworxVolume is deprecated. All operations for the in-tree portworxVolume type
-                        are redirected to the pxd.portworx.com CSI driver when the CSIMigrationPortworx feature-gate
-                        is on.
+                        are redirected to the pxd.portworx.com CSI driver.
                       properties:
                         fsType:
                           description: |-
@@ -21939,6 +22015,7 @@ spec:
                       getConcurrency defines the maximum number of GET requests processed concurrently. This corresponds to the
                       Alertmanager's `--web.get-concurrency` flag.
                     format: int32
+                    minimum: 0
                     type: integer
                   httpConfig:
                     description: httpConfig defines HTTP parameters for web server.
@@ -21999,6 +22076,7 @@ spec:
                       timeout for HTTP requests. This corresponds to the Alertmanager's
                       `--web.timeout` flag.
                     format: int32
+                    minimum: 0
                     type: integer
                   tlsConfig:
                     description: tlsConfig defines the TLS parameters for HTTPS.
@@ -22317,8 +22395,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.90.0
+    controller-gen.kubebuilder.io/version: v0.21.0
+    operator.prometheus.io/version: 0.93.1
   name: podmonitors.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -22381,6 +22459,10 @@ spec:
 
                       The Prometheus service account must have the `list` and `watch`
                       permissions on the `Nodes` objects.
+
+                      Node metadata labels are not automatically added to scraped metrics. They are
+                      exposed as `__meta_kubernetes_node_*` labels and can be copied to timeseries
+                      with relabeling configuration.
                     type: boolean
                 type: object
               bodySizeLimit:
@@ -22428,6 +22510,7 @@ spec:
 
                   It requires Prometheus >= v2.47.0.
                 format: int64
+                minimum: 0
                 type: integer
               labelLimit:
                 description: |-
@@ -22435,6 +22518,7 @@ spec:
 
                   It requires Prometheus >= v2.27.0.
                 format: int64
+                minimum: 0
                 type: integer
               labelNameLengthLimit:
                 description: |-
@@ -22442,6 +22526,7 @@ spec:
 
                   It requires Prometheus >= v2.27.0.
                 format: int64
+                minimum: 0
                 type: integer
               labelValueLengthLimit:
                 description: |-
@@ -22449,6 +22534,7 @@ spec:
 
                   It requires Prometheus >= v2.27.0.
                 format: int64
+                minimum: 0
                 type: integer
               namespaceSelector:
                 description: |-
@@ -22473,6 +22559,7 @@ spec:
                   buckets will be merged to stay within the limit.
                   It requires Prometheus >= v2.45.0.
                 format: int64
+                minimum: 0
                 type: integer
               nativeHistogramMinBucketFactor:
                 anyOf:
@@ -22709,6 +22796,7 @@ spec:
 
                               Only applicable when the action is `HashMod`.
                             format: int64
+                            minimum: 0
                             type: integer
                           regex:
                             description: regex defines the regular expression against
@@ -23082,7 +23170,7 @@ spec:
                         tokenUrl:
                           description: tokenUrl defines the URL to fetch the token
                             from.
-                          minLength: 1
+                          pattern: ^(http|https)://.+$
                           type: string
                       required:
                       - clientId
@@ -23233,6 +23321,7 @@ spec:
 
                               Only applicable when the action is `HashMod`.
                             format: int64
+                            minimum: 0
                             type: integer
                           regex:
                             description: regex defines the regular expression against
@@ -23489,6 +23578,7 @@ spec:
                   sampleLimit defines a per-scrape limit on the number of scraped samples
                   that will be accepted.
                 format: int64
+                minimum: 0
                 type: integer
               scrapeClass:
                 description: scrapeClass defines the scrape class to apply.
@@ -23596,6 +23686,7 @@ spec:
                   targetLimit defines a limit on the number of scraped targets that will
                   be accepted.
                 format: int64
+                minimum: 0
                 type: integer
             required:
             - selector
@@ -23715,8 +23806,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.90.0
+    controller-gen.kubebuilder.io/version: v0.21.0
+    operator.prometheus.io/version: 0.93.1
   name: probes.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -23937,24 +24028,28 @@ spec:
 
                   It requires Prometheus >= v2.47.0.
                 format: int64
+                minimum: 0
                 type: integer
               labelLimit:
                 description: |-
                   labelLimit defines the per-scrape limit on number of labels that will be accepted for a sample.
                   Only valid in Prometheus versions 2.27.0 and newer.
                 format: int64
+                minimum: 0
                 type: integer
               labelNameLengthLimit:
                 description: |-
                   labelNameLengthLimit defines the per-scrape limit on length of labels name that will be accepted for a sample.
                   Only valid in Prometheus versions 2.27.0 and newer.
                 format: int64
+                minimum: 0
                 type: integer
               labelValueLengthLimit:
                 description: |-
                   labelValueLengthLimit defines the per-scrape limit on length of labels value that will be accepted for a sample.
                   Only valid in Prometheus versions 2.27.0 and newer.
                 format: int64
+                minimum: 0
                 type: integer
               metricRelabelings:
                 description: metricRelabelings defines the RelabelConfig to apply
@@ -24005,6 +24100,7 @@ spec:
 
                         Only applicable when the action is `HashMod`.
                       format: int64
+                      minimum: 0
                       type: integer
                     regex:
                       description: regex defines the regular expression against which
@@ -24056,6 +24152,7 @@ spec:
                   buckets will be merged to stay within the limit.
                   It requires Prometheus >= v2.45.0.
                 format: int64
+                minimum: 0
                 type: integer
               nativeHistogramMinBucketFactor:
                 anyOf:
@@ -24392,7 +24489,7 @@ spec:
                     type: object
                   tokenUrl:
                     description: tokenUrl defines the URL to fetch the token from.
-                    minLength: 1
+                    pattern: ^(http|https)://.+$
                     type: string
                 required:
                 - clientId
@@ -24515,6 +24612,7 @@ spec:
                 description: sampleLimit defines per-scrape limit on number of scraped
                   samples that will be accepted.
                 format: int64
+                minimum: 0
                 type: integer
               scrapeClass:
                 description: scrapeClass defines the scrape class to apply.
@@ -24569,6 +24667,7 @@ spec:
                 description: targetLimit defines a limit on the number of scraped
                   targets that will be accepted.
                 format: int64
+                minimum: 0
                 type: integer
               targets:
                 description: targets defines a set of static or dynamically discovered
@@ -24651,6 +24750,7 @@ spec:
 
                                 Only applicable when the action is `HashMod`.
                               format: int64
+                              minimum: 0
                               type: integer
                             regex:
                               description: regex defines the regular expression against
@@ -24801,6 +24901,7 @@ spec:
 
                                 Only applicable when the action is `HashMod`.
                               format: int64
+                              minimum: 0
                               type: integer
                             regex:
                               description: regex defines the regular expression against
@@ -25130,8 +25231,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.90.0
+    controller-gen.kubebuilder.io/version: v0.21.0
+    operator.prometheus.io/version: 0.93.1
   name: prometheusagents.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -27704,7 +27805,6 @@ spec:
                             procMount denotes the type of proc mount to use for the containers.
                             The default value is Default which uses the container runtime defaults for
                             readonly paths and masked paths.
-                            This requires the ProcMountType feature flag to be enabled.
                             Note that this field cannot be set when spec.os.name is windows.
                           type: string
                         readOnlyRootFilesystem:
@@ -28259,6 +28359,7 @@ spec:
                   * Scrape objects with a keepDroppedTargets value less than or equal to enforcedKeepDroppedTargets keep their specific value.
                   * Scrape objects with a keepDroppedTargets value greater than enforcedKeepDroppedTargets are set to enforcedKeepDroppedTargets.
                 format: int64
+                minimum: 0
                 type: integer
               enforcedLabelLimit:
                 description: |-
@@ -28275,6 +28376,7 @@ spec:
                   * Scrape objects with a labelLimit value less than or equal to enforcedLabelLimit keep their specific value.
                   * Scrape objects with a labelLimit value greater than enforcedLabelLimit are set to enforcedLabelLimit.
                 format: int64
+                minimum: 0
                 type: integer
               enforcedLabelNameLengthLimit:
                 description: |-
@@ -28291,6 +28393,7 @@ spec:
                   * Scrape objects with a labelNameLengthLimit value less than or equal to enforcedLabelNameLengthLimit keep their specific value.
                   * Scrape objects with a labelNameLengthLimit value greater than enforcedLabelNameLengthLimit are set to enforcedLabelNameLengthLimit.
                 format: int64
+                minimum: 0
                 type: integer
               enforcedLabelValueLengthLimit:
                 description: |-
@@ -28307,6 +28410,7 @@ spec:
                   * Scrape objects with a labelValueLengthLimit value less than or equal to enforcedLabelValueLengthLimit keep their specific value.
                   * Scrape objects with a labelValueLengthLimit value greater than enforcedLabelValueLengthLimit are set to enforcedLabelValueLengthLimit.
                 format: int64
+                minimum: 0
                 type: integer
               enforcedNamespaceLabel:
                 description: |-
@@ -28340,6 +28444,7 @@ spec:
                   * Scrape objects with a sampleLimit value less than or equal to enforcedSampleLimit keep their specific value.
                   * Scrape objects with a sampleLimit value greater than enforcedSampleLimit are set to enforcedSampleLimit.
                 format: int64
+                minimum: 0
                 type: integer
               enforcedTargetLimit:
                 description: |-
@@ -28357,6 +28462,7 @@ spec:
                   * Scrape objects with a targetLimit value less than or equal to enforcedTargetLimit keep their specific value.
                   * Scrape objects with a targetLimit value greater than enforcedTargetLimit are set to enforcedTargetLimit.
                 format: int64
+                minimum: 0
                 type: integer
               excludedFromEnforcement:
                 description: |-
@@ -29625,7 +29731,6 @@ spec:
                             procMount denotes the type of proc mount to use for the containers.
                             The default value is Default which uses the container runtime defaults for
                             readonly paths and masked paths.
-                            This requires the ProcMountType feature flag to be enabled.
                             Note that this field cannot be set when spec.os.name is windows.
                           type: string
                         readOnlyRootFilesystem:
@@ -30058,6 +30163,7 @@ spec:
                   Note that the global limit only applies to scrape objects that don't specify an explicit limit value.
                   If you want to enforce a maximum limit for all scrape objects, refer to enforcedKeepDroppedTargets.
                 format: int64
+                minimum: 0
                 type: integer
               labelLimit:
                 description: |-
@@ -30067,6 +30173,7 @@ spec:
                   Note that the global limit only applies to scrape objects that don't specify an explicit limit value.
                   If you want to enforce a maximum limit for all scrape objects, refer to enforcedLabelLimit.
                 format: int64
+                minimum: 0
                 type: integer
               labelNameLengthLimit:
                 description: |-
@@ -30076,6 +30183,7 @@ spec:
                   Note that the global limit only applies to scrape objects that don't specify an explicit limit value.
                   If you want to enforce a maximum limit for all scrape objects, refer to enforcedLabelNameLengthLimit.
                 format: int64
+                minimum: 0
                 type: integer
               labelValueLengthLimit:
                 description: |-
@@ -30085,6 +30193,7 @@ spec:
                   Note that the global limit only applies to scrape objects that don't specify an explicit limit value.
                   If you want to enforce a maximum limit for all scrape objects, refer to enforcedLabelValueLengthLimit.
                 format: int64
+                minimum: 0
                 type: integer
               listenLocal:
                 description: |-
@@ -30188,6 +30297,26 @@ spec:
                       resource attributes to the `target_info` metric, on top of converting them into the `instance` and `job` labels.
 
                       It requires Prometheus >= v3.1.0.
+                    type: boolean
+                  labelNamePreserveMultipleUnderscores:
+                    description: |-
+                      labelNamePreserveMultipleUnderscores enables preserving of multiple consecutive underscores in label names when translation_strategy uses
+                      underscore escaping.
+                      When true (default), multiple consecutive underscores are preserved during label name sanitization.
+
+                      Notice: This one has no impact if `nameEscapingScheme` is `AllowUTF8`.
+
+                      It requires Prometheus >= v3.8.0.
+                    type: boolean
+                  labelNameUnderscoreSanitization:
+                    description: |-
+                      labelNameUnderscoreSanitization controls whether to enable prepending of 'key_' to labels starting with '_'.
+                      Reserved labels starting with '__' are not modified.
+                      This is only relevant when translation_strategy uses underscore escaping (e.g., "UnderscoreEscapingWithSuffixes" or "UnderscoreEscapingWithoutSuffixes").
+
+                      Notice: This one has no impact if `nameEscapingScheme` is `AllowUTF8`.
+
+                      It requires Prometheus >= v3.8.0.
                     type: boolean
                   promoteAllResourceAttributes:
                     description: |-
@@ -30866,8 +30995,10 @@ spec:
                           minimum: -1
                           type: integer
                         send:
-                          description: send defines whether metric metadata is sent
-                            to the remote storage or not.
+                          description: |-
+                            send defines whether metric metadata is sent to the remote storage or not.
+
+                            The setting is ignored when Remote Write message's version 2.0 is used.
                           type: boolean
                         sendInterval:
                           description: sendInterval defines how frequently metric
@@ -31216,7 +31347,7 @@ spec:
                         tokenUrl:
                           description: tokenUrl defines the URL to fetch the token
                             from.
-                          minLength: 1
+                          pattern: ^(http|https)://.+$
                           type: string
                       required:
                       - clientId
@@ -31387,6 +31518,12 @@ spec:
                           - key
                           type: object
                           x-kubernetes-map-type: atomic
+                        externalId:
+                          description: |-
+                            externalId defines the external ID used when assuming an AWS role. Can only be used with roleArn.
+                            It requires Prometheus >= v3.11.0 or Alertmanager >= v0.33.0. Currently not supported by Thanos.
+                          minLength: 1
+                          type: string
                         profile:
                           description: profile defines the named AWS profile used
                             to authenticate.
@@ -31431,6 +31568,9 @@ spec:
                             It requires Prometheus >= v2.54.0.
                           type: boolean
                       type: object
+                      x-kubernetes-validations:
+                      - message: externalId can only be used when roleArn is specified
+                        rule: '!has(self.externalId) || has(self.roleArn)'
                     tlsConfig:
                       description: tlsConfig to use for the URL.
                       properties:
@@ -31666,6 +31806,7 @@ spec:
 
                               Only applicable when the action is `HashMod`.
                             format: int64
+                            minimum: 0
                             type: integer
                           regex:
                             description: regex defines the regular expression against
@@ -31829,6 +31970,7 @@ spec:
                   Note that the global limit only applies to scrape objects that don't specify an explicit limit value.
                   If you want to enforce a maximum limit for all scrape objects, refer to enforcedSampleLimit.
                 format: int64
+                minimum: 0
                 type: integer
               schedulerName:
                 description: schedulerName defines the scheduler to use for Pod scheduling.
@@ -31857,6 +31999,10 @@ spec:
 
                             The Prometheus service account must have the `list` and `watch`
                             permissions on the `Nodes` objects.
+
+                            Node metadata labels are not automatically added to scraped metrics. They are
+                            exposed as `__meta_kubernetes_node_*` labels and can be copied to timeseries
+                            with relabeling configuration.
                           type: boolean
                       type: object
                     authorization:
@@ -31977,6 +32123,7 @@ spec:
 
                               Only applicable when the action is `HashMod`.
                             format: int64
+                            minimum: 0
                             type: integer
                           regex:
                             description: regex defines the regular expression against
@@ -32076,6 +32223,7 @@ spec:
 
                               Only applicable when the action is `HashMod`.
                             format: int64
+                            minimum: 0
                             type: integer
                           regex:
                             description: regex defines the regular expression against
@@ -32320,7 +32468,8 @@ spec:
                   matches all namespaces. A null label selector matches the current
                   namespace only.
 
-                  Note that the ScrapeConfig custom resource definition is currently at Alpha level.
+                  Note that the ScrapeConfig custom resource definition is currently at Alpha level
+                  and will be graduated to Beta in a future release.
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.
@@ -32379,7 +32528,8 @@ spec:
                   of the custom resource definition. It is recommended to use
                   `spec.additionalScrapeConfigs` instead.
 
-                  Note that the ScrapeConfig custom resource definition is currently at Alpha level.
+                  Note that the ScrapeConfig custom resource definition is currently at Alpha level
+                  and will be graduated to Beta in a future release.
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.
@@ -32859,7 +33009,56 @@ spec:
                   See https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#stable-network-id for more details.
                 minLength: 1
                 type: string
+              shardingStrategy:
+                description: |-
+                  shardingStrategy defines the sharding strategy for distributing scraped targets across Prometheus shards.
+
+                  When not defined, the operator defaults to the 'Address' mode which distributes
+                  targets based on a hash of the target address.
+                properties:
+                  mode:
+                    description: |-
+                      mode defines the sharding mode. Can be 'Address' or 'Topology'.
+
+                      'Address' is the default mode and distributes targets across shards
+                      based on a hash of the target address.
+
+                      'Topology' enables zone-aware sharding where each shard is assigned to a
+                      specific topology zone and only scrapes targets in that zone.
+                      (Alpha) Using the 'Topology' mode requires the `PrometheusTopologySharding`
+                      feature gate to be enabled.
+                    enum:
+                    - Address
+                    - Topology
+                    type: string
+                  topology:
+                    description: |-
+                      topology defines the configuration for topology-aware sharding.
+                      This field is only valid when mode is set to 'Topology'.
+                    properties:
+                      externalLabelName:
+                        description: |-
+                          externalLabelName defines the name of the Prometheus external label used
+                          to communicate the topology zone assigned to the Prometheus instance.
+                          If not defined, it defaults to "zone".
+                          If set to the empty string, no external label is added to the Prometheus configuration.
+                        type: string
+                      values:
+                        description: |-
+                          values defines the list of topology values (e.g. zone names) to be used
+                          for sharding. The configured number of shards must be greater than or
+                          equal to the number of values.
+                        items:
+                          type: string
+                        type: array
+                        x-kubernetes-list-type: atomic
+                    type: object
+                type: object
+                x-kubernetes-validations:
+                - message: topology can only be defined when mode is set to 'Topology'
+                  rule: '!has(self.topology) || (has(self.mode) && self.mode == ''Topology'')'
               shards:
+                default: 1
                 description: |-
                   shards defines the number of shards to distribute the scraped targets onto.
 
@@ -32887,6 +33086,8 @@ spec:
                   You can also disable sharding on a specific target by setting the
                   `__tmp_disable_sharding` label with relabeling configuration. When
                   the label value isn't empty, all Prometheus shards will scrape the target.
+
+                  Default: 1
                 format: int32
                 type: integer
               storage:
@@ -33606,6 +33807,7 @@ spec:
                   Note that the global limit only applies to scrape objects that don't specify an explicit limit value.
                   If you want to enforce a maximum limit for all scrape objects, refer to enforcedTargetLimit.
                 format: int64
+                minimum: 0
                 type: integer
               terminationGracePeriodSeconds:
                 description: |-
@@ -34076,6 +34278,31 @@ spec:
                   tsdb defines the runtime reloadable configuration of the timeseries database(TSDB).
                   It requires Prometheus >= v2.39.0 or PrometheusAgent >= v2.54.0.
                 properties:
+                  chunkEncoding:
+                    description: |-
+                      chunkEncoding configures per-chunk-type encoding overrides.
+
+                      It requires Prometheus >= v3.13.0.
+
+                      Notice: Setting "Xor" is incompatible with --enable-feature=st-storage
+                      (XOR chunks do not store start timestamps).
+                    properties:
+                      floats:
+                        description: |-
+                          floats selects the encoding used for float chunks.
+                          Valid values are "Xor" and "Xor2".
+
+                          Notice:
+                           * Setting "Xor" is incompatible with --enable-feature=st-storage
+                          (XOR chunks do not store start timestamps).
+                           * Setting "Xor2" automatically adds the `xor2-encoding` feature flag.
+
+                          It requires Prometheus >= v3.13.0.
+                        enum:
+                        - Xor
+                        - Xor2
+                        type: string
+                    type: object
                   outOfOrderTimeWindow:
                     description: |-
                       outOfOrderTimeWindow defines how old an out-of-order/out-of-bounds sample can be with
@@ -34090,6 +34317,26 @@ spec:
                       It requires Prometheus >= v2.39.0 or PrometheusAgent >= v2.54.0.
                     pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                     type: string
+                  staleSeriesCompactionThreshold:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: |-
+                      staleSeriesCompactionThreshold configures the trigger point for compacting
+                      stale series from memory into persistent blocks and removing those stale
+                      series from memory.
+
+                      The threshold is a number between 0.0 and 1.0. It represents the ratio of
+                      stale series in memory to the total series in memory. The stale series
+                      compaction is triggered when this ratio crosses the configured threshold.
+                      It may not trigger the stale series compaction if the usual head compaction
+                      is about to happen soon.
+
+                      If set to 0, stale series compaction is disabled.
+
+                      It requires Prometheus >= v3.10.0.
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
                 type: object
               updateStrategy:
                 description: |-
@@ -35130,7 +35377,7 @@ spec:
                         A failure to resolve or pull the image during pod startup will block containers from starting and may add significant latency. Failures will be retried using normal volume backoff and will be reported on the pod reason and message.
                         The types of objects that may be mounted by this volume are defined by the container runtime implementation on a host machine and at minimum must include all valid types supported by the container image field.
                         The OCI object gets mounted in a single directory (spec.containers[*].volumeMounts.mountPath) by merging the manifest layers in the same way as for container images.
-                        The volume will be mounted read-only (ro) and non-executable files (noexec).
+                        The volume will be mounted read-only (ro).
                         Sub path mounts for containers are not supported (spec.containers[*].volumeMounts.subpath) before 1.33.
                         The field spec.securityContext.fsGroupChangePolicy has no effect on this volume type.
                       properties:
@@ -35302,8 +35549,7 @@ spec:
                       description: |-
                         portworxVolume represents a portworx volume attached and mounted on kubelets host machine.
                         Deprecated: PortworxVolume is deprecated. All operations for the in-tree portworxVolume type
-                        are redirected to the pxd.portworx.com CSI driver when the CSIMigrationPortworx feature-gate
-                        is on.
+                        are redirected to the pxd.portworx.com CSI driver.
                       properties:
                         fsType:
                           description: |-
@@ -36432,6 +36678,14 @@ spec:
               rule: '!(has(self.mode) && self.mode == ''DaemonSet'' && has(self.serviceMonitorNamespaceSelector))'
             - message: additionalScrapeConfigs cannot be set when mode is DaemonSet
               rule: '!(has(self.mode) && self.mode == ''DaemonSet'' && has(self.additionalScrapeConfigs))'
+            - message: shardingStrategy cannot be set when mode is DaemonSet
+              rule: '!(has(self.mode) && self.mode == ''DaemonSet'' && has(self.shardingStrategy))'
+            - message: shards must be greater than or equal to the number of topology
+                values when sharding strategy mode is Topology
+              rule: '!has(self.shardingStrategy) || !has(self.shardingStrategy.mode)
+                || self.shardingStrategy.mode != ''Topology'' || !has(self.shardingStrategy.topology)
+                || !has(self.shardingStrategy.topology.values) || self.shardingStrategy.topology.values.size()
+                == 0 || (has(self.shards) ? self.shards : 1) >= self.shardingStrategy.topology.values.size()'
           status:
             description: |-
               status defines the most recent observed status of the Prometheus cluster. Read-only.
@@ -36578,8 +36832,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.90.0
+    controller-gen.kubebuilder.io/version: v0.21.0
+    operator.prometheus.io/version: 0.93.1
   name: prometheuses.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -37764,6 +38018,7 @@ spec:
 
                                   Only applicable when the action is `HashMod`.
                                 format: int64
+                                minimum: 0
                                 type: integer
                               regex:
                                 description: regex defines the regular expression
@@ -38048,6 +38303,7 @@ spec:
 
                                   Only applicable when the action is `HashMod`.
                                 format: int64
+                                minimum: 0
                                 type: integer
                               regex:
                                 description: regex defines the regular expression
@@ -38130,6 +38386,12 @@ spec:
                               - key
                               type: object
                               x-kubernetes-map-type: atomic
+                            externalId:
+                              description: |-
+                                externalId defines the external ID used when assuming an AWS role. Can only be used with roleArn.
+                                It requires Prometheus >= v3.11.0 or Alertmanager >= v0.33.0. Currently not supported by Thanos.
+                              minLength: 1
+                              type: string
                             profile:
                               description: profile defines the named AWS profile used
                                 to authenticate.
@@ -38174,6 +38436,9 @@ spec:
                                 It requires Prometheus >= v2.54.0.
                               type: boolean
                           type: object
+                          x-kubernetes-validations:
+                          - message: externalId can only be used when roleArn is specified
+                            rule: '!has(self.externalId) || has(self.roleArn)'
                         timeout:
                           description: timeout defines a per-target Alertmanager timeout
                             when pushing alerts.
@@ -39903,7 +40168,6 @@ spec:
                             procMount denotes the type of proc mount to use for the containers.
                             The default value is Default which uses the container runtime defaults for
                             readonly paths and masked paths.
-                            This requires the ProcMountType feature flag to be enabled.
                             Note that this field cannot be set when spec.os.name is windows.
                           type: string
                         readOnlyRootFilesystem:
@@ -40336,8 +40600,15 @@ spec:
               disableCompaction:
                 description: |-
                   disableCompaction when true, the Prometheus compaction is disabled.
-                  When `spec.thanos.objectStorageConfig` or `spec.objectStorageConfigFile` are defined, the operator automatically
-                  disables block compaction to avoid race conditions during block uploads (as the Thanos documentation recommends).
+
+                  When `spec.thanos.objectStorageConfig` or `spec.thanos.objectStorageConfigFile` are defined, the operator's
+                  default handling depends on the Prometheus and Thanos sidecar versions:
+                    - With Prometheus < v3.9.0 or a Thanos sidecar < v0.41.0, block compaction is disabled to avoid race
+                      conditions during block uploads (as the Thanos documentation recommends).
+                    - With Prometheus >= v3.9.0 and a Thanos sidecar >= v0.41.0, local compaction is kept enabled and coordinated
+                      with the sidecar through the shipper meta file (`--storage.tsdb.delay-compact-file.path`), so blocks are only
+                      compacted after they have been uploaded.
+                  Setting this field to true always disables local compaction regardless of the versions.
                 type: boolean
               dnsConfig:
                 description: dnsConfig defines the DNS configuration for the pods.
@@ -40476,6 +40747,7 @@ spec:
                   * Scrape objects with a keepDroppedTargets value less than or equal to enforcedKeepDroppedTargets keep their specific value.
                   * Scrape objects with a keepDroppedTargets value greater than enforcedKeepDroppedTargets are set to enforcedKeepDroppedTargets.
                 format: int64
+                minimum: 0
                 type: integer
               enforcedLabelLimit:
                 description: |-
@@ -40492,6 +40764,7 @@ spec:
                   * Scrape objects with a labelLimit value less than or equal to enforcedLabelLimit keep their specific value.
                   * Scrape objects with a labelLimit value greater than enforcedLabelLimit are set to enforcedLabelLimit.
                 format: int64
+                minimum: 0
                 type: integer
               enforcedLabelNameLengthLimit:
                 description: |-
@@ -40508,6 +40781,7 @@ spec:
                   * Scrape objects with a labelNameLengthLimit value less than or equal to enforcedLabelNameLengthLimit keep their specific value.
                   * Scrape objects with a labelNameLengthLimit value greater than enforcedLabelNameLengthLimit are set to enforcedLabelNameLengthLimit.
                 format: int64
+                minimum: 0
                 type: integer
               enforcedLabelValueLengthLimit:
                 description: |-
@@ -40524,6 +40798,7 @@ spec:
                   * Scrape objects with a labelValueLengthLimit value less than or equal to enforcedLabelValueLengthLimit keep their specific value.
                   * Scrape objects with a labelValueLengthLimit value greater than enforcedLabelValueLengthLimit are set to enforcedLabelValueLengthLimit.
                 format: int64
+                minimum: 0
                 type: integer
               enforcedNamespaceLabel:
                 description: |-
@@ -40557,6 +40832,7 @@ spec:
                   * Scrape objects with a sampleLimit value less than or equal to enforcedSampleLimit keep their specific value.
                   * Scrape objects with a sampleLimit value greater than enforcedSampleLimit are set to enforcedSampleLimit.
                 format: int64
+                minimum: 0
                 type: integer
               enforcedTargetLimit:
                 description: |-
@@ -40574,6 +40850,7 @@ spec:
                   * Scrape objects with a targetLimit value less than or equal to enforcedTargetLimit keep their specific value.
                   * Scrape objects with a targetLimit value greater than enforcedTargetLimit are set to enforcedTargetLimit.
                 format: int64
+                minimum: 0
                 type: integer
               evaluationInterval:
                 default: 30s
@@ -41866,7 +42143,6 @@ spec:
                             procMount denotes the type of proc mount to use for the containers.
                             The default value is Default which uses the container runtime defaults for
                             readonly paths and masked paths.
-                            This requires the ProcMountType feature flag to be enabled.
                             Note that this field cannot be set when spec.os.name is windows.
                           type: string
                         readOnlyRootFilesystem:
@@ -42299,6 +42575,7 @@ spec:
                   Note that the global limit only applies to scrape objects that don't specify an explicit limit value.
                   If you want to enforce a maximum limit for all scrape objects, refer to enforcedKeepDroppedTargets.
                 format: int64
+                minimum: 0
                 type: integer
               labelLimit:
                 description: |-
@@ -42308,6 +42585,7 @@ spec:
                   Note that the global limit only applies to scrape objects that don't specify an explicit limit value.
                   If you want to enforce a maximum limit for all scrape objects, refer to enforcedLabelLimit.
                 format: int64
+                minimum: 0
                 type: integer
               labelNameLengthLimit:
                 description: |-
@@ -42317,6 +42595,7 @@ spec:
                   Note that the global limit only applies to scrape objects that don't specify an explicit limit value.
                   If you want to enforce a maximum limit for all scrape objects, refer to enforcedLabelNameLengthLimit.
                 format: int64
+                minimum: 0
                 type: integer
               labelValueLengthLimit:
                 description: |-
@@ -42326,6 +42605,7 @@ spec:
                   Note that the global limit only applies to scrape objects that don't specify an explicit limit value.
                   If you want to enforce a maximum limit for all scrape objects, refer to enforcedLabelValueLengthLimit.
                 format: int64
+                minimum: 0
                 type: integer
               listenLocal:
                 description: |-
@@ -42420,6 +42700,26 @@ spec:
                       resource attributes to the `target_info` metric, on top of converting them into the `instance` and `job` labels.
 
                       It requires Prometheus >= v3.1.0.
+                    type: boolean
+                  labelNamePreserveMultipleUnderscores:
+                    description: |-
+                      labelNamePreserveMultipleUnderscores enables preserving of multiple consecutive underscores in label names when translation_strategy uses
+                      underscore escaping.
+                      When true (default), multiple consecutive underscores are preserved during label name sanitization.
+
+                      Notice: This one has no impact if `nameEscapingScheme` is `AllowUTF8`.
+
+                      It requires Prometheus >= v3.8.0.
+                    type: boolean
+                  labelNameUnderscoreSanitization:
+                    description: |-
+                      labelNameUnderscoreSanitization controls whether to enable prepending of 'key_' to labels starting with '_'.
+                      Reserved labels starting with '__' are not modified.
+                      This is only relevant when translation_strategy uses underscore escaping (e.g., "UnderscoreEscapingWithSuffixes" or "UnderscoreEscapingWithoutSuffixes").
+
+                      Notice: This one has no impact if `nameEscapingScheme` is `AllowUTF8`.
+
+                      It requires Prometheus >= v3.8.0.
                     type: boolean
                   promoteAllResourceAttributes:
                     description: |-
@@ -43351,7 +43651,7 @@ spec:
                         tokenUrl:
                           description: tokenUrl defines the URL to fetch the token
                             from.
-                          minLength: 1
+                          pattern: ^(http|https)://.+$
                           type: string
                       required:
                       - clientId
@@ -43599,7 +43899,11 @@ spec:
                           type: string
                       type: object
                     url:
-                      description: url defines the URL of the endpoint to query from.
+                      description: |-
+                        url defines the URL of the endpoint to query from.
+
+                        It must use the HTTP or HTTPS scheme.
+                      pattern: ^(http|https)://.+$
                       type: string
                   required:
                   - url
@@ -43904,8 +44208,10 @@ spec:
                           minimum: -1
                           type: integer
                         send:
-                          description: send defines whether metric metadata is sent
-                            to the remote storage or not.
+                          description: |-
+                            send defines whether metric metadata is sent to the remote storage or not.
+
+                            The setting is ignored when Remote Write message's version 2.0 is used.
                           type: boolean
                         sendInterval:
                           description: sendInterval defines how frequently metric
@@ -44254,7 +44560,7 @@ spec:
                         tokenUrl:
                           description: tokenUrl defines the URL to fetch the token
                             from.
-                          minLength: 1
+                          pattern: ^(http|https)://.+$
                           type: string
                       required:
                       - clientId
@@ -44425,6 +44731,12 @@ spec:
                           - key
                           type: object
                           x-kubernetes-map-type: atomic
+                        externalId:
+                          description: |-
+                            externalId defines the external ID used when assuming an AWS role. Can only be used with roleArn.
+                            It requires Prometheus >= v3.11.0 or Alertmanager >= v0.33.0. Currently not supported by Thanos.
+                          minLength: 1
+                          type: string
                         profile:
                           description: profile defines the named AWS profile used
                             to authenticate.
@@ -44469,6 +44781,9 @@ spec:
                             It requires Prometheus >= v2.54.0.
                           type: boolean
                       type: object
+                      x-kubernetes-validations:
+                      - message: externalId can only be used when roleArn is specified
+                        rule: '!has(self.externalId) || has(self.roleArn)'
                     tlsConfig:
                       description: tlsConfig to use for the URL.
                       properties:
@@ -44704,6 +45019,7 @@ spec:
 
                               Only applicable when the action is `HashMod`.
                             format: int64
+                            minimum: 0
                             type: integer
                           regex:
                             description: regex defines the regular expression against
@@ -45012,6 +45328,7 @@ spec:
                   Note that the global limit only applies to scrape objects that don't specify an explicit limit value.
                   If you want to enforce a maximum limit for all scrape objects, refer to enforcedSampleLimit.
                 format: int64
+                minimum: 0
                 type: integer
               schedulerName:
                 description: schedulerName defines the scheduler to use for Pod scheduling.
@@ -45040,6 +45357,10 @@ spec:
 
                             The Prometheus service account must have the `list` and `watch`
                             permissions on the `Nodes` objects.
+
+                            Node metadata labels are not automatically added to scraped metrics. They are
+                            exposed as `__meta_kubernetes_node_*` labels and can be copied to timeseries
+                            with relabeling configuration.
                           type: boolean
                       type: object
                     authorization:
@@ -45160,6 +45481,7 @@ spec:
 
                               Only applicable when the action is `HashMod`.
                             format: int64
+                            minimum: 0
                             type: integer
                           regex:
                             description: regex defines the regular expression against
@@ -45259,6 +45581,7 @@ spec:
 
                               Only applicable when the action is `HashMod`.
                             format: int64
+                            minimum: 0
                             type: integer
                           regex:
                             description: regex defines the regular expression against
@@ -45503,7 +45826,8 @@ spec:
                   matches all namespaces. A null label selector matches the current
                   namespace only.
 
-                  Note that the ScrapeConfig custom resource definition is currently at Alpha level.
+                  Note that the ScrapeConfig custom resource definition is currently at Alpha level
+                  and will be graduated to Beta in a future release.
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.
@@ -45562,7 +45886,8 @@ spec:
                   of the custom resource definition. It is recommended to use
                   `spec.additionalScrapeConfigs` instead.
 
-                  Note that the ScrapeConfig custom resource definition is currently at Alpha level.
+                  Note that the ScrapeConfig custom resource definition is currently at Alpha level
+                  and will be graduated to Beta in a future release.
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.
@@ -46049,20 +46374,22 @@ spec:
               shardRetentionPolicy:
                 description: |-
                   shardRetentionPolicy defines the retention policy for the Prometheus shards.
-                  (Alpha) Using this field requires the 'PrometheusShardRetentionPolicy' feature gate to be enabled.
 
-                  The final goals for this feature can be seen at https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/proposals/202310-shard-autoscaling.md#graceful-scale-down-of-prometheus-servers,
-                  however, the feature is not yet fully implemented in this PR. The limitation being:
-                  * Retention duration is not settable, for now, shards are retained forever.
+                  (Beta) Using this mode requires the `PrometheusShardRetentionPolicy` feature gate (enabled by default).
                 properties:
                   retain:
                     description: |-
-                      retain defines the config for retention when the retention policy is set to `Retain`.
-                      This field is ineffective as of now.
+                      retain defines the config for retention when the retention policy is set
+                      to `Retain`.
+
+                      If not defined, the operator will use the retention duration configured
+                      for the Prometheus data. If the resource uses size-based retention, the
+                      shard(s) are kept forever (unless manually deleted).
                     properties:
                       retentionPeriod:
-                        description: retentionPeriod defines the retentionPeriod for
-                          shard retention policy.
+                        description: |-
+                          retentionPeriod defines how long the scaled-down shard(s) need to be
+                          kept before being deleted.
                         pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                         type: string
                     required:
@@ -46080,7 +46407,56 @@ spec:
                     - Delete
                     type: string
                 type: object
+              shardingStrategy:
+                description: |-
+                  shardingStrategy defines the sharding strategy for distributing scraped targets across Prometheus shards.
+
+                  When not defined, the operator defaults to the 'Address' mode which distributes
+                  targets based on a hash of the target address.
+                properties:
+                  mode:
+                    description: |-
+                      mode defines the sharding mode. Can be 'Address' or 'Topology'.
+
+                      'Address' is the default mode and distributes targets across shards
+                      based on a hash of the target address.
+
+                      'Topology' enables zone-aware sharding where each shard is assigned to a
+                      specific topology zone and only scrapes targets in that zone.
+                      (Alpha) Using the 'Topology' mode requires the `PrometheusTopologySharding`
+                      feature gate to be enabled.
+                    enum:
+                    - Address
+                    - Topology
+                    type: string
+                  topology:
+                    description: |-
+                      topology defines the configuration for topology-aware sharding.
+                      This field is only valid when mode is set to 'Topology'.
+                    properties:
+                      externalLabelName:
+                        description: |-
+                          externalLabelName defines the name of the Prometheus external label used
+                          to communicate the topology zone assigned to the Prometheus instance.
+                          If not defined, it defaults to "zone".
+                          If set to the empty string, no external label is added to the Prometheus configuration.
+                        type: string
+                      values:
+                        description: |-
+                          values defines the list of topology values (e.g. zone names) to be used
+                          for sharding. The configured number of shards must be greater than or
+                          equal to the number of values.
+                        items:
+                          type: string
+                        type: array
+                        x-kubernetes-list-type: atomic
+                    type: object
+                type: object
+                x-kubernetes-validations:
+                - message: topology can only be defined when mode is set to 'Topology'
+                  rule: '!has(self.topology) || (has(self.mode) && self.mode == ''Topology'')'
               shards:
+                default: 1
                 description: |-
                   shards defines the number of shards to distribute the scraped targets onto.
 
@@ -46108,6 +46484,8 @@ spec:
                   You can also disable sharding on a specific target by setting the
                   `__tmp_disable_sharding` label with relabeling configuration. When
                   the label value isn't empty, all Prometheus shards will scrape the target.
+
+                  Default: 1
                 format: int32
                 type: integer
               storage:
@@ -46831,6 +47209,7 @@ spec:
                   Note that the global limit only applies to scrape objects that don't specify an explicit limit value.
                   If you want to enforce a maximum limit for all scrape objects, refer to enforcedTargetLimit.
                 format: int64
+                minimum: 0
                 type: integer
               terminationGracePeriodSeconds:
                 description: |-
@@ -46906,7 +47285,7 @@ spec:
                     description: |-
                       grpcServerTlsConfig defines the TLS parameters for the gRPC server providing the StoreAPI.
 
-                      Note: Currently only the `minVersion`, `caFile`, `certFile`, and `keyFile` fields are supported.
+                      Note: Currently only the `minVersion`, `caFile`, `certFile`, `keyFile`, `cipherSuites` and `curves` fields are supported.
                     properties:
                       ca:
                         description: ca defines the Certificate authority used when
@@ -47024,6 +47403,38 @@ spec:
                         description: certFile defines the path to the client cert
                           file in the Prometheus container for the targets.
                         type: string
+                      cipherSuites:
+                        description: |-
+                          cipherSuites defines the list of supported cipher suites for TLS
+                          versions up to TLS 1.2.
+
+                          If not defined, the Go default cipher suites are used.
+                          Available cipher suites are documented in the Go documentation:
+                          https://golang.org/pkg/crypto/tls/#pkg-constants
+
+                          It requires Thanos >= v0.42.0. Note that the operator doesn't verify if
+                          the Thanos version supports the provided values.
+                        items:
+                          type: string
+                        minItems: 1
+                        type: array
+                        x-kubernetes-list-type: set
+                      curves:
+                        description: |-
+                          curves defines the list of preferred elliptic curves for
+                          TLS handshakes.
+
+                          If not defined, the Go default curves are used.
+                          Available curves are documented in the Go documentation:
+                          https://golang.org/pkg/crypto/tls/#CurveID
+
+                          It requires Thanos >= v0.42.0. Note that the operator doesn't verify if
+                          the Thanos version supports the provided values.
+                        items:
+                          type: string
+                        minItems: 1
+                        type: array
+                        x-kubernetes-list-type: set
                       insecureSkipVerify:
                         description: insecureSkipVerify defines how to disable target
                           certificate validation.
@@ -47821,6 +48232,31 @@ spec:
                   tsdb defines the runtime reloadable configuration of the timeseries database(TSDB).
                   It requires Prometheus >= v2.39.0 or PrometheusAgent >= v2.54.0.
                 properties:
+                  chunkEncoding:
+                    description: |-
+                      chunkEncoding configures per-chunk-type encoding overrides.
+
+                      It requires Prometheus >= v3.13.0.
+
+                      Notice: Setting "Xor" is incompatible with --enable-feature=st-storage
+                      (XOR chunks do not store start timestamps).
+                    properties:
+                      floats:
+                        description: |-
+                          floats selects the encoding used for float chunks.
+                          Valid values are "Xor" and "Xor2".
+
+                          Notice:
+                           * Setting "Xor" is incompatible with --enable-feature=st-storage
+                          (XOR chunks do not store start timestamps).
+                           * Setting "Xor2" automatically adds the `xor2-encoding` feature flag.
+
+                          It requires Prometheus >= v3.13.0.
+                        enum:
+                        - Xor
+                        - Xor2
+                        type: string
+                    type: object
                   outOfOrderTimeWindow:
                     description: |-
                       outOfOrderTimeWindow defines how old an out-of-order/out-of-bounds sample can be with
@@ -47835,6 +48271,26 @@ spec:
                       It requires Prometheus >= v2.39.0 or PrometheusAgent >= v2.54.0.
                     pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                     type: string
+                  staleSeriesCompactionThreshold:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: |-
+                      staleSeriesCompactionThreshold configures the trigger point for compacting
+                      stale series from memory into persistent blocks and removing those stale
+                      series from memory.
+
+                      The threshold is a number between 0.0 and 1.0. It represents the ratio of
+                      stale series in memory to the total series in memory. The stale series
+                      compaction is triggered when this ratio crosses the configured threshold.
+                      It may not trigger the stale series compaction if the usual head compaction
+                      is about to happen soon.
+
+                      If set to 0, stale series compaction is disabled.
+
+                      It requires Prometheus >= v3.10.0.
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
                 type: object
               updateStrategy:
                 description: |-
@@ -48875,7 +49331,7 @@ spec:
                         A failure to resolve or pull the image during pod startup will block containers from starting and may add significant latency. Failures will be retried using normal volume backoff and will be reported on the pod reason and message.
                         The types of objects that may be mounted by this volume are defined by the container runtime implementation on a host machine and at minimum must include all valid types supported by the container image field.
                         The OCI object gets mounted in a single directory (spec.containers[*].volumeMounts.mountPath) by merging the manifest layers in the same way as for container images.
-                        The volume will be mounted read-only (ro) and non-executable files (noexec).
+                        The volume will be mounted read-only (ro).
                         Sub path mounts for containers are not supported (spec.containers[*].volumeMounts.subpath) before 1.33.
                         The field spec.securityContext.fsGroupChangePolicy has no effect on this volume type.
                       properties:
@@ -49047,8 +49503,7 @@ spec:
                       description: |-
                         portworxVolume represents a portworx volume attached and mounted on kubelets host machine.
                         Deprecated: PortworxVolume is deprecated. All operations for the in-tree portworxVolume type
-                        are redirected to the pxd.portworx.com CSI driver when the CSIMigrationPortworx feature-gate
-                        is on.
+                        are redirected to the pxd.portworx.com CSI driver.
                       properties:
                         fsType:
                           description: |-
@@ -50151,6 +50606,13 @@ spec:
                     type: object
                 type: object
             type: object
+            x-kubernetes-validations:
+            - message: shards must be greater than or equal to the number of topology
+                values when sharding strategy mode is Topology
+              rule: '!has(self.shardingStrategy) || !has(self.shardingStrategy.mode)
+                || self.shardingStrategy.mode != ''Topology'' || !has(self.shardingStrategy.topology)
+                || !has(self.shardingStrategy.topology.values) || self.shardingStrategy.topology.values.size()
+                == 0 || (has(self.shards) ? self.shards : 1) >= self.shardingStrategy.topology.values.size()'
           status:
             description: |-
               status defines the most recent observed status of the Prometheus cluster. Read-only.
@@ -50297,8 +50759,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.90.0
+    controller-gen.kubebuilder.io/version: v0.21.0
+    operator.prometheus.io/version: 0.93.1
   name: prometheusrules.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -50563,8 +51025,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.90.0
+    controller-gen.kubebuilder.io/version: v0.21.0
+    operator.prometheus.io/version: 0.93.1
   name: scrapeconfigs.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -50662,6 +51124,7 @@ spec:
                       - OAuth
                       - ManagedIdentity
                       - SDK
+                      - WorkloadIdentity
                       type: string
                     authorization:
                       description: |-
@@ -51132,7 +51595,7 @@ spec:
                         tokenUrl:
                           description: tokenUrl defines the URL to fetch the token
                             from.
-                          minLength: 1
+                          pattern: ^(http|https)://.+$
                           type: string
                       required:
                       - clientId
@@ -51214,7 +51677,7 @@ spec:
                       minLength: 1
                       type: string
                     tlsConfig:
-                      description: tlsConfig defies the TLS configuration applying
+                      description: tlsConfig defines the TLS configuration applying
                         to the target HTTP endpoint.
                       properties:
                         ca:
@@ -51573,7 +52036,7 @@ spec:
                     filter:
                       description: |-
                         filter defines the filter expression used to filter the catalog results.
-                        See https://www.consul.io/api-docs/catalog#list-services
+                        See https://developer.hashicorp.com/consul/api-docs/catalog#filtering
                         It requires Prometheus >= 3.0.0.
                       minLength: 1
                       type: string
@@ -51581,6 +52044,13 @@ spec:
                       description: followRedirects defines whether HTTP requests follow
                         HTTP 3xx redirects.
                       type: boolean
+                    healthFilter:
+                      description: |-
+                        healthFilter defines the filter expression used to filter the health results.
+                        See https://developer.hashicorp.com/consul/api-docs/health#filtering
+                        It requires Prometheus >= 3.11.2.
+                      minLength: 1
+                      type: string
                     namespace:
                       description: |-
                         namespace are only supported in Consul Enterprise.
@@ -51927,7 +52397,7 @@ spec:
                         tokenUrl:
                           description: tokenUrl defines the URL to fetch the token
                             from.
-                          minLength: 1
+                          pattern: ^(http|https)://.+$
                           type: string
                       required:
                       - clientId
@@ -52618,7 +53088,7 @@ spec:
                         tokenUrl:
                           description: tokenUrl defines the URL to fetch the token
                             from.
-                          minLength: 1
+                          pattern: ^(http|https)://.+$
                           type: string
                       required:
                       - clientId
@@ -53387,7 +53857,7 @@ spec:
                         tokenUrl:
                           description: tokenUrl defines the URL to fetch the token
                             from.
-                          minLength: 1
+                          pattern: ^(http|https)://.+$
                           type: string
                       required:
                       - clientId
@@ -54101,7 +54571,7 @@ spec:
                         tokenUrl:
                           description: tokenUrl defines the URL to fetch the token
                             from.
-                          minLength: 1
+                          pattern: ^(http|https)://.+$
                           type: string
                       required:
                       - clientId
@@ -55148,7 +55618,7 @@ spec:
                         tokenUrl:
                           description: tokenUrl defines the URL to fetch the token
                             from.
-                          minLength: 1
+                          pattern: ^(http|https)://.+$
                           type: string
                       required:
                       - clientId
@@ -55932,7 +56402,7 @@ spec:
                         tokenUrl:
                           description: tokenUrl defines the URL to fetch the token
                             from.
-                          minLength: 1
+                          pattern: ^(http|https)://.+$
                           type: string
                       required:
                       - clientId
@@ -56631,7 +57101,7 @@ spec:
                         tokenUrl:
                           description: tokenUrl defines the URL to fetch the token
                             from.
-                          minLength: 1
+                          pattern: ^(http|https)://.+$
                           type: string
                       required:
                       - clientId
@@ -57254,7 +57724,7 @@ spec:
                         tokenUrl:
                           description: tokenUrl defines the URL to fetch the token
                             from.
-                          minLength: 1
+                          pattern: ^(http|https)://.+$
                           type: string
                       required:
                       - clientId
@@ -57507,6 +57977,7 @@ spec:
 
                   It requires Prometheus >= v2.47.0.
                 format: int64
+                minimum: 0
                 type: integer
               kubernetesSDConfigs:
                 description: kubernetesSDConfigs defines a list of Kubernetes service
@@ -57991,7 +58462,7 @@ spec:
                         tokenUrl:
                           description: tokenUrl defines the URL to fetch the token
                             from.
-                          minLength: 1
+                          pattern: ^(http|https)://.+$
                           type: string
                       required:
                       - clientId
@@ -58716,7 +59187,7 @@ spec:
                         tokenUrl:
                           description: tokenUrl defines the URL to fetch the token
                             from.
-                          minLength: 1
+                          pattern: ^(http|https)://.+$
                           type: string
                       required:
                       - clientId
@@ -58955,18 +59426,21 @@ spec:
                   labelLimit defines the per-scrape limit on number of labels that will be accepted for a sample.
                   Only valid in Prometheus versions 2.27.0 and newer.
                 format: int64
+                minimum: 0
                 type: integer
               labelNameLengthLimit:
                 description: |-
                   labelNameLengthLimit defines the per-scrape limit on length of labels name that will be accepted for a sample.
                   Only valid in Prometheus versions 2.27.0 and newer.
                 format: int64
+                minimum: 0
                 type: integer
               labelValueLengthLimit:
                 description: |-
                   labelValueLengthLimit defines the per-scrape limit on length of labels value that will be accepted for a sample.
                   Only valid in Prometheus versions 2.27.0 and newer.
                 format: int64
+                minimum: 0
                 type: integer
               lightSailSDConfigs:
                 description: lightSailSDConfigs defines a list of Lightsail service
@@ -59439,7 +59913,7 @@ spec:
                         tokenUrl:
                           description: tokenUrl defines the URL to fetch the token
                             from.
-                          minLength: 1
+                          pattern: ^(http|https)://.+$
                           type: string
                       required:
                       - clientId
@@ -59510,6 +59984,7 @@ spec:
                     roleARN:
                       description: roleARN defines the AWS Role ARN, an alternative
                         to using AWS API keys.
+                      minLength: 1
                       type: string
                     secretKey:
                       description: secretKey defines the AWS API secret.
@@ -60090,7 +60565,7 @@ spec:
                         tokenUrl:
                           description: tokenUrl defines the URL to fetch the token
                             from.
-                          minLength: 1
+                          pattern: ^(http|https)://.+$
                           type: string
                       required:
                       - clientId
@@ -60382,6 +60857,7 @@ spec:
 
                         Only applicable when the action is `HashMod`.
                       format: int64
+                      minimum: 0
                       type: integer
                     regex:
                       description: regex defines the regular expression against which
@@ -60453,6 +60929,7 @@ spec:
                   buckets will be merged to stay within the limit.
                   It requires Prometheus >= v2.45.0.
                 format: int64
+                minimum: 0
                 type: integer
               nativeHistogramMinBucketFactor:
                 anyOf:
@@ -60592,6 +61069,7 @@ spec:
                       description: |-
                         namespace defines the Nomad namespace to query for service discovery.
                         When specified, only resources within this namespace will be discovered.
+                      minLength: 1
                       type: string
                     noProxy:
                       description: |-
@@ -60923,7 +61401,7 @@ spec:
                         tokenUrl:
                           description: tokenUrl defines the URL to fetch the token
                             from.
-                          minLength: 1
+                          pattern: ^(http|https)://.+$
                           type: string
                       required:
                       - clientId
@@ -60984,6 +61462,7 @@ spec:
                       description: |-
                         region defines the Nomad region to query for service discovery.
                         When specified, only resources within this region will be discovered.
+                      minLength: 1
                       type: string
                     server:
                       description: |-
@@ -60995,6 +61474,7 @@ spec:
                       description: |-
                         tagSeparator defines the separator used to join multiple tags.
                         This determines how Nomad service tags are concatenated into Prometheus labels.
+                      minLength: 1
                       type: string
                     tlsConfig:
                       description: tlsConfig defines the TLS configuration to connect
@@ -61489,7 +61969,7 @@ spec:
                     type: object
                   tokenUrl:
                     description: tokenUrl defines the URL to fetch the token from.
-                    minLength: 1
+                    pattern: ^(http|https)://.+$
                     type: string
                 required:
                 - clientId
@@ -61511,6 +61991,7 @@ spec:
                       type: boolean
                     applicationCredentialId:
                       description: applicationCredentialId defines the OpenStack applicationCredentialId.
+                      minLength: 1
                       type: string
                     applicationCredentialName:
                       description: |-
@@ -62418,7 +62899,7 @@ spec:
                         tokenUrl:
                           description: tokenUrl defines the URL to fetch the token
                             from.
-                          minLength: 1
+                          pattern: ^(http|https)://.+$
                           type: string
                       required:
                       - clientId
@@ -62718,6 +63199,7 @@ spec:
 
                         Only applicable when the action is `HashMod`.
                       format: int64
+                      minimum: 0
                       type: integer
                     regex:
                       description: regex defines the regular expression against which
@@ -62762,6 +63244,7 @@ spec:
                 description: sampleLimit defines per-scrape limit on number of scraped
                   samples that will be accepted.
                 format: int64
+                minimum: 0
                 type: integer
               scalewaySDConfigs:
                 description: scalewaySDConfigs defines a list of Scaleway instances
@@ -62770,6 +63253,9 @@ spec:
                   description: |-
                     ScalewaySDConfig configurations allow retrieving scrape targets from Scaleway instances and baremetal services.
                     See https://prometheus.io/docs/prometheus/latest/configuration/configuration/#scaleway_sd_config
+
+                    Note: The `_file` variants of credential fields (e.g. `secret_key_file`)
+                    from the Prometheus configuration are not supported. Use Kubernetes secrets via `secretKey` instead.
                   properties:
                     accessKey:
                       description: accessKey defines the access key to use. https://console.scaleway.com/project/credentials
@@ -63179,6 +63665,7 @@ spec:
                 description: targetLimit defines a limit on the number of scraped
                   targets that will be accepted.
                 format: int64
+                minimum: 0
                 type: integer
               tlsConfig:
                 description: tlsConfig defines the TLS configuration to use on every
@@ -63356,6 +63843,10 @@ spec:
                   It requires Prometheus >= v2.48.0.
                 type: boolean
             type: object
+            x-kubernetes-validations:
+            - message: at most one of basicAuth, authorization, or oauth2 can be configured
+              rule: '[has(self.basicAuth), has(self.authorization), has(self.oauth2)].filter(x,
+                x).size() <= 1'
           status:
             description: |-
               status defines the status subresource. It is under active development and is updated only when the
@@ -63471,8 +63962,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.90.0
+    controller-gen.kubebuilder.io/version: v0.21.0
+    operator.prometheus.io/version: 0.93.1
   name: servicemonitors.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -63536,6 +64027,10 @@ spec:
 
                       The Prometheus service account must have the `list` and `watch`
                       permissions on the `Nodes` objects.
+
+                      Node metadata labels are not automatically added to scraped metrics. They are
+                      exposed as `__meta_kubernetes_node_*` labels and can be copied to timeseries
+                      with relabeling configuration.
                     type: boolean
                 type: object
               bodySizeLimit:
@@ -63784,6 +64279,7 @@ spec:
 
                               Only applicable when the action is `HashMod`.
                             format: int64
+                            minimum: 0
                             type: integer
                           regex:
                             description: regex defines the regular expression against
@@ -64157,7 +64653,7 @@ spec:
                         tokenUrl:
                           description: tokenUrl defines the URL to fetch the token
                             from.
-                          minLength: 1
+                          pattern: ^(http|https)://.+$
                           type: string
                       required:
                       - clientId
@@ -64179,7 +64675,8 @@ spec:
                       type: string
                     port:
                       description: |-
-                        port defines the name of the Service port which this endpoint refers to.
+                        port defines the name of the Service port which this endpoint refers to
+                        (e.g. `.spec.ports[].name`).
 
                         It takes precedence over `targetPort`.
                       type: string
@@ -64283,6 +64780,7 @@ spec:
 
                               Only applicable when the action is `HashMod`.
                             format: int64
+                            minimum: 0
                             type: integer
                           regex:
                             description: regex defines the regular expression against
@@ -64345,8 +64843,10 @@ spec:
                       - type: integer
                       - type: string
                       description: |-
-                        targetPort defines the name or number of the target port of the `Pod` object behind the
-                        Service. The port must be specified with the container's port property.
+                        targetPort defines the name or number of a container port on Pods selected
+                        by the Service.
+                        If a name, it matches against `.spec.containers[].ports[].name` of the Pods.
+                        If a number, it matches against `.spec.containers[].ports[].containerPort` of the Pods.
                       x-kubernetes-int-or-string: true
                     tlsConfig:
                       description: tlsConfig defines TLS configuration used by the
@@ -64570,6 +65070,7 @@ spec:
 
                   It requires Prometheus >= v2.47.0.
                 format: int64
+                minimum: 0
                 type: integer
               labelLimit:
                 description: |-
@@ -64577,6 +65078,7 @@ spec:
 
                   It requires Prometheus >= v2.27.0.
                 format: int64
+                minimum: 0
                 type: integer
               labelNameLengthLimit:
                 description: |-
@@ -64584,6 +65086,7 @@ spec:
 
                   It requires Prometheus >= v2.27.0.
                 format: int64
+                minimum: 0
                 type: integer
               labelValueLengthLimit:
                 description: |-
@@ -64591,6 +65094,7 @@ spec:
 
                   It requires Prometheus >= v2.27.0.
                 format: int64
+                minimum: 0
                 type: integer
               namespaceSelector:
                 description: |-
@@ -64615,6 +65119,7 @@ spec:
                   buckets will be merged to stay within the limit.
                   It requires Prometheus >= v2.45.0.
                 format: int64
+                minimum: 0
                 type: integer
               nativeHistogramMinBucketFactor:
                 anyOf:
@@ -64638,6 +65143,7 @@ spec:
                   sampleLimit defines a per-scrape limit on the number of scraped samples
                   that will be accepted.
                 format: int64
+                minimum: 0
                 type: integer
               scrapeClass:
                 description: scrapeClass defines the scrape class to apply.
@@ -64763,6 +65269,7 @@ spec:
                   targetLimit defines a limit on the number of scraped targets that will
                   be accepted.
                 format: int64
+                minimum: 0
                 type: integer
             required:
             - endpoints
@@ -64883,8 +65390,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.90.0
+    controller-gen.kubebuilder.io/version: v0.21.0
+    operator.prometheus.io/version: 0.93.1
   name: thanosrulers.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -67110,7 +67617,6 @@ spec:
                             procMount denotes the type of proc mount to use for the containers.
                             The default value is Default which uses the container runtime defaults for
                             readonly paths and masked paths.
-                            This requires the ProcMountType feature flag to be enabled.
                             Note that this field cannot be set when spec.os.name is windows.
                           type: string
                         readOnlyRootFilesystem:
@@ -67671,7 +68177,7 @@ spec:
                   grpcServerTlsConfig defines the gRPC server from which Thanos Querier reads
                   recorded rule data.
 
-                  Note: Currently only the `minVersion`, `caFile`, `certFile`, and `keyFile` fields are supported.
+                  Note: Currently only the `minVersion`, `caFile`, `certFile`, `keyFile`, `cipherSuites` and `curves` fields are supported.
                 properties:
                   ca:
                     description: ca defines the Certificate authority used when verifying
@@ -67789,6 +68295,38 @@ spec:
                     description: certFile defines the path to the client cert file
                       in the Prometheus container for the targets.
                     type: string
+                  cipherSuites:
+                    description: |-
+                      cipherSuites defines the list of supported cipher suites for TLS
+                      versions up to TLS 1.2.
+
+                      If not defined, the Go default cipher suites are used.
+                      Available cipher suites are documented in the Go documentation:
+                      https://golang.org/pkg/crypto/tls/#pkg-constants
+
+                      It requires Thanos >= v0.42.0. Note that the operator doesn't verify if
+                      the Thanos version supports the provided values.
+                    items:
+                      type: string
+                    minItems: 1
+                    type: array
+                    x-kubernetes-list-type: set
+                  curves:
+                    description: |-
+                      curves defines the list of preferred elliptic curves for
+                      TLS handshakes.
+
+                      If not defined, the Go default curves are used.
+                      Available curves are documented in the Go documentation:
+                      https://golang.org/pkg/crypto/tls/#CurveID
+
+                      It requires Thanos >= v0.42.0. Note that the operator doesn't verify if
+                      the Thanos version supports the provided values.
+                    items:
+                      type: string
+                    minItems: 1
+                    type: array
+                    x-kubernetes-list-type: set
                   insecureSkipVerify:
                     description: insecureSkipVerify defines how to disable target
                       certificate validation.
@@ -69021,7 +69559,6 @@ spec:
                             procMount denotes the type of proc mount to use for the containers.
                             The default value is Default which uses the container runtime defaults for
                             readonly paths and masked paths.
-                            This requires the ProcMountType feature flag to be enabled.
                             Note that this field cannot be set when spec.os.name is windows.
                           type: string
                         readOnlyRootFilesystem:
@@ -69967,8 +70504,10 @@ spec:
                           minimum: -1
                           type: integer
                         send:
-                          description: send defines whether metric metadata is sent
-                            to the remote storage or not.
+                          description: |-
+                            send defines whether metric metadata is sent to the remote storage or not.
+
+                            The setting is ignored when Remote Write message's version 2.0 is used.
                           type: boolean
                         sendInterval:
                           description: sendInterval defines how frequently metric
@@ -70317,7 +70856,7 @@ spec:
                         tokenUrl:
                           description: tokenUrl defines the URL to fetch the token
                             from.
-                          minLength: 1
+                          pattern: ^(http|https)://.+$
                           type: string
                       required:
                       - clientId
@@ -70488,6 +71027,12 @@ spec:
                           - key
                           type: object
                           x-kubernetes-map-type: atomic
+                        externalId:
+                          description: |-
+                            externalId defines the external ID used when assuming an AWS role. Can only be used with roleArn.
+                            It requires Prometheus >= v3.11.0 or Alertmanager >= v0.33.0. Currently not supported by Thanos.
+                          minLength: 1
+                          type: string
                         profile:
                           description: profile defines the named AWS profile used
                             to authenticate.
@@ -70532,6 +71077,9 @@ spec:
                             It requires Prometheus >= v2.54.0.
                           type: boolean
                       type: object
+                      x-kubernetes-validations:
+                      - message: externalId can only be used when roleArn is specified
+                        rule: '!has(self.externalId) || has(self.roleArn)'
                     tlsConfig:
                       description: tlsConfig to use for the URL.
                       properties:
@@ -70767,6 +71315,7 @@ spec:
 
                               Only applicable when the action is `HashMod`.
                             format: int64
+                            minimum: 0
                             type: integer
                           regex:
                             description: regex defines the regular expression against
@@ -73284,7 +73833,7 @@ spec:
                         A failure to resolve or pull the image during pod startup will block containers from starting and may add significant latency. Failures will be retried using normal volume backoff and will be reported on the pod reason and message.
                         The types of objects that may be mounted by this volume are defined by the container runtime implementation on a host machine and at minimum must include all valid types supported by the container image field.
                         The OCI object gets mounted in a single directory (spec.containers[*].volumeMounts.mountPath) by merging the manifest layers in the same way as for container images.
-                        The volume will be mounted read-only (ro) and non-executable files (noexec).
+                        The volume will be mounted read-only (ro).
                         Sub path mounts for containers are not supported (spec.containers[*].volumeMounts.subpath) before 1.33.
                         The field spec.securityContext.fsGroupChangePolicy has no effect on this volume type.
                       properties:
@@ -73456,8 +74005,7 @@ spec:
                       description: |-
                         portworxVolume represents a portworx volume attached and mounted on kubelets host machine.
                         Deprecated: PortworxVolume is deprecated. All operations for the in-tree portworxVolume type
-                        are redirected to the pxd.portworx.com CSI driver when the CSIMigrationPortworx feature-gate
-                        is on.
+                        are redirected to the pxd.portworx.com CSI driver.
                       properties:
                         fsType:
                           description: |-

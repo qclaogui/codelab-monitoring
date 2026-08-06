@@ -219,7 +219,7 @@ manifests-monitoring-mixins: $(KUSTOMIZE)
 	$(info ******************** generates manifests-monitoring-mixins manifests ********************)
 	@$(KUSTOMIZE) build monitoring-mixins > monitoring-mixins/k8s-all-in-one.yaml
 
-helmKubeVersion := 1.34.1 # Kubernetes version used by Helm for Capabilities.KubeVersion
+helmKubeVersion := 1.36.3 # Kubernetes version used by Helm for Capabilities.KubeVersion
 
 manifests-common: $(KUSTOMIZE)
 	$(info ******************** generates manifests-common manifests ********************)
@@ -230,14 +230,14 @@ manifests-common: $(KUSTOMIZE)
 	@$(KUSTOMIZE) build --helm-command $(HELM) --helm-kube-version ${helmKubeVersion} --enable-helm kubernetes/common/grafana > kubernetes/common/grafana/manifests/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --helm-command $(HELM) --helm-kube-version ${helmKubeVersion} --enable-helm kubernetes/common/kube-prometheus-stack > kubernetes/common/kube-prometheus-stack/manifests/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --helm-command $(HELM) --helm-kube-version ${helmKubeVersion} --enable-helm kubernetes/common/kube-state-metrics > kubernetes/common/kube-state-metrics/manifests/k8s-all-in-one.yaml
-	@$(KUSTOMIZE) build --helm-command $(HELM) --helm-kube-version ${helmKubeVersion} --enable-helm kubernetes/common/memcached > kubernetes/common/memcached/manifests/k8s-all-in-one.yaml
+# 	@$(KUSTOMIZE) build --helm-command $(HELM) --helm-kube-version ${helmKubeVersion} --enable-helm kubernetes/common/memcached > kubernetes/common/memcached/manifests/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --helm-command $(HELM) --helm-kube-version ${helmKubeVersion} --enable-helm kubernetes/common/minio-operator > kubernetes/common/minio-operator/manifests/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --helm-command $(HELM) --helm-kube-version ${helmKubeVersion} --enable-helm kubernetes/common/minio-tenant > kubernetes/common/minio-tenant/manifests/k8s-all-in-one.yaml
-	@$(KUSTOMIZE) build --helm-command $(HELM) --helm-kube-version ${helmKubeVersion} --enable-helm kubernetes/common/mysql > kubernetes/common/mysql/manifests/k8s-all-in-one.yaml
+# 	@$(KUSTOMIZE) build --helm-command $(HELM) --helm-kube-version ${helmKubeVersion} --enable-helm kubernetes/common/mysql > kubernetes/common/mysql/manifests/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --helm-command $(HELM) --helm-kube-version ${helmKubeVersion} --enable-helm kubernetes/common/prometheus-node-exporter > kubernetes/common/prometheus-node-exporter/manifests/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --helm-command $(HELM) --helm-kube-version ${helmKubeVersion} --enable-helm kubernetes/common/prometheus-operator-crds > kubernetes/common/prometheus-operator-crds/manifests/k8s-all-in-one.yaml
 	@$(KUSTOMIZE) build --helm-command $(HELM) --helm-kube-version ${helmKubeVersion} --enable-helm kubernetes/common/rancher-pushprox > kubernetes/common/rancher-pushprox/manifests/k8s-all-in-one.yaml
-	@$(KUSTOMIZE) build --helm-command $(HELM) --helm-kube-version ${helmKubeVersion} --enable-helm kubernetes/common/redis > kubernetes/common/redis/manifests/k8s-all-in-one.yaml
+# 	@$(KUSTOMIZE) build --helm-command $(HELM) --helm-kube-version ${helmKubeVersion} --enable-helm kubernetes/common/redis > kubernetes/common/redis/manifests/k8s-all-in-one.yaml
 
 manifests-monolithic-mode: $(KUSTOMIZE)
 	$(info ******************** generates monolithic-mode manifests ********************)

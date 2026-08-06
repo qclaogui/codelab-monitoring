@@ -39,7 +39,7 @@ services:
     labels:
       metrics.grafana.com/scrape: false
     depends_on: {distributor: {condition: service_healthy}}
-    image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.29-alpine}
+    image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.31-alpine}
     restart: always
     volumes:
       - ../../common/config/nginx/10-default-lgtmp.envsh:/docker-entrypoint.d/10-default-lgtmp.envsh
@@ -62,7 +62,7 @@ services:
       <<: *profiles-labels
       profiles.grafana.com/service_name: pyroscope-distributor
     depends_on: {ingester: {condition: service_healthy}}
-    image: &pyroscopeImage ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:1.19.0}
+    image: &pyroscopeImage ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:2.2.1}
     configs:
       - source: pyroscope_config_file
         target: /etc/pyroscope/config.yaml

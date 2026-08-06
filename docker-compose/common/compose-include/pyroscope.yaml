@@ -10,7 +10,7 @@ services:
       profiles.grafana.com/memory.scrape: true
       profiles.grafana.com/goroutine.scrape: true
     depends_on: {minio: {condition: service_healthy}}
-    image: ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:1.19.0}
+    image: ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:2.2.1}
     configs:
       - source: pyroscope_config_file
         target: /etc/pyroscope/config.yaml
@@ -31,6 +31,9 @@ services:
       interval: 2s
       timeout: 1s
       retries: 15
+      # -target=all boots metastore (~12s) then ingester waits 15s post-ready,
+      # so ~30s+ before /ready succeeds — give it room before retries count.
+      start_period: 60s
     # expose 34040 port so we can directly access pyroscope inside container
     ports:
       - "34040:4040"

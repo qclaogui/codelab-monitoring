@@ -29,7 +29,7 @@ services:
     labels:
       metrics.grafana.com/scrape: false
     depends_on: {distributor: {condition: service_started}}
-    image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.29-alpine}
+    image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.31-alpine}
     restart: always
     volumes:
       - ../../common/config/nginx/10-default-lgtmp.envsh:/docker-entrypoint.d/10-default-lgtmp.envsh
@@ -52,7 +52,7 @@ services:
 
   distributor:
     depends_on: {ingester: {condition: service_started}}
-    image: &tempoImage ${TEMPO_IMAGE:-docker.io/grafana/tempo:2.10.3}
+    image: &tempoImage ${TEMPO_IMAGE:-docker.io/grafana/tempo:3.0.3}
     configs:
       - source: tempo_config_file
         target: /etc/tempo/config.yaml

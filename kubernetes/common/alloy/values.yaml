@@ -18,6 +18,9 @@ global:
     # -- Optional set of global image pull secrets.
     pullSecrets: []
 
+    # -- Global image pull policy to apply to all containers. Overrides `image.pullPolicy` and `configReloader.image.pullPolicy`.
+    pullPolicy: ""
+
   # -- Security context to apply to the Grafana Alloy pod.
   podSecurityContext: {}
 
@@ -90,12 +93,21 @@ alloy:
   # -- Maps all the keys on a ConfigMap or Secret as environment variables. https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#envfromsource-v1-core
   envFrom: []
 
+  # -- Override the entrypoint command for the Alloy container. When set, this
+  # replaces the image's default entrypoint (the chart-provided `args` are still
+  # passed). Useful on Windows where the binary lives at a different path, for
+  # example `["C:\\Program Files\\GrafanaLabs\\Alloy\\alloy.exe"]`. Leave empty
+  # to use the image's default entrypoint.
+  command: []
+
   # -- Extra args to pass to `alloy run`: https://grafana.com/docs/alloy/latest/reference/cli/run/
   extraArgs: []
 
   # -- Extra ports to expose on the Alloy container.
+  # If `service.type` is `NodePort`, each item may set `nodePort` to choose the Service NodePort for that port.
   extraPorts: []
   # - name: "faro"
+  #   nodePort: 31129
   #   port: 12347
   #   targetPort: 12347
   #   protocol: "TCP"
@@ -200,9 +212,17 @@ rbac:
 
   # -- The rules to create for the ClusterRole objects.
   clusterRules:
-    # -- Rules required for the `discovery.kubernetes` component.
+    # -- Rules required for the Nodes role in the `discovery.kubernetes` component.
     - apiGroups: [""]
-      resources: ["nodes", "nodes/proxy", "nodes/metrics"]
+      resources: ["nodes"]
+      verbs: ["get", "list", "watch"]
+    # -- Rules required for the `discovery.kubelet` component.
+    - apiGroups: [""]
+      resources: ["nodes/pods"]
+      verbs: ["get", "list", "watch"]
+    # -- Rules required accessing metric endpoints on the Node (e.g. Kubelet, cAdvisor, etc...).
+    - apiGroups: [""]
+      resources: ["nodes/metrics"]
       verbs: ["get", "list", "watch"]
     # -- Rules required for accessing metrics endpoint.
     - nonResourceURLs: ["/metrics"]
@@ -231,9 +251,11 @@ configReloader:
     # -- Repository to get config reloader image from.
     repository: prometheus-operator/prometheus-config-reloader
     # -- Tag of image to use for config reloading.
-    tag: v0.81.0
+    tag: v0.91.0@sha256:7d9e4eea5f1139e602508871f422b0116c60e87c662f3dcd234d5ab60cd0d8c1
     # -- SHA256 digest of image to use for config reloading (either in format "sha256:XYZ" or "XYZ"). When set, will override `configReloader.image.tag`
     digest: ""
+    # -- Config reloader image pull policy.
+    pullPolicy: IfNotPresent
   # -- Override the args passed to the container.
   customArgs: []
   # -- Resource requests and limits to apply to the config reloader container.
@@ -242,7 +264,17 @@ configReloader:
       cpu: "10m"
       memory: "50Mi"
   # -- Security context to apply to the Grafana configReloader container.
-  securityContext: {}
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+    runAsNonRoot: true
+    runAsUser: 65534
+    runAsGroup: 65534
+    seccompProfile:
+      type: RuntimeDefault
 
 controller:
   # -- Type of controller to use for deploying Grafana Alloy in the cluster.
@@ -277,6 +309,9 @@ controller:
   # -- Termination grace period in seconds for the Grafana Alloy pods.
   # The default value used by Kubernetes if unspecifed is 30 seconds.
   terminationGracePeriodSeconds: null
+
+  # -- The maximum number of revisions that will be maintained in the Controllers's revision history. The history consists of all revisions not represented by a currently applied reversion.
+  revisionHistoryLimit: 10
 
   # -- Update strategy for updating deployed Pods.
   updateStrategy: {}
@@ -352,6 +387,19 @@ controller:
     horizontal:
       # -- Enables the Horizontal Pod Autoscaler for the controller.
       enabled: false
+      # -- When true, the chart omits `spec.replicas` from the workload AND does NOT
+      # render its own HorizontalPodAutoscaler. Use this when an external controller
+      # (e.g. KEDA, a hand-written HPA, or another scaler) owns replicas for the Alloy
+      # workload. Mutually exclusive with `horizontal.enabled`. When set, all other
+      # `controller.autoscaling.horizontal.*` fields are ignored.
+      #
+      # Upgrade note: switching this from `false` to `true` on an existing release
+      # triggers a one-time single-cycle dip to 1 replica on the next `helm upgrade`
+      # (Helm removes the `replicas` field via `{"spec":{"replicas":null}}`, which
+      # Kubernetes interprets as "reset to default"). The external HPA corrects this
+      # within its next polling interval; users with `minReplicaCount > 1` are
+      # restored within ~30s under KEDA defaults. Plan upgrades accordingly.
+      externalHPA: false
 
       # -- The lower limit for the number of replicas to which the autoscaler can scale down.
       minReplicas: 1
@@ -469,6 +517,8 @@ service:
   clusterIP: ''
   # -- Value for internal traffic policy. 'Cluster' or 'Local'
   internalTrafficPolicy: Cluster
+  # -- Value for external traffic policy. 'Cluster' or 'Local'
+  externalTrafficPolicy: Cluster
   annotations: {}
     # cloud.google.com/load-balancer-type: Internal
 

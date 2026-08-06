@@ -22,7 +22,7 @@ services:
     labels:
       - metrics.grafana.com/scrape=false
     depends_on: {distributor: {condition: service_started}, ruler: {condition: service_started}}
-    image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.29-alpine}
+    image: ${NGINX_IMAGE:-docker.io/nginxinc/nginx-unprivileged:1.31-alpine}
     volumes:
       - ../../common/config/nginx/10-default-lgtmp.envsh:/docker-entrypoint.d/10-default-lgtmp.envsh
       - ../../common/config/nginx/nginx.conf:/etc/nginx/templates/nginx.conf.template
@@ -43,7 +43,7 @@ services:
 
   distributor:
     depends_on: {ingester: {condition: service_started}}
-    image: &mimirImage ${MIMIR_IMAGE:-docker.io/grafana/mimir:3.0.4}
+    image: &mimirImage ${MIMIR_IMAGE:-docker.io/grafana/mimir:3.2.0}
     configs:
       - source: mimir_config_file
         target: /etc/mimir/config.yaml
@@ -208,7 +208,7 @@ services:
   mimirtool:
     labels:
       metrics.grafana.com/scrape: false
-    image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:3.0.4}
+    image: ${MIMIRTOOL_IMAGE:-docker.io/grafana/mimirtool:3.2.0}
     volumes:
       - ../../../monitoring-mixins/alloy-mixin/deploy/alloy-mixin-alerts.yaml:/rules/alloy-mixin-alerts.yaml
       - ../../../monitoring-mixins/memcached-mixin/deploy/memcached-mixin-alerts.yaml:/rules/memcached-mixin-alerts.yaml

@@ -6,8 +6,38 @@ namespace: monitoring-system
 helmCharts:
 - name: cert-exporter
   repo: https://joe-elliott.github.io/cert-exporter
-  version: 3.14.0
+  version: 3.15.0
   releaseName: cert-exporter
   namespace: monitoring-system
   includeCRDs: false
   valuesFile: values-k3d-k3s.yaml
+
+patches:
+  - target:
+      kind: ServiceAccount
+      name: cert-exporter
+    patch: |-
+      - op: replace
+        path: /metadata/namespace
+        value: monitoring-system
+  - target:
+      kind: Service
+      name: cert-exporter
+    patch: |-
+      - op: replace
+        path: /metadata/namespace
+        value: monitoring-system
+  - target:
+      kind: Deployment
+      name: cert-exporter-cert-manager
+    patch: |-
+      - op: replace
+        path: /metadata/namespace
+        value: monitoring-system
+  - target:
+      kind: ServiceMonitor
+      name: cert-exporter-cert-manager
+    patch: |-
+      - op: replace
+        path: /metadata/namespace
+        value: monitoring-system

@@ -47,17 +47,17 @@ $(GOFUMPT): $(BINGO_DIR)/gofumpt.mod
 	@echo "(re)installing $(GOBIN)/gofumpt-v0.11.0"
 	@cd $(BINGO_DIR) && GOWORK=off GOOS=$(GOHOSTOS) GOARCH=$(GOHOSTARCH) GOARM=$(GOHOSTARM) $(GO) build -mod=mod -modfile=gofumpt.mod -o=$(GOBIN)/gofumpt-v0.11.0 "mvdan.cc/gofumpt"
 
-GOLANGCI_LINT := $(GOBIN)/golangci-lint-v2.12.2
+GOLANGCI_LINT := $(GOBIN)/golangci-lint-v2.13.1
 $(GOLANGCI_LINT): $(BINGO_DIR)/golangci-lint.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
-	@echo "(re)installing $(GOBIN)/golangci-lint-v2.12.2"
-	@cd $(BINGO_DIR) && GOWORK=off GOOS=$(GOHOSTOS) GOARCH=$(GOHOSTARCH) GOARM=$(GOHOSTARM) $(GO) build -mod=mod -modfile=golangci-lint.mod -o=$(GOBIN)/golangci-lint-v2.12.2 "github.com/golangci/golangci-lint/v2/cmd/golangci-lint"
+	@echo "(re)installing $(GOBIN)/golangci-lint-v2.13.1"
+	@cd $(BINGO_DIR) && GOWORK=off GOOS=$(GOHOSTOS) GOARCH=$(GOHOSTARCH) GOARM=$(GOHOSTARM) $(GO) build -mod=mod -modfile=golangci-lint.mod -o=$(GOBIN)/golangci-lint-v2.13.1 "github.com/golangci/golangci-lint/v2/cmd/golangci-lint"
 
-GORELEASER := $(GOBIN)/goreleaser-v2.17.1
+GORELEASER := $(GOBIN)/goreleaser-v2.18.0
 $(GORELEASER): $(BINGO_DIR)/goreleaser.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
-	@echo "(re)installing $(GOBIN)/goreleaser-v2.17.1"
-	@cd $(BINGO_DIR) && GOWORK=off GOOS=$(GOHOSTOS) GOARCH=$(GOHOSTARCH) GOARM=$(GOHOSTARM) $(GO) build -mod=mod -modfile=goreleaser.mod -o=$(GOBIN)/goreleaser-v2.17.1 "github.com/goreleaser/goreleaser/v2"
+	@echo "(re)installing $(GOBIN)/goreleaser-v2.18.0"
+	@cd $(BINGO_DIR) && GOWORK=off GOOS=$(GOHOSTOS) GOARCH=$(GOHOSTARCH) GOARM=$(GOHOSTARM) $(GO) build -mod=mod -modfile=goreleaser.mod -o=$(GOBIN)/goreleaser-v2.18.0 "github.com/goreleaser/goreleaser/v2"
 
 GRR := $(GOBIN)/grr-v0.7.1
 $(GRR): $(BINGO_DIR)/grr.mod
@@ -65,11 +65,11 @@ $(GRR): $(BINGO_DIR)/grr.mod
 	@echo "(re)installing $(GOBIN)/grr-v0.7.1"
 	@cd $(BINGO_DIR) && GOWORK=off GOOS=$(GOHOSTOS) GOARCH=$(GOHOSTARCH) GOARM=$(GOHOSTARM) $(GO) build -mod=mod -modfile=grr.mod -o=$(GOBIN)/grr-v0.7.1 "github.com/grafana/grizzly/cmd/grr"
 
-HELM := $(GOBIN)/helm-v3.21.3
+HELM := $(GOBIN)/helm-v4.2.4
 $(HELM): $(BINGO_DIR)/helm.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
-	@echo "(re)installing $(GOBIN)/helm-v3.21.3"
-	@cd $(BINGO_DIR) && GOWORK=off GOOS=$(GOHOSTOS) GOARCH=$(GOHOSTARCH) GOARM=$(GOHOSTARM) $(GO) build -mod=mod -modfile=helm.mod -o=$(GOBIN)/helm-v3.21.3 "helm.sh/helm/v3/cmd/helm"
+	@echo "(re)installing $(GOBIN)/helm-v4.2.4"
+	@cd $(BINGO_DIR) && GOWORK=off GOOS=$(GOHOSTOS) GOARCH=$(GOHOSTARCH) GOARM=$(GOHOSTARM) $(GO) build -mod=mod -modfile=helm.mod -o=$(GOBIN)/helm-v4.2.4 "helm.sh/helm/v4/cmd/helm"
 
 JB := $(GOBIN)/jb-v0.6.0
 $(JB): $(BINGO_DIR)/jb.mod

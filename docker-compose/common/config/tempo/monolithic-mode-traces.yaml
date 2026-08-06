@@ -7,10 +7,6 @@ multitenancy_enabled: true
 usage_report:
   reporting_enabled: false
 
-compactor:
-  compaction:
-    block_retention: 1h
-
 distributor:
   receivers:
     otlp:
@@ -19,11 +15,6 @@ distributor:
           endpoint: tempo:4317
         http:
           endpoint: tempo:4318
-
-ingester:
-  trace_idle_period: 10s
-  max_block_bytes: 1_000_000
-  max_block_duration: 5m
 
 server:
   http_listen_port: 3200
@@ -49,15 +40,12 @@ metrics_generator:
       - service.version
   storage:
     path: /tmp/tempo/generator/wal
-    remote_write_add_org_id_header: true
     remote_write:
     - url: http://gateway:8080/api/v1/push
       send_exemplars: true
       send_native_histograms: true
-      headers:
-        X-Scope-OrgID: "anonymous"
-  traces_storage:
-    path: /tmp/tempo/generator/traces
+      # headers:
+      #   X-Scope-OrgID: "anonymous"
 
 storage:
   trace:
@@ -77,11 +65,12 @@ cache:
   caches:
   - roles:
     - bloom
+    - trace-id-index
     - parquet-footer
-    - parquet-page
-    - frontend-search
     - parquet-column-idx
     - parquet-offset-idx
+    - parquet-page
+    - frontend-search
     memcached:
       addresses: "dns+memcached:11211"
 
@@ -93,5 +82,4 @@ overrides:
       processors:
       - service-graphs
       - span-metrics
-      - local-blocks
       generate_native_histograms: both
