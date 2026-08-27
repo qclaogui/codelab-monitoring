@@ -25,9 +25,11 @@ local utils = import 'mixin-utils/utils.libsonnet';
     },
   },
 
-  ncSumHistogramCountRate(metric, selectors, extra_selector, rate_interval='$__rate_interval')::
-    local selectorsStr = $.toPrometheusSelector(selectors);
-    local extendedSelectorsStr = $.toPrometheusSelector(selectors + extra_selector);
+  // ncSumHistogramCountRateRatio builds native and classic queries for
+  // sum(rate(<metric>_count{<selectors + extra_selector>}[ri])) / sum(rate(<metric>_count{<selectors>}[ri])).
+  ncSumHistogramCountRateRatio(metric, selectors, extra_selector, rate_interval='$__rate_interval')::
+    local selectorsStr = utils.toPrometheusSelector(selectors);
+    local extendedSelectorsStr = utils.toPrometheusSelector(selectors + extra_selector);
     {
       classic: 'sum(rate(%(metric)s_count%(extendedSelectors)s[%(rateInterval)s])) /\nsum(rate(%(metric)s_count%(selectors)s[%(rateInterval)s]))' % {
         metric: metric,
@@ -43,10 +45,27 @@ local utils = import 'mixin-utils/utils.libsonnet';
       },
     },
 
+  // ncSumHistogramCountRate builds native and classic queries for
+  // sum(rate(<metric>_count{<selectors>}[ri])).
+  ncSumHistogramCountRate(metric, selectors, rate_interval='$__rate_interval')::
+    local selectorsStr = utils.toPrometheusSelector(selectors);
+    {
+      classic: 'sum(rate(%(metric)s_count%(selectors)s[%(rateInterval)s]))' % {
+        metric: metric,
+        rateInterval: rate_interval,
+        selectors: selectorsStr,
+      },
+      native: 'sum(histogram_count(rate(%(metric)s%(selectors)s[%(rateInterval)s])))' % {
+        metric: metric,
+        rateInterval: rate_interval,
+        selectors: selectorsStr,
+      },
+    },
+
   ncAvgHistogramQuantile(quantile, metric, selectors, offset, rate_interval='$__rate_interval')::
     local labels = std.join('_', [matcher.label for matcher in selectors]);
     local metricStr = '%(labels)s:%(metric)s' % { labels: labels, metric: metric };
-    local selectorsStr = $.toPrometheusSelector(selectors);
+    local selectorsStr = utils.toPrometheusSelector(selectors);
     {
       classic: |||
         1 - (
@@ -85,6 +104,7 @@ local utils = import 'mixin-utils/utils.libsonnet';
       requestsPerSecondMetric: $.requests_per_second_metric,
       gatewayMatcher: $.jobMatcher($._config.job_names.gateway),
       distributorMatcher: $.jobMatcher($._config.job_names.distributor),
+      usageTrackerMatcher: $.jobMatcher($._config.job_names.usage_tracker),
       ingesterMatcher: $.jobMatcher($._config.job_names.ingester),
       queryFrontendMatcher: $.jobMatcher($._config.job_names.query_frontend),
       rulerMatcher: $.jobMatcher($._config.job_names.ruler),
@@ -102,6 +122,9 @@ local utils = import 'mixin-utils/utils.libsonnet';
       readGRPCIngesterRoute: $.queries.read_grpc_ingester_route,
       readGRPCStoreGatewayRoute: $.queries.read_grpc_store_gateway_route,
       rulerQueryFrontendRoutesRegex: $.queries.ruler_query_frontend_routes_regex,
+      usageTrackerTrackSeriesRoutesRegex: $.queries.usage_tracker_track_series_routes_regex,
+      usageTrackerTrackSeriesBatchRoutesRegex: $.queries.usage_tracker_track_series_batch_routes_regex,
+      usageTrackerGetUsersCloseToLimitRoutesRegex: $.queries.usage_tracker_get_users_close_to_limit_routes_regex,
       perClusterLabel: $._config.per_cluster_label,
       recordingRulePrefix: $.recordingRulePrefix($.jobSelector('any')),  // The job name does not matter here.
       groupPrefixJobs: $._config.group_prefix_jobs,
@@ -116,7 +139,8 @@ local utils = import 'mixin-utils/utils.libsonnet';
     write_http_routes_regex: self.write_prom_http_routes_regex + '|' + self.write_otlp_http_routes_regex + '|' + self.write_influx_http_routes_regex,
     write_grpc_distributor_routes_regex: '/distributor.Distributor/Push|/httpgrpc.*',
     write_grpc_ingester_route: '/cortex.Ingester/Push',
-    read_http_routes_regex: '(prometheus|api_prom)_api_v1_.+',
+    read_http_routes_regex: '(prometheus|api_prom)_api_v1_.+',  // Read routes exposed by gateway and query-frontend.
+    querier_read_routes_regex: '(%s|querierpb.EvaluateQueryRequest)' % self.read_http_routes_regex,  // Read routes exposed by querier.
     read_grpc_ingester_route: $._config.ingester_read_path_routes_regex,
     read_grpc_store_gateway_route: $._config.store_gateway_read_path_routes_regex,
     query_http_routes_regex: '(prometheus|api_prom)_api_v1_query(_range)?',
@@ -124,6 +148,9 @@ local utils = import 'mixin-utils/utils.libsonnet';
     alertmanager_grpc_routes_regex: '/alertmanagerpb.Alertmanager/HandleRequest',
     // Both support gRPC and HTTP requests. HTTP request is used when rule evaluation query requests go through the query-tee.
     ruler_query_frontend_routes_regex: '/httpgrpc.HTTP/Handle|.*api_v1_query',
+    usage_tracker_track_series_routes_regex: '/usagetrackerpb.UsageTracker/TrackSeries',
+    usage_tracker_track_series_batch_routes_regex: '/usagetrackerpb.UsageTracker/TrackSeriesBatch',
+    usage_tracker_get_users_close_to_limit_routes_regex: '/usagetrackerpb.UsageTracker/GetUsersCloseToLimit',
 
     gateway: {
       local p = self,
@@ -153,6 +180,21 @@ local utils = import 'mixin-utils/utils.libsonnet';
       writeFailuresRate: $.ncHistogramFailureRate(p.requestsPerSecondMetric, p.writeRequestsPerSecondSelector),
     },
 
+    usage_tracker: {
+      local p = self,
+      clientRequestsPerSecondMetric: 'cortex_usage_tracker_client_track_series_duration_seconds',
+      requestsPerSecondMetric: $.queries.requests_per_second_metric,
+      trackSeriesRequestsPerSecondRouteRegex: '%(usageTrackerTrackSeriesRoutesRegex)s' % variables,
+      trackSeriesRequestsPerSecondSelector: '%(usageTrackerMatcher)s, route=~"%(usageTrackerTrackSeriesRoutesRegex)s"' % variables,
+      trackSeriesBatchRequestsPerSecondRouteRegex: '%(usageTrackerTrackSeriesBatchRoutesRegex)s' % variables,
+      trackSeriesBatchRequestsPerSecondSelector: '%(usageTrackerMatcher)s, route=~"%(usageTrackerTrackSeriesBatchRoutesRegex)s"' % variables,
+      getUsersCloseToLimitRequestsPerSecondRouteRegex: '%(usageTrackerGetUsersCloseToLimitRoutesRegex)s' % variables,
+      getUsersCloseToLimitRequestsPerSecondSelector: '%(usageTrackerMatcher)s, route=~"%(usageTrackerGetUsersCloseToLimitRoutesRegex)s"' % variables,
+
+      // Write failures rate as percentage of total requests.
+      writeFailuresRate: $.ncHistogramFailureRate(p.requestsPerSecondMetric, p.writeRequestsPerSecondSelector),
+    },
+
     query_frontend: {
       local p = self,
       requestsPerSecondMetric: $.queries.requests_per_second_metric,
@@ -171,6 +213,9 @@ local utils = import 'mixin-utils/utils.libsonnet';
         { name: 'activeSeries', displayName: '"active series" queries', route: '/api/v1/cardinality_active_series', routeLabel: '_api_v1_cardinality_active_series' },
         { name: 'labelNamesCardinality', displayName: '"label name cardinality" queries', route: '/api/v1/cardinality_label_names', routeLabel: '_api_v1_cardinality_label_names' },
         { name: 'labelValuesCardinality', displayName: '"label value cardinality" queries', route: '/api/v1/cardinality_label_values', routeLabel: '_api_v1_cardinality_label_values' },
+        { name: 'searchMetricNames', displayName: '"search metric names" queries', route: '/api/v1/search/metric_names', routeLabel: '_api_v1_search_metric_names' },
+        { name: 'searchLabelNames', displayName: '"search label names" queries', route: '/api/v1/search/label_names', routeLabel: '_api_v1_search_label_names' },
+        { name: 'searchLabelValues', displayName: '"search label values" queries', route: '/api/v1/search/label_values', routeLabel: '_api_v1_search_label_values' },
       ],
       local overviewRoutesRegex = '(prometheus|api_prom)(%s)' % std.join('|', [r.routeLabel for r in overviewRoutes]),
       overviewRoutesOverrides: [
@@ -308,7 +353,7 @@ local utils = import 'mixin-utils/utils.libsonnet';
       ingestOrClassicDeduplicatedQuery(perIngesterQuery, groupByLabels=''):: |||
         ( # Classic storage
           sum by (%(groupByCluster)s, %(groupByLabels)s) (
-            %(perIngesterQuery)s unless on (job)
+            %(perIngesterQuery)s unless on (%(groupByCluster)s, job)
             cortex_partition_ring_partitions{%(ingester)s}
           )
           / on (%(groupByCluster)s) group_left()
@@ -320,7 +365,7 @@ local utils = import 'mixin-utils/utils.libsonnet';
             max by (ingester_id, %(groupByCluster)s, %(groupByLabels)s) (
               label_replace(
                 %(perIngesterQuery)s,
-                "ingester_id", "$1", "%(instance)s", ".*-([0-9]+)$"
+                "ingester_id", "$1", "%(instance)s", ".*?-(rc-[0-9]+-[0-9]+|[0-9]+)$"
               )
             )
           )

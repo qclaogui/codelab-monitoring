@@ -8,8 +8,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.19.0
-    helm.sh/chart: alloy-1.12.0
+    app.kubernetes.io/version: v1.19.2
+    helm.sh/chart: alloy-1.12.1
   name: alloy
   namespace: monitoring-system
 ---
@@ -34,8 +34,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.19.0
-    helm.sh/chart: alloy-1.12.0
+    app.kubernetes.io/version: v1.19.2
+    helm.sh/chart: alloy-1.12.1
   name: alloy
 rules:
 - apiGroups:
@@ -161,8 +161,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.19.0
-    helm.sh/chart: alloy-1.12.0
+    app.kubernetes.io/version: v1.19.2
+    helm.sh/chart: alloy-1.12.1
   name: alloy
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -194,7 +194,7 @@ data:
                 {
                    "datasource": "$loki_datasource",
                    "enable": true,
-                   "expr": "{cluster=\"$cluster\", container=\"kube-diff-logger\"} | json | namespace_extracted=\"alloy\" | name_extracted=~\"alloy.*\"",
+                   "expr": "{cluster=~\"$cluster\", container=\"kube-diff-logger\"} | json | namespace_extracted=\"alloy\" | name_extracted=~\"alloy.*\"",
                    "iconColor": "rgba(0, 211, 255, 1)",
                    "instant": false,
                    "name": "Deployments",
@@ -322,9 +322,9 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "rate(cluster_node_gossip_received_events_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
+                      "expr": "sum by(${groupby}) (rate(cluster_node_gossip_received_events_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
                       "instant": false,
-                      "legendFormat": "{{event}}",
+                      "legendFormat": "__auto",
                       "range": true
                    }
                 ],
@@ -583,7 +583,7 @@ data:
                 "type": "timeseries"
              }
           ],
-          "refresh": "10s",
+          "refresh": "30s",
           "schemaVersion": 36,
           "tags": [
              "alloy-mixin"
@@ -607,39 +607,46 @@ data:
                    "type": "datasource"
                 },
                 {
+                   "allowCustomValue": true,
                    "datasource": "${datasource}",
                    "label": "cluster",
+                   "multi": true,
                    "name": "cluster",
                    "query": {
                       "query": "label_values(alloy_component_controller_running_components, cluster)\n",
                       "refId": "cluster"
                    },
                    "refresh": 2,
-                   "sort": 2,
+                   "sort": 1,
                    "type": "query"
                 },
                 {
+                   "allowCustomValue": true,
                    "datasource": "${datasource}",
                    "label": "namespace",
+                   "multi": true,
                    "name": "namespace",
                    "query": {
                       "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\"}, namespace)\n",
                       "refId": "namespace"
                    },
                    "refresh": 2,
-                   "sort": 2,
+                   "sort": 1,
                    "type": "query"
                 },
                 {
+                   "allValue": ".*",
                    "datasource": "${datasource}",
+                   "includeAll": true,
                    "label": "job",
+                   "multi": true,
                    "name": "job",
                    "query": {
                       "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\"}, job)\n",
                       "refId": "job"
                    },
                    "refresh": 2,
-                   "sort": 2,
+                   "sort": 1,
                    "type": "query"
                 },
                 {
@@ -654,8 +661,28 @@ data:
                       "refId": "instance"
                    },
                    "refresh": 2,
-                   "sort": 2,
+                   "sort": 1,
                    "type": "query"
+                },
+                {
+                   "datasource": {
+                      "type": "prometheus",
+                      "uid": "${datasource}"
+                   },
+                   "name": "filters",
+                   "type": "adhoc"
+                },
+                {
+                   "allowCustomValue": true,
+                   "current": {
+                      "selected": true,
+                      "text": "event",
+                      "value": "event"
+                   },
+                   "label": "Group by",
+                   "name": "groupby",
+                   "query": "event,state,instance,job,namespace,cluster,pod",
+                   "type": "custom"
                 }
              ]
           },
@@ -711,7 +738,7 @@ data:
                 {
                    "datasource": "$loki_datasource",
                    "enable": true,
-                   "expr": "{cluster=\"$cluster\", container=\"kube-diff-logger\"} | json | namespace_extracted=\"alloy\" | name_extracted=~\"alloy.*\"",
+                   "expr": "{cluster=~\"$cluster\", container=\"kube-diff-logger\"} | json | namespace_extracted=\"alloy\" | name_extracted=~\"alloy.*\"",
                    "iconColor": "rgba(0, 211, 255, 1)",
                    "instant": false,
                    "name": "Deployments",
@@ -903,7 +930,7 @@ data:
                       "range": false
                    }
                 ],
-                "title": "Convergance state",
+                "title": "Convergence state",
                 "type": "stat"
              },
              {
@@ -956,7 +983,7 @@ data:
                       "range": true
                    }
                 ],
-                "title": "Convergance state timeline",
+                "title": "Convergence state timeline",
                 "type": "state-timeline"
              },
              {
@@ -1014,9 +1041,9 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by(instance) (cluster_node_peers{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"})\n",
+                      "expr": "sum by(${groupby}) (cluster_node_peers{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"})\n",
                       "instant": false,
-                      "legendFormat": "{{instance}}",
+                      "legendFormat": "__auto",
                       "range": true
                    },
                    {
@@ -1031,7 +1058,7 @@ data:
                 "type": "timeseries"
              }
           ],
-          "refresh": "10s",
+          "refresh": "30s",
           "schemaVersion": 36,
           "tags": [
              "alloy-mixin"
@@ -1055,40 +1082,67 @@ data:
                    "type": "datasource"
                 },
                 {
+                   "allowCustomValue": true,
                    "datasource": "${datasource}",
                    "label": "cluster",
+                   "multi": true,
                    "name": "cluster",
                    "query": {
                       "query": "label_values(alloy_component_controller_running_components, cluster)\n",
                       "refId": "cluster"
                    },
                    "refresh": 2,
-                   "sort": 2,
+                   "sort": 1,
                    "type": "query"
                 },
                 {
+                   "allowCustomValue": true,
                    "datasource": "${datasource}",
                    "label": "namespace",
+                   "multi": true,
                    "name": "namespace",
                    "query": {
                       "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\"}, namespace)\n",
                       "refId": "namespace"
                    },
                    "refresh": 2,
-                   "sort": 2,
+                   "sort": 1,
                    "type": "query"
                 },
                 {
+                   "allValue": ".*",
                    "datasource": "${datasource}",
+                   "includeAll": true,
                    "label": "job",
+                   "multi": true,
                    "name": "job",
                    "query": {
                       "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\"}, job)\n",
                       "refId": "job"
                    },
                    "refresh": 2,
-                   "sort": 2,
+                   "sort": 1,
                    "type": "query"
+                },
+                {
+                   "datasource": {
+                      "type": "prometheus",
+                      "uid": "${datasource}"
+                   },
+                   "name": "filters",
+                   "type": "adhoc"
+                },
+                {
+                   "allowCustomValue": true,
+                   "current": {
+                      "selected": true,
+                      "text": "instance",
+                      "value": "instance"
+                   },
+                   "label": "Group by",
+                   "name": "groupby",
+                   "query": "instance,state,job,namespace,cluster,pod",
+                   "type": "custom"
                 }
              ]
           },
@@ -1177,7 +1231,7 @@ data:
                 {
                    "datasource": "$loki_datasource",
                    "enable": true,
-                   "expr": "{cluster=\"$cluster\", container=\"kube-diff-logger\"} | json | namespace_extracted=\"alloy\" | name_extracted=~\"alloy.*\"",
+                   "expr": "{cluster=~\"$cluster\", container=\"kube-diff-logger\"} | json | namespace_extracted=\"alloy\" | name_extracted=~\"alloy.*\"",
                    "iconColor": "rgba(0, 211, 255, 1)",
                    "instant": false,
                    "name": "Deployments",
@@ -1466,7 +1520,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by (instance) (rate(alloy_component_evaluation_seconds_count{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval]))\n",
+                      "expr": "sum by (${groupby}) (rate(alloy_component_evaluation_seconds_count{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\"}[$__rate_interval]))\n",
                       "instant": false,
                       "legendFormat": "__auto",
                       "range": true
@@ -1630,7 +1684,7 @@ data:
                 "type": "heatmap"
              }
           ],
-          "refresh": "10s",
+          "refresh": "30s",
           "schemaVersion": 36,
           "tags": [
              "alloy-mixin"
@@ -1654,40 +1708,67 @@ data:
                    "type": "datasource"
                 },
                 {
+                   "allowCustomValue": true,
                    "datasource": "${datasource}",
                    "label": "cluster",
+                   "multi": true,
                    "name": "cluster",
                    "query": {
                       "query": "label_values(alloy_component_controller_running_components, cluster)\n",
                       "refId": "cluster"
                    },
                    "refresh": 2,
-                   "sort": 2,
+                   "sort": 1,
                    "type": "query"
                 },
                 {
+                   "allowCustomValue": true,
                    "datasource": "${datasource}",
                    "label": "namespace",
+                   "multi": true,
                    "name": "namespace",
                    "query": {
                       "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\"}, namespace)\n",
                       "refId": "namespace"
                    },
                    "refresh": 2,
-                   "sort": 2,
+                   "sort": 1,
                    "type": "query"
                 },
                 {
+                   "allValue": ".*",
                    "datasource": "${datasource}",
+                   "includeAll": true,
                    "label": "job",
+                   "multi": true,
                    "name": "job",
                    "query": {
                       "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\"}, job)\n",
                       "refId": "job"
                    },
                    "refresh": 2,
-                   "sort": 2,
+                   "sort": 1,
                    "type": "query"
+                },
+                {
+                   "datasource": {
+                      "type": "prometheus",
+                      "uid": "${datasource}"
+                   },
+                   "name": "filters",
+                   "type": "adhoc"
+                },
+                {
+                   "allowCustomValue": true,
+                   "current": {
+                      "selected": true,
+                      "text": "instance",
+                      "value": "instance"
+                   },
+                   "label": "Group by",
+                   "name": "groupby",
+                   "query": "instance,component_path,component_id,controller_path,health_type,job,namespace,cluster,pod",
+                   "type": "custom"
                 }
              ]
           },
@@ -3145,7 +3226,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by(instance) (rate(otelcol_receiver_accepted_metric_points_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
+                      "expr": "sum by(${groupby}) (rate(otelcol_receiver_accepted_metric_points_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
                       "instant": false,
                       "legendFormat": "__auto",
                       "range": true
@@ -3178,7 +3259,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by(instance) (rate(otelcol_receiver_refused_metric_points_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
+                      "expr": "sum by(${groupby}) (rate(otelcol_receiver_refused_metric_points_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
                       "instant": false,
                       "legendFormat": "__auto",
                       "range": true
@@ -3211,7 +3292,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by(instance) (rate(otelcol_receiver_accepted_log_records_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
+                      "expr": "sum by(${groupby}) (rate(otelcol_receiver_accepted_log_records_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
                       "instant": false,
                       "legendFormat": "__auto",
                       "range": true
@@ -3244,7 +3325,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by(instance) (rate(otelcol_receiver_refused_log_records_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
+                      "expr": "sum by(${groupby}) (rate(otelcol_receiver_refused_log_records_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
                       "instant": false,
                       "legendFormat": "__auto",
                       "range": true
@@ -3277,7 +3358,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by(instance) (rate(otelcol_receiver_accepted_spans_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
+                      "expr": "sum by(${groupby}) (rate(otelcol_receiver_accepted_spans_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
                       "instant": false,
                       "legendFormat": "__auto",
                       "range": true
@@ -3310,7 +3391,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by(instance) (rate(otelcol_receiver_refused_spans_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
+                      "expr": "sum by(${groupby}) (rate(otelcol_receiver_refused_spans_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
                       "instant": false,
                       "legendFormat": "__auto",
                       "range": true
@@ -3496,7 +3577,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by(instance) (otelcol_processor_batch_metadata_cardinality{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"})\n",
+                      "expr": "sum by(${groupby}) (otelcol_processor_batch_metadata_cardinality{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"})\n",
                       "instant": false,
                       "legendFormat": "__auto",
                       "range": true
@@ -3522,7 +3603,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by(instance) (rate(otelcol_processor_batch_timeout_trigger_send_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
+                      "expr": "sum by(${groupby}) (rate(otelcol_processor_batch_timeout_trigger_send_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
                       "instant": false,
                       "legendFormat": "__auto",
                       "range": true
@@ -3566,7 +3647,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by(instance) (rate(otelcol_exporter_sent_metric_points_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
+                      "expr": "sum by(${groupby}) (rate(otelcol_exporter_sent_metric_points_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
                       "instant": false,
                       "legendFormat": "__auto",
                       "range": true
@@ -3599,7 +3680,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by(instance) (rate(otelcol_exporter_send_failed_metric_points_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
+                      "expr": "sum by(${groupby}) (rate(otelcol_exporter_send_failed_metric_points_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
                       "instant": false,
                       "legendFormat": "__auto",
                       "range": true
@@ -3632,7 +3713,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by(instance) (rate(otelcol_exporter_sent_log_records_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
+                      "expr": "sum by(${groupby}) (rate(otelcol_exporter_sent_log_records_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
                       "instant": false,
                       "legendFormat": "__auto",
                       "range": true
@@ -3665,7 +3746,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by(instance) (rate(otelcol_exporter_send_failed_log_records_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
+                      "expr": "sum by(${groupby}) (rate(otelcol_exporter_send_failed_log_records_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
                       "instant": false,
                       "legendFormat": "__auto",
                       "range": true
@@ -3698,7 +3779,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by(instance) (rate(otelcol_exporter_sent_spans_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
+                      "expr": "sum by(${groupby}) (rate(otelcol_exporter_sent_spans_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
                       "instant": false,
                       "legendFormat": "__auto",
                       "range": true
@@ -3731,7 +3812,7 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by(instance) (rate(otelcol_exporter_send_failed_spans_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
+                      "expr": "sum by(${groupby}) (rate(otelcol_exporter_send_failed_spans_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
                       "instant": false,
                       "legendFormat": "__auto",
                       "range": true
@@ -3837,7 +3918,7 @@ data:
                 "type": "heatmap"
              }
           ],
-          "refresh": "10s",
+          "refresh": "30s",
           "schemaVersion": 36,
           "tags": [
              "alloy-mixin"
@@ -3861,39 +3942,46 @@ data:
                    "type": "datasource"
                 },
                 {
+                   "allowCustomValue": true,
                    "datasource": "${datasource}",
                    "label": "cluster",
+                   "multi": true,
                    "name": "cluster",
                    "query": {
                       "query": "label_values(alloy_component_controller_running_components, cluster)\n",
                       "refId": "cluster"
                    },
                    "refresh": 2,
-                   "sort": 2,
+                   "sort": 1,
                    "type": "query"
                 },
                 {
+                   "allowCustomValue": true,
                    "datasource": "${datasource}",
                    "label": "namespace",
+                   "multi": true,
                    "name": "namespace",
                    "query": {
                       "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\"}, namespace)\n",
                       "refId": "namespace"
                    },
                    "refresh": 2,
-                   "sort": 2,
+                   "sort": 1,
                    "type": "query"
                 },
                 {
+                   "allValue": ".*",
                    "datasource": "${datasource}",
+                   "includeAll": true,
                    "label": "job",
+                   "multi": true,
                    "name": "job",
                    "query": {
                       "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\"}, job)\n",
                       "refId": "job"
                    },
                    "refresh": 2,
-                   "sort": 2,
+                   "sort": 1,
                    "type": "query"
                 },
                 {
@@ -3908,8 +3996,28 @@ data:
                       "refId": "instance"
                    },
                    "refresh": 2,
-                   "sort": 2,
+                   "sort": 1,
                    "type": "query"
+                },
+                {
+                   "datasource": {
+                      "type": "prometheus",
+                      "uid": "${datasource}"
+                   },
+                   "name": "filters",
+                   "type": "adhoc"
+                },
+                {
+                   "allowCustomValue": true,
+                   "current": {
+                      "selected": true,
+                      "text": "instance",
+                      "value": "instance"
+                   },
+                   "label": "Group by",
+                   "name": "groupby",
+                   "query": "instance,receiver,transport,exporter,processor,component_id,otel_signal,otel_scope_name,job,namespace,cluster,pod",
+                   "type": "custom"
                 }
              ]
           },
@@ -4011,7 +4119,7 @@ data:
              },
              {
                 "datasource": "${datasource}",
-                "description": "Percentage of targets successfully scraped by prometheus.scrape\ncomponents.\n\nThis metric is calculated by dividing the number of targets\nsuccessfully scraped by the total number of targets scraped,\nacross all the namespaces in the selected cluster.\n\nLow success rates can indicate a problem with scrape targets,\nstale service discovery, or Alloy misconfiguration.\n",
+                "description": "Percentage of targets successfully scraped in the selected\ncluster and job.\n\nLow success rates can indicate a problem with scrape targets,\nstale service discovery, or Alloy misconfiguration.\n",
                 "fieldConfig": {
                    "defaults": {
                       "unit": "percentunit"
@@ -4032,12 +4140,12 @@ data:
                       "range": true
                    }
                 ],
-                "title": "Scrape success rate in $cluster",
+                "title": "Scrape success rate",
                 "type": "timeseries"
              },
              {
                 "datasource": "${datasource}",
-                "description": "Duration of successful scrapes by prometheus.scrape components,\nacross all the namespaces in the selected cluster.\n\nThis metric should be below your configured scrape interval.\nHigh durations can indicate a problem with a scrape target or\na performance issue with Alloy.\n",
+                "description": "Duration of scrapes for the selected cluster and job,\nshown as p99, p95, and p50 quantiles.\n\nThis metric should be below your configured scrape interval.\nHigh durations can indicate a problem with a scrape target or\na performance issue with Alloy.\n",
                 "fieldConfig": {
                    "defaults": {
                       "unit": "s"
@@ -4072,7 +4180,7 @@ data:
                       "range": true
                    }
                 ],
-                "title": "Scrape duration in $cluster",
+                "title": "Scrape duration",
                 "type": "timeseries"
              },
              {
@@ -4170,9 +4278,9 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by (instance, component_path, component_id) (\n  prometheus_remote_storage_highest_timestamp_in_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\"}\n  - ignoring(url, remote_name) group_right(instance)\n  prometheus_remote_storage_queue_highest_sent_timestamp_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}\n)\n",
+                      "expr": "sum by (${groupby}) (\n  (\n    prometheus_remote_storage_highest_timestamp_in_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\"}\n    - ignoring(url, remote_name) group_right(instance)\n    prometheus_remote_storage_queue_highest_sent_timestamp_seconds{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}\n  ) < 31536000 > 0\n)\n",
                       "instant": false,
-                      "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
+                      "legendFormat": "__auto",
                       "range": true
                    }
                 ],
@@ -4203,9 +4311,9 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by (instance, component_path, component_id) (\n    rate(prometheus_remote_storage_bytes_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval]) +\n    rate(prometheus_remote_storage_metadata_bytes_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
+                      "expr": "sum by (${groupby}) (\n    rate(prometheus_remote_storage_bytes_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval]) +\n    rate(prometheus_remote_storage_metadata_bytes_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
                       "instant": false,
-                      "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
+                      "legendFormat": "__auto",
                       "range": true
                    }
                 ],
@@ -4291,9 +4399,9 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by (instance, component_path, component_id) (\n    prometheus_remote_storage_shards{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}\n)\n",
+                      "expr": "sum by (${groupby}) (\n    prometheus_remote_storage_shards{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}\n)\n",
                       "instant": false,
-                      "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
+                      "legendFormat": "__auto",
                       "range": true
                    },
                    {
@@ -4338,9 +4446,9 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by (instance, component_path, component_id) (\n  rate(prometheus_remote_storage_samples_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
+                      "expr": "sum by (${groupby}) (\n  rate(prometheus_remote_storage_samples_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
                       "instant": false,
-                      "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
+                      "legendFormat": "__auto",
                       "range": true
                    }
                 ],
@@ -4371,9 +4479,9 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by (instance, component_path, component_id) (\n  rate(prometheus_remote_storage_samples_failed_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
+                      "expr": "sum by (${groupby}) (\n  rate(prometheus_remote_storage_samples_failed_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
                       "instant": false,
-                      "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
+                      "legendFormat": "__auto",
                       "range": true
                    }
                 ],
@@ -4404,9 +4512,9 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "sum by (instance, component_path, component_id) (\n  rate(prometheus_remote_storage_samples_retried_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
+                      "expr": "sum by (${groupby}) (\n  rate(prometheus_remote_storage_samples_retried_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_path=~\"$component_path\", component_id=~\"$component\", url=~\"$url\"}[$__rate_interval])\n)\n",
                       "instant": false,
-                      "legendFormat": "{{instance}} / {{component_path}} {{component_id}}",
+                      "legendFormat": "__auto",
                       "range": true
                    }
                 ],
@@ -4415,7 +4523,7 @@ data:
              },
              {
                 "datasource": "${datasource}",
-                "description": "Total number of active series across all components.\n\nAn \"active series\" is a series that prometheus.remote_write recently\nreceived a sample for. Active series are garbage collected whenever a\ntruncation of the WAL occurs.\n\nNOTE: This metric is not available when using prometheus.write.queue component.\n",
+                "description": "Total number of active series across all components.\n\nAn \"active series\" is a series that prometheus.remote_write recently\nreceived a sample for. Active series are garbage collected whenever a\ntruncation of the WAL occurs.\n",
                 "fieldConfig": {
                    "defaults": {
                       "unit": "short"
@@ -4446,7 +4554,7 @@ data:
              },
              {
                 "datasource": "${datasource}",
-                "description": "Total number of active series which are currently being tracked by\nprometheus.remote_write components, with separate lines for each Alloy instance.\n\nAn \"active series\" is a series that prometheus.remote_write recently\nreceived a sample for. Active series are garbage collected whenever a\ntruncation of the WAL occurs.\n\nNOTE: This metric is not available when using prometheus.write.queue component.\n",
+                "description": "Total number of active series which are currently being tracked by\nprometheus.remote_write components, with separate lines for each Alloy instance.\n\nAn \"active series\" is a series that prometheus.remote_write recently\nreceived a sample for. Active series are garbage collected whenever a\ntruncation of the WAL occurs.\n",
                 "fieldConfig": {
                    "defaults": {
                       "unit": "short"
@@ -4472,7 +4580,7 @@ data:
              },
              {
                 "datasource": "${datasource}",
-                "description": "Total number of active series which are currently being tracked by\nprometheus.remote_write components, aggregated across all instances.\n\nAn \"active series\" is a series that prometheus.remote_write recently\nreceived a sample for. Active series are garbage collected whenever a\ntruncation of the WAL occurs.\n\nNOTE: This metric is not available when using prometheus.write.queue component.\n",
+                "description": "Total number of active series which are currently being tracked by\nprometheus.remote_write components, aggregated across all instances.\n\nAn \"active series\" is a series that prometheus.remote_write recently\nreceived a sample for. Active series are garbage collected whenever a\ntruncation of the WAL occurs.\n",
                 "fieldConfig": {
                    "defaults": {
                       "unit": "short"
@@ -4497,7 +4605,7 @@ data:
                 "type": "timeseries"
              }
           ],
-          "refresh": "10s",
+          "refresh": "30s",
           "schemaVersion": 36,
           "tags": [
              "alloy-mixin"
@@ -4521,39 +4629,46 @@ data:
                    "type": "datasource"
                 },
                 {
+                   "allowCustomValue": true,
                    "datasource": "${datasource}",
                    "label": "cluster",
+                   "multi": true,
                    "name": "cluster",
                    "query": {
                       "query": "label_values(alloy_component_controller_running_components, cluster)\n",
                       "refId": "cluster"
                    },
                    "refresh": 2,
-                   "sort": 2,
+                   "sort": 1,
                    "type": "query"
                 },
                 {
+                   "allowCustomValue": true,
                    "datasource": "${datasource}",
                    "label": "namespace",
+                   "multi": true,
                    "name": "namespace",
                    "query": {
                       "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\"}, namespace)\n",
                       "refId": "namespace"
                    },
                    "refresh": 2,
-                   "sort": 2,
+                   "sort": 1,
                    "type": "query"
                 },
                 {
+                   "allValue": ".*",
                    "datasource": "${datasource}",
+                   "includeAll": true,
                    "label": "job",
+                   "multi": true,
                    "name": "job",
                    "query": {
                       "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\"}, job)\n",
                       "refId": "job"
                    },
                    "refresh": 2,
-                   "sort": 2,
+                   "sort": 1,
                    "type": "query"
                 },
                 {
@@ -4568,8 +4683,16 @@ data:
                       "refId": "instance"
                    },
                    "refresh": 2,
-                   "sort": 2,
+                   "sort": 1,
                    "type": "query"
+                },
+                {
+                   "datasource": {
+                      "type": "prometheus",
+                      "uid": "${datasource}"
+                   },
+                   "name": "filters",
+                   "type": "adhoc"
                 },
                 {
                    "allValue": ".*",
@@ -4583,7 +4706,7 @@ data:
                       "refId": "component_path"
                    },
                    "refresh": 2,
-                   "sort": 2,
+                   "sort": 1,
                    "type": "query"
                 },
                 {
@@ -4598,7 +4721,7 @@ data:
                       "refId": "component"
                    },
                    "refresh": 2,
-                   "sort": 2,
+                   "sort": 1,
                    "type": "query"
                 },
                 {
@@ -4609,12 +4732,24 @@ data:
                    "multi": true,
                    "name": "url",
                    "query": {
-                      "query": "label_values(prometheus_remote_storage_sent_batch_duration_seconds_sum{cluster=~\"$cluster\", namespace=~\"$namespace\", job=\"$job\", instance=~\"$instance\", component_id=~\"$component\"}, url)\n",
+                      "query": "label_values(prometheus_remote_storage_sent_batch_duration_seconds_sum{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\", component_id=~\"$component\"}, url)\n",
                       "refId": "url"
                    },
                    "refresh": 2,
-                   "sort": 2,
+                   "sort": 1,
                    "type": "query"
+                },
+                {
+                   "allowCustomValue": true,
+                   "current": {
+                      "selected": true,
+                      "text": "instance,component_path,component_id",
+                      "value": "instance,component_path,component_id"
+                   },
+                   "label": "Group by",
+                   "name": "groupby",
+                   "query": "instance,component_path,component_id,url,remote_name,job,namespace,cluster,pod",
+                   "type": "custom"
                 }
              ]
           },
@@ -4670,7 +4805,7 @@ data:
                 {
                    "datasource": "$loki_datasource",
                    "enable": true,
-                   "expr": "{cluster=\"$cluster\", container=\"kube-diff-logger\"} | json | namespace_extracted=\"alloy\" | name_extracted=~\"alloy.*\"",
+                   "expr": "{cluster=~\"$cluster\", container=\"kube-diff-logger\"} | json | namespace_extracted=\"alloy\" | name_extracted=~\"alloy.*\"",
                    "iconColor": "rgba(0, 211, 255, 1)",
                    "instant": false,
                    "name": "Deployments",
@@ -4711,9 +4846,9 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "rate(alloy_resources_process_cpu_seconds_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
+                      "expr": "sum by(${groupby}) (rate(alloy_resources_process_cpu_seconds_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
                       "instant": false,
-                      "legendFormat": "{{instance}}",
+                      "legendFormat": "__auto",
                       "range": true
                    }
                 ],
@@ -4737,9 +4872,9 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "alloy_resources_process_resident_memory_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}\n",
+                      "expr": "sum by(${groupby}) (alloy_resources_process_resident_memory_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"})\n",
                       "instant": false,
-                      "legendFormat": "{{instance}}",
+                      "legendFormat": "__auto",
                       "range": true
                    }
                 ],
@@ -4767,9 +4902,9 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "rate(go_gc_duration_seconds_count{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[5m])\nand on(instance)\nalloy_build_info{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}\n",
+                      "expr": "sum by(${groupby}) (\n  rate(go_gc_duration_seconds_count{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[5m])\n  and on(instance)\n  alloy_build_info{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}\n)\n",
                       "instant": false,
-                      "legendFormat": "{{instance}}",
+                      "legendFormat": "__auto",
                       "range": true
                    }
                 ],
@@ -4793,9 +4928,9 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "go_goroutines{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}\nand on(instance)\nalloy_build_info{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}\n",
+                      "expr": "sum by(${groupby}) (\n  go_goroutines{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}\n  and on(instance)\n  alloy_build_info{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}\n)\n",
                       "instant": false,
-                      "legendFormat": "{{instance}}",
+                      "legendFormat": "__auto",
                       "range": true
                    }
                 ],
@@ -4819,13 +4954,13 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "go_memstats_heap_inuse_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}\nand on(instance)\nalloy_build_info{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}\n",
+                      "expr": "sum by(${groupby}) (\n  go_memstats_heap_inuse_bytes{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}\n  and on(instance)\n  alloy_build_info{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}\n)\n",
                       "instant": false,
-                      "legendFormat": "{{instance}}",
+                      "legendFormat": "__auto",
                       "range": true
                    }
                 ],
-                "title": "Memory (heap inuse)",
+                "title": "Memory (heap in use)",
                 "type": "timeseries"
              },
              {
@@ -4852,9 +4987,9 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "rate(alloy_resources_machine_rx_bytes_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
+                      "expr": "sum by(${groupby}) (rate(alloy_resources_machine_rx_bytes_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
                       "instant": false,
-                      "legendFormat": "{{instance}}",
+                      "legendFormat": "__auto",
                       "range": true
                    }
                 ],
@@ -4885,9 +5020,9 @@ data:
                 "targets": [
                    {
                       "datasource": "${datasource}",
-                      "expr": "rate(alloy_resources_machine_tx_bytes_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval])\n",
+                      "expr": "sum by(${groupby}) (rate(alloy_resources_machine_tx_bytes_total{cluster=~\"$cluster\", namespace=~\"$namespace\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))\n",
                       "instant": false,
-                      "legendFormat": "{{instance}}",
+                      "legendFormat": "__auto",
                       "range": true
                    }
                 ],
@@ -4895,7 +5030,7 @@ data:
                 "type": "timeseries"
              }
           ],
-          "refresh": "10s",
+          "refresh": "30s",
           "schemaVersion": 36,
           "tags": [
              "alloy-mixin"
@@ -4919,39 +5054,46 @@ data:
                    "type": "datasource"
                 },
                 {
+                   "allowCustomValue": true,
                    "datasource": "${datasource}",
                    "label": "cluster",
+                   "multi": true,
                    "name": "cluster",
                    "query": {
                       "query": "label_values(alloy_component_controller_running_components, cluster)\n",
                       "refId": "cluster"
                    },
                    "refresh": 2,
-                   "sort": 2,
+                   "sort": 1,
                    "type": "query"
                 },
                 {
+                   "allowCustomValue": true,
                    "datasource": "${datasource}",
                    "label": "namespace",
+                   "multi": true,
                    "name": "namespace",
                    "query": {
                       "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\"}, namespace)\n",
                       "refId": "namespace"
                    },
                    "refresh": 2,
-                   "sort": 2,
+                   "sort": 1,
                    "type": "query"
                 },
                 {
+                   "allValue": ".*",
                    "datasource": "${datasource}",
+                   "includeAll": true,
                    "label": "job",
+                   "multi": true,
                    "name": "job",
                    "query": {
                       "query": "label_values(alloy_component_controller_running_components{cluster=~\"$cluster\", namespace=~\"$namespace\"}, job)\n",
                       "refId": "job"
                    },
                    "refresh": 2,
-                   "sort": 2,
+                   "sort": 1,
                    "type": "query"
                 },
                 {
@@ -4966,8 +5108,28 @@ data:
                       "refId": "instance"
                    },
                    "refresh": 2,
-                   "sort": 2,
+                   "sort": 1,
                    "type": "query"
+                },
+                {
+                   "datasource": {
+                      "type": "prometheus",
+                      "uid": "${datasource}"
+                   },
+                   "name": "filters",
+                   "type": "adhoc"
+                },
+                {
+                   "allowCustomValue": true,
+                   "current": {
+                      "selected": true,
+                      "text": "instance",
+                      "value": "instance"
+                   },
+                   "label": "Group by",
+                   "name": "groupby",
+                   "query": "instance,job,namespace,cluster,pod",
+                   "type": "custom"
                 }
              ]
           },
@@ -5292,8 +5454,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.19.0
-    helm.sh/chart: alloy-1.12.0
+    app.kubernetes.io/version: v1.19.2
+    helm.sh/chart: alloy-1.12.1
   name: alloy
   namespace: monitoring-system
 spec:
@@ -5333,8 +5495,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.19.0
-    helm.sh/chart: alloy-1.12.0
+    app.kubernetes.io/version: v1.19.2
+    helm.sh/chart: alloy-1.12.1
   name: alloy-cluster
   namespace: monitoring-system
 spec:
@@ -6557,8 +6719,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.19.0
-    helm.sh/chart: alloy-1.12.0
+    app.kubernetes.io/version: v1.19.2
+    helm.sh/chart: alloy-1.12.1
   name: alloy
   namespace: monitoring-system
 spec:
@@ -6579,11 +6741,11 @@ spec:
         kubectl.kubernetes.io/default-container: alloy
         logs.grafana.com/scrape: "true"
         profiles.grafana.com/cpu.port_name: http-metrics
-        profiles.grafana.com/cpu.scrape: "false"
+        profiles.grafana.com/cpu.scrape: "true"
         profiles.grafana.com/goroutine.port_name: http-metrics
-        profiles.grafana.com/goroutine.scrape: "false"
+        profiles.grafana.com/goroutine.scrape: "true"
         profiles.grafana.com/memory.port_name: http-metrics
-        profiles.grafana.com/memory.scrape: "false"
+        profiles.grafana.com/memory.scrape: "true"
         pyroscope.io/service_name: alloy
       labels:
         app.kubernetes.io/instance: alloy
@@ -6615,7 +6777,7 @@ spec:
         - secretRef:
             name: alloy-env
             optional: true
-        image: docker.io/grafana/alloy:v1.19.0
+        image: docker.io/grafana/alloy:v1.19.2
         imagePullPolicy: IfNotPresent
         name: alloy
         ports:
@@ -7509,7 +7671,7 @@ spec:
         summary: Cluster configuration drifting.
       expr: |
         count without (sha256) (
-            max by (cluster, namespace, sha256, job, cluster_name) (alloy_config_hash and on(cluster, namespace, job, cluster_name) cluster_node_info)
+            max by (cluster, namespace, sha256, job, cluster_name) (alloy_config_hash{cluster_name!=""} and on(cluster, namespace, job, cluster_name) cluster_node_info)
         ) > 1
       for: 5m
       labels:
@@ -7646,8 +7808,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: alloy
     app.kubernetes.io/part-of: alloy
-    app.kubernetes.io/version: v1.19.0
-    helm.sh/chart: alloy-1.12.0
+    app.kubernetes.io/version: v1.19.2
+    helm.sh/chart: alloy-1.12.1
   name: alloy
   namespace: monitoring-system
 spec:

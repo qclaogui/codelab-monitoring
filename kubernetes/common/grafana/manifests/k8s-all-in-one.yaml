@@ -55,53 +55,6 @@ subjects:
 ---
 apiVersion: v1
 data:
-  grafana.ini: |
-    [log]
-    level = warn
-    [log.frontend]
-    enabled = false
-    provider = grafana
-
-    [analytics]
-    reporting_enabled = false
-    check_for_updates = false
-    check_for_plugin_updates = false
-
-    [auth.anonymous]
-    enabled = true
-    org_role = Admin
-
-    [security]
-    disable_gravatar = true
-    angular_support_enabled = false
-
-    [explore]
-    enabled = true
-
-    [users]
-    default_theme = dark
-
-    [metrics]
-    enabled = true
-    disable_total_stats = false
-
-    [date_formats]
-    use_browser_locale = true
-    date_format_use_browser_locale = true
-
-    [server]
-    enable_gzip = true
-
-    [dashboards]
-    default_home_dashboard_path = /dashboards/home-kubernetes-monitoring.json
-    ;default_home_dashboard_path = /var/lib/grafana/dashboards/minio-dashboard.json
-kind: ConfigMap
-metadata:
-  name: grafana-8282tff288
-  namespace: monitoring-system
----
-apiVersion: v1
-data:
   provider.yaml: |-
     apiVersion: 1
     providers:
@@ -227,17 +180,17 @@ data:
           datasourceUid: logs
           spanStartTimeShift: '-30m'
           spanEndTimeShift: '30m'
-          tags: [{ key: 'app', value: 'app' }]
-          filterByTraceID: false
-          filterBySpanID: false
-          customQuery: true
-          query: 'method="$${__span.tags.method}"'
+          # tags: [{ key: 'app', value: 'app' }]
+          # filterByTraceID: false
+          # filterBySpanID: false
+          # customQuery: true
+          # query: 'method="$${__span.tags.method}"'
         tracesToProfiles:
           datasourceUid: "profiles"
-          tags: [{ key: 'app', value: 'service_name' }]
+          # tags: [{ key: 'app', value: 'service_name' }]
           profileTypeId: "process_cpu:cpu:nanoseconds:cpu:nanoseconds"
-          customQuery: true
-          query: 'method="$${__span.tags.method}"'
+          # customQuery: true
+          # query: 'method="$${__span.tags.method}"'
 
 
     # Pyroscope for profiles
@@ -251,12 +204,79 @@ data:
       isDefault: false
       version: 1
       editable: true
+      secureJsonData:
+        httpHeaderValue1: 'anonymous'
+      jsonData:
+        httpHeaderName1: 'X-Scope-OrgID'
 immutable: true
 kind: ConfigMap
 metadata:
   labels:
     grafana_datasource: "1"
-  name: grafana-datasources-ghghk762bd
+  name: grafana-datasources-g9ttt55m9k
+  namespace: monitoring-system
+---
+apiVersion: v1
+data:
+  grafana.ini: |
+    [log]
+    level = error
+    [log.frontend]
+    enabled = false
+    provider = grafana
+
+    [analytics]
+    enabled = false
+    reporting_enabled = false
+    check_for_updates = false
+    check_for_plugin_updates = false
+
+    [auth]
+    managed_service_accounts_enabled = true
+    ; disable_login_form = true
+    disable_signout_menu = true
+    [auth.basic]
+    enabled = false
+    [auth.anonymous]
+    enabled = true
+    org_role = Admin
+
+    [security]
+    disable_gravatar = true
+    angular_support_enabled = false
+
+    [snapshots]
+    enabled = false
+
+    [explore]
+    enabled = true
+
+    [users]
+    default_theme = dark
+
+    ; https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/feature-toggles/#public-preview-feature-toggles
+    ; https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#override-configuration-with-environment-variables
+    [feature_toggles]
+    grafanaAdvisor = false
+    ; alertingListViewV2PreviewToggle = true
+    ; pyroscopeUTF8LabelNames = true
+    ; flameGraphWithCallTree = true
+    ; grafana.dynamicTraceToLogs = true
+
+    ; https://grafana.com/docs/grafana/latest/setup-grafana/installation/docker/#install-plugins-in-the-docker-container
+    ; https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#plugins-1
+    [plugins]
+    enable_alpha = true
+    ; preinstall_sync = grafana-exploretraces-app,grafana-pyroscope-app
+    ; preinstall = grafana-exploretraces-app,grafana-pyroscope-app
+    preinstall_auto_update = false
+
+    [dashboards]
+    default_home_dashboard_path = /dashboards/home-kubernetes-monitoring.json
+    ;default_home_dashboard_path = /var/lib/grafana/dashboards/minio-dashboard.json
+kind: ConfigMap
+metadata:
+  name: grafana-ffd46fc8tt
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -4168,7 +4188,10 @@ metadata:
 ---
 apiVersion: v1
 data:
-  GF_FEATURE_TOGGLES_ENABLE: cGFuZWxUaXRsZVNlYXJjaCBsb2dzUGFuZWxDb250cm9scw==
+  GF_FEATURE_TOGGLES_ENABLE: |
+    YWxlcnRpbmdMaXN0Vmlld1YyUHJldmlld1RvZ2dsZSxweXJvc2NvcGVVVEY4TGFiZWxOYW
+    1lcyxmbGFtZUdyYXBoV2l0aENhbGxUcmVlLGdyYWZhbmEuZHluYW1pY1RyYWNlVG9Mb2dz
+    LGt1YmVybmV0ZXNMb2dzRHJpbGxkb3du
   GF_LOG_LEVEL: aW5mbw==
   NAMESPACE: bW9uaXRvcmluZy1zeXN0ZW0=
 kind: Secret
@@ -4351,7 +4374,7 @@ spec:
         - name: GF_UNIFIED_STORAGE_INDEX_PATH
           value: /var/lib/grafana-search/bleve
         - name: GOMEMLIMIT
-          value: 460MiB
+          value: 921MiB
         envFrom:
         - secretRef:
             name: grafana-env
@@ -4385,8 +4408,8 @@ spec:
             port: grafana
         resources:
           limits:
-            cpu: 250m
-            memory: 512Mi
+            cpu: 1000m
+            memory: 1Gi
           requests:
             cpu: 100m
             memory: 256Mi
@@ -4428,7 +4451,7 @@ spec:
       - emptyDir: {}
         name: tmp
       - configMap:
-          name: grafana-8282tff288
+          name: grafana-ffd46fc8tt
         name: config
       - emptyDir: {}
         name: storage

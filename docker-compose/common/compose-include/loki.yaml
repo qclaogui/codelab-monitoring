@@ -8,7 +8,7 @@ services:
     labels:
       metrics.grafana.com/scrape: false
     depends_on: {minio: {condition: service_healthy}}
-    image: ${LOKI_IMAGE:-docker.io/grafana/loki:3.7.6}
+    image: ${LOKI_IMAGE:-docker.io/grafana/loki:3.7.7}
     configs:
       - source: loki_config_file
         target: /etc/loki/config.yaml
@@ -20,9 +20,10 @@ services:
       - -config.expand-env=true
     healthcheck:
       test: ["CMD", "loki", "-health"]
-      interval: 3s
-      timeout: 1s
-      retries: 15
+      interval: 5s
+      timeout: 2s
+      retries: 10
+      start_period: 10s
     # expose 33100 port so we can directly access loki inside container
     ports:
       - "33100:3100"

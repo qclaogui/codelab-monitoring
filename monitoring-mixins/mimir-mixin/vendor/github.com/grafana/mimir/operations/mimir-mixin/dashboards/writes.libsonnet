@@ -8,7 +8,7 @@ local filename = 'mimir-writes.json';
     assert std.md5(filename) == '8280707b8f16e7b87b840fc1cc92d4c5' : 'UID of the dashboard has changed, please update references to dashboard.';
     ($.dashboard('Writes') + { uid: std.md5(filename) })
     .addClusterSelectorTemplates()
-    .addShowNativeLatencyVariable()
+    .addShowNativeLatencyVariable($.latencyVariableDefault())
     .addRowIf(
       $._config.show_dashboard_descriptions.writes,
       ($.row('Writes dashboard description') { height: '125px', showTitle: false })
@@ -38,6 +38,7 @@ local filename = 'mimir-writes.json';
          height: '100px',
          showTitle: false,
        })
+      .justifyPanels()  // Make sure panels use all width even if 12 columns are not divisible by the number of panels.
       .addPanel(
         $.panel('Samples / sec') +
         $.statPanel(
@@ -76,6 +77,40 @@ local filename = 'mimir-writes.json';
         ),
       )
       .addPanel(
+        local title = 'Owned series';
+        $.panel(title) +
+        $.statPanel(
+          $.queries.ingester.ingestOrClassicDeduplicatedQuery('sum without (user) (cortex_ingester_owned_series{%s})' % [$.jobMatcher($._config.job_names.ingester)]),
+          format='short'
+        ) +
+        $.panelDescription(
+          title,
+          |||
+            The number of owned series across all ingesters.
+            Owned series are the subset of in-memory series that currently map to the ingester in the ring.
+            With classic storage the sum of series from all ingesters is divided by the replication factor.
+            With ingest storage we take the maximum series of each ingest partition.
+          |||
+        ),
+      )
+      .addPanel(
+        local title = 'Active series';
+        $.panel(title) +
+        $.statPanel(
+          $.queries.ingester.ingestOrClassicDeduplicatedQuery('sum without (user) (cortex_ingester_active_series{%s})' % [$.jobMatcher($._config.job_names.ingester)]),
+          format='short'
+        ) +
+        $.panelDescription(
+          title,
+          |||
+            The number of active series across all ingesters.
+            Active series are series that have received a sample within the active series window (configured via -ingester.active-series-metrics-idle-timeout).
+            With classic storage the sum of series from all ingesters is divided by the replication factor.
+            With ingest storage we take the maximum series of each ingest partition.
+          |||
+        ),
+      )
+      .addPanel(
         local title = 'Exemplars in ingesters';
         $.panel(title) +
         $.statPanel(
@@ -106,11 +141,16 @@ local filename = 'mimir-writes.json';
       $.row('Gateway - all write requests')
       .addPanel(
         $.timeseriesPanel('Requests / sec') +
-        $.qpsPanelNativeHistogram($.queries.gateway.requestsPerSecondMetric, $.queries.gateway.writeRequestsPerSecondSelector)
+        $.qpsPanelNativeHistogram($.queries.gateway.requestsPerSecondMetric, $.withoutMultiZoneJobs($.queries.gateway.writeRequestsPerSecondSelector, $._config.multi_zone_job_name_formats.gateway)) +
+        $.multiZoneQpsPanelMixin($.queries.gateway.requestsPerSecondMetric, $._config.multi_zone_job_name_formats.gateway, $.queries.write_http_routes_regex)
       )
       .addPanel(
         $.timeseriesPanel('Latency') +
         $.latencyRecordingRulePanelNativeHistogram($.queries.gateway.requestsPerSecondMetric, $.jobSelector($._config.job_names.gateway) + [utils.selector.re('route', $.queries.write_http_routes_regex)])
+      )
+      .addPanelIf(
+        $._config.show_multi_zone_write_path_panels,
+        $.multiZoneLatencyPanel($.queries.gateway.requestsPerSecondMetric, $._config.multi_zone_job_name_formats.gateway, $.queries.write_http_routes_regex)
       )
       .addPanel(
         $.timeseriesPanel('Per %s p99 latency' % $._config.per_instance_label) +
@@ -122,11 +162,16 @@ local filename = 'mimir-writes.json';
       $.row('Gateway - Prometheus remote write requests')
       .addPanel(
         $.timeseriesPanel('Requests / sec') +
-        $.qpsPanelNativeHistogram($.queries.gateway.requestsPerSecondMetric, $.queries.gateway.promWriteRequestsPerSecondSelector)
+        $.qpsPanelNativeHistogram($.queries.gateway.requestsPerSecondMetric, $.withoutMultiZoneJobs($.queries.gateway.promWriteRequestsPerSecondSelector, $._config.multi_zone_job_name_formats.gateway)) +
+        $.multiZoneQpsPanelMixin($.queries.gateway.requestsPerSecondMetric, $._config.multi_zone_job_name_formats.gateway, $.queries.write_prom_http_routes_regex)
       )
       .addPanel(
         $.timeseriesPanel('Latency') +
         $.latencyRecordingRulePanelNativeHistogram($.queries.gateway.requestsPerSecondMetric, $.jobSelector($._config.job_names.gateway) + [utils.selector.re('route', $.queries.write_prom_http_routes_regex)])
+      )
+      .addPanelIf(
+        $._config.show_multi_zone_write_path_panels,
+        $.multiZoneLatencyPanel($.queries.gateway.requestsPerSecondMetric, $._config.multi_zone_job_name_formats.gateway, $.queries.write_prom_http_routes_regex)
       )
       .addPanel(
         $.timeseriesPanel('Per %s p99 latency' % $._config.per_instance_label) +
@@ -138,11 +183,16 @@ local filename = 'mimir-writes.json';
       $.row('Gateway - OTLP write requests')
       .addPanel(
         $.timeseriesPanel('Requests / sec') +
-        $.qpsPanelNativeHistogram($.queries.gateway.requestsPerSecondMetric, $.queries.gateway.otlpWriteRequestsPerSecondSelector)
+        $.qpsPanelNativeHistogram($.queries.gateway.requestsPerSecondMetric, $.withoutMultiZoneJobs($.queries.gateway.otlpWriteRequestsPerSecondSelector, $._config.multi_zone_job_name_formats.gateway)) +
+        $.multiZoneQpsPanelMixin($.queries.gateway.requestsPerSecondMetric, $._config.multi_zone_job_name_formats.gateway, $.queries.write_otlp_http_routes_regex)
       )
       .addPanel(
         $.timeseriesPanel('Latency') +
         $.latencyRecordingRulePanelNativeHistogram($.queries.gateway.requestsPerSecondMetric, $.jobSelector($._config.job_names.gateway) + [utils.selector.re('route', $.queries.write_otlp_http_routes_regex)])
+      )
+      .addPanelIf(
+        $._config.show_multi_zone_write_path_panels,
+        $.multiZoneLatencyPanel($.queries.gateway.requestsPerSecondMetric, $._config.multi_zone_job_name_formats.gateway, $.queries.write_otlp_http_routes_regex)
       )
       .addPanel(
         $.timeseriesPanel('Per %s p99 latency' % $._config.per_instance_label) +
@@ -154,11 +204,16 @@ local filename = 'mimir-writes.json';
       $.row('Gateway - Influx write requests')
       .addPanel(
         $.timeseriesPanel('Requests / sec') +
-        $.qpsPanelNativeHistogram($.queries.gateway.requestsPerSecondMetric, $.queries.gateway.influxWriteRequestsPerSecondSelector)
+        $.qpsPanelNativeHistogram($.queries.gateway.requestsPerSecondMetric, $.withoutMultiZoneJobs($.queries.gateway.influxWriteRequestsPerSecondSelector, $._config.multi_zone_job_name_formats.gateway)) +
+        $.multiZoneQpsPanelMixin($.queries.gateway.requestsPerSecondMetric, $._config.multi_zone_job_name_formats.gateway, $.queries.write_influx_http_routes_regex)
       )
       .addPanel(
         $.timeseriesPanel('Latency') +
         $.latencyRecordingRulePanelNativeHistogram($.queries.gateway.requestsPerSecondMetric, $.jobSelector($._config.job_names.gateway) + [utils.selector.re('route', $.queries.write_influx_http_routes_regex)])
+      )
+      .addPanelIf(
+        $._config.show_multi_zone_write_path_panels,
+        $.multiZoneLatencyPanel($.queries.gateway.requestsPerSecondMetric, $._config.multi_zone_job_name_formats.gateway, $.queries.write_influx_http_routes_regex)
       )
       .addPanel(
         $.timeseriesPanel('Per %s p99 latency' % $._config.per_instance_label) +
@@ -186,19 +241,32 @@ local filename = 'mimir-writes.json';
             When distributor is not configured to use "early" request rejection, then rejected requests are also counted as "errors".
           |||
         ) +
-        $.qpsPanelNativeHistogram($.queries.distributor.requestsPerSecondMetric, $.queries.distributor.writeRequestsPerSecondSelector) +
+        $.qpsPanelNativeHistogram($.queries.distributor.requestsPerSecondMetric, $.withoutMultiZoneJobs($.queries.distributor.writeRequestsPerSecondSelector, $._config.multi_zone_job_name_formats.distributor)) +
+        $.multiZoneQpsPanelMixin($.queries.distributor.requestsPerSecondMetric, $._config.multi_zone_job_name_formats.distributor, $.queries.distributor.writeRequestsPerSecondRouteRegex) +
         if $._config.show_rejected_requests_on_writes_dashboard then
           {
             targets: [
               {
                 legendLink: null,
-                expr: 'sum (rate(cortex_distributor_instance_rejected_requests_total{%s}[$__rate_interval]))' % [$.jobMatcher($._config.job_names.distributor)],
+                expr: 'sum (rate(cortex_distributor_instance_rejected_requests_total{%s}[$__rate_interval]))' % [$.withoutMultiZoneJobs($.jobMatcher($._config.job_names.distributor), $._config.multi_zone_job_name_formats.distributor)],
                 format: 'time_series',
                 intervalFactor: 2,
                 legendFormat: 'rejected',
                 refId: 'B',
               },
-            ] + super.targets,
+            ] + (
+              if !$._config.show_multi_zone_write_path_panels then [] else [
+                {
+                  legendLink: null,
+                  expr: 'sum (rate(cortex_distributor_instance_rejected_requests_total{%s}[$__rate_interval]))' % [$.jobMatcher($.multiZoneJobNames($._config.multi_zone_job_name_formats.distributor, zone))],
+                  format: 'time_series',
+                  intervalFactor: 2,
+                  legendFormat: 'rejected zone-%s' % zone,
+                  refId: 'B_zone_%s' % zone,
+                }
+                for zone in $._config.multi_zone_write_path_zones
+              ]
+            ) + super.targets,
           } + $.aliasColors({
             rejected: '#EAB839',
           })
@@ -207,6 +275,10 @@ local filename = 'mimir-writes.json';
       .addPanel(
         $.timeseriesPanel('Latency') +
         $.latencyRecordingRulePanelNativeHistogram($.queries.distributor.requestsPerSecondMetric, $.jobSelector($._config.job_names.distributor) + [utils.selector.re('route', '%s' % $.queries.distributor.writeRequestsPerSecondRouteRegex)])
+      )
+      .addPanelIf(
+        $._config.show_multi_zone_write_path_panels,
+        $.multiZoneLatencyPanel($.queries.distributor.requestsPerSecondMetric, $._config.multi_zone_job_name_formats.distributor, $.queries.distributor.writeRequestsPerSecondRouteRegex)
       )
       .addPanel(
         $.timeseriesPanel('Per %s p99 latency' % $._config.per_instance_label) +
@@ -217,13 +289,134 @@ local filename = 'mimir-writes.json';
       $._config.show_ingest_storage_panels,
       $.row('Distributor (ingest storage)')
       .addPanel(
-        $.ingestStorageKafkaProducedRecordsRatePanel('distributor')
+        $.ingestStorageKafkaProducedRecordsRatePanel($.withoutMultiZoneJobs($.jobMatcher($._config.job_names.distributor), $._config.multi_zone_job_name_formats.distributor)) +
+        $.multiZoneIngestStorageKafkaProducedRecordsRatePanelMixin($._config.multi_zone_job_name_formats.distributor)
       )
       .addPanel(
-        $.ingestStorageKafkaProducedRecordsLatencyPanel('distributor')
+        $.ingestStorageKafkaProducedRecordsLatencyPanel($.jobMatcher($._config.job_names.distributor))
+      )
+      .addPanelIf(
+        $._config.show_multi_zone_write_path_panels,
+        $.multiZoneIngestStorageKafkaProducedRecordsLatencyPanel($._config.multi_zone_job_name_formats.distributor)
       )
     )
     .addRowsIf(std.objectHasAll($._config.injectRows, 'postDistributor'), $._config.injectRows.postDistributor($))
+    .addRowIf(
+      $._config.usage_tracker_enabled,
+      $.row('Usage Tracker (client)')
+      .addPanel(
+        local title = 'Client req / sec';
+        local asyncJobMatcher = $.jobMatcher(std.set($._config.job_names.distributor + $._config.job_names.ruler));
+        $.timeseriesPanel(title) +
+        $.qpsPanelNativeHistogram($.queries.usage_tracker.clientRequestsPerSecondMetric, $.namespaceMatcher()) +
+        {
+          // Prefix sync target legends with "Sync " and append async targets.
+          targets: [
+            t { legendFormat: 'Sync ' + t.legendFormat }
+            for t in super.targets
+          ] + [
+            {
+              expr: |||
+                sum(rate(cortex_distributor_async_usage_tracker_calls_total{%s}[$__rate_interval]))
+                -
+                (
+                  sum(rate(cortex_distributor_async_usage_tracker_calls_with_rejected_series_total{%s}[$__rate_interval]))
+                  or vector(0)
+                )
+              ||| % [asyncJobMatcher, asyncJobMatcher],
+              format: 'time_series',
+              legendFormat: 'Async',
+              refId: 'async',
+            },
+            {
+              expr: |||
+                sum(rate(cortex_distributor_async_usage_tracker_calls_with_rejected_series_total{%s}[$__rate_interval]))
+              ||| % [asyncJobMatcher],
+              format: 'time_series',
+              legendFormat: 'Async (rejected but ingested)',
+              refId: 'async_rejected',
+            },
+          ],
+        } +
+        $.aliasColors({
+          ['Sync ' + name]: $.qpsPanelColors[name]
+          for name in std.objectFields($.qpsPanelColors)
+        } + {
+          Async: '#2A66CF',
+          'Async (rejected but ingested)': '#9E44C1',
+        }) +
+        $.panelDescription(
+          title,
+          |||
+            The number of tracking requests sent through the Usage Tracker client, which are later multiplexed into individual requests to the Usage Tracker service instances.
+            Async requests proceed with the write request without waiting for tracking to complete.
+            Some async requests may have rejected the series that were actually ingested.
+          |||
+        ),
+      )
+      .addPanel(
+        local title = 'Client sync requests latency';
+        $.timeseriesPanel(title) +
+        $.latencyRecordingRulePanelNativeHistogram($.queries.usage_tracker.clientRequestsPerSecondMetric, $.jobSelector(std.set($._config.job_names.distributor + $._config.job_names.ruler))) +
+        $.panelDescription(
+          title,
+          |||
+            Time taken to track all series in remote write request, eventually sharding the tracking among multiple usage-tracker instances.
+          |||
+        )
+      )
+      .addPanel(
+        $.timeseriesPanel('Client per %s p99 sync requests latency' % $._config.per_instance_label) +
+        $.perInstanceLatencyPanelNativeHistogram('0.99', $.queries.usage_tracker.clientRequestsPerSecondMetric, $.jobSelector(std.set($._config.job_names.distributor + $._config.job_names.ruler)))
+      )
+    )
+    .addRowIf(
+      $._config.usage_tracker_enabled,
+      local title = 'Usage Tracker — TrackSeries';
+      $.row(title)
+      .addPanel(
+        $.timeseriesPanel('Requests / sec') +
+        $.qpsPanelNativeHistogram($.queries.usage_tracker.requestsPerSecondMetric, $.queries.usage_tracker.trackSeriesRequestsPerSecondSelector) +
+        $.panelDescription(
+          'Requests / sec',
+          |||
+            The rate of non-batched (singular) TrackSeries RPCs received by the Usage Tracker service.
+          |||
+        )
+      )
+      .addPanel(
+        $.timeseriesPanel('Latency') +
+        $.latencyRecordingRulePanelNativeHistogram($.queries.usage_tracker.requestsPerSecondMetric, $.jobSelector($._config.job_names.usage_tracker) + [utils.selector.re('route', $.queries.usage_tracker.trackSeriesRequestsPerSecondRouteRegex)])
+      )
+      .addPanel(
+        $.timeseriesPanel('Per %s p99 latency' % $._config.per_instance_label) +
+        $.perInstanceLatencyPanelNativeHistogram('0.99', $.queries.usage_tracker.requestsPerSecondMetric, $.jobSelector($._config.job_names.usage_tracker) + [utils.selector.re('route', $.queries.usage_tracker.trackSeriesRequestsPerSecondRouteRegex)])
+      )
+    )
+    .addRowIf(
+      $._config.usage_tracker_enabled,
+      local title = 'Usage Tracker — TrackSeriesBatch';
+      $.row(title)
+      .addPanel(
+        $.timeseriesPanel('Requests / sec') +
+        $.qpsPanelNativeHistogram($.queries.usage_tracker.requestsPerSecondMetric, $.queries.usage_tracker.trackSeriesBatchRequestsPerSecondSelector) +
+        $.panelDescription(
+          'Requests / sec',
+          |||
+            The rate of batched TrackSeriesBatch RPCs received by the Usage Tracker service.
+            These carry both synchronous batched tracking and asynchronous tracking, so each RPC represents many individual tracking calls multiplexed together.
+          |||
+        )
+      )
+      .addPanel(
+        $.timeseriesPanel('Latency') +
+        $.latencyRecordingRulePanelNativeHistogram($.queries.usage_tracker.requestsPerSecondMetric, $.jobSelector($._config.job_names.usage_tracker) + [utils.selector.re('route', $.queries.usage_tracker.trackSeriesBatchRequestsPerSecondRouteRegex)])
+      )
+      .addPanel(
+        $.timeseriesPanel('Per %s p99 latency' % $._config.per_instance_label) +
+        $.perInstanceLatencyPanelNativeHistogram('0.99', $.queries.usage_tracker.requestsPerSecondMetric, $.jobSelector($._config.job_names.usage_tracker) + [utils.selector.re('route', $.queries.usage_tracker.trackSeriesBatchRequestsPerSecondRouteRegex)])
+      )
+    )
     .addRowIf(
       $._config.show_grpc_ingestion_panels,
       ($.row('Ingester'))
@@ -333,17 +526,23 @@ local filename = 'mimir-writes.json';
             The estimation is used to enforce the max-buffered-bytes limit and to reduce discarded bytes.
           |||
         ) +
+        local selector = $.jobMatcher($._config.job_names.ingester);
+        local recordsPerFetchSum = utils.ncHistogramSumBy(
+          utils.ncHistogramSumRate('cortex_ingest_storage_reader_records_per_fetch', selector)
+        );
+        local query = utils.ncHistogramApplyTemplate(
+          template='sum(rate(cortex_ingest_storage_reader_fetch_bytes_total{' + selector + '}[$__rate_interval])) / %s',
+          query=recordsPerFetchSum,
+        );
         $.queryPanel([
-          |||
-            sum(rate(cortex_ingest_storage_reader_fetch_bytes_total{%s}[$__rate_interval]))
-            /
-            sum(rate(cortex_ingest_storage_reader_records_per_fetch_sum{%s}[$__rate_interval]))
-          ||| % [$.jobMatcher($._config.job_names.ingester), $.jobMatcher($._config.job_names.ingester)],
+          utils.showClassicHistogramQuery(query),
+          utils.showNativeHistogramQuery(query),
           |||
             histogram_avg(sum(rate(cortex_ingest_storage_reader_estimated_bytes_per_record{%s}[$__rate_interval])))
           |||
-          % [$.jobMatcher($._config.job_names.ingester)],
+          % [selector],
         ], [
+          'Actual bytes per record (avg)',
           'Actual bytes per record (avg)',
           'Estimated bytes per record (avg)',
         ]) +
@@ -457,6 +656,22 @@ local filename = 'mimir-writes.json';
       )
       .addPanel(
         $.ingestStorageIngesterEndToEndLatencyWhenStartingPanel(),
+      )
+      .addPanel(
+        $.timeseriesPanel('Forced TSDB head compactions in progress') +
+        $.panelDescription(
+          'Forced TSDB head compactions in progress',
+          |||
+            The number of ingesters currently performing a forced TSDB head compaction. During a forced compaction,
+            Kafka consumption may be paused, which is a common cause of elevated — but temporary — end-to-end latency.
+          |||
+        ) +
+        $.queryPanel([
+          'sum(max_over_time(cortex_ingester_tsdb_forced_compactions_in_progress{%s}[$__rate_interval]))' % [$.jobMatcher($._config.job_names.ingester)],
+        ], [
+          'In progress',
+        ]) +
+        { fieldConfig+: { defaults+: { unit: 'short' } } },
       )
     )
     .addRowIf(
@@ -607,7 +822,7 @@ local filename = 'mimir-writes.json';
       )
       .addPanel(
         $.timeseriesPanel('Upload latency') +
-        $.latencyPanel('thanos_objstore_bucket_operation_duration_seconds', '{%s,component="ingester",operation="upload"}' % $.jobMatcher($._config.job_names.ingester)) +
+        $.ncLatencyPanel('thanos_objstore_bucket_operation_duration_seconds', '%s,component="ingester",operation="upload"' % $.jobMatcher($._config.job_names.ingester)) +
         $.panelDescription(
           'Upload latency',
           |||
@@ -637,7 +852,7 @@ local filename = 'mimir-writes.json';
       )
       .addPanel(
         $.timeseriesPanel('Compactions latency') +
-        $.latencyPanel('cortex_ingester_tsdb_compaction_duration_seconds', '{%s}' % $.jobMatcher($._config.job_names.ingester)) +
+        $.ncLatencyPanel('cortex_ingester_tsdb_compaction_duration_seconds', '%s' % $.jobMatcher($._config.job_names.ingester)) +
         $.panelDescription(
           'Compaction latency',
           |||

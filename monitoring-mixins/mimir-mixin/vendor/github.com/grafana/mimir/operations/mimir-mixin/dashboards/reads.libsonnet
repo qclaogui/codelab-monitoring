@@ -6,7 +6,7 @@ local filename = 'mimir-reads.json';
     assert std.md5(filename) == 'e327503188913dc38ad571c647eef643' : 'UID of the dashboard has changed, please update references to dashboard.';
     ($.dashboard('Reads') + { uid: std.md5(filename) })
     .addClusterSelectorTemplates()
-    .addShowNativeLatencyVariable()
+    .addShowNativeLatencyVariable($.latencyVariableDefault())
     .addRowIf(
       $._config.show_dashboard_descriptions.reads,
       ($.row('Reads dashboard description') { height: '175px', showTitle: false })
@@ -324,15 +324,10 @@ local filename = 'mimir-reads.json';
       )
       .addPanel(
         $.timeseriesPanel('Latency (getmulti)') +
-        $.latencyPanel(
+        $.ncLatencyPanel(
           'thanos_cache_operation_duration_seconds',
           |||
-            {
-              %s,
-              operation="getmulti",
-              component="store-gateway",
-              name="index-cache"
-            }
+            %s, operation="getmulti", component="store-gateway", name="index-cache"
           ||| % $.jobMatcher($._config.job_names.store_gateway)
         )
       )
@@ -393,7 +388,7 @@ local filename = 'mimir-reads.json';
       $.thanosMemcachedCache(
         'Memcached – metadata cache (querier accesses)',
         $._config.job_names.querier,
-        'querier',
+        'querier|querier-rc-.*',
         'metadata-cache'
       )
     )
@@ -403,7 +398,7 @@ local filename = 'mimir-reads.json';
     )
     // Object store metrics for the querier.
     .addRows(
-      $.getObjectStoreRows('Blocks object store (querier accesses)', 'querier')
+      $.getObjectStoreRows('Blocks object store (querier accesses)', 'querier|querier-rc.*')
     )
     .addRowIf(
       $._config.show_reactive_limiter_panels,
@@ -411,7 +406,7 @@ local filename = 'mimir-reads.json';
       .addPanel(
         $.timeseriesPanel('Ingester per %s queued requests' % $._config.per_instance_label) +
         $.hiddenLegendQueryPanel(
-          'sum by (%s) (cortex_ingester_reactive_limiter_blocked_requests{%s, request_type="read"})'
+          'sum by (%s) (cortex_ingester_reactive_limiter_queued_requests{%s, request_type="read"})'
           % [$._config.per_instance_label, $.jobMatcher($._config.job_names.ingester)], '',
         ) +
         { fieldConfig+: { defaults+: { unit: 'req' } } }

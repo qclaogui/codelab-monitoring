@@ -7,9 +7,12 @@ multitenancy_enabled: true
 usage_report:
   reporting_enabled: false
 
-compactor:
-  compaction:
-    block_retention: 1h
+# Optional. Enables span profiling via otelpyroscope. When enabled, Tempo attaches pprof goroutine
+# labels (span_id, span_name) to OTel spans and adds a pyroscope.profile.id attribute to root spans,
+# enabling profile-to-trace correlation in Pyroscope.
+# Requires OTEL_TRACES_EXPORTER, OTEL_EXPORTER_OTLP_ENDPOINT, or
+# OTEL_EXPORTER_OTLP_TRACES_ENDPOINT to be set.
+span_profiling: true
 
 memberlist:
   join_members: [ tempo-memberlist:7946 ]
@@ -22,9 +25,6 @@ distributor:
           endpoint: tempo-headless:4317
         http:
           endpoint: tempo-headless:4318
-
-ingester:
-  max_block_duration: 5m
 
 metrics_generator:
   processor:
@@ -50,10 +50,6 @@ metrics_generator:
     - url: http://nginx.gateway.svc.cluster.local:8080/api/v1/push
       send_exemplars: true
       send_native_histograms: true
-      headers:
-        X-Scope-OrgID: "anonymous"
-  traces_storage:
-    path: /tmp/tempo/generator/traces
 
 server:
   http_listen_port: 3200
@@ -77,11 +73,12 @@ cache:
   caches:
   - roles:
     - bloom
+    - trace-id-index
     - parquet-footer
-    - parquet-page
-    - frontend-search
     - parquet-column-idx
     - parquet-offset-idx
+    - parquet-page
+    - frontend-search
     memcached:
       addresses: "dns+memcached.memcached-system.svc:11211"
 
@@ -94,12 +91,8 @@ overrides:
       processors:
       - service-graphs
       - span-metrics
-      - local-blocks
       generate_native_histograms: both
 
 querier:
   frontend_worker:
     frontend_address: tempo:9095
-
-query_frontend:
-  multi_tenant_queries_enabled: true

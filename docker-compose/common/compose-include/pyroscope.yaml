@@ -10,7 +10,7 @@ services:
       profiles.grafana.com/memory.scrape: true
       profiles.grafana.com/goroutine.scrape: true
     depends_on: {minio: {condition: service_healthy}}
-    image: ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:2.2.1}
+    image: ${PYROSCOPE_IMAGE:-docker.io/grafana/pyroscope:2.3.0}
     configs:
       - source: pyroscope_config_file
         target: /etc/pyroscope/config.yaml
@@ -28,9 +28,9 @@ services:
       # test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:4040/ready || exit 1" ]
       ## execute the `test` without a shell, use the form: `["CMD", "command", "arg1", "arg2"]`
       test: ["CMD", "profilecli", "ready"]
-      interval: 2s
-      timeout: 1s
-      retries: 15
+      interval: 5s
+      timeout: 2s
+      retries: 10
       # -target=all boots metastore (~12s) then ingester waits 15s post-ready,
       # so ~30s+ before /ready succeeds — give it room before retries count.
       start_period: 60s

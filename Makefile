@@ -12,11 +12,11 @@ install-build-deps: ## Install dependencies tools
 
 .PHONY: update-helm-charts
 update-helm-charts: $(UPDATECLI) ## Update helm charts dependencies
-	@$(UPDATECLI) apply --config .github/updatecli.d/kubernetes > /dev/null 2>&1
+	@$(UPDATECLI) pipeline apply --clean --config .github/updatecli.d/kubernetes > /dev/null 2>&1
 
 .PHONY: update-docker-images
 update-docker-images: $(UPDATECLI) ## Update docker image dependencies
-	@$(UPDATECLI) apply --config .github/updatecli.d/docker-compose > /dev/null 2>&1
+	@$(UPDATECLI) pipeline apply --clean --config .github/updatecli.d/docker-compose > /dev/null 2>&1
 
 ##@ Lint & fmt
 
@@ -38,7 +38,7 @@ ALLOY_CONFIG_FILES_IN_DOCKER = $(subst ./, /data/, $(ALLOY_CONFIG_FILES))
 alloy-fmt: ## Uses Grafana Alloy to fmt the config
 	@for c in $(ALLOY_CONFIG_FILES_IN_DOCKER); do \
 		echo "$$c"; \
-		docker run --rm --volume "$(shell pwd):/data" -u $(shell id -u) grafana/alloy:v1.11.3 fmt -w $$c ; \
+		docker run --rm --volume "$(shell pwd):/data" -u $(shell id -u) grafana/alloy:v1.19.2 fmt -w $$c ; \
 	done
 
 .PHONY: go-fmt

@@ -24,7 +24,7 @@ services:
     # https://github.com/grafana/grafana
     labels:
       metrics.grafana.com/scrape: false
-    image: ${GRAFANA_IMAGE:-docker.io/grafana/grafana:13.2.0}
+    image: ${GRAFANA_IMAGE:-docker.io/grafana/grafana:13.2.1}
     command:
       - --config=/etc/grafana-config/grafana.ini
     volumes:
@@ -37,6 +37,8 @@ services:
       - ../../../monitoring-mixins/memcached-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/memcached-mixin
       # - ../../../monitoring-mixins/go-runtime-mixin/deploy/dashboards_out:/var/lib/grafana/dashboards/go-runtime-mixin
     environment:
+      NAMESPACE: monitoring-system
+      GF_FEATURE_TOGGLES_ENABLE: "alertingListViewV2PreviewToggle,pyroscopeUTF8LabelNames,flameGraphWithCallTree,grafana.dynamicTraceToLogs,kubernetesLogsDrilldown"
       GF_SMTP_ENABLED: true
       GF_SMTP_HOST: inbucket:2500
     ports:
