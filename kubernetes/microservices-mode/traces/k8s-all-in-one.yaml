@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.6.2
+    app.kubernetes.io/version: 3.7.6
   name: logging-system
 ---
 apiVersion: v1
@@ -23,7 +23,7 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.6.2
+    app.kubernetes.io/version: 3.7.6
   name: loki
   namespace: logging-system
 ---
@@ -50,7 +50,7 @@ metadata:
     app.kubernetes.io/instance: mimir-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 3.0.1
+    app.kubernetes.io/version: 3.2.0
   name: mimir
   namespace: monitoring-system
 ---
@@ -202,7 +202,7 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.6.2
+    app.kubernetes.io/version: 3.7.6
   name: loki-clusterrole
 rules:
 - apiGroups:
@@ -244,7 +244,7 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.6.2
+    app.kubernetes.io/version: 3.7.6
   name: loki-clusterrolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -442,6 +442,8 @@ data:
     server:
       http_listen_port: 3100
       grpc_listen_port: 9095
+      http_server_read_timeout: 310s # must be slightly longer than limits_config.query_timeout
+      http_server_write_timeout: 310s # must be slightly longer than limits_config.query_timeout
       log_level: info
       log_format: json
 
@@ -482,6 +484,7 @@ data:
     # https://github.com/grafana/loki/blob/main/docs/sources/configure/_index.md#query_range
     query_range:
       align_queries_with_step: true
+      instant_metric_query_split_align: true
 
       cache_results: true
       results_cache:
@@ -495,13 +498,36 @@ data:
           memcached_client:
             addresses: "dns+memcached.memcached-system.svc.cluster.local:11211"
 
+      cache_instant_metric_results: true
+      instant_metric_results_cache:
+        cache:
+          memcached_client:
+            addresses: "dns+memcached.memcached-system.svc.cluster.local:11211"
+
+      cache_series_results: true
+      series_results_cache:
+        cache:
+          memcached_client:
+            addresses: "dns+memcached.memcached-system.svc.cluster.local:11211"
+
+      cache_volume_results: true
+      volume_results_cache:
+        cache:
+          memcached_client:
+            addresses: "dns+memcached.memcached-system.svc.cluster.local:11211"
+
     pattern_ingester:
       enabled: true
+      metric_aggregation:
+        loki_address: loki.logging-system.svc.cluster.local:3100
 
     limits_config:
-      max_global_streams_per_user: 0
+      split_instant_metric_queries_by_interval: '10m' # default = 1h
+      metric_aggregation_enabled: true
+      max_global_streams_per_user: 10000
       ingestion_rate_mb: 50000
       ingestion_burst_size_mb: 50000
+      query_timeout: 300s
       volume_enabled: true
 
     ruler:
@@ -515,7 +541,7 @@ data:
 
     schema_config:
       configs:
-      - from: "2024-04-08"
+      - from: 2026-08-01
         index:
           period: 24h
           prefix: loki_index_
@@ -541,8 +567,8 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.6.2
-  name: loki-config-h496k8kh6b
+    app.kubernetes.io/version: 3.7.6
+  name: loki-config-b88cggh9m7
   namespace: logging-system
 ---
 apiVersion: v1
@@ -565,7 +591,7 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.6.2
+    app.kubernetes.io/version: 3.7.6
   name: loki-runtime-9599m5k6h2
   namespace: logging-system
 ---
@@ -5504,7 +5530,7 @@ data:
     ruler:
       rule_path: /data/rules
       enable_api: true
-      alertmanager_url: http://localhost:8080/alertmanager
+      alertmanager_url: http://mimir:8080/alertmanager
     ruler_storage:
       s3:
         bucket_name: mimir-ruler
@@ -5557,8 +5583,8 @@ metadata:
     app.kubernetes.io/instance: mimir-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 3.0.1
-  name: mimir-config-tk585gmccf
+    app.kubernetes.io/version: 3.2.0
+  name: mimir-config-f5mbg5m748
   namespace: monitoring-system
 ---
 apiVersion: v1
@@ -5719,7 +5745,7 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.6.2
+    app.kubernetes.io/version: 3.7.6
   name: loki-env-58m52b99kc
   namespace: logging-system
 type: Opaque
@@ -5768,7 +5794,7 @@ metadata:
     app.kubernetes.io/instance: mimir-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 3.0.1
+    app.kubernetes.io/version: 3.2.0
   name: mimir-env-92ddctt858
   namespace: monitoring-system
 type: Opaque
@@ -5793,7 +5819,7 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.6.2
+    app.kubernetes.io/version: 3.7.6
   name: loki
   namespace: logging-system
 spec:
@@ -5816,7 +5842,7 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.6.2
+    app.kubernetes.io/version: 3.7.6
     prometheus.io/service-monitor: "false"
   name: loki-headless
   namespace: logging-system
@@ -5838,7 +5864,7 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.6.2
+    app.kubernetes.io/version: 3.7.6
     prometheus.io/service-monitor: "false"
   name: loki-memberlist
   namespace: logging-system
@@ -5945,7 +5971,7 @@ metadata:
     app.kubernetes.io/instance: mimir-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 3.0.1
+    app.kubernetes.io/version: 3.2.0
   name: mimir
   namespace: monitoring-system
 spec:
@@ -5967,7 +5993,7 @@ metadata:
     app.kubernetes.io/instance: mimir-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 3.0.1
+    app.kubernetes.io/version: 3.2.0
     prometheus.io/service-monitor: "false"
   name: mimir-memberlist
   namespace: monitoring-system
@@ -6348,7 +6374,7 @@ metadata:
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: mimir
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 3.0.1
+    app.kubernetes.io/version: 3.2.0
   name: mimir
   namespace: monitoring-system
 spec:
@@ -6390,7 +6416,7 @@ spec:
         envFrom:
         - secretRef:
             name: mimir-env-92ddctt858
-        image: docker.io/grafana/mimir:3.0.1
+        image: docker.io/grafana/mimir:3.2.0
         imagePullPolicy: IfNotPresent
         name: mimir
         ports:
@@ -6419,7 +6445,7 @@ spec:
       terminationGracePeriodSeconds: 60
       volumes:
       - configMap:
-          name: mimir-config-tk585gmccf
+          name: mimir-config-f5mbg5m748
         name: config
       - emptyDir: {}
         name: storage
@@ -7086,7 +7112,7 @@ metadata:
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
     app.kubernetes.io/part-of: memberlist
-    app.kubernetes.io/version: 3.6.2
+    app.kubernetes.io/version: 3.7.6
   name: loki
   namespace: logging-system
 spec:
@@ -7124,7 +7150,7 @@ spec:
         envFrom:
         - secretRef:
             name: loki-env-58m52b99kc
-        image: docker.io/grafana/loki:3.6.2
+        image: docker.io/grafana/loki:3.7.6
         imagePullPolicy: IfNotPresent
         name: loki
         ports:
@@ -7173,7 +7199,7 @@ spec:
           items:
           - key: config.yaml
             path: config.yaml
-          name: loki-config-h496k8kh6b
+          name: loki-config-b88cggh9m7
         name: config
       - configMap:
           name: loki-runtime-9599m5k6h2
@@ -7708,7 +7734,7 @@ metadata:
     app.kubernetes.io/instance: loki-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: loki
-    app.kubernetes.io/version: 3.6.2
+    app.kubernetes.io/version: 3.7.6
   name: loki
   namespace: logging-system
 spec:
@@ -7772,7 +7798,7 @@ metadata:
     app.kubernetes.io/instance: mimir-monolithic-mode
     app.kubernetes.io/managed-by: Kustomize
     app.kubernetes.io/name: mimir
-    app.kubernetes.io/version: 3.0.1
+    app.kubernetes.io/version: 3.2.0
   name: mimir
   namespace: monitoring-system
 spec:

@@ -8,6 +8,8 @@ analytics:
 server:
   http_listen_port: 3100
   grpc_listen_port: 9095
+  http_server_read_timeout: 310s # must be slightly longer than limits_config.query_timeout
+  http_server_write_timeout: 310s # must be slightly longer than limits_config.query_timeout
   log_level: info
   log_format: json
 
@@ -48,6 +50,7 @@ memberlist:
 # https://github.com/grafana/loki/blob/main/docs/sources/configure/_index.md#query_range
 query_range:
   align_queries_with_step: true
+  instant_metric_query_split_align: true
 
   cache_results: true
   results_cache:
@@ -61,13 +64,36 @@ query_range:
       memcached_client:
         addresses: "dns+memcached.memcached-system.svc.cluster.local:11211"
 
+  cache_instant_metric_results: true
+  instant_metric_results_cache:
+    cache:
+      memcached_client:
+        addresses: "dns+memcached.memcached-system.svc.cluster.local:11211"
+
+  cache_series_results: true
+  series_results_cache:
+    cache:
+      memcached_client:
+        addresses: "dns+memcached.memcached-system.svc.cluster.local:11211"
+
+  cache_volume_results: true
+  volume_results_cache:
+    cache:
+      memcached_client:
+        addresses: "dns+memcached.memcached-system.svc.cluster.local:11211"
+
 pattern_ingester:
   enabled: true
+  metric_aggregation:
+    loki_address: loki.logging-system.svc.cluster.local:3100
 
 limits_config:
-  max_global_streams_per_user: 0
+  split_instant_metric_queries_by_interval: '10m' # default = 1h
+  metric_aggregation_enabled: true
+  max_global_streams_per_user: 10000
   ingestion_rate_mb: 50000
   ingestion_burst_size_mb: 50000
+  query_timeout: 300s
   volume_enabled: true
 
 ruler:
@@ -81,7 +107,7 @@ runtime_config:
 
 schema_config:
   configs:
-  - from: "2024-04-08"
+  - from: 2026-08-01
     index:
       period: 24h
       prefix: loki_index_
