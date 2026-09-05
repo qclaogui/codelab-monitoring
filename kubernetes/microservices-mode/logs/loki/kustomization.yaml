@@ -18,13 +18,17 @@ secretGenerator:
   namespace: logging-system
   literals:
   - LOKI_S3_SECRET_ACCESS_KEY=VD538OYxSEiGD4I9mmFfqFMCGq1vIiGm
-# configMapGenerator:
-# - name: loki-config
-#   namespace: logging-system
-#   files:
-#   - config.yaml=configs/loki.yaml
-# # Move the configMapGenerator, as a plugin, under generators because kustomize runs plugins after built-in fields
+# Move the configMapGenerator, as a plugin, under generators because kustomize runs plugins after built-in fields
 generators:
+- |-
+  apiVersion: builtin
+  kind: ConfigMapGenerator
+  metadata:
+    name: loki-config
+    namespace: logging-system
+  behavior: replace
+  files:
+  - config.yaml=configs/loki.yaml
 - |-
   apiVersion: builtin
   kind: ConfigMapGenerator
@@ -34,19 +38,3 @@ generators:
   behavior: replace
   files:
   - runtime-config.yaml=configs/loki-runtime.yaml
-# patches:
-# - patch: |-
-#     apiVersion: apps/v1
-#     kind: StatefulSet
-#     metadata:
-#       name: loki-distributed-ingester
-#       namespace: logging-system
-#     spec:
-#       template:
-#         spec:
-#           containers:
-#             - name: ingester
-#               args:
-#                 - -config.file=/etc/loki/config/config.yaml
-#                 - -target=ingester
-#                 - -config.expand-env=true
