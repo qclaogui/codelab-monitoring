@@ -10,7 +10,7 @@
 
 # If you want to get the values file from Github, build the URL as follows because we git tag every release:
 # `https://github.com/grafana/mimir/blob/mimir-distributed-<chart-version>/operations/helm/charts/mimir-distributed/values.yaml`.
-# For example, https://github.com/grafana/mimir/blob/mimir-distributed-3.1.0/operations/helm/charts/mimir-distributed/values.yaml.
+# For example, https://github.com/grafana/mimir/blob/mimir-distributed-release-6.2/operations/helm/charts/mimir-distributed/values.yaml.
 
 # -- Overrides the version used to determine compatibility of resources with the target Kubernetes cluster.
 # This is useful when using `helm template`, because then helm will use the client version of kubectl as the Kubernetes version,
@@ -29,9 +29,10 @@ fullnameOverride: null
 
 image:
   # -- Grafana Mimir container image repository
-  repository: grafana/mimir
+  repository: docker.io/grafana/mimir
   # -- Grafana Mimir container image tag
-  tag: 3.0.1
+  # When set it takes precedence over what is defined as "appVersion" in Chart.yaml.
+  # tag: 3.2.0
   # -- Container pull policy
   pullPolicy: IfNotPresent
   # -- Optionally specify an array of imagePullSecrets
@@ -280,10 +281,7 @@ mimir:
       - dns+{{ include "mimir.fullname" . }}-gossip-ring.{{ .Release.Namespace }}.svc.{{ .Values.global.clusterDomain }}:{{ include "mimir.memberlistBindPort" . }}
 
     querier:
-      # With query sharding we run more but smaller queries. We must strike a balance
-      # which allows us to process more sharded queries in parallel when requested, but not overload
-      # queriers during non-sharded queries.
-      max_concurrent: 16
+      max_concurrent: 8
 
     query_scheduler:
       # Increase from default of 100 to account for queries created by query sharding
@@ -445,6 +443,19 @@ kedaAutoscaling:
   #  - cluster!="eu-west"
   #  - app="foobar"
 
+  # -- KEDA fallback configuration. This section specifies fallback options when the scaler fails to get metrics from the source.
+  # For more information, refer to the [KEDA ScaledObject specification](https://keda.sh/docs/2.18/reference/scaledobject-spec/).
+  fallback:
+    # -- Enable fallback behavior when the scaler fails to get metrics.
+    enabled: false
+    # failureThreshold: 3  # Number of consecutive failures before activating fallback behavior
+    # replicas: 6          # Number of replicas to scale to when fallback is triggered
+    # behavior: "static"   # Fallback behavior type. Options: "static", "currentReplicas", "currentReplicasIfHigher", "currentReplicasIfLower"
+    #                      # static: Use the fallback.replicas value
+    #                      # currentReplicas: Use the current replica count
+    #                      # currentReplicasIfHigher: Use current replicas if higher than fallback.replicas, otherwise use fallback.replicas
+    #                      # currentReplicasIfLower: Use current replicas if lower than fallback.replicas, otherwise use fallback.replicas
+
   # --KEDA trigger authentication settings.
   # ref: https://keda.sh/docs/2.16/scalers/pulsar/#authentication-parameters
   authentication:
@@ -467,10 +478,10 @@ alertmanager:
   revisionHistoryLimit: null
 
   # -- Allows to override the container image of the alertmanager component.
-  # When set it takes precedence over what is defined in global "image" .
+  # When set it takes precedence over what is defined in global "image".
   image:
     # repository: grafana/mimir
-    # tag: 2.16.0
+    # tag: 3.2.0
 
   statefulSet:
     enabled: true
@@ -565,6 +576,10 @@ alertmanager:
     #
     annotations: {}
 
+    # Alertmanager data Persistent Volume Claim labels
+    #
+    labels: {}
+
     # Alertmanager data Persistent Volume access modes
     # Must match those of existing PV or dynamic provisioner
     # Ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
@@ -589,6 +604,13 @@ alertmanager:
     #
     # A per-zone storageClass configuration in `alertmanager.zoneAwareReplication.zones[*].storageClass` takes precedence over this field.
     # storageClass: "-"
+
+    # Alertmanager data Persistent Volume Attributes Class
+    # Allows you to dynamically modify a volume's attributes on the fly
+    # Requires Kubernetes 1.31+ and a CSI driver with ModifyVolume support.
+    # Must reference an existing cluster VolumeAttributesClass.
+    # A per-zone volumeAttributesClassName in `alertmanager.zoneAwareReplication.zones[*].volumeAttributesClassName` takes precedence over this field when set.
+    # volumeAttributesClassName: my-cluster-vac
 
     # -- Enable StatefulSetAutoDeletePVC feature
     # https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#persistentvolumeclaim-retention
@@ -710,6 +732,9 @@ alertmanager:
         # If set to "-", then use `storageClassName: ""`, which disables dynamic provisioning
         # If undefined or set to null (the default), then fall back to the value of `alertmanager.persistentVolume.storageClass`.
         storageClass: null
+        # -- Persistent Volume VolumeAttributesClass for this zone.
+        # If undefined or set to null (the default), then fall back to the component `persistentVolume.volumeAttributesClassName`.
+        volumeAttributesClassName: null
         # -- noDownscale adds a label that can be used by the rollout-operator as documented in the rollout-operator repo: https://github.com/grafana/rollout-operator#webhooks
         noDownscale: false
         # -- downscaleLeader is an Annotation used by the rollout-operator to coordinate downscaling across zones.
@@ -730,6 +755,9 @@ alertmanager:
         # If set to "-", then use `storageClassName: ""`, which disables dynamic provisioning
         # If undefined or set to null (the default), then fall back to the value of `alertmanager.persistentVolume.storageClass`.
         storageClass: null
+        # -- Persistent Volume VolumeAttributesClass for this zone.
+        # If undefined or set to null (the default), then fall back to the component `persistentVolume.volumeAttributesClassName`.
+        volumeAttributesClassName: null
         # -- noDownscale adds a label that can be used by the rollout-operator as documented in the rollout-operator repo: https://github.com/grafana/rollout-operator#webhooks
         noDownscale: false
         # -- downscaleLeader is an Annotation used by the rollout-operator to coordinate downscaling across zones.
@@ -750,6 +778,9 @@ alertmanager:
         # If set to "-", then use `storageClassName: ""`, which disables dynamic provisioning
         # If undefined or set to null (the default), then fall back to the value of `alertmanager.persistentVolume.storageClass`.
         storageClass: null
+        # -- Persistent Volume VolumeAttributesClass for this zone.
+        # If undefined or set to null (the default), then fall back to the component `persistentVolume.volumeAttributesClassName`.
+        volumeAttributesClassName: null
         # -- noDownscale adds a label that can be used by the rollout-operator as documented in the rollout-operator repo: https://github.com/grafana/rollout-operator#webhooks
         noDownscale: false
         # -- downscaleLeader is an Annotation used by the rollout-operator to coordinate downscaling across zones.
@@ -763,10 +794,10 @@ distributor:
   enabled: true
 
   # -- Allows to override the container image of the distributor component.
-  # When set it takes precedence over what is defined in global "image" .
+  # When set it takes precedence over what is defined in global "image".
   image:
     # repository: grafana/mimir
-    # tag: 2.16.0
+    # tag: 3.2.0
 
   # Setting it to null will produce a deployment without replicas set, allowing you to use autoscaling with the deployment
   replicas: 1
@@ -797,6 +828,8 @@ distributor:
           - periodSeconds: 600
             type: Percent
             value: 10
+    # -- Fallback configuration for this component. If not set (null), the global kedaAutoscaling.fallback configuration is used.
+    # fallback: {}
 
   service:
     annotations: {}
@@ -888,16 +921,17 @@ ingester:
   enabled: true
 
   # -- Allows to override the container image of the ingester component.
-  # When set it takes precedence over what is defined in global "image" .
+  # When set it takes precedence over what is defined in global "image".
   image:
     # repository: grafana/mimir
-    # tag: 2.16.0
+    # tag: 3.2.0
 
   # -- Total number of replicas for the ingester across all availability zones
   # If ingester.zoneAwareReplication.enabled=false, this number is taken as is.
   # Otherwise each zone starts `ceil(replicas / number_of_zones)` number of pods.
   #   E.g. if 'replicas' is set to 4 and there are 3 zones, then 4/3=1.33 and after rounding up it means 2 pods per zone are started.
   replicas: 3
+  revisionHistoryLimit: null
 
   statefulSet:
     enabled: true
@@ -976,6 +1010,10 @@ ingester:
     #
     annotations: {}
 
+    # Ingester data Persistent Volume Claim labels
+    #
+    labels: {}
+
     # Ingester data Persistent Volume access modes
     # Must match those of existing PV or dynamic provisioner
     # Ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
@@ -1004,6 +1042,13 @@ ingester:
     # A per-zone storageClass configuration in `ingester.zoneAwareReplication.zones[*].storageClass` takes precedence over this field.
     #
     # storageClass: "-"
+
+    # Ingester data Persistent Volume Attributes Class
+    # Allows you to dynamically modify a volume's attributes on the fly
+    # Requires Kubernetes 1.31+ and a CSI driver with ModifyVolume support.
+    # Must reference an existing cluster VolumeAttributesClass.
+    # A per-zone volumeAttributesClassName in `ingester.zoneAwareReplication.zones[*].volumeAttributesClassName` takes precedence over this field when set.
+    # volumeAttributesClassName: my-cluster-vac
 
   livenessProbe: null
   readinessProbe:
@@ -1063,9 +1108,17 @@ ingester:
     enabled: true
     # -- Maximum number of ingesters that can be unavailable per zone during rollout
     maxUnavailable: 50
+    # -- Minimum time for the rollout operator to wait between ingester zone down scales
+    minTimeBetweenZonesDownscale: 12h
     # -- topologyKey to use in pod anti-affinity. If unset, no anti-affinity rules are generated. If set, the generated anti-affinity rule makes sure that pods from different zones do not mix.
     # E.g.: topologyKey: 'kubernetes.io/hostname'
     topologyKey: null
+    # -- When true and zone-aware replication is enabled, automatically set the
+    # -ingest-storage.kafka.client-rack flag on each ingester zone to its zone name.
+    # This enables Kafka rack-aware consumption so that ingesters prefer reading
+    # from Kafka replicas in the same availability zone, reducing cross-AZ traffic.
+    # Set to false if you want to manage client-rack manually via extraArgs.
+    autoIngestStorageClientRack: true
     # -- Auxiliary values for migration, see https://grafana.com/docs/helm-charts/mimir-distributed/latest/migration-guides/migrate-from-single-zone-with-helm/
     migration:
       # -- Indicate if migration is ongoing for multi zone ingester
@@ -1081,6 +1134,7 @@ ingester:
       # -- Enable zone-awareness, write path only
       writePath: false
     # -- Zone definitions for ingester zones. Note: you have to redefine the whole list to change parts as YAML does not allow to modify parts of a list.
+    # When ingest storage is enabled, 2 zones are sufficient since Kafka handles replication. 3 zones are required for classic (non-ingest-storage) architecture.
     zones:
       # -- Name of the zone, used in labels and selectors. Must follow Kubernetes naming restrictions: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
       - name: zone-a
@@ -1095,6 +1149,9 @@ ingester:
         # If set to "-", then use `storageClassName: ""`, which disables dynamic provisioning
         # If undefined or set to null (the default), then fall back to the value of `ingester.persistentVolume.storageClass`.
         storageClass: null
+        # -- Persistent Volume VolumeAttributesClass for this zone.
+        # If undefined or set to null (the default), then fall back to the component `persistentVolume.volumeAttributesClassName`.
+        volumeAttributesClassName: null
         # -- noDownscale adds a label that can be used by the rollout-operator as documented in the rollout-operator repo: https://github.com/grafana/rollout-operator#webhooks
         noDownscale: false
         # -- downscaleLeader is an Annotation used by the rollout-operator to coordinate downscaling across zones.
@@ -1117,6 +1174,9 @@ ingester:
         # If set to "-", then use `storageClassName: ""`, which disables dynamic provisioning
         # If undefined or set to null (the default), then fall back to the value of `ingester.persistentVolume.storageClass`.
         storageClass: null
+        # -- Persistent Volume VolumeAttributesClass for this zone.
+        # If undefined or set to null (the default), then fall back to the component `persistentVolume.volumeAttributesClassName`.
+        volumeAttributesClassName: null
         # -- noDownscale adds a label that can be used by the rollout-operator as documented in the rollout-operator repo: https://github.com/grafana/rollout-operator#webhooks
         noDownscale: false
         # -- downscaleLeader is an Annotation used by the rollout-operator to coordinate downscaling across zones.
@@ -1139,6 +1199,9 @@ ingester:
         # If set to "-", then use `storageClassName: ""`, which disables dynamic provisioning
         # If undefined or set to null (the default), then fall back to the value of `ingester.persistentVolume.storageClass`.
         storageClass: null
+        # -- Persistent Volume VolumeAttributesClass for this zone.
+        # If undefined or set to null (the default), then fall back to the component `persistentVolume.volumeAttributesClassName`.
+        volumeAttributesClassName: null
         # -- noDownscale adds a label that can be used by the rollout-operator as documented in the rollout-operator repo: https://github.com/grafana/rollout-operator#webhooks
         noDownscale: false
         # -- downscaleLeader is an Annotation used by the rollout-operator to coordinate downscaling across zones.
@@ -1153,10 +1216,10 @@ overrides_exporter:
   enabled: true
 
   # -- Allows to override the container image of the overrides-exporter component.
-  # When set it takes precedence over what is defined in global "image" .
+  # When set it takes precedence over what is defined in global "image".
   image:
     # repository: grafana/mimir
-    # tag: 2.16.0
+    # tag: 3.2.0
 
   replicas: 1
   revisionHistoryLimit: null
@@ -1248,10 +1311,10 @@ ruler:
   enabled: true
 
   # -- Allows to override the container image of the ruler component.
-  # When set it takes precedence over what is defined in global "image" .
+  # When set it takes precedence over what is defined in global "image".
   image:
     # repository: grafana/mimir
-    # tag: 2.16.0
+    # tag: 3.2.0
 
   replicas: 1
   revisionHistoryLimit: null
@@ -1281,6 +1344,8 @@ ruler:
           - periodSeconds: 600
             type: Percent
             value: 10
+    # -- Fallback configuration for this component. If not set (null), the global kedaAutoscaling.fallback configuration is used.
+    # fallback: {}
 
   service:
     annotations: {}
@@ -1309,6 +1374,11 @@ ruler:
   # Additional ruler container arguments, e.g. log level (debug, info, warn, error)
   extraArgs: {}
     # log.level: debug
+
+  # -- Size in bytes of the memory ballast (-mem-ballast-size-bytes). The ballast reduces GC frequency
+  # and CPU usage around ruler start and rollouts. It must be smaller than any GOMEMLIMIT set on the
+  # ruler, otherwise the GC thrashes permanently. Set to 0 to disable the ballast.
+  memBallastSizeBytes: 1073741824
 
   # Pod Labels
   podLabels: {}
@@ -1379,10 +1449,10 @@ ruler:
 # -- Only deployed if .Values.ruler.remoteEvaluationDedicatedQueryPath
 ruler_querier:
   # -- Allows to override the container image of the ruler-querier component.
-  # When set it takes precedence over what is defined in global "image" .
+  # When set it takes precedence over what is defined in global "image".
   image:
     # repository: grafana/mimir
-    # tag: 2.16.0
+    # tag: 3.2.0
 
   replicas: 2
   revisionHistoryLimit: null
@@ -1417,6 +1487,8 @@ ruler_querier:
             type: Pods
             value: 15
         stabilizationWindowSeconds: 60
+    # -- Fallback configuration for this component. If not set (null), the global kedaAutoscaling.fallback configuration is used.
+    # fallback: {}
 
   service:
     annotations: {}
@@ -1502,10 +1574,10 @@ ruler_querier:
 # -- Only deployed if .Values.ruler.remoteEvaluationDedicatedQueryPath
 ruler_query_frontend:
   # -- Allows to override the container image of the ruler-query-frontend component.
-  # When set it takes precedence over what is defined in global "image" .
+  # When set it takes precedence over what is defined in global "image".
   image:
     # repository: grafana/mimir
-    # tag: 2.16.0
+    # tag: 3.2.0
 
   # Setting it to null will produce a deployment without replicas set, allowing you to use autoscaling with the deployment
   replicas: 1
@@ -1536,6 +1608,8 @@ ruler_query_frontend:
           - periodSeconds: 60
             type: Percent
             value: 10
+    # -- Fallback configuration for this component. If not set (null), the global kedaAutoscaling.fallback configuration is used.
+    # fallback: {}
 
   service:
     annotations: {}
@@ -1621,10 +1695,10 @@ ruler_query_frontend:
 # -- Only deployed if .Values.ruler.remoteEvaluationDedicatedQueryPath
 ruler_query_scheduler:
   # -- Allows to override the container image of the ruler-query-scheduler component.
-  # When set it takes precedence over what is defined in global "image" .
+  # When set it takes precedence over what is defined in global "image".
   image:
     # repository: grafana/mimir
-    # tag: 2.16.0
+    # tag: 3.2.0
 
   replicas: 2
   revisionHistoryLimit: null
@@ -1715,10 +1789,10 @@ querier:
   enabled: true
 
   # -- Allows to override the container image of the querier component.
-  # When set it takes precedence over what is defined in global "image" .
+  # When set it takes precedence over what is defined in global "image".
   image:
     # repository: grafana/mimir
-    # tag: 2.16.0
+    # tag: 3.2.0
 
   replicas: 2
   revisionHistoryLimit: null
@@ -1764,6 +1838,8 @@ querier:
             type: Pods
             value: 15
         stabilizationWindowSeconds: 60
+    # -- Fallback configuration for this component. If not set (null), the global kedaAutoscaling.fallback configuration is used.
+    # fallback: {}
 
   service:
     annotations: {}
@@ -1853,10 +1929,10 @@ query_frontend:
   enabled: true
 
   # -- Allows to override the container image of the query-frontend component.
-  # When set it takes precedence over what is defined in global "image" .
+  # When set it takes precedence over what is defined in global "image".
   image:
     # repository: grafana/mimir
-    # tag: 2.16.0
+    # tag: 3.2.0
 
   # Setting it to null will produce a deployment without replicas set, allowing you to use autoscaling with the deployment
   replicas: 1
@@ -1887,6 +1963,8 @@ query_frontend:
           - periodSeconds: 60
             type: Percent
             value: 10
+    # -- Fallback configuration for this component. If not set (null), the global kedaAutoscaling.fallback configuration is used.
+    # fallback: {}
 
   service:
     annotations: {}
@@ -1975,10 +2053,10 @@ query_scheduler:
   enabled: true
 
   # -- Allows to override the container image of the query-scheduler component.
-  # When set it takes precedence over what is defined in global "image" .
+  # When set it takes precedence over what is defined in global "image".
   image:
     # repository: grafana/mimir
-    # tag: 2.16.0
+    # tag: 3.2.0
 
   replicas: 2
   revisionHistoryLimit: null
@@ -2071,16 +2149,17 @@ store_gateway:
   enabled: true
 
   # -- Allows to override the container image of the store-gateway component.
-  # When set it takes precedence over what is defined in global "image" .
+  # When set it takes precedence over what is defined in global "image".
   image:
     # repository: grafana/mimir
-    # tag: 2.16.0
+    # tag: 3.2.0
 
   # -- Total number of replicas for the store-gateway across all availability zones
   # If store_gateway.zoneAwareReplication.enabled=false, this number is taken as is.
   # Otherwise each zone starts `ceil(replicas / number_of_zones)` number of pods.
   #   E.g. if 'replicas' is set to 4 and there are 3 zones, then 4/3=1.33 and after rounding up it means 2 pods per zone are started.
   replicas: 1
+  revisionHistoryLimit: null
 
   service:
     annotations: {}
@@ -2164,6 +2243,10 @@ store_gateway:
     #
     annotations: {}
 
+    # Store-gateway data Persistent Volume Claim labels
+    #
+    labels: {}
+
     # Store-gateway data Persistent Volume access modes
     # Must match those of existing PV or dynamic provisioner
     # Ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
@@ -2188,6 +2271,11 @@ store_gateway:
     #
     # A per-zone storageClass configuration in `store_gateway.zoneAwareReplication.zones[*].storageClass` takes precedence over this field.
     # storageClass: "-"
+
+    # volumeAttributesClassName: my-cluster-vac
+    # Requires Kubernetes 1.31+ and a CSI driver with ModifyVolume support.
+    # Must reference an existing cluster VolumeAttributesClass.
+    # A per-zone volumeAttributesClassName in `store_gateway.zoneAwareReplication.zones[*].volumeAttributesClassName` takes precedence over this field when set.
 
     # -- Enable StatefulSetAutoDeletePVC feature
     # https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#persistentvolumeclaim-retention
@@ -2252,6 +2340,8 @@ store_gateway:
     enabled: true
     # -- Maximum number of store-gateways that can be unavailable per zone during rollout
     maxUnavailable: 50
+    # -- Minimum time for the rollout operator to wait between store-gateway zone down scales
+    minTimeBetweenZonesDownscale: 30m
     # -- topologyKey to use in pod anti-affinity. If unset, no anti-affinity rules are generated. If set, the generated anti-affinity rule makes sure that pods from different zones do not mix.
     # E.g.: topologyKey: 'kubernetes.io/hostname'
     topologyKey: null
@@ -2276,6 +2366,9 @@ store_gateway:
         # If set to "-", then use `storageClassName: ""`, which disables dynamic provisioning
         # If undefined or set to null (the default), then fall back to the value of `store_gateway.persistentVolume.storageClass`.
         storageClass: null
+        # -- Persistent Volume VolumeAttributesClass for this zone.
+        # If undefined or set to null (the default), then fall back to the component `persistentVolume.volumeAttributesClassName`.
+        volumeAttributesClassName: null
         # -- noDownscale adds a label that can be used by the rollout-operator as documented in the rollout-operator repo: https://github.com/grafana/rollout-operator#webhooks
         noDownscale: false
         # -- downscaleLeader is an Annotation used by the rollout-operator to coordinate downscaling across zones.
@@ -2298,6 +2391,9 @@ store_gateway:
         # If set to "-", then use `storageClassName: ""`, which disables dynamic provisioning
         # If undefined or set to null (the default), then fall back to the value of `store_gateway.persistentVolume.storageClass`.
         storageClass: null
+        # -- Persistent Volume VolumeAttributesClass for this zone.
+        # If undefined or set to null (the default), then fall back to the component `persistentVolume.volumeAttributesClassName`.
+        volumeAttributesClassName: null
         # -- noDownscale adds a label that can be used by the rollout-operator as documented in the rollout-operator repo: https://github.com/grafana/rollout-operator#webhooks
         noDownscale: false
         # -- downscaleLeader is an Annotation used by the rollout-operator to coordinate downscaling across zones.
@@ -2320,6 +2416,9 @@ store_gateway:
         # If set to "-", then use `storageClassName: ""`, which disables dynamic provisioning
         # If undefined or set to null (the default), then fall back to the value of `store_gateway.persistentVolume.storageClass`.
         storageClass: null
+        # -- Persistent Volume VolumeAttributesClass for this zone.
+        # If undefined or set to null (the default), then fall back to the component `persistentVolume.volumeAttributesClassName`.
+        volumeAttributesClassName: null
         # -- noDownscale adds a label that can be used by the rollout-operator as documented in the rollout-operator repo: https://github.com/grafana/rollout-operator#webhooks
         noDownscale: false
         # -- downscaleLeader is an Annotation used by the rollout-operator to coordinate downscaling across zones.
@@ -2335,12 +2434,13 @@ compactor:
   enabled: true
 
   # -- Allows to override the container image of the compactor component.
-  # When set it takes precedence over what is defined in global "image" .
+  # When set it takes precedence over what is defined in global "image".
   image:
     # repository: grafana/mimir
-    # tag: 2.16.0
+    # tag: 3.2.0
 
   replicas: 1
+  revisionHistoryLimit: null
 
   service:
     annotations: {}
@@ -2408,6 +2508,10 @@ compactor:
     #
     annotations: {}
 
+    # compactor data Persistent Volume Claim labels
+    #
+    labels: {}
+
     # compactor data Persistent Volume access modes
     # Must match those of existing PV or dynamic provisioner
     # Ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
@@ -2431,6 +2535,12 @@ compactor:
     #   set, choosing the default provisioner.
     #
     # storageClass: "-"
+
+    # compactor Persistent Volume Attributes Class
+    # Allows you to dynamically modify a volume's attributes on the fly
+    # Requires Kubernetes 1.31+ and a CSI driver with ModifyVolume support.
+    # Must reference an existing cluster VolumeAttributesClass.
+    # volumeAttributesClassName: my-cluster-vac
 
     # -- Enable StatefulSetAutoDeletePVC feature
     # https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#persistentvolumeclaim-retention
@@ -2531,8 +2641,14 @@ chunks-cache:
   # -- Specifies whether memcached based chunks-cache should be enabled
   enabled: false
 
+  # -- How long each pod must be ready for before the next one is started/restarted
+  minReadySeconds: 60
+
   # -- Total number of chunks-cache replicas
   replicas: 1
+
+  # -- Number of old ReplicaSets to retain to allow rollback (if not set, the default Kubernetes value is set to 10)
+  revisionHistoryLimit: null
 
   # -- Port of the chunks-cache service
   port: 11211
@@ -2633,8 +2749,14 @@ index-cache:
   # -- Specifies whether memcached based index-cache should be enabled
   enabled: false
 
+  # -- How long each pod must be ready for before the next one is started/restarted
+  minReadySeconds: 60
+
   # -- Total number of index-cache replicas
   replicas: 1
+
+  # -- Number of old ReplicaSets to retain to allow rollback (if not set, the default Kubernetes value is set to 10)
+  revisionHistoryLimit: null
 
   # -- Port of the index-cache service
   port: 11211
@@ -2735,8 +2857,14 @@ metadata-cache:
   # -- Specifies whether memcached based metadata-cache should be enabled
   enabled: false
 
+  # -- How long each pod must be ready for before the next one is started/restarted
+  minReadySeconds: 60
+
   # -- Total number of metadata-cache replicas
   replicas: 1
+
+  # -- Number of old ReplicaSets to retain to allow rollback (if not set, the default Kubernetes value is set to 10)
+  revisionHistoryLimit: null
 
   # -- Port of the metadata-cache service
   port: 11211
@@ -2837,8 +2965,14 @@ results-cache:
   # -- Specifies whether memcached based results-cache should be enabled
   enabled: false
 
+  # -- How long each pod must be ready for before the next one is started/restarted
+  minReadySeconds: 60
+
   # -- Total number of results-cache replicas
   replicas: 1
+
+  # -- Number of old ReplicaSets to retain to allow rollback (if not set, the default Kubernetes value is set to 10)
+  revisionHistoryLimit: null
 
   # -- Port of the results-cache service
   port: 11211
@@ -2847,7 +2981,7 @@ results-cache:
   allocatedMemory: 512
 
   # -- Maximum item results-cache for memcached (in MB).
-  maxItemMemory: 5
+  maxItemMemory: 25
 
   # -- Maximum number of connections allowed
   connectionLimit: 16384
@@ -3013,6 +3147,9 @@ kafka:
     enabled: true
     size: 5Gi
     storageClassName: ""
+    # volumeAttributesClassName: my-cluster-vac
+    # Requires Kubernetes 1.31+ and a CSI driver with ModifyVolume support.
+    # Must reference an existing cluster VolumeAttributesClass.
     # Additional settings for emptyDir if persistence is disabled
     emptyDir: {}
   # -- Resource requests and limits for Kafka
@@ -3054,8 +3191,12 @@ kafka:
     allowPrivilegeEscalation: false
   # -- Grace period to allow Kafka to shutdown before it is killed
   terminationGracePeriodSeconds: 30
-  # -- Additional environment variables for Kafka
-  extraEnv: []
+  # -- Kafka log retention period in hours
+  logRetentionHours: 24
+  # -- Additional environment variables for Kafka.
+  # Entries are merged by name into the default Kafka env vars, following the same pattern as other chart components.
+  # A user-provided entry with the same name as a default overrides the default in-place (preserving list order).
+  env: []
   # -- Additional environment variables from secrets or configmaps
   extraEnvFrom: []
 
@@ -3550,20 +3691,20 @@ metaMonitoring:
     groups: []
   #  - name: mimir_api_1
   #    rules:
-  #    - expr: histogram_quantile(0.99, sum(rate(cortex_request_duration_seconds_bucket[1m]))
+  #    - expr: histogram_quantile(0.99, sum(rate(cortex_request_duration_seconds_bucket[4m]))
   #        by (le, cluster, job))
   #      record: cluster_job:cortex_request_duration_seconds:99quantile
-  #    - expr: histogram_quantile(0.50, sum(rate(cortex_request_duration_seconds_bucket[1m]))
+  #    - expr: histogram_quantile(0.50, sum(rate(cortex_request_duration_seconds_bucket[4m]))
   #        by (le, cluster, job))
   #      record: cluster_job:cortex_request_duration_seconds:50quantile
-  #    - expr: sum(rate(cortex_request_duration_seconds_sum[1m])) by (cluster, job) / sum(rate(cortex_request_duration_seconds_count[1m]))
+  #    - expr: sum(rate(cortex_request_duration_seconds_sum[4m])) by (cluster, job) / sum(rate(cortex_request_duration_seconds_count[4m]))
   #        by (cluster, job)
   #      record: cluster_job:cortex_request_duration_seconds:avg
-  #    - expr: sum(rate(cortex_request_duration_seconds_bucket[1m])) by (le, cluster, job)
+  #    - expr: sum(rate(cortex_request_duration_seconds_bucket[4m])) by (le, cluster, job)
   #      record: cluster_job:cortex_request_duration_seconds_bucket:sum_rate
-  #    - expr: sum(rate(cortex_request_duration_seconds_sum[1m])) by (cluster, job)
+  #    - expr: sum(rate(cortex_request_duration_seconds_sum[4m])) by (cluster, job)
   #      record: cluster_job:cortex_request_duration_seconds_sum:sum_rate
-  #    - expr: sum(rate(cortex_request_duration_seconds_count[1m])) by (cluster, job)
+  #    - expr: sum(rate(cortex_request_duration_seconds_count[4m])) by (cluster, job)
   #      record: cluster_job:cortex_request_duration_seconds_count:sum_rate
 
   # -- DEPRECATED: Grafana Agent is deprecated and will reach the End-of-Support in the end of 2025.
@@ -3769,10 +3910,10 @@ grafana-agent-operator:
 
 smoke_test:
   # -- Allows to override the container image of the smoke-test component.
-  # When set it takes precedence over what is defined in global "image" .
+  # When set it takes precedence over what is defined in global "image".
   image:
     # repository: grafana/mimir
-    # tag: 2.16.0
+    # tag: 3.2.0
   # -- Controls the backoffLimit on the Kubernetes Job. The Job is marked as failed after that many retries.
   backoffLimit: 5
   # The image section has been removed as continuous test is now a module of the regular Mimir image.
@@ -3794,10 +3935,10 @@ smoke_test:
 continuous_test:
   enabled: false
   # -- Allows to override the container image of the continuous-test component.
-  # When set it takes precedence over what is defined in global "image" .
+  # When set it takes precedence over what is defined in global "image".
   image:
     # repository: grafana/mimir-continuous-test
-    # tag: 2.16.0
+    # tag: 3.2.0
   # -- Number of replicas to start of continuous test
   replicas: 1
   revisionHistoryLimit: null
@@ -3899,6 +4040,3 @@ continuous_test:
 #   data: |
 #     extra.yml: "{{ include some-mimir-define }}"
 extraObjects: []
-enterprise:
-  image:
-    tag: r365-3fdf702d
