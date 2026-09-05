@@ -1,10 +1,45 @@
 deploymentMode: Distributed
 
 loki:
-  useTestSchema: true
   configStorageType: ConfigMap
   configObjectName: loki-config
-  generatedConfigObjectName: ''
+  generatedConfigObjectName: loki-config
+  useTestSchema: true
+
+  bloom_build:
+    enabled: true
+  bloom_gateway:
+    enabled: true
+  pattern_ingester:
+    enabled: true
+  ui:
+    enabled: true
+    gateway:
+      enabled: true
+  storage:
+    bucketNames:
+      chunks: loki-data
+      ruler: loki-ruler
+  commonConfig:
+    path_prefix: /var/loki
+    replication_factor: 1
+    storage:
+      s3:
+        bucketnames: loki-data
+        endpoint: ${LOKI_S3_ENDPOINT:-https://minio.minio-system.svc.cluster.local:443}
+        access_key_id: ${LOKI_S3_ACCESS_KEY_ID:-lgtmp}
+        secret_access_key: ${LOKI_S3_SECRET_ACCESS_KEY:-supersecret}
+        insecure: ${LOKI_S3_INSECURE:-false}
+        s3forcepathstyle: true
+        http_config:
+          insecure_skip_verify: true
+  tenants:
+  - name: "anonymous"
+    password: "anonymous"
+  - name: "test-user-1"
+    password: "test-password-1"
+  - name: "test-user-2"
+    passwordHash: "$2y$10$7O40CaY1yz7fu9O24k2/u.ct/wELYHRBsn25v/7AyuQ8E8hrLqpva" # generated using `htpasswd -nbBC10 test-user-2 test-password-2`
 
 test:
   enabled: false
@@ -17,8 +52,17 @@ memberlist:
     publishNotReadyAddresses: true
 
 gateway:
-  enabled: false
-  verboseLogging: false
+  enabled: true
+  verboseLogging: true
+  basicAuth:
+    enabled: true
+  route:
+    main:
+      enabled: true
+
+route:
+  main:
+    enabled: false
 
 chunksCache:
   enabled: false
@@ -40,6 +84,7 @@ backend:
 #
 ######################################################################################################################
 ingester:
+  enabled: true
   replicas: 3
   extraArgs:
   - -config.expand-env=true
@@ -50,6 +95,7 @@ ingester:
     enabled: false
 
 distributor:
+  enabled: true
   replicas: 2
   maxUnavailable: 1
   extraArgs:
@@ -59,6 +105,7 @@ distributor:
       name: loki-env
 
 querier:
+  enabled: true
   replicas: 2
   maxUnavailable: 1
   extraArgs:
@@ -68,6 +115,7 @@ querier:
       name: loki-env
 
 queryFrontend:
+  enabled: true
   replicas: 1
   maxUnavailable: 1
   extraArgs:
@@ -77,6 +125,7 @@ queryFrontend:
       name: loki-env
 
 queryScheduler:
+  enabled: true
   replicas: 1
   extraArgs:
   - -config.expand-env=true
@@ -85,6 +134,7 @@ queryScheduler:
       name: loki-env
 
 indexGateway:
+  enabled: true
   replicas: 1
   maxUnavailable: 1
   extraArgs:
@@ -96,6 +146,7 @@ indexGateway:
     enabled: false
 
 compactor:
+  enabled: true
   replicas: 1
   extraArgs:
   - -config.expand-env=true
@@ -104,6 +155,7 @@ compactor:
       name: loki-env
 
 bloomGateway:
+  enabled: true
   replicas: 1
   extraArgs:
   - -config.expand-env=true
@@ -112,6 +164,7 @@ bloomGateway:
       name: loki-env
 
 bloomPlanner:
+  enabled: true
   replicas: 1
   extraArgs:
   - -config.expand-env=true
@@ -120,6 +173,7 @@ bloomPlanner:
       name: loki-env
 
 bloomBuilder:
+  enabled: true
   replicas: 1
   extraArgs:
   - -config.expand-env=true
@@ -128,6 +182,7 @@ bloomBuilder:
       name: loki-env
 
 patternIngester:
+  enabled: true
   replicas: 1
   extraArgs:
   - -config.expand-env=true
