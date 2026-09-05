@@ -1,5 +1,12 @@
 deploymentMode: Distributed
 
+global:
+  extraArgs:
+  - -config.expand-env=true
+  extraEnvFrom:
+  - secretRef:
+      name: loki-env
+
 loki:
   configStorageType: ConfigMap
   configObjectName: loki-config
@@ -36,8 +43,6 @@ loki:
   tenants:
   - name: "anonymous"
     password: "anonymous"
-  - name: "test-user-1"
-    password: "test-password-1"
   - name: "test-user-2"
     passwordHash: "$2y$10$7O40CaY1yz7fu9O24k2/u.ct/wELYHRBsn25v/7AyuQ8E8hrLqpva" # generated using `htpasswd -nbBC10 test-user-2 test-password-2`
 
@@ -86,11 +91,6 @@ backend:
 ingester:
   enabled: true
   replicas: 3
-  extraArgs:
-  - -config.expand-env=true
-  extraEnvFrom:
-  - secretRef:
-      name: loki-env
   zoneAwareReplication:
     enabled: false
 
@@ -98,113 +98,53 @@ distributor:
   enabled: true
   replicas: 2
   maxUnavailable: 1
-  extraArgs:
-  - -config.expand-env=true
-  extraEnvFrom:
-  - secretRef:
-      name: loki-env
 
 querier:
   enabled: true
   replicas: 2
   maxUnavailable: 1
-  extraArgs:
-  - -config.expand-env=true
-  extraEnvFrom:
-  - secretRef:
-      name: loki-env
 
 queryFrontend:
   enabled: true
   replicas: 1
   maxUnavailable: 1
-  extraArgs:
-  - -config.expand-env=true
-  extraEnvFrom:
-  - secretRef:
-      name: loki-env
 
 queryScheduler:
   enabled: true
   replicas: 1
-  extraArgs:
-  - -config.expand-env=true
-  extraEnvFrom:
-  - secretRef:
-      name: loki-env
 
 indexGateway:
   enabled: true
   replicas: 1
   maxUnavailable: 1
-  extraArgs:
-  - -config.expand-env=true
-  extraEnvFrom:
-  - secretRef:
-      name: loki-env
   persistence:
     enabled: false
 
 compactor:
   enabled: true
   replicas: 1
-  extraArgs:
-  - -config.expand-env=true
-  extraEnvFrom:
-  - secretRef:
-      name: loki-env
 
 bloomGateway:
   enabled: true
   replicas: 1
-  extraArgs:
-  - -config.expand-env=true
-  extraEnvFrom:
-  - secretRef:
-      name: loki-env
 
 bloomPlanner:
   enabled: true
   replicas: 1
-  extraArgs:
-  - -config.expand-env=true
-  extraEnvFrom:
-  - secretRef:
-      name: loki-env
 
 bloomBuilder:
   enabled: true
   replicas: 1
-  extraArgs:
-  - -config.expand-env=true
-  extraEnvFrom:
-  - secretRef:
-      name: loki-env
 
 patternIngester:
   enabled: true
   replicas: 1
-  extraArgs:
-  - -config.expand-env=true
-  extraEnvFrom:
-  - secretRef:
-      name: loki-env
 
 ruler:
   enabled: true
   replicas: 1
   maxUnavailable: 1
-  extraArgs:
-  - -config.expand-env=true
-  extraEnvFrom:
-  - secretRef:
-      name: loki-env
 
 overridesExporter:
   enabled: true
   replicas: 1
-  extraArgs:
-  - -config.expand-env=true
-  extraEnvFrom:
-  - secretRef:
-      name: loki-env
